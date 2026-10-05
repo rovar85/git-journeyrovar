@@ -1,0 +1,105 @@
+
+<!-- ============================ CHAPTER 8 ============================ -->
+<section class="chapter" id="ch8" data-title="8 · Effective agents" data-road="Building effective agents" data-sub="When to build an agent, keeping it simple, the five workflow patterns, and thinking like your agent.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 8</span>
+    <h2>Building effective agents</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>decide when an agent is the right tool and when a workflow or a single call is better</li>
+      <li>describe the three parts of a simple agent and what to optimise first</li>
+      <li>name and explain the five workflow patterns</li>
+      <li>debug an agent by "thinking like your agent"</li>
+    </ul>
+  </div>
+
+  <p>This chapter follows Barry Zhang of Anthropic, who gives three ideas: <b>don't build agents for everything</b>, <b>keep it simple</b>, and <b>think like your agent</b>. We add the workflow patterns from the Anthropic article "Building Effective Agents" that your study notes cite.</p>
+
+  <h3>How we got here</h3>
+  <p>Most teams start with single-call features such as summarisation, classification and extraction. Then one call is not enough, so they orchestrate several calls in a predefined flow. That trades <b>cost and delay for better performance</b>. These are <b>workflows</b>. Models are now capable enough that <b>agents</b> are appearing in production: unlike workflows, agents decide their own trajectory and act almost independently, guided by feedback from the environment. The trend is clear. The more agency you give a system, the more useful it can be. But <b>cost, delay and the consequences of errors go up with it.</b></p>
+
+  <h3>Idea 1: don't build agents for everything</h3>
+  <p>Agents are a way to scale <i>complex and valuable</i> tasks. They should not be a drop-in upgrade for every use case. Ask four questions:</p>
+  <ol>
+    <li><b>Is the task complex and ambiguous?</b> Agents thrive in ambiguous problem spaces. If you can map the whole decision tree easily, build that explicitly and optimise each node. It is cheaper and gives you more control.</li>
+    <li><b>Is the task valuable?</b> Exploration costs a lot of tokens. If your budget is around 10 cents per task, for example in a high-volume customer-support system, that affords only roughly 30,000 to 50,000 tokens. Use a workflow for the common cases.</li>
+    <li><b>Have you de-risked the critical capabilities?</b> For a coding agent: can it write good code, debug, and recover from errors? Bottlenecks are not fatal but multiply cost and delay. If you find some, narrow the scope and try again.</li>
+    <li><b>What is the cost of an error, and how easily is it discovered?</b> If errors are high-stakes and hard to spot, you cannot trust an agent to act for you. You can limit the damage with read-only access and human approval, but that also limits how far you can scale.</li>
+  </ol>
+  <p>Coding is a good example. Going from a design document to a pull request is ambiguous and complex. Good code is valuable. Models are already strong at many parts of the coding workflow. And output is easy to verify with unit tests and CI. That is why coding agents lead the way.</p>
+
+  <div class="lab" id="budget">
+    <div class="lab-title">Token budget <small>Does an exploring agent fit in the budget?</small></div>
+    <div id="bg-ctl"></div>
+    <div class="out" id="bg-out" aria-live="polite"></div>
+    <p style="font-size:.88rem;color:var(--muted);margin:8px 0 0">The price is an assumption you can change. The talk's figure (10 cents buys 30,000 to 50,000 tokens) corresponds to a blended price of roughly $2 to $3 per million tokens. Real prices vary by model, and input and output tokens are priced differently.</p>
+  </div>
+
+  <div class="lab" id="rubric">
+    <div class="lab-title">Should I build an agent? <small>Answer for your own task</small></div>
+    <div class="checks" id="rb-checks"></div>
+    <div class="out" id="rb-out" aria-live="polite"></div>
+  </div>
+
+  <h3>Idea 2: keep it as simple as possible</h3>
+  <p>Anthropic's view of an agent is "models using tools in a loop", and three components define it:</p>
+  <div class="flow">
+    <div class="node"><b>Environment</b>the system the agent operates in</div>
+    <div class="node"><b>Tools</b>the interface for acting and getting feedback</div>
+    <div class="node"><b>System prompt</b>goals, constraints and ideal behaviour</div><span class="arr">→</span>
+    <div class="node hl"><b>The model, called in a loop</b></div>
+  </div>
+  <p>Their lesson, learned the hard way: complexity up front kills iteration speed. Three very different agents they built (coding, computer use, search) share almost exactly the same code. The environment depends on your use case, so <b>your only real design decisions are the set of tools and the prompt.</b> Iterate on those first. It gives by far the best return. Optimise later:</p>
+  <ul>
+    <li>For coding and computer use: <b>cache the trajectory</b> to cut cost.</li>
+    <li>For search, which makes many tool calls: <b>run calls in parallel</b> to cut delay.</li>
+    <li>For almost everything: <b>show the agent's progress</b> so users trust it.</li>
+  </ul>
+
+  <h3>The five workflow patterns</h3>
+  <p>Between a single call and a free-running agent sit composable workflow patterns. They are often easier to test than a fully autonomous agent, because the control flow is known. Click through them:</p>
+  <div class="lab" id="patterns"><div class="lab-title">Workflow pattern explorer</div><div id="pt-tabs"></div></div>
+
+  <h3>Idea 3: think like your agent</h3>
+  <p>Builders, Barry included, develop agents from their own perspective and are confused when the agent errs. The fix: <b>put yourself in the agent's context window.</b> An agent can look very sophisticated, but at every step the model is just running inference on a limited set of tokens, around 10 to 20 thousand. Everything it knows about the world is in there.</p>
+  <p>Imagine being a computer-use agent. You receive one still screenshot and a vaguely written description. You choose a click. While the click executes and the next screenshot is prepared, it is as if you closed your eyes for three to five seconds and used the computer in the dark. Then you open your eyes, and whatever you did may have worked, or may have shut the machine down. You quickly see what the agent would have needed: the screen resolution, recommended actions, the limits, and guardrails that stop wasted exploration.</p>
+  <div class="board note"><span class="tag">The debugging question</span><p><b>"If I were the agent, with exactly this context and these tools, would the next decision be obvious?"</b> Try the whole task from the agent's seat. It is a fascinating, mildly uncomfortable exercise.</p></div>
+  <p>Since the systems speak your language, you can also use them to help:</p>
+  <ul>
+    <li>Paste your system prompt and ask: "Is any of this instruction ambiguous? Can you follow it?"</li>
+    <li>Paste a tool description and ask whether the agent would know how to use the tool, or wants more or fewer parameters.</li>
+    <li>Paste the agent's whole trajectory and ask: "Why did you make this decision here? What would help you decide better?"</li>
+  </ul>
+  <p>This shouldn't replace your own understanding of the context, but it brings you closer to how the agent sees the world.</p>
+
+  <h3>Three open questions (from the talk)</h3>
+  <ul>
+    <li><b>Budget-aware agents.</b> Workflows have predictable cost and latency. Agents do not. How should we define and enforce budgets in time, money and tokens?</li>
+    <li><b>Self-evolving tools.</b> Models already help refine tool descriptions. Could agents design and improve their own tools?</li>
+    <li><b>Multi-agent collaboration.</b> Sub-agents protect the main agent's context and parallelise well. But how do agents communicate asynchronously and recognise each other's roles?</li>
+  </ul>
+  <p>Notice how these connect to what you have learned: budgets (Chapter 5), tool design and discovery (Chapter 10), multi-agent protocols and security (Chapters 10 and 12).</p>
+
+  <div class="board note"><span class="tag">The engineering judgement</span><p>The skill is not "build more agents". The skill is <b>choosing the smallest architecture that reliably delivers the value</b>.</p></div>
+
+  <h3>Try it yourself (no code)</h3>
+  <ol>
+    <li>Take the Enterprise Vault tool list from Chapter 7 (service status, event logs, SQL test, DNS check). Write the shortest possible system prompt for the diagnosing agent.</li>
+    <li>Now sit in the agent's seat. At step 1 what does it not know? (For example: which server? What counts as "down"? What is it allowed to touch?) Add those answers to the prompt.</li>
+    <li>Write a one-sentence description for each tool that would let a stranger use it correctly. Ask a model if any is ambiguous.</li>
+  </ol>
+
+  <div class="recap"><h3>Chapter 8 in plain words</h3>
+    <ul>
+      <li>More agency means more usefulness and also more cost, delay and risk.</li>
+      <li>Build an agent only for complex, valuable tasks with de-risked capabilities and manageable error costs. Otherwise use a workflow.</li>
+      <li>A simple agent is environment + tools + system prompt, in a loop. Iterate on tools and prompt first, optimise later.</li>
+      <li>Five workflow patterns: prompt chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser.</li>
+      <li>Debug by thinking like the agent: what is in its context and tools right now?</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c8"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

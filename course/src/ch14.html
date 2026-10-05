@@ -1,0 +1,150 @@
+
+<!-- ============================ CHAPTER 14 ============================ -->
+<section class="chapter" id="ch14" data-title="14 · Capstone" data-road="Capstone: design your Enterprise Vault agent" data-sub="Put everything together: a design workbook, the master test, the skill ladder and a study plan.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 14</span>
+    <h2>Capstone: design your Enterprise Vault agent</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you will have:</b>
+    <ul>
+      <li>a one-page design for a read-only diagnostic agent, generated from your own choices</li>
+      <li>a checklist (the master test) to find what you still cannot explain</li>
+      <li>a realistic picture of what level you have reached and a plan for the next 90 days</li>
+    </ul>
+  </div>
+
+  <div class="board warn"><span class="tag">The real goal</span><p>Do not build "AI that magically fixes Enterprise Vault". Build <b>a reliable troubleshooting system</b> that <b>gathers evidence, tests hypotheses, explains why it believes the diagnosis, and takes only authorised actions.</b> That sentence is from your own study notes, and it is the whole course in one line.</p></div>
+
+  <h3>The final architecture on one board</h3>
+  <div class="codewrap"><pre class="code"><code>USER / QA
+  -> AGENT HOST
+     -> AGENT LOOP
+        + LLM
+        + RAG                  (runbooks, known failures)
+        + MEMORY / STATE
+        -> MCP CLIENT
+           -> MCP SERVER
+              + EV diagnostics
+              + Windows / AD diagnostics
+              + SQL diagnostics
+              + test execution
+        -> EVIDENCE
+        -> EVALUATION
+        -> HUMAN APPROVAL      (risky actions only)
+        -> ACTION
+        -> VERIFY
+        -> AUDIT</code></pre></div>
+  <p>You have now met every box. The model and attention (Chapter 2). Training and the data behind it (3 and 4). Prompts and context (5). RAG (6). The agent loop, state and memory (7). When to use it (8). Evaluation (9). MCP (10). The raw loop (11). Security and approval (12). Production, tracing and tests (13).</p>
+
+  <h3>The four-stage capstone</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Phase</th><th>Objective</th><th>Deliverable</th></tr></thead><tbody>
+    <tr><td>1. Observe</td><td>collect evidence</td><td>read-only MCP tools + diagnosis</td></tr>
+    <tr><td>2. Verify</td><td>confirm hypotheses</td><td>cross-checks + regression suite</td></tr>
+    <tr><td>3. Remediate</td><td>controlled actions</td><td>approval-gated fixes</td></tr>
+    <tr><td>4. Learn</td><td>improve over time</td><td>traces + evaluation + tool and prompt versions</td></tr>
+  </tbody></table></div>
+  <div class="board note"><span class="tag">Start here</span><p><b>Build read-only diagnosis first. Measure it against 50 or more known failure scenarios. Only then introduce controlled remediation.</b> Your QA framework is not a side project here. It can be the evaluation harness: known failure modes become controlled test cases, and every improvement is checked against the regression suite.</p></div>
+
+  <h3>Workbook: generate your design</h3>
+  <p>Make the choices below and the page assembles a one-page design brief that you can copy into a document. Every choice comes from a chapter, so if you cannot decide, go back and re-read that chapter. (The tool list is taken from your study notes' Enterprise Vault MCP server.)</p>
+  <div class="lab" id="wb">
+    <div class="lab-title">Design workbook</div>
+    <label class="fl" for="wb-goal">Goal in one sentence</label>
+    <textarea id="wb-goal">Diagnose why Enterprise Vault indexing has stopped or is failing, report the most likely root cause with evidence and confidence, and suggest next steps. Make no changes to any system.</textarea>
+    <label class="fl">Tools to expose (read-only first)</label>
+    <div class="checks" id="wb-tools"></div>
+    <label class="fl">Safety policy</label>
+    <div class="checks" id="wb-safe"></div>
+    <label class="fl">Evaluation: what will you measure?</label>
+    <div class="checks" id="wb-eval"></div>
+    <div id="wb-ctl"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="wb-gen" type="button">Generate design brief</button><button class="btn ghost" id="wb-copy" type="button">Copy</button></div>
+    <div class="pre-out" id="wb-out" style="margin-top:12px">Press "Generate design brief".</div>
+  </div>
+
+  <h3>The five diagrams to be able to redraw from memory</h3>
+  <p>Close the page and draw each one on paper. Then compare.</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Diagram</th><th>The chain</th><th>Chapter</th></tr></thead><tbody>
+    <tr><td>1. LLM pipeline</td><td>text → tokenizer → token IDs → embeddings → Transformer → logits → probability → next token</td><td>2</td></tr>
+    <tr><td>2. Attention</td><td>Q + K → compatibility → softmax weights → V → contextual representation</td><td>2</td></tr>
+    <tr><td>3. Training</td><td>data → prediction → loss → backprop → optimiser → updated parameters → repeat</td><td>3</td></tr>
+    <tr><td>4. Agent</td><td>goal → model → tool → observation → state → model → … → done</td><td>7</td></tr>
+    <tr><td>5. MCP</td><td>host → client → server → tools / resources / prompts → external systems</td><td>10</td></tr>
+  </tbody></table></div>
+
+  <h3>The master test</h3>
+  <p>Close everything and try to answer each question out loud <b>before</b> opening the model answer. Anything you cannot answer tells you which chapter to re-read. When you can pass it, your notes say, the next step should be code: build the smallest possible agent, connect two tools, expose them through MCP, then measure it.</p>
+  <div id="mt"></div>
+
+  <h3>The skill ladder: where are you really?</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Level</th><th>You can…</th><th>Reached by</th></tr></thead><tbody>
+    <tr><td>1. Recognise</td><td>define the terms</td><td>reading this course</td></tr>
+    <tr><td>2. Explain</td><td>teach the idea simply</td><td>the master test, out loud</td></tr>
+    <tr><td>3. Draw</td><td>show the architecture</td><td>the five diagrams</td></tr>
+    <tr><td>4. Implement</td><td>write a small version</td><td>the code exercises (Chapters 3, 6, 9, 11, 12)</td></tr>
+    <tr><td>5. Debug</td><td>explain why it failed</td><td>traces and "think like the agent"</td></tr>
+    <tr><td>6. Evaluate</td><td>measure whether it works</td><td>your own test set and scorecard</td></tr>
+    <tr><td>7. Design</td><td>choose the right architecture</td><td>real projects and the Chapter 8 rubric</td></tr>
+    <tr><td>8. Operate</td><td>secure, monitor and improve it in production</td><td>running something real for months</td></tr>
+  </tbody></table></div>
+  <div class="board warn"><span class="tag">Honest answer to "will I be an expert?"</span><p>Reading this course gets you solidly through levels 1 to 3 for the whole subject. The exercises take you into levels 4 and 5 for the parts you actually do. Levels 6 to 8 come only from building and running real systems. Your notes put it this way: the target is levels 5 to 8 over time, and an AI engineer is not the person who knows the most framework names, but the person who understands the model, the system around it, the failure modes, the evaluation method and the trade-offs, <b>and can build, test and improve the whole thing.</b></p></div>
+
+  <h3>A 45-day study plan</h3>
+  <p>This is the plan from your notes, with the chapter of this course that supports each block. Chapter 2 only gives you the minimum maths vocabulary (vectors, dot product, softmax). For deeper linear algebra, probability and calculus, use a dedicated beginner resource alongside it.</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Days</th><th>Focus</th><th>You should be able to…</th><th>Chapter</th></tr></thead><tbody>
+    <tr><td>1–3</td><td>AI / ML / DL / LLM hierarchy</td><td>draw the nested boxes and explain each</td><td>1</td></tr>
+    <tr><td>4–9</td><td>Neural networks and linear algebra</td><td>weights, bias, activation, layers; vectors, matrices, dot product</td><td>2</td></tr>
+    <tr><td>10–12</td><td>Probability</td><td>logits, softmax, probabilities, cross-entropy</td><td>2, 3</td></tr>
+    <tr><td>13–21</td><td>Tokens, embeddings, Transformer</td><td>tokenizer, vectors, position, attention Q/K/V, multi-head, block, causal mask</td><td>2</td></tr>
+    <tr><td>22</td><td>Inference</td><td>temperature, top-k, top-p, stopping, KV cache</td><td>2</td></tr>
+    <tr><td>23–28</td><td>Training, systems, scaling</td><td>data, pre-training, loss, backprop; GPUs, mixed precision; scaling trade-offs</td><td>3</td></tr>
+    <tr><td>29–33</td><td>Evaluation and post-training</td><td>perplexity, benchmarks, contamination; SFT, preference data, RLHF, DPO</td><td>4</td></tr>
+    <tr><td>34–36</td><td>Agentic AI</td><td>chatbot vs workflow vs agent, loop, tools</td><td>7</td></tr>
+    <tr><td>37</td><td>RAG</td><td>retrieval pipeline and grounding</td><td>6</td></tr>
+    <tr><td>38–39</td><td>Planning, reflection, workflows</td><td>decomposition, verification; chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser</td><td>7, 8</td></tr>
+    <tr><td>40</td><td>Memory and multi-agent</td><td>state, long-term memory, collaboration</td><td>7, 13</td></tr>
+    <tr><td>41</td><td>Evaluation of agents</td><td>success, safety, cost, latency</td><td>9</td></tr>
+    <tr><td>42</td><td>MCP</td><td>host / client / server, tools / resources / prompts</td><td>10</td></tr>
+    <tr><td>43</td><td>Agent from scratch</td><td>build the loop</td><td>11</td></tr>
+    <tr><td>44</td><td>Production</td><td>observability, approvals, permissions</td><td>12, 13</td></tr>
+    <tr><td>45</td><td>Capstone</td><td>present the complete architecture</td><td>14</td></tr>
+  </tbody></table></div>
+
+  <h3>A 90-day build roadmap</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Period</th><th>Focus</th><th>Hands-on deliverable</th></tr></thead><tbody>
+    <tr><td>Days 1–20</td><td>LLM fundamentals</td><td>token, embedding and attention experiments</td></tr>
+    <tr><td>Days 21–35</td><td>Training concepts</td><td>a tiny toy language model (start from <code>tiny_bigram.py</code>)</td></tr>
+    <tr><td>Days 36–50</td><td>Agents + tools + RAG</td><td>a 3-tool agent (extend <code>mini_agent.py</code>)</td></tr>
+    <tr><td>Days 51–65</td><td>MCP</td><td>an MCP server exposing those tools</td></tr>
+    <tr><td>Days 66–80</td><td>Evaluation</td><td>50+ regression scenarios</td></tr>
+    <tr><td>Days 81–90</td><td>EV capstone</td><td>a read-only troubleshooting agent</td></tr>
+  </tbody></table></div>
+  <div class="board note"><span class="tag">Teacher says</span><p>Measure progress by what you can <b>explain, draw, code, test and debug</b>, not by how many hours of video you consumed.</p></div>
+
+  <h3>What to keep learning after this course</h3>
+  <ul>
+    <li>Python and software design</li>
+    <li>Probability, statistics and linear algebra</li>
+    <li>Deep learning and optimisation</li>
+    <li>Transformer internals and inference systems</li>
+    <li>RAG and information retrieval</li>
+    <li>Tool and function calling</li>
+    <li>Agent state and orchestration</li>
+    <li>Evaluation and LLMOps</li>
+    <li>MCP and protocol design (follow the current specification)</li>
+    <li>Security and authorisation, distributed systems, cost and performance engineering</li>
+  </ul>
+
+  <div class="recap"><h3>Chapter 14 in plain words</h3>
+    <ul>
+      <li>Build a reliable evidence-gathering system, not a magic fixer.</li>
+      <li>Four phases: observe, verify, remediate, learn. Read-only first.</li>
+      <li>Your QA skills turn into the evaluation harness.</li>
+      <li>Use the master test to find gaps, and the ladder to be honest about your level.</li>
+      <li>The next step is code: the smallest agent, two tools, an MCP server, then measure.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c14"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

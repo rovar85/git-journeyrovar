@@ -1,0 +1,124 @@
+
+<!-- ============================ CHAPTER 7 ============================ -->
+<section class="chapter" id="ch7" data-title="7 · Agents" data-road="What is an AI agent?" data-sub="The agent loop, workflows versus agents, reasoning and acting, planning, reflection, memory, teams.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 7</span>
+    <h2>What is an AI agent?</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>define an agent in your own words and draw the agent loop</li>
+      <li>tell a chatbot, a workflow and an agent apart</li>
+      <li>explain ReAct, planning, reflection, memory and multi-agent patterns</li>
+      <li>follow a worked example of an agent diagnosing a failing service</li>
+    </ul>
+  </div>
+
+  <h3>The progression: from prompt to agent</h3>
+  <p>Agents are not a separate species. They are the end of a staircase that you have already climbed:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Level</th><th>What is added</th><th>Shape</th></tr></thead><tbody>
+    <tr><td>1</td><td>A plain prompt</td><td>prompt → answer</td></tr>
+    <tr><td>2</td><td>Context from your documents (RAG)</td><td>prompt + retrieved text → answer</td></tr>
+    <tr><td>3</td><td>Tools</td><td>the model can call functions and see results</td></tr>
+    <tr><td>4</td><td>A loop with a goal</td><td>goal → act → observe → decide again, until done</td></tr>
+    <tr><td>5</td><td>Several specialised agents</td><td>an orchestrator and helpers</td></tr>
+  </tbody></table></div>
+  <p>The model stays the reasoning core throughout. What changes is the system around it: it can retrieve, call functions, plan, reflect, remember and interact with an environment.</p>
+
+  <h3>What is an agent?</h3>
+  <p>Many definitions exist, and the speakers in your source talks each phrase it slightly differently. They agree on the shape:</p>
+  <ul>
+    <li>"<b>An LLM, memory, planning, tools and a while loop</b>" (Kam Lasater).</li>
+    <li>"<b>Models using tools in a loop</b>", defined by three parts: the <i>environment</i>, a set of <i>tools</i>, and a <i>system prompt</i> (Barry Zhang, Anthropic).</li>
+    <li>"<b>Language models control the operation of a system</b>" (a definition Sayash Kapoor cites). By that standard even ChatGPT is a rudimentary agent: it filters inputs and outputs and can call tools.</li>
+  </ul>
+  <p>A practical definition for building: <b>an agent is a software system in which an LLM helps choose actions toward a goal, using tools and observations to decide what to do next.</b></p>
+  <div class="flow">
+    <div class="node hl"><b>Goal</b>what must be achieved</div><span class="arr">→</span>
+    <div class="node"><b>LLM</b>decides the next action</div><span class="arr">→</span>
+    <div class="node"><b>Tool</b>software runs the action</div><span class="arr">→</span>
+    <div class="node"><b>Environment</b>the real system responds</div><span class="arr">→</span>
+    <div class="node"><b>Observation</b>result goes back to the LLM</div><span class="arr">↺</span>
+  </div>
+  <div class="board note"><span class="tag">Teacher says</span><p><b>The model is not the whole agent.</b> The agent is the complete loop around the model: instructions, environment, tools, state, results and stopping rules. This is the fourth of the five diagrams to memorise: <i>goal → model → tool → observation → state → model → … → done</i>.</p></div>
+
+  <h3>Chatbot, workflow, or agent?</h3>
+  <p>Not every AI feature should be an agent. This comparison is the most useful decision tool in the course:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Property</th><th>Chatbot</th><th>Workflow</th><th>Agent</th></tr></thead><tbody>
+    <tr><td>Main job</td><td>answer</td><td>execute a known process</td><td>achieve a goal</td></tr>
+    <tr><td>Control flow</td><td>one or few calls</td><td>predefined by you</td><td>directed by the model</td></tr>
+    <tr><td>Tools</td><td>optional</td><td>specified in advance</td><td>chosen dynamically</td></tr>
+    <tr><td>Adapts to results</td><td>limited</td><td>by your rules</td><td>yes</td></tr>
+    <tr><td>Cost predictability</td><td>high</td><td>high</td><td>lower</td></tr>
+    <tr><td>Best fit</td><td>Q&amp;A</td><td>a repeatable process</td><td>ambiguous multi-step work</td></tr>
+  </tbody></table></div>
+  <p>The principle from Anthropic: <b>start with the simplest system that solves the problem.</b> Workflows are powerful when the path is predictable. Agents are valuable when flexible, model-driven decisions are genuinely needed. Try the sorting exercise:</p>
+
+  <div class="lab" id="sorter">
+    <div class="lab-title">Sort the task <small>Which design fits best?</small></div>
+    <div id="so-body"></div>
+  </div>
+
+  <h3>The reason-act loop (ReAct)</h3>
+  <p>The core agentic pattern alternates deciding and doing: <b>decide the next action → call a tool → observe the result → update your understanding → decide again.</b> It is often called <b>ReAct</b> (reason and act). Reasoning gives the model a plan. Acting gets it new information from the outside world. Together they let a model solve problems that no single answer could.</p>
+  <div class="board note"><span class="tag">Engineering note</span><p>For engineering you do not need to expose a model's hidden reasoning. What you need is the <b>action and observation loop</b>, short decision summaries, evidence and traceability. You must be able to see <i>what it did and why</i>.</p></div>
+
+  <h3>Watch an agent work</h3>
+  <p>Here is a worked example in the spirit of your study notes: an agent investigating "Why is Enterprise Vault indexing down?". It has read-only tools. At each step it sees only what is in its context, picks a tool, and learns from the result. <b>All tool outputs are invented for the demonstration.</b> Pick a scenario. Notice how the second one sends the agent down a different path because the observations are different. That is the point of an agent: the next step depends on what it found.</p>
+  <div class="lab" id="sim">
+    <div class="lab-title">Agent loop simulator</div>
+    <div class="picker" id="sim-pick" role="group" aria-label="Scenario"></div>
+    <div id="sim-step"></div>
+  </div>
+
+  <h3>Planning</h3>
+  <p>Planning means deciding what sequence of actions could reach the goal. Instead of you breaking the task into steps (like the prompt chaining of Chapter 5), you ask the model to break it down. Some agents plan once up front. Others re-plan as evidence arrives. Remember: <b>a plan is a hypothesis about the environment, not reality.</b> When a step fails, the agent must adapt.</p>
+
+  <h3>Reflection</h3>
+  <p>Reflection means making a draft, critiquing it against criteria, and producing a better version. The Stanford talk's example is refactoring code: first ask the model to read the code and give constructive feedback, then give the code and that feedback to a second call that rewrites it. It is quick to implement and often improves quality. The limit: <b>reflection can improve a result, but it is not proof of correctness.</b> A model can critique an answer and still miss the real defect.</p>
+  <div class="flow">
+    <div class="node">Draft</div><span class="arr">→</span><div class="node">Critique</div><span class="arr">→</span><div class="node">Improve</div><span class="arr">→</span><div class="node hl">Verify with a real check</div>
+  </div>
+
+  <h3>Memory and state</h3>
+  <p>An agent must keep track of where it is. "Memory" covers several different things:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Kind</th><th>Meaning</th><th>Example</th></tr></thead><tbody>
+    <tr><td>Working context</td><td>information in the current model call</td><td>the latest tool result</td></tr>
+    <tr><td>Task state</td><td>where the current job stands</td><td>hypothesis: SQL timeout</td></tr>
+    <tr><td>Conversation memory</td><td>recent interaction history</td><td>the user's earlier instruction</td></tr>
+    <tr><td>Long-term memory</td><td>information that persists</td><td>a known failure pattern</td></tr>
+    <tr><td>Episodic memory</td><td>past tasks and events</td><td>a previous incident trace</td></tr>
+  </tbody></table></div>
+  <p>Memory should be <b>selective</b>. Storing everything creates privacy, relevance and retrieval problems. A strong system decides what is worth remembering and how it will be retrieved. Chapter 13 shows short-term and long-term memory in a real project.</p>
+
+  <h3>Many agents</h3>
+  <p>One design splits the work among specialist agents: an orchestrator hands tasks to a documentation agent, a database agent and a testing agent, then synthesises their results. Benefits: separation of concerns, parallel work, and protecting the main agent's context window. Costs: every extra agent adds another context, another failure surface, more messages and more money. Stanford presents specialised agents as one pattern. Anthropic discusses multi-agent collaboration as an emerging direction while insisting on simplicity first. Open question from Barry Zhang's talk: how do agents talk to each other asynchronously, instead of in rigid user-assistant turns?</p>
+  <div class="flow">
+    <div class="node hl"><b>Orchestrator</b>plans and delegates</div><span class="arr">→</span>
+    <div class="node"><b>Docs agent</b></div>
+    <div class="node"><b>SQL agent</b></div>
+    <div class="node"><b>Test agent</b></div><span class="arr">→</span>
+    <div class="node"><b>Synthesise</b>one answer</div>
+  </div>
+
+  <div class="board ask"><span class="tag">Student asks</span><p><b>Why not always build the most autonomous agent?</b></p><p>Because every bit of autonomy adds cost, delay and the consequences of mistakes. You choose the <i>smallest architecture that reliably delivers the value</i>. Chapter 8 gives you a rubric for this.</p></div>
+
+  <h3>Try it yourself (no code)</h3>
+  <ol>
+    <li>Draw the agent loop from memory on paper, with five boxes.</li>
+    <li>Pick one task from your own work. Write down the tools an agent would need, and which of them are read-only.</li>
+    <li>Walk through the task as the agent. At step 1, what is in its context? What does it still not know?</li>
+  </ol>
+
+  <div class="recap"><h3>Chapter 7 in plain words</h3>
+    <ul>
+      <li>An agent is a model using tools in a loop toward a goal. The model is not the whole agent.</li>
+      <li>Chatbot answers, workflow follows your fixed steps, agent decides the steps. Start with the simplest that works.</li>
+      <li>ReAct: decide, act, observe, update, repeat. Planning, reflection and memory strengthen it.</li>
+      <li>More agents means more power and more cost, failure points and complexity.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c7"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

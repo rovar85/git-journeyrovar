@@ -1,0 +1,161 @@
+
+<!-- ============================ CHAPTER 2 ============================ -->
+<section class="chapter" id="ch2" data-title="2 · Inside" data-road="Inside the machine" data-sub="Tokens, embeddings, attention, the Transformer block, and how the next word is chosen.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 2</span>
+    <h2>Inside the machine</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>draw the full pipeline from text to next token and explain every box</li>
+      <li>explain why models use tokens, and how a tokenizer is built</li>
+      <li>explain what an embedding is and why attention uses Query, Key and Value</li>
+      <li>explain temperature, top-k and top-p, and what the context window is</li>
+    </ul>
+  </div>
+
+  <div class="board note"><span class="tag">A promise</span><p>This is the chapter with the most maths vocabulary. Do not skip it, but do not be afraid of it. For every idea, ask three questions: <b>what goes in, what transformation happens, what comes out, and why is that useful?</b> If you can answer those, you understand it. You do not need to memorise any equation.</p></div>
+
+  <h3>A neural network is a function made of numbers</h3>
+  <p>A <span class="term" tabindex="0" data-def="A mathematical function with many adjustable numbers (parameters). It takes numbers in, transforms them through layers, and gives numbers out.">neural network</span> takes numbers in, passes them through layers, and gives numbers out. Training adjusts its parameters so the outputs get better at some goal. The word "neural" is only loosely inspired by brain cells. A single artificial neuron is just arithmetic:</p>
+  <p style="text-align:center;font-family:var(--f-mono)">output = activation( w1×x1 + w2×x2 + bias )</p>
+  <p>The <b>weights</b> (w) and the <b>bias</b> are the learned numbers. The <b>activation</b> is a small bend that stops the neuron being a plain straight-line calculation. Without the bend, stacking layers would add nothing. Try it:</p>
+
+  <div class="lab" id="neuron">
+    <div class="lab-title">One neuron <small>Move the sliders and watch the output</small></div>
+    <div id="nr-ctl"></div>
+    <div class="picker" id="nr-act" role="group" aria-label="Activation"></div>
+    <div class="out" id="nr-out" aria-live="polite"></div>
+  </div>
+  <p>A large language model is this idea scaled up: billions of weights arranged in many layers. You do not need more calculus than that to build agents. But you should hold on to one fact: <b>an LLM is not a database or a rules engine. It is a giant learned function whose behaviour comes from many layers of numerical transformations.</b></p>
+
+  <h3>The pipeline at a glance</h3>
+  <p>Here is the whole journey of one prediction. Click each box. This is the first of five diagrams worth being able to redraw from memory.</p>
+  <div class="lab" id="pipe">
+    <div class="picker" id="pp-pick" role="group" aria-label="Pipeline step"></div>
+    <div class="out" id="pp-out" aria-live="polite"></div>
+  </div>
+
+  <h3>Step 1: Tokenization (text becomes numbers)</h3>
+  <p>A computer cannot feed an English sentence into a neural network. A <b>tokenizer</b> first cuts the text into pieces and gives each piece an ID number. Why not simply use whole words? Two reasons:</p>
+  <ul>
+    <li><b>Typos and rare words.</b> If every word is its own token, a misspelling or a new name has no token at all. Some languages (Thai, for example) do not even put spaces between words.</li>
+    <li><b>The other extreme fails too.</b> Splitting into single letters works, but sequences become very long. The cost of attention (below) grows roughly with the <i>square</i> of the sequence length, so long sequences are expensive.</li>
+  </ul>
+  <p>The compromise is <b>sub-word tokens</b>: common chunks of letters become one token, rarer words are assembled from pieces. On average a token is about 3 to 4 letters. A popular recipe is <b>byte-pair encoding</b>. You can run its training steps yourself on a tiny text:</p>
+
+  <div class="lab" id="bpe">
+    <div class="lab-title">Build a tokenizer <small>Corpus: token ×3, tokens ×2, tokenizer ×2, to ×2, toe ×1</small></div>
+    <p style="margin:.4rem 0">Start with single letters. At each step, find the most frequent neighbouring pair and merge it into a new token.</p>
+    <div id="bpe-step"></div>
+  </div>
+
+  <div class="board note"><span class="tag">Why you care</span><p>The number of tokens drives <b>cost, speed and how much fits in memory</b>. An agent that pastes every raw log line into every model call wastes tokens. Tokenization also explains odd behaviour: models handle numbers and code indentation differently from how people do, because numbers and spaces were chopped up in particular ways. (GPT-4 changed how it tokenizes code spaces and got better at code.)</p></div>
+
+  <h3>Step 2: Embeddings (IDs become meaningful vectors)</h3>
+  <p>A token ID is just an index, like a locker number. The number 431 tells the model nothing about meaning. So each ID is looked up in a table that returns a list of numbers called an <span class="term" tabindex="0" data-def="A list of numbers (a vector) that represents a token or a piece of text. Similar meanings get nearby vectors.">embedding</span>. During training, the table is adjusted so that tokens used in similar ways get similar vectors.</p>
+  <p>Real embeddings have hundreds or thousands of numbers. We can only draw two. In the map below (invented positions, for teaching), things with similar meaning sit near each other. The <b>dot product</b> and its cousin <b>cosine similarity</b> measure how well two arrows line up. They are the basic similarity tool of both attention and search.</p>
+
+  <div class="lab" id="emb">
+    <div class="lab-title">Meaning map <small>Illustrative 2-D embeddings</small></div>
+    <svg class="chart" id="emb-svg" viewBox="0 0 360 240" role="img" aria-label="Map of words"></svg>
+    <div class="row" style="margin-top:8px"><label>Word A <select id="emb-a"></select></label><label>Word B <select id="emb-b"></select></label></div>
+    <div class="out" id="emb-out" aria-live="polite"></div>
+  </div>
+  <div class="board ask"><span class="tag">Student asks</span><p><b>Does an embedding store the definition of a word?</b></p><p>No. It is a learned vector, not a dictionary entry. Meaning is spread across the numbers, and it changes with context as the vector passes through the Transformer layers. For example, "bank" has the same token ID whether it means a money bank or a river bank. The layers adjust the representation using the surrounding words.</p></div>
+  <p>Embeddings are also used <i>outside</i> the model. A document chunk and a user question can both be turned into vectors and compared. This is the foundation of semantic search and RAG, which you will meet in Chapter 6.</p>
+
+  <h3>Step 3: Position (order matters)</h3>
+  <p>"Dog bites man" and "man bites dog" use the same words with very different meaning. Attention by itself looks at a bag of tokens, so the model also adds information about <i>where</i> each token sits. Each token's representation therefore carries two things: <b>what</b> token it is and <b>where</b> it is in the sequence. Different models encode position in different ways. The engineering idea matters more than the exact formula.</p>
+
+  <h3>Step 4: Self-attention (tokens look at each other)</h3>
+  <p>Take the sentence "The cat, which was hungry, ate the fish." When the model processes "ate", which other words matter most? "cat" (who ate?), "fish" (what was eaten?), and probably "hungry". "The" matters much less. <span class="term" tabindex="0" data-def="A mechanism that lets each token build a new representation by looking at the other tokens and weighting how much each one matters.">Self-attention</span> is the mechanism that lets each token build a richer representation by mixing in information from the others, weighted by relevance.</p>
+  <p>Each token produces three vectors, which you can remember with a library analogy:</p>
+  <ul>
+    <li><b>Query (Q):</b> "what am I looking for?" (the question you bring to the library)</li>
+    <li><b>Key (K):</b> "what kind of information do I offer?" (the label on each book spine)</li>
+    <li><b>Value (V):</b> "what do I pass along if I am chosen?" (the contents of the book)</li>
+  </ul>
+  <p>The steps are always the same. <b>Compare</b> the query with every key to get compatibility scores. Turn the scores into weights with <b>softmax</b> (they become positive and add up to 1). Then <b>mix</b> the value vectors using those weights. In short: compare, weight, mix. The famous formula is just this recipe written compactly:</p>
+  <p style="text-align:center;font-family:var(--f-mono);font-size:.95rem">Attention(Q,K,V) = softmax( Q·Kᵀ / √d ) · V</p>
+  <div class="board note"><span class="tag">Do not get stuck</span><p>You do not need to memorise the matrix multiplication. You need the information flow: <b>compare, weight, mix</b>.</p></div>
+
+  <div class="lab" id="attn">
+    <div class="lab-title">Attention explorer <small>Illustrative scores, real softmax</small></div>
+    <p style="margin:.4rem 0">Pick the word that is "looking". The bars show how much of each other word it uses.</p>
+    <div class="picker" id="at-pick" role="group" aria-label="Query word"></div>
+    <label style="display:block;margin:6px 0"><input type="checkbox" id="at-mask"> Hide future words (this is how GPT-style models generate: a token may only look backwards)</label>
+    <div class="bars" id="at-bars"></div>
+    <div class="out" id="at-out"></div>
+  </div>
+
+  <h3>Multi-head attention and the Transformer block</h3>
+  <p>One attention pass can only learn one style of relationship. Models run many in parallel, called <b>heads</b>. One head might track nearby grammar, another long-range links. Their outputs are joined. (Heads do not cleanly "mean grammar" or "mean facts". The benefit is simply that several patterns can be learned in parallel.)</p>
+  <p>A <b>Transformer block</b> repeats a small recipe. A model stacks dozens of blocks:</p>
+  <div class="flow">
+    <div class="node"><b>Self-attention</b>mix information across positions</div><span class="arr">→</span>
+    <div class="node"><b>Add &amp; normalise</b>keep a direct path and steady numbers</div><span class="arr">→</span>
+    <div class="node"><b>Feed-forward network</b>transform each position</div><span class="arr">→</span>
+    <div class="node"><b>Add &amp; normalise</b>again</div>
+  </div>
+  <p>The "add" is a <b>residual connection</b>: the input is added back to the output so information has a shortcut. "Normalise" keeps the numbers in a stable range so training does not blow up. Modern models vary in the exact order, but you will recognise these parts in diagrams and source code.</p>
+
+  <h3>The causal mask: why generation goes left to right</h3>
+  <p>When predicting the next word, a model must not peek at words that come later, because at generation time they do not exist yet. A <b>causal mask</b> blocks attention to future positions. Tick the box in the attention explorer above to see it. During <i>training</i>, the mask lets the model practise predicting every position of a sentence in parallel. During <i>generation</i>, tokens are produced one at a time. Models built this way are called <b>decoder-only</b>, and GPT, Claude and Llama are of this kind.</p>
+
+  <h3>Step 5: From scores to a chosen word</h3>
+  <p>After the last block, the model produces one raw score per token in its vocabulary. These scores are called <span class="term" tabindex="0" data-def="The raw, unnormalised scores a model gives to every possible next token, before softmax turns them into probabilities.">logits</span>. <b>Softmax</b> converts logits into probabilities that sum to 1: it makes big scores much more influential and turns everything into a percentage. Then a <b>decoder</b> chooses one token. How it chooses is under your control:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Method</th><th>Idea</th><th>Typical effect</th></tr></thead><tbody>
+    <tr><td>Greedy</td><td>always pick the most probable token</td><td>stable, can be repetitive</td></tr>
+    <tr><td>Temperature</td><td>reshape the scores before softmax</td><td>low = cautious, high = varied</td></tr>
+    <tr><td>Top-k</td><td>sample only among the k best tokens</td><td>cuts off the long tail of odd choices</td></tr>
+    <tr><td>Top-p</td><td>sample among the smallest set whose probabilities add up to p</td><td>adaptive candidate list</td></tr>
+  </tbody></table></div>
+
+  <div class="lab" id="dec">
+    <div class="lab-title">Decoding lab <small>Real softmax on invented logits</small></div>
+    <p style="margin:.4rem 0">Prompt: "The cat sat on the ___". Change the method and see which words stay in play.</p>
+    <div class="picker" id="dc-method" role="group" aria-label="Method"></div>
+    <div id="dc-ctl"></div>
+    <div class="bars" id="dc-bars"></div>
+    <div class="row"><button class="btn ghost" id="dc-draw" type="button">Draw 20 words</button><span id="dc-tally" style="font-family:var(--f-mono);font-size:.85rem"></span></div>
+  </div>
+  <p style="font-size:.92rem;color:var(--muted)">Your study notes list the logits cat = 2.1, dog = 4.7, mat = 1.2, car = −0.4 and show rounded example probabilities. This widget computes the real softmax, so its numbers differ slightly from those rounded examples. The method is identical.</p>
+  <p>Generation stops when the model emits a special stop token, reaches a maximum length, or meets a rule your application sets.</p>
+
+  <h3>The context window and the KV cache</h3>
+  <p>Everything the model can use for the next prediction must fit in its <span class="term" tabindex="0" data-def="The maximum amount of text (measured in tokens) the model can read at once: instructions, conversation, documents, tool results and your request.">context window</span>: system instructions, the conversation so far, retrieved documents, tool results, and the current request. It is finite, and it costs computing power. While generating, implementations keep the intermediate Keys and Values of earlier tokens in a <b>KV cache</b> so they are not recomputed for every new token. That speeds things up but uses memory.</p>
+  <div class="board note"><span class="tag">Agent connection</span><p>An agent running for many steps fills its context with logs, plans and tool outputs. <b>Context management</b> becomes a first-class engineering skill. You will practise it in Chapters 5, 8 and 11.</p></div>
+
+  <h3>Try it yourself (optional, runs offline)</h3>
+  <p>This tiny Python script computes softmax with a temperature. Change <code>TEMPERATURE</code> and rerun it. It uses only the standard library.</p>
+  <div class="codewrap"><pre class="code"><code>import math
+
+logits = {"cat": 2.1, "dog": 4.7, "mat": 1.2, "car": -0.4}
+TEMPERATURE = 1.0   # try 0.2, 1.0, 2.0
+
+def softmax(scores, temperature=1.0):
+    scaled = {w: s / temperature for w, s in scores.items()}
+    biggest = max(scaled.values())            # subtract for numerical safety
+    exps = {w: math.exp(s - biggest) for w, s in scaled.items()}
+    total = sum(exps.values())
+    return {w: e / total for w, e in exps.items()}
+
+for word, p in sorted(softmax(logits, TEMPERATURE).items(), key=lambda x: -x[1]):
+    print(f"{word:>4}  {p:6.3f}")</code></pre></div>
+  <p>Predict first: at temperature 0.2, will "dog" get more or less than 90%? Then run it and check.</p>
+
+  <div class="recap"><h3>Chapter 2 in plain words</h3>
+    <ul>
+      <li>Pipeline: text → tokenizer → token IDs → embeddings (+ position) → Transformer blocks → logits → softmax → next token → repeat.</li>
+      <li>Tokens are sub-word pieces. Their count drives cost and context use.</li>
+      <li>Embeddings turn IDs into vectors where similar meanings are close.</li>
+      <li>Attention is compare, weight, mix, using Query, Key and Value. A causal mask stops a token from seeing the future.</li>
+      <li>Temperature, top-k and top-p control how the next token is picked from the probabilities.</li>
+      <li>The context window is the model's working memory, and it is finite.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c2"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

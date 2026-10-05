@@ -1,0 +1,109 @@
+
+<!-- ============================ CHAPTER 5 ============================ -->
+<section class="chapter" id="ch5" data-title="5 · Prompting" data-road="Talking to a model: prompting" data-sub="Five habits of good prompts, the context window as a budget, logging and measuring.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 5</span>
+    <h2>Talking to a model: prompting</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>explain what an API call to a model looks like</li>
+      <li>use five habits that improve any prompt</li>
+      <li>describe a prompt as the whole "context" you build, and manage its budget</li>
+      <li>explain why logging and measuring from day one matters</li>
+    </ul>
+  </div>
+
+  <h3>How software talks to a model</h3>
+  <p>When you use a chat website, you type text and get text back. Programs do the same through an API:</p>
+  <div class="flow">
+    <div class="node"><b>Your software</b>Builds the text of a request</div><span class="arr">→</span>
+    <div class="node"><b>Model provider</b>Runs the model on powerful computers</div><span class="arr">→</span>
+    <div class="node"><b>Generated text</b>Returns to your software</div><span class="arr">→</span>
+    <div class="node"><b>Your software</b>Reads the text and uses it, or sends another request</div>
+  </div>
+  <p>The input is free-form text, written in ordinary language. The text you send is called a <span class="term" tabindex="0" data-def="The text you send to a model to tell it what you want.">prompt</span>. Writing it well is called prompting, and it is the single biggest lever you have. The same model can give a poor or an excellent answer depending on the prompt.</p>
+
+  <div class="board note"><span class="tag">A bigger idea</span><p>A prompt is not just one sentence telling the model what to do. It is the <b>entire context you construct for one model call</b>: system rules, the user's goal, examples, retrieved evidence, tool descriptions, previous observations, current state, and the required output format. Better prompting is often really <i>better context construction</i>.</p></div>
+  <div class="flow">
+    <div class="node"><b>System rules</b>role, limits, tone</div>
+    <div class="node"><b>User goal</b>what is asked</div>
+    <div class="node"><b>Examples</b>style to copy</div>
+    <div class="node"><b>Retrieved docs</b>evidence</div>
+    <div class="node"><b>Tool definitions</b>what it may call</div>
+    <div class="node"><b>Observations</b>earlier tool results</div>
+    <div class="node"><b>State</b>where the task stands</div>
+    <div class="node hl"><b>Output format</b>the shape of the answer</div>
+  </div>
+  <div class="board ask"><span class="tag">Student asks</span><p><b>So is better prompting always enough?</b></p><p>No. Some problems are limited by <i>missing information</i> or <i>missing actions</i>. No wording can make a model know today's weather or your company's refund policy. That is where retrieval and tools (Chapter 6) and agents (Chapter 7) come in. Better context plus tools plus repeated feedback beats a clever sentence.</p></div>
+
+  <h3>Five habits of good prompts</h3>
+
+  <h3 style="margin-top:1.4rem">Habit 1: be clear and detailed</h3>
+  <p>The model cannot read your mind. "Write about our bottle" leaves it guessing the length, the audience, the tone and the facts. Say what you want.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 2: show examples</h3>
+  <p>Give one or two sample inputs and outputs in the style you want, then ask your real question. This is called <span class="term" tabindex="0" data-def="Giving the model a few worked examples inside the prompt so it copies the pattern.">few-shot prompting</span>. Showing is often stronger than describing.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 3: give it the facts</h3>
+  <p>If the answer depends on specific information, paste that information in, and tell the model to use only that. Add "if the answer is not in the text, say you cannot find it". This cuts down hallucination a lot, and it is the seed of the technique in Chapter 6.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 4: let it think before it answers</h3>
+  <p>Asking for the answer immediately gives the model no room to work. Ask it to reason first. This is called <span class="term" tabindex="0" data-def="Asking the model to write out its reasoning steps before the final answer. Often called CoT.">chain of thought</span>. A well-known case: ask a mid-sized model "is this student's maths solution correct?" and it may just agree. Ask it to first work out its own solution, then compare, and it checks properly. The written steps are part of the text the model reads when it produces the next words, so they genuinely help.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 5: split big jobs into small steps</h3>
+  <p>One prompt with five tasks often goes badly. Five prompts with one task each, where the output of each feeds the next, works better. This is called <span class="term" tabindex="0" data-def="Running a sequence of simple prompts where each one uses the previous answer.">prompt chaining</span>.</p>
+  <div class="flow">
+    <div class="node"><b>Prompt 1</b>Extract the key facts</div><span class="arr">→</span>
+    <div class="node"><b>Prompt 2</b>Outline using those facts</div><span class="arr">→</span>
+    <div class="node"><b>Prompt 3</b>Write the final text from the outline</div>
+  </div>
+
+  <div class="lab" id="promptlab">
+    <div class="lab-title">Prompt lab <small>Tick habits and watch the prompt grow</small></div>
+    <div class="checks" id="pl-checks"></div>
+    <p style="margin:.6rem 0 .3rem;font-weight:700">Your prompt:</p>
+    <div class="promptbox" id="pl-box" aria-live="polite"></div>
+    <p id="pl-why" style="margin-bottom:0;font-size:.95rem"></p>
+  </div>
+
+  <h3>The context window is a budget</h3>
+  <p>Everything in the "context" competes for the same limited space, the <b>context window</b> from Chapter 2. Longer context costs more and responds slower. When an agent runs for many steps, tool results and logs can swallow the window. Experiment with a budget. All sizes are in thousands of tokens and invented for the demonstration:</p>
+  <div class="lab" id="ctxb">
+    <div class="lab-title">Context budget <small>What fits in one call?</small></div>
+    <div class="picker" id="cb-win" role="group" aria-label="Window size"></div>
+    <div id="cb-ctl"></div>
+    <div class="out" id="cb-out" aria-live="polite"></div>
+  </div>
+  <p>The practical lessons: summarise old conversation, retrieve only the few chunks you need, trim verbose tool output into the few fields that matter, and keep tool descriptions short and precise. Anthropic's engineers note that at each step an agent knows the world only through roughly the 10 to 20 thousand tokens in front of it. If something is not in the context, the model cannot use it.</p>
+
+  <h3>Two engineering habits that beginners skip</h3>
+  <ul>
+    <li><b>Keep logs.</b> Record the prompts you sent and the answers you got. When something goes wrong, the log is how you find out why. Later chapters call this <i>observability</i>.</li>
+    <li><b>Measure from the start.</b> Make a small set of questions with the answers you expect, and score your system against it each time you change something. Humans can do the scoring, but that is slow and costly, so people often ask a second model to grade the answers. That is called <span class="term" tabindex="0" data-def="Using one language model to score the outputs of another.">LLM-as-a-judge</span>. Models improve and get retired quickly. If you can measure, you can switch to a better model with confidence.</li>
+  </ul>
+  <p>Also, version your prompts like code. A prompt gets edited many times, and you want to compare versions and go back. Chapter 13 shows how a real project does this.</p>
+
+  <h3>A cost-saving trick: the router</h3>
+  <p>Not every question needs the biggest model. A small piece of software (or a small model) can look at each incoming request and send it to the right prompt and the right model. Simple questions go to a cheap model. Hard ones go to a strong model. This lowers cost and often improves quality. You will meet the same idea as a "routing" workflow in Chapter 8.</p>
+
+  <h3>Try it yourself (no code)</h3>
+  <ol>
+    <li>Pick a real task from your own work. Write the laziest prompt you can and save the answer.</li>
+    <li>Rewrite it using the five habits. Save the answer and compare the two.</li>
+    <li>Ask the model: "Is anything in my prompt ambiguous? What would you need to know to do this better?" This "ask the model about the prompt" trick is used by experienced agent builders.</li>
+  </ol>
+
+  <div class="recap"><h3>Chapter 5 in plain words</h3>
+    <ul>
+      <li>Software talks to a model by sending text and reading text back.</li>
+      <li>A prompt is the whole context you build for one call, not just one sentence.</li>
+      <li>Good prompts are clear, show examples, supply facts, allow thinking and split big jobs.</li>
+      <li>The context window is a finite budget. Manage it.</li>
+      <li>Keep logs, version prompts and measure results from the first day. A router can send easy requests to cheap models.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c5"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

@@ -1,0 +1,133 @@
+
+<!-- ============================ CHAPTER 11 ============================ -->
+<section class="chapter" id="ch11" data-title="11 · Build one" data-road="Build an agent from scratch" data-sub="The raw loop, step by step: a model call, a check, tools, parallel calls, planning. Includes runnable code.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 11</span>
+    <h2>Build an agent from scratch</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>write (or read) the smallest working agent loop</li>
+      <li>explain each piece: model call, done-check, tools, parallel calls, planning, limits</li>
+      <li>run a complete agent on your own computer and extend it</li>
+    </ul>
+  </div>
+
+  <p>Kam Lasater's talk has three goals: let you <b>experience the simplest version of an agent</b>, make you comfortable <b>running and reading the code</b> ("execution and decoding are a very important part of learning"), and give you <b>intuition for how agent frameworks work</b>, so that if you use one, you understand the parts underneath. This chapter follows his five steps, then gives you a program you can run.</p>
+
+  <div class="board note"><span class="tag">Rule for the whole course</span><p><b>Understand first, code second, framework third.</b> You do not need to write code to read this chapter. The code is there so the ideas become concrete. If you do run it, you will understand agents far better than someone who only read about them.</p></div>
+
+  <h3>What is an agent, in the smallest terms?</h3>
+  <p>Two definitions Lasater likes: an agent is <b>"LLM, memory, planning, tools, and a while loop."</b> Break it down: memory is just <i>reading and writing</i> some state. The while loop is a <i>condition</i> plus a <i>repeat</i>. Rearrange those parts and you get a plan for the code.</p>
+
+  <h3>Five steps, each adding one ability</h3>
+  <p>Step through the build. At each step note what is <i>new</i>. Lasater observes that the first steps feel mechanical and deterministic, like ordinary code. The feeling changes at step 4, when you feel you are playing with an agent.</p>
+  <div class="lab" id="build"><div class="lab-title">Build-up</div><div id="bd-step"></div></div>
+
+  <h3>The raw loop, in a few lines</h3>
+  <p>Strip away the details and the whole thing is this. Your study notes call it the foundation of many agents:</p>
+  <div class="codewrap"><pre class="code"><code>messages = [system_prompt, user_goal]
+
+while True:
+    response = call_llm(messages)
+
+    if response.requests_tool:
+        result = execute_safe_tool(response.tool_name, response.arguments)
+        messages.append(response)       # what the model asked for
+        messages.append(result)         # what actually happened
+        continue                        # go round again with the new information
+
+    return response.text                # no tool requested: this is the answer</code></pre></div>
+  <p>Frameworks later add persistence, streaming, retries, graphs, human approval and observability. The underlying alternating pattern, <b>model proposes, software executes, result goes back</b>, remains.</p>
+
+  <h3>Tool calling in slow motion</h3>
+  <div class="flow">
+    <div class="node"><b>User</b>"Why is EV indexing failing?"</div><span class="arr">→</span>
+    <div class="node"><b>LLM</b>"I need service state."</div><span class="arr">→</span>
+    <div class="node"><b>Tool</b>get_service_status</div><span class="arr">→</span>
+    <div class="node"><b>Result</b>STOPPED</div><span class="arr">→</span>
+    <div class="node hl"><b>LLM</b>updates hypothesis, picks get_event_logs</div>
+  </div>
+  <p>Notice the key point: <b>the model did not need to know the answer at the start.</b> It gathered evidence, updated its working state and chose another action. Agent behaviour emerges from the combination of language model plus environment.</p>
+  <p>One more habit from Lasater: think of a tool as a <b>text transformation</b>. There may be a few parameters, but at heart most tools turn some input text into some output text. That makes them easy to reason about and test.</p>
+
+  <h3>Make tool results structured</h3>
+  <p>Do not make the model read enormous terminal output when your tool can pull out the fields that matter:</p>
+  <div class="codewrap"><pre class="code"><code>{
+  "server": "EV01",
+  "service": "Enterprise Vault Indexing Service",
+  "status": "Stopped",
+  "error": null,
+  "checked_at": "2026-10-05T09:14:00Z"
+}</code></pre></div>
+  <div class="board note"><span class="tag">Engineering rule</span><p>Put parsing and deterministic validation in code. Use the model for interpretation and for decisions that need language or context. Structured results improve reliability, evaluation and debugging.</p></div>
+
+  <h3>Safety rails every loop needs</h3>
+  <ul>
+    <li><b>A step limit.</b> An agent can loop forever without converging. Lasater mentions that real systems cap the number of iterations before the client code cuts it off.</li>
+    <li><b>A budget.</b> Cap tokens and money too (Chapter 8's open question).</li>
+    <li><b>Errors are data.</b> In his demo, a tool call failed because the model passed a location string that did not match what the search API accepts. Return errors to the model as results and let it adjust, but also validate arguments against the tool's schema before running.</li>
+    <li><b>Never run model output as code directly.</b> The example calculator below parses only numbers and + − × ÷. It never uses <code>eval</code>.</li>
+    <li><b>Log a trace.</b> Print every step. You will want to reconstruct the trajectory when something fails (Chapters 9 and 13).</li>
+  </ul>
+
+  <h3>The complete program (runs offline)</h3>
+  <p>Here is a full agent in about a hundred lines, with all five abilities: planning with a to-do list, tools (search, calculator, the to-do tools), parallel tool calls, a "done?" judge, and a step limit. The language model is replaced by <code>MockLLM</code>, a small rule-based stand-in, so it runs with no account and no internet. Everything else is real agent code. It is saved as <code>course/examples/mini_agent.py</code>.</p>
+  <div class="codewrap"><pre class="code"><code><!--include:examples/mini_agent.py--></code></pre></div>
+  <p>Run it with <code>python mini_agent.py</code>. You should see seven steps: it plans, searches twice in parallel, calculates, ticks off each to-do, and the judge accepts the final answer.</p>
+
+  <h3>Swap in a real model (optional)</h3>
+  <p>Only <code>MockLLM.chat()</code> is fake. To use a real model, you replace it with a call to a provider's API that supports tool calling. Here is the shape of that loop using Anthropic's Python SDK. <b>I could not run this one here because it needs an API key and network access, so treat it as a starting sketch and check the current SDK documentation.</b>
+  </p>
+  <div class="codewrap"><pre class="code"><code>import anthropic, json
+client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY from the environment
+MODEL = "put-a-current-model-name-here"
+
+TOOL_SPECS = [{
+    "name": "calculator",
+    "description": "Evaluate simple arithmetic such as '(25 + 40) * 2'. Returns the numeric value.",
+    "input_schema": {"type": "object",
+                     "properties": {"expression": {"type": "string"}},
+                     "required": ["expression"]},
+}]   # add one entry per tool, using the TOOLS dictionary from mini_agent.py
+
+def real_agent(goal, max_steps=12):
+    messages = [{"role": "user", "content": goal}]
+    for _ in range(max_steps):
+        resp = client.messages.create(model=MODEL, max_tokens=1024,
+                                      system="Plan with the to-do list first.",
+                                      tools=TOOL_SPECS, messages=messages)
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason != "tool_use":             # no tool requested: final answer
+            return "".join(b.text for b in resp.content if b.type == "text")
+        results = []
+        for block in resp.content:
+            if block.type == "tool_use":               # the model proposes...
+                out = json.dumps(TOOLS[block.name](**block.input))   # ...your code executes
+                results.append({"type": "tool_result", "tool_use_id": block.id, "content": out})
+        messages.append({"role": "user", "content": results})
+    return "Stopped: step limit reached."</code></pre></div>
+  <p>Notice what stayed the same: the loop, the tools, the step limit. Only the "brain" changed. Lasater suggests the next improvement is memory: save the pages the agent browses into a vector database so it can retrieve them later (RAG, Chapter 6).</p>
+
+  <h3>Exercises (do at least two)</h3>
+  <ol>
+    <li><b>Run it,</b> then read the trace and match every line to a part of the loop.</li>
+    <li><b>Add a tool</b> called <code>get_time()</code> that returns today's date. Why might an agent need it? (Lasater added today's date to his prompt because models can be unsure what day it is.)</li>
+    <li><b>Break it on purpose.</b> Make <code>search</code> return "no results" for everything. Does the loop recover or spin? Lower <code>max_steps</code> to 3 and watch the safety rail work.</li>
+    <li><b>Add a budget.</b> Count the characters of every message and stop with an error when a limit is crossed.</li>
+    <li><b>Design for Enterprise Vault.</b> Replace <code>search</code> with three read-only tools that return fake JSON (<code>get_service_status</code>, <code>get_event_logs</code>, <code>test_sql_connectivity</code>) and let the mock "diagnose" a stopped service. This is the skeleton of Chapter 14.</li>
+  </ol>
+
+  <div class="recap"><h3>Chapter 11 in plain words</h3>
+    <ul>
+      <li>An agent is a model call in a loop with tools, memory and planning.</li>
+      <li>Build it up: one call, a done-check, a tool, parallel tools, a to-do list for planning.</li>
+      <li>The model proposes tool calls. Your code executes them and returns structured results.</li>
+      <li>Add a step limit, a budget, error handling and a trace. Never run model output blindly.</li>
+      <li>Frameworks are this loop plus conveniences. Understanding the loop is what matters.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c11"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

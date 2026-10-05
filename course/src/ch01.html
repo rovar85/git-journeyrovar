@@ -1,0 +1,101 @@
+
+<!-- ============================ CHAPTER 1 ============================ -->
+<section class="chapter" id="ch1" data-title="1 · LLM" data-road="What is a language model?" data-sub="It is a next-word predictor. Where it sits in AI, and what a model physically is.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 1</span>
+    <h2>What is a language model?</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>what a language model does, in one sentence</li>
+      <li>where it sits inside "AI", "machine learning" and "deep learning"</li>
+      <li>what a model physically is on a computer, and how a product like ChatGPT differs from it</li>
+      <li>why a model sometimes makes things up</li>
+    </ul>
+  </div>
+
+  <h3>Start with a game you already play</h3>
+  <p>Finish this sentence: <i>"The students opened their ___."</i></p>
+  <p>You probably thought of "books" or "laptops". You did not think of "volcano". Without any effort you ranked the possible next words by how likely they are.</p>
+  <p>That is the entire job of a <span class="term" tabindex="0" data-def="A computer program that has learned patterns in text well enough to predict which word is likely to come next.">language model</span>. You give it some text. It gives back its best guess for what comes next, with a probability for each candidate. Everything else you have seen ChatGPT or Claude do is built on top of this one trick.</p>
+
+  <div class="lab" id="nextword">
+    <div class="lab-title">Try it: be the language model <small>(the percentages are made up for teaching)</small></div>
+    <p style="margin:.5rem 0">Click a word to add it to the sentence. Watch the choices change each time.</p>
+    <div class="sentence" id="nw-sentence" aria-live="polite"></div>
+    <div class="opts" id="nw-opts"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="nw-sample" type="button">Let the model pick (weighted by chance)</button>
+      <button class="btn ghost" id="nw-reset" type="button">Start over</button>
+    </div>
+    <p id="nw-msg" style="color:var(--muted);font-size:.95rem;margin-bottom:0"></p>
+  </div>
+
+  <div class="board note">
+    <span class="tag">Teacher's note</span>
+    <p>Notice two things. First, the model never "decides what it wants to say". It only scores possible next words. Second, when it picks one, that word is added to the text and the whole thing is fed back in to get the next word. A long answer is just this loop repeated hundreds of times. Press "Let the model pick" a few times and you will see it.</p>
+  </div>
+
+  <h3>Where does a language model sit?</h3>
+  <p>People throw around many names. Here is how they nest, from the biggest idea to the smallest.</p>
+  <div class="flow" id="c1-nest"></div>
+  <ul>
+    <li><b>Artificial intelligence (AI)</b> is the broad goal: software that does things we associate with intelligence.</li>
+    <li><b>Machine learning</b> is one way to get there. Instead of writing rules by hand, you let the computer find patterns in data.</li>
+    <li><b>Deep learning</b> is machine learning that uses neural networks with many layers.</li>
+    <li>A <b>Transformer</b> is a particular design of neural network that is very good at sequences like text.</li>
+    <li>A <b>large language model (LLM)</b> is a Transformer-style model trained at huge scale on text. GPT, Claude, Gemini and Llama are examples.</li>
+  </ul>
+  <div class="board note"><span class="tag">Teacher says</span><p>Do not just memorise the nesting. Ask what each box adds. Machine learning adds "learn from data". Neural networks add a flexible function that can be tuned. Transformers add a strong way to handle sequences. Large-scale training adds broad language ability.</p></div>
+  <div class="board ask"><span class="tag">Student asks</span><p><b>If ChatGPT is an LLM, is it "just the Transformer"?</b></p><p>No. The Transformer is the model design. A product like a chat assistant also has an interface, hidden system instructions, safety filters, often retrieval and tools, memory, and monitoring. The model is the engine. The product is the whole car. This matters later, because an <i>agent</i> is also "model plus a lot of software around it".</p></div>
+
+  <h3>Words are really "tokens"</h3>
+  <p>Strictly speaking, models do not read whole words. They read <span class="term" tabindex="0" data-def="A small piece of text, often a whole word or part of a word, that the model treats as one unit. Each token gets a number.">tokens</span>, which are small pieces of text. A common word like "books" is usually one token. A rare or long word may be split into several pieces. Each piece is given an ID number, and the model works with the numbers. For now, when you read "word", think "token". Chapter 2 opens up the tokenizer and shows how the pieces are chosen.</p>
+
+  <h3>What is a "model", physically?</h3>
+  <p>This surprises almost everyone. A model such as Meta's Llama 2 70B, an open model whose details were published, is just <b>two files</b> on a computer:</p>
+  <ol>
+    <li><b>A parameters file.</b> A very long list of numbers. These numbers are the "knowledge" of the model.</li>
+    <li><b>A small program.</b> It takes your text and those numbers and calculates the next-word probabilities. For this model, the program is only about 500 lines of code.</li>
+  </ol>
+  <p>The "70B" means 70 billion parameters. Each one is stored in 2 bytes. So the size is easy to calculate yourself:</p>
+
+  <div class="lab" id="params">
+    <div class="lab-title">Calculator: how big is the parameters file?</div>
+    <div class="row seg" id="p-seg" role="group" aria-label="Model size"></div>
+    <div class="files">
+      <div class="file"><b>parameters</b><span class="big" id="p-gb">140 GB</span><span id="p-math" style="color:var(--muted);font-size:.9rem"></span></div>
+      <div class="file"><b>run program</b><span class="big">~500 lines</span><span style="color:var(--muted);font-size:.9rem">of plain code, no internet needed</span></div>
+    </div>
+    <p id="p-note" style="margin-bottom:0;font-size:.95rem"></p>
+  </div>
+
+  <p>With those two files on a laptop, you could run the model with no internet connection. The program is simple and well understood. All the magic is in the numbers. Chapter 3 explains where the numbers come from.</p>
+
+  <h3>Why does predicting words make a model smart?</h3>
+  <p>Imagine the model reads a Wikipedia article about a famous inventor and has to guess the next word at every position. To guess well, it needs to know when she was born, what she invented, and who she worked with. Nobody wrote these facts into the model. The model absorbed them because they help it predict. A simple-sounding goal forces the model to learn a lot about the world, and it stores that learning in its parameters.</p>
+  <p>You can think of the parameters as a <b>blurry zip file of the internet</b>. Unlike a real zip file, it is lossy: you get the gist of the text, not an exact copy.</p>
+
+  <h3>Why it sometimes makes things up (hallucination)</h3>
+  <p>Because the model is a blurry memory that fills in plausible words, it sometimes writes something that sounds right and is false. This is called a <span class="term" tabindex="0" data-def="When a model states something that sounds confident and plausible but is not true.">hallucination</span>. A classic example is asking it for a book's ISBN number. The model knows an ISBN looks like a number of a certain length, so it produces a number of that shape. It may not exist.</p>
+  <div class="board warn">
+    <span class="tag">Remember this</span>
+    <p>A language model produces the most <i>plausible</i> text, not the most <i>true</i> text. In engineering terms: <b>a fluent answer is not a verified fact.</b> When the answer matters, you show evidence, use a tool, retrieve documentation, or verify. Most of this course (retrieval, tools, evaluation, agents) exists to close the gap between plausible and true.</p>
+  </div>
+  <p>One more oddity. Researchers do not fully understand what each of the billions of numbers does. We know every mathematical operation the model performs, yet we cannot point at one number and say "this one stores the capital of France". The knowledge can even be lopsided. A famous example: a model can answer "Who is Tom Cruise's mother?" correctly but fail to answer "Who is that woman's son?". So we treat models as things we test by experiment: give inputs, look at outputs, and measure how often they are right. This is why <b>evaluation</b> gets its own chapters later.</p>
+
+  <div class="recap"><h3>Chapter 1 in plain words</h3>
+    <ul>
+      <li>A language model predicts the next token, over and over.</li>
+      <li>It is one box inside machine learning, deep learning and neural networks.</li>
+      <li>The model is a big file of numbers plus a small program. A product around it adds much more.</li>
+      <li>Learning to predict forces it to absorb knowledge, but only as a blurry memory, so it can state false things confidently.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c1">
+    <h3>Check yourself</h3>
+    <div class="score" hidden></div>
+  </div>
+</section>

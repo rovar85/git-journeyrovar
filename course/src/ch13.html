@@ -1,0 +1,143 @@
+
+<!-- ============================ CHAPTER 13 ============================ -->
+<section class="chapter" id="ch13" data-title="13 · PhiloAgents" data-road="From demo to production: PhiloAgents" data-sub="A full agent application: game UI, WebSockets, LangGraph, memory, retrieval, observability and evaluation.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 13</span>
+    <h2>From demo to production: PhiloAgents</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>describe how a single model call grows into a complete agent application</li>
+      <li>read a LangGraph-style workflow: nodes, edges, conditional edges and state</li>
+      <li>explain short-term and long-term memory, and why WebSockets suit real-time agents</li>
+      <li>explain the LLMOps basics: prompt versioning, tracing and evaluation</li>
+    </ul>
+  </div>
+
+  <p><b>PhiloAgents</b> is an open-source course by Miguel Otero Pedrido and Paul Iusztin (their GitHub organisation is called Neural Maze). It builds a game village where every non-player character is an AI agent playing a historical thinker: Plato, Aristotle, Socrates, Turing, Ada Lovelace and others. You walk up, press a key, and have a conversation. It is a game, but it is also a compact example of a <b>real agent application</b>. That is why it is in this course: the educational value is architectural. You can see exactly how one LLM call becomes an application with state, retrieval, serving and observability.</p>
+
+  <h3>The big picture: offline and online</h3>
+  <p>The project has two phases. <b>Offline</b> work happens before anyone plays. <b>Online</b> work happens live during the conversation. Click each part:</p>
+  <div class="lab" id="arch13">
+    <div class="picker" id="a13-pick" role="group" aria-label="Part of the architecture"></div>
+    <div class="out" id="a13-out" aria-live="polite"></div>
+  </div>
+
+  <h3>Follow one message</h3>
+  <div class="lab" id="path13"><div class="lab-title">A player asks Turing a question</div><div id="p13-step"></div></div>
+
+  <h3>The brain: a LangGraph workflow</h3>
+  <p>A <b>graph</b> workflow describes an agent as <b>nodes</b> (steps that do work) joined by <b>edges</b> (which step comes next). Some edges are <b>conditional</b>: the next step depends on a decision. All the nodes share a <b>state</b> that is passed along and updated. In PhiloAgents the state is the list of messages plus extra fields: the philosopher's context, name, perspective, style, and a summary of the conversation so far.</p>
+  <p>The graph has five working nodes:</p>
+  <ul>
+    <li><b>conversation:</b> the model replies in character, using a prompt built from the philosopher's name, perspective and style. It can also decide to call a tool.</li>
+    <li><b>retrieve philosopher context:</b> a retrieval tool that searches the long-term memory (a vector database).</li>
+    <li><b>summarise context:</b> compresses what was retrieved, to avoid wasting tokens.</li>
+    <li><b>connector:</b> a "do nothing" node used only to join paths.</li>
+    <li><b>summarise conversation:</b> once the chat is long (more than 30 messages), it compresses the history.</li>
+  </ul>
+  <p>The clever part is <b>agentic RAG</b>. A single conditional edge after the conversation node decides: does the model want to call the retrieval tool? If yes, go retrieve, summarise, and come back to the conversation node (a loop). If no, move on. The authors point out this takes only about five lines of code. Ask Turing "hello" and it just answers. Ask about the Chinese room argument and it fetches background first. <b>The agent decides when it needs retrieval.</b> That is the difference from plain RAG, which always retrieves. Run a conversation through the graph:</p>
+  <div class="lab" id="graph13">
+    <div class="lab-title">Walk the graph</div>
+    <div class="picker" id="g13-pick" role="group" aria-label="Scenario"></div>
+    <div id="g13-step"></div>
+  </div>
+  <p>Two engineering choices to notice. First, the project uses <b>different models for different jobs</b>: a large model (Llama 3.3 70B on Groq) for the in-character conversation, and a smaller, faster one (Llama 3.1 8B) for the summaries. That is the router idea from Chapters 5 and 8. Second, the prompts are templates filled from a small data object per philosopher, so adding a new character is mostly adding data.</p>
+
+  <h3>Memory: short-term and long-term</h3>
+  <p>These two are very different. <b>Short-term memory</b> is the chat history, stored in the graph's state and saved to a database after each step (a <i>checkpointer</i>). Each philosopher has its own conversation thread ID, so Turing and Socrates never mix their histories. <b>Long-term memory</b> is the vector store of grounded knowledge: biographies and ideas, which makes answers historically accurate. Try the short-term memory demo, based on the notebook in the course (the replies are scripted for illustration):</p>
+  <div class="lab" id="mem13">
+    <div class="lab-title">Short-term memory on and off</div>
+    <label style="display:block;margin:6px 0"><input type="checkbox" id="m13-on"> Save conversation state between turns (checkpointer on)</label>
+    <div class="chat" id="m13-chat"></div>
+  </div>
+  <p>How is long-term memory built? An offline pipeline downloads text about each philosopher from Wikipedia and the Stanford Encyclopedia of Philosophy, <b>splits</b> it into overlapping chunks, <b>removes near-duplicates</b> (using a similarity fingerprint), turns each chunk into an <b>embedding</b>, and stores it in MongoDB, which has vector search. At run time the retrieval tool uses a <b>hybrid</b> search, as Chapter 6 suggested. Everything from Chapter 6 shows up here in production form.</p>
+
+  <h3>WebSockets: a persistent, two-way connection</h3>
+  <p>A normal web request (HTTP) works like sending letters: the client opens a connection, asks, waits for the whole answer, and closes. For a real-time game that is a bottleneck. A <b>WebSocket</b> does one handshake and then keeps the connection open, so both sides can send messages whenever they like. The three advantages the authors list: <b>low delay</b> (no new connection per message), <b>real-time two-way interaction</b>, and <b>room to scale to multiplayer</b>. The server also <b>streams</b> the answer in chunks, and the game builds the text as it arrives. (An idle connection is closed after a timeout.) Compare them:</p>
+  <div class="lab" id="ws13">
+    <div class="lab-title">HTTP versus WebSocket streaming <small>Simulated</small></div>
+    <div class="row"><button class="btn ghost" id="w13-http" type="button">Ask via HTTP</button><button class="btn" id="w13-ws" type="button">Ask via WebSocket (streaming)</button></div>
+    <div class="out" id="w13-out" style="min-height:3.2em" aria-live="polite">Press a button.</div>
+  </div>
+  <p>The Python server side is under 200 lines using FastAPI. It has an HTTP endpoint (handy for debugging) and a WebSocket endpoint that accepts the connection, receives JSON, calls the graph, and sends each chunk back. The game side is a JavaScript game built with Phaser, with a small service class to open and manage the connection.</p>
+
+  <h3>LLMOps: running a model-based system in production</h3>
+  <p>The course's fifth lesson is a crash course in <b>LLMOps</b>: the practices and tools for the production life cycle of LLM systems. It names six components:</p>
+  <div class="flow">
+    <div class="node"><b>Model deployment</b>serving a model</div>
+    <div class="node"><b>Data management</b>datasets, such as the evaluation set</div>
+    <div class="node hl"><b>Prompt versioning</b></div>
+    <div class="node hl"><b>Monitoring &amp; observability</b></div>
+    <div class="node"><b>Security</b>guardrails, privacy</div>
+    <div class="node hl"><b>Evaluation</b></div>
+  </div>
+  <p>The lesson focuses on the three highlighted ones, using an open-source tool called Opik.</p>
+
+  <h3>Prompt versioning</h3>
+  <p>We version code, data and models. Prompts deserve the same. A complex prompt, like the philosopher character card, is edited many times, and the project's card had 18 versions. Versioning lets you compare, see progress, and fall back. In the project each prompt is registered with a name, and whenever the text changes a new version is created automatically. Try it:</p>
+  <div class="lab" id="pv13">
+    <div class="lab-title">Prompt history <small>The example from the lesson</small></div>
+    <div class="picker" id="pv-pick"></div>
+    <div class="promptbox" id="pv-box"></div>
+  </div>
+
+  <h3>Observability: reconstruct what happened</h3>
+  <p>Every conversation produces a <b>trace</b>: the sequence of steps (spans) with inputs, outputs, tokens used and time taken. You can see whether a tool was called and how long each step took. The authors' rule: "observe 100 percent of everything. The framework should be transparent to you." Here is an illustrative trace (invented times) for a question that triggers retrieval:</p>
+  <div class="lab" id="tr13">
+    <div class="lab-title">A trace <small>Illustrative</small></div>
+    <div class="bars" id="tr-bars"></div>
+    <div class="out" id="tr-out"></div>
+  </div>
+
+  <h3>Evaluation: the five metrics and the test data</h3>
+  <p>As Chapter 9 said, many people build RAG systems but few evaluate them. Here is how this project does it. A language model reads chunks from Wikipedia and the Stanford Encyclopedia and <b>generates realistic multi-turn conversations</b> between a user and a philosopher, grounded in those chunks (and a validation step checks that the format is right). Those conversations form the test set. To evaluate, the agent receives the messages up to the last assistant message, produces its own reply, and the system scores it against the expected one using five metrics, judged by another language model:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Metric</th><th>Range and meaning</th></tr></thead><tbody>
+    <tr><td>Hallucination</td><td>0 to 1. 1 means the answer is fully grounded in the context.</td></tr>
+    <tr><td>Answer relevance</td><td>0 to 1. 1 means the answer is relevant to the question and context.</td></tr>
+    <tr><td>Moderation</td><td>0 to 1. Is the content toxic or offensive?</td></tr>
+    <tr><td>Context precision</td><td>What share of the retrieved context was relevant?</td></tr>
+    <tr><td>Context recall</td><td>What share of all the relevant context was retrieved?</td></tr>
+  </tbody></table></div>
+  <p>In the lesson's example run, scores were around 0.9 for relevance, 0.84 for hallucination (higher is better here), 0.65 for precision and 0.73 for recall. One conversation scored low on moderation (0.3) because the philosopher was defending free speech. The authors call that judgement a bit dumb. <b>The judge is a tool you check, not an oracle.</b> The lesson also warns that generating the test data is slow and uses many tokens, so a ready-made dataset is provided.</p>
+
+  <h3>Code organisation</h3>
+  <p>The Python backend uses <b>clean architecture</b> with three layers: a <b>domain</b> layer (the core concepts such as the philosopher object, the prompts and exceptions), an <b>application</b> layer (use cases, such as the conversation service and evaluation), and an <b>infrastructure</b> layer (the connections to the outside: the API, the database, the tracing tool). Keeping the layers apart makes each part easier to change and test.</p>
+
+  <h3>Mapping this to your Enterprise Vault agent</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>PhiloAgents piece</th><th>Your Enterprise Vault agent</th></tr></thead><tbody>
+    <tr><td>Game UI (Phaser)</td><td>a chat window or command-line front end</td></tr>
+    <tr><td>FastAPI + WebSocket</td><td>a service that streams progress to the user</td></tr>
+    <tr><td>LangGraph agent</td><td>the diagnosis loop: gather evidence, form and test hypotheses</td></tr>
+    <tr><td>Retrieval tool + MongoDB vectors</td><td>RAG over runbooks, knowledge-base articles and known failure patterns</td></tr>
+    <tr><td>Checkpointer (short-term memory)</td><td>the state of the current investigation</td></tr>
+    <tr><td>Long-term memory</td><td>past incidents and their root causes</td></tr>
+    <tr><td>Prompt versioning</td><td>versioned system prompts and tool descriptions</td></tr>
+    <tr><td>Opik traces</td><td>the investigation trace: every model call and tool call</td></tr>
+    <tr><td>Generated evaluation data</td><td>50 or more controlled failure scenarios in the lab</td></tr>
+    <tr><td>Five judge metrics</td><td>your scorecard from Chapter 9</td></tr>
+  </tbody></table></div>
+
+  <h3>Try it yourself (a real project)</h3>
+  <p>If you have Git, Docker and a few free API keys, clone the PhiloAgents repository (search for "philoagents-course" in the Neural Maze GitHub organisation) and follow its install guide. The course says it runs locally with a single command that starts three services: the database, the agent API and the game. Then:</p>
+  <ol>
+    <li>Play for ten minutes. Ask Turing a casual question and then a specific one. Watch the difference in the traces.</li>
+    <li>Open the graph in LangGraph Studio and find the conditional edge that implements agentic RAG.</li>
+    <li>Change the character prompt for one philosopher, and see the prompt version increase.</li>
+    <li>Run the evaluation and read the five metrics. Which is lowest? What would you change to improve it?</li>
+  </ol>
+  <p>I have not run that project myself. Setup details can change, so follow the repository's own instructions.</p>
+
+  <div class="recap"><h3>Chapter 13 in plain words</h3>
+    <ul>
+      <li>A production agent is a stack: UI, API, agent graph, tools and retrieval, memory, an LLM gateway, observability and evaluation.</li>
+      <li>A graph workflow has nodes, edges, conditional edges and shared state. A conditional edge can implement agentic RAG: the agent decides when to retrieve.</li>
+      <li>Short-term memory is chat history in saved state. Long-term memory is a vector store built offline.</li>
+      <li>WebSockets keep a connection open for real-time, two-way streaming.</li>
+      <li>LLMOps: version prompts, trace everything, and evaluate with a test set and several metrics. Check the judge.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c13"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

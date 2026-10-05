@@ -1,0 +1,160 @@
+
+<!-- ============================ CHAPTER 6 ============================ -->
+<section class="chapter" id="ch6" data-title="6 · RAG & tools" data-road="Fixing a model's weaknesses" data-sub="Retrieval (RAG) and tool use, step by step, with a working search engine.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 6</span>
+    <h2>Fixing a model's weaknesses</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>five common weaknesses of language models</li>
+      <li>how retrieval-augmented generation (RAG) works, step by step, and where it breaks</li>
+      <li>how tool use (function calling) lets a model act on the world, and who really does the calling</li>
+    </ul>
+  </div>
+
+  <h3>Five weaknesses</h3>
+  <p>Even a strong model has limits. Knowing them tells you why the techniques in this chapter exist.</p>
+  <ol>
+    <li><b>Hallucination.</b> It can state false things confidently, especially in maths and specific facts.</li>
+    <li><b>Knowledge cut-off.</b> Its training data stops at some date. It has not seen recent news.</li>
+    <li><b>No sources.</b> It can answer, but it cannot tell you which document the answer came from.</li>
+    <li><b>No private data.</b> It was trained on public text. It has never seen your company's documents.</li>
+    <li><b>Limited context.</b> It can only read so much text at once. Longer inputs cost more and respond slower.</li>
+  </ol>
+
+  <h3>Fix 1: Retrieval-Augmented Generation (RAG)</h3>
+  <p>The idea is simple. Do not ask the model to remember. Look up the relevant pages first, then hand them to the model with the question. It is an open-book exam instead of a closed-book exam. You already used the prompt side of this in Chapter 5, habit 3. RAG adds the automatic "look up" step.</p>
+
+  <div class="lab" id="rag">
+    <div class="lab-title">RAG step by step <small>Example: a company help desk</small></div>
+    <div id="rag-step"></div>
+  </div>
+
+  <div class="board note">
+    <span class="tag">Words you will hear</span>
+    <p><b>Chunk</b>: a small piece of a document, like one paragraph. <b>Embedding</b>: a list of numbers that represents the meaning of a piece of text, so texts with similar meaning get similar numbers (Chapter 2). <b>Vector database</b>: a store that can quickly find the stored chunks whose numbers are closest to a question's numbers. <b>Top-k</b>: the k best matches, for example the best 3. <b>Reranking</b>: a second pass that re-orders the candidates so the most useful come first.</p>
+  </div>
+
+  <h3>Each design choice is a question</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Component</th><th>The question it answers</th></tr></thead><tbody>
+    <tr><td>Chunking</td><td>What unit of text should be retrieved?</td></tr>
+    <tr><td>Embedding</td><td>How do we represent its meaning as numbers?</td></tr>
+    <tr><td>Vector index</td><td>How do we find similar candidates quickly?</td></tr>
+    <tr><td>Top-k</td><td>How many candidates should we fetch?</td></tr>
+    <tr><td>Reranking</td><td>Which of the candidates are most useful?</td></tr>
+    <tr><td>Context assembly</td><td>How do we present the evidence to the model?</td></tr>
+  </tbody></table></div>
+
+  <h3>Lab 1: chunking</h3>
+  <p>Chunks that are too small lose context. Chunks that are too large dilute relevance and eat your context budget. Real systems usually add a small <b>overlap</b> so a sentence cut at a boundary still appears whole in one chunk. Move the sliders and watch where the cuts fall:</p>
+  <div class="lab" id="chunk">
+    <div class="lab-title">Chunking lab</div>
+    <div id="ck-ctl"></div>
+    <div id="ck-out" class="bars" style="gap:8px"></div>
+  </div>
+
+  <h3>Lab 2: a working search engine</h3>
+  <p>Below is a real, tiny retrieval system running in your browser. It uses <b>keyword matching</b> (a classic scoring method called TF-IDF), not embeddings, so you can see exactly why a chunk is chosen. Ask a question. Then try the suggested questions, including the ones marked as tricky.</p>
+  <div class="lab" id="ret">
+    <div class="lab-title">Mini help-desk search</div>
+    <div class="row"><input type="text" id="rt-q" style="flex:1;min-width:12em" value="Can I return a jacket I bought three weeks ago?" aria-label="Question"><button class="btn" id="rt-go" type="button">Search</button></div>
+    <div class="picker" id="rt-ex"></div>
+    <div id="rt-ctl"></div>
+    <div id="rt-out"></div>
+  </div>
+  <div class="board warn"><span class="tag">What just happened?</span><p>"How long until I get my money back?" returns nothing useful, even though the refund-timeline chunk is exactly the answer. The question says "money back" and the chunk says "refunds". Keyword search needs shared words. <b>Embeddings fix this</b> because "money back" and "refund" land close together on the meaning map from Chapter 2. Real systems therefore often combine both: a hybrid of keyword and vector search. This is also a lesson about RAG itself: <b>RAG is not a guarantee of truth.</b> Bad retrieval can supply irrelevant or contradictory evidence, and the model can still misread what it is given.</p></div>
+
+  <h3>What RAG fixes</h3>
+  <ul>
+    <li>Less hallucination, because the answer comes from supplied text.</li>
+    <li>Citations are possible, because you know which chunk was used.</li>
+    <li>Fresh information and your private documents become usable.</li>
+    <li>You only send a few relevant chunks, so the context stays short.</li>
+  </ul>
+  <p>There are other ways to retrieve. You can search the web instead of your own files. You can turn your documents into a <i>knowledge graph</i> (things and the relationships between them), which is called graph RAG. The common pattern is the same: find relevant material, put it in the prompt. Chapter 13 shows a real project that builds its long-term memory exactly this way.</p>
+
+  <h3>Fix 2: Tool use (function calling)</h3>
+  <p>A language model takes text in and gives text out. On its own it cannot check the weather, send an email or do a long calculation reliably. Tool use gives it hands.</p>
+  <p>You tell the model, in the prompt, which tools exist and the exact format to use when it wants one. When the model decides a tool is needed, it writes a request in that format. <b>Your software</b> (not the model) notices the request, runs the real function, and passes the result back to the model. Then the model writes the final answer for the user. Step through it:</p>
+
+  <div class="lab" id="tool">
+    <div class="lab-title">Tool use step by step <small>Question: "What's the weather in San Francisco?"</small></div>
+    <div id="tool-step"></div>
+  </div>
+
+  <div class="board warn">
+    <span class="tag">Common mistake</span>
+    <p>Beginners think the model itself calls the weather service. It does not. The model only writes text that <i>asks</i> for the call. Your own program does the calling. <b>The model proposes. Your software executes.</b> This split matters a lot for safety, because your software is where you validate the request, check permissions and write an audit log.</p>
+  </div>
+
+  <p>The same idea covers writing code. The model can write a small program to do a calculation or draw a chart, and your software runs it in a protected area called a <span class="term" tabindex="0" data-def="A locked-down environment where code can run without being able to harm the rest of the system.">sandbox</span>, then returns the output to the model.</p>
+
+  <div class="board note"><span class="tag">A famous demo</span><p>In his intro talk, Andrej Karpathy asks ChatGPT for a company's funding rounds in a table. The model <b>searches the web</b> and builds the table. Asked to estimate the missing values from the ratios, it <b>uses a calculator</b>, because models are not reliable at arithmetic "in their head". Asked for a chart with a trend line, it <b>writes plotting code</b> and runs it. Finally it calls an image generator. Four tools, one conversation. Humans solve problems the same way: we do not do everything in our heads, we use tools.</p></div>
+
+  <h3>Models as the "kernel" of a new kind of computer</h3>
+  <p>Karpathy offers a picture worth remembering. An LLM is less a chatbot than the <b>kernel of an emerging operating system</b>. It reads and writes text, browses the web or your files (retrieval), uses software like a calculator or Python, sees and generates images, hears and speaks, and could eventually think longer and be customised for tasks. The <b>context window is its working memory (like RAM)</b>, and the kernel decides what to page in and out. Even the ecosystem looks familiar: a few closed systems (like Windows and macOS) and a growing open-source family (like Linux). You will see in the next chapters how an <i>agent</i> is what you get when you run this "operating system" in a loop.</p>
+
+  <h3>Where this leads</h3>
+  <p>Put the pieces together. A model that can <b>retrieve</b> information, <b>use tools</b>, and <b>look at the results and decide what to do next</b> is no longer just answering. It is working on a task. That is the starting point for the next chapter.</p>
+
+  <h3>Try it yourself (optional, runs offline)</h3>
+  <p>Here is the mini search engine from Lab 2 in about 30 lines of Python. It is a complete retrieval step. Add a document, ask the "money back" question, and then try improving it, for example by adding a small table of synonyms. That is a first taste of why embeddings exist. The file is also saved as <code>course/examples/mini_rag.py</code>.</p>
+  <div class="codewrap"><pre class="code"><code>import math, re
+from collections import Counter
+
+DOCS = {
+    "Returns policy": "Items can be returned within 30 days of delivery for a full refund if unused.",
+    "Clothing exceptions": "Jackets can be returned within 30 days if unworn and with tags attached.",
+    "Refund timeline": "Refunds are issued to the original payment method within 5 to 7 business days.",
+    "Shipping options": "Standard shipping takes 3 to 5 business days. Orders over 50 dollars ship free.",
+    "Password reset": "Choose forgot password on the sign in page. We email a reset link.",
+}
+STOP = {"a","an","the","of","to","in","on","for","and","or","is","are","be","can","i","my","if","how","what","with"}
+
+def stem(word):
+    return re.sub(r"(ing|ed|es|s)$", "", word)      # very crude: returned -> return, jackets -> jacket
+
+def words(text):
+    return [stem(w) for w in re.findall(r"[a-z0-9]+", text.lower()) if w not in STOP]
+
+def tfidf(tokens, df, n):
+    tf = Counter(tokens)
+    return {w: c * (math.log((n + 1) / (df.get(w, 0) + 1)) + 1) for w, c in tf.items()}
+
+def cosine(a, b):
+    dot = sum(v * b.get(w, 0) for w, v in a.items())
+    na = math.sqrt(sum(v * v for v in a.values()))
+    nb = math.sqrt(sum(v * v for v in b.values()))
+    return dot / (na * nb) if na and nb else 0.0
+
+tokenised = {t: words(t + " " + body) for t, body in DOCS.items()}
+df = Counter(w for toks in tokenised.values() for w in set(toks))
+vectors = {t: tfidf(toks, df, len(DOCS)) for t, toks in tokenised.items()}
+
+def retrieve(question, k=2):
+    q = tfidf(words(question), df, len(DOCS))
+    scored = sorted(((cosine(q, v), t) for t, v in vectors.items()), reverse=True)
+    return scored[:k]
+
+def build_prompt(question, k=2):
+    chunks = [f"[{t}] {DOCS[t]}" for score, t in retrieve(question, k) if score > 0]
+    return ("Answer using only the text below. If the answer is not there, say you cannot find it.\n\n"
+            + "\n".join(chunks) + f"\n\nQuestion: {question}")
+
+print(build_prompt("Can I return a jacket I bought three weeks ago?"))
+print()
+print(build_prompt("How long until I get my money back?"))   # keyword search misses this one</code></pre></div>
+
+  <div class="recap"><h3>Chapter 6 in plain words</h3>
+    <ul>
+      <li>Models hallucinate, go out of date, cite nothing, miss private data and have limited reading room.</li>
+      <li>RAG looks up relevant chunks and puts them into the prompt. Chunking, embeddings, top-k and reranking are the design choices. RAG is not a guarantee of truth.</li>
+      <li>Tool use lets the model ask your software to run functions and return results. The model proposes. Your software executes.</li>
+      <li>Combine retrieval, tools and a loop, and you are close to an agent.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c6"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

@@ -1,0 +1,114 @@
+
+<!-- ============================ CHAPTER 4 ============================ -->
+<section class="chapter" id="ch4" data-title="4 · Post-training" data-road="From base model to assistant" data-sub="Fine-tuning, RLHF, DPO, and how language models are evaluated.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 4</span>
+    <h2>From base model to assistant</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>why a pre-trained model is not yet an assistant</li>
+      <li>what SFT, RLHF and DPO each do, and how they differ</li>
+      <li>why evaluating assistants is hard, and the main ways it is done</li>
+    </ul>
+  </div>
+
+  <h3>The problem: a base model only continues text</h3>
+  <p>After pre-training you have a <b>base model</b>. It is an expert at continuing internet-style text. Ask it "Explain the moon landing to a six-year-old" and it may reply with "Explain the theory of gravity to a six-year-old". Why? On the internet, one question is often followed by a list of similar questions, not an answer. A model that imitates the internet imitates that. We want an <b>assistant</b>: a model that follows instructions and behaves helpfully and safely. The step that does this is called <b>post-training</b>.</p>
+  <div class="compare">
+    <div><h4>Base model</h4><p style="margin:0">You: <i>What is the capital of France?</i><br>Model: <i>What is the capital of Germany? What is the capital of Spain? What is…</i></p></div>
+    <div><h4>Assistant</h4><p style="margin:0">You: <i>What is the capital of France?</i><br>Model: <i>The capital of France is Paris.</i></p></div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted)">This pair illustrates the behaviour. It is not a recording of a real model.</p>
+
+  <h3>The assembly line</h3>
+  <p>Click through the stages. All of them use the same guess, compare, nudge loop from Chapter 3. What changes is the <b>data</b>.</p>
+  <div class="lab" id="stages"><div class="lab-title">From internet text to assistant</div><div id="st-tabs"></div></div>
+
+  <h3>Stage 2 in detail: supervised fine-tuning (SFT)</h3>
+  <p>People write example conversations: a question and the ideal answer. The model is then trained on them with the <i>same</i> next-token loss as before, only on this new data. It is "supervised" because a human supplied the desired answer. Companies hire labelers and give them detailed instructions (be helpful, truthful and harmless). Here are the practical lessons from the lectures:</p>
+  <ul>
+    <li><b>You do not need much data.</b> A study named LIMA found that raising the SFT data from 2,000 to 32,000 examples did not help much. The model already knows the facts from pre-training. SFT mostly teaches it <i>which style of answerer to be</i>: out of all the kinds of internet writers it imitates, it should act like the helpful assistant.</li>
+    <li><b>LLMs can write training data.</b> The Alpaca project started with 175 human-written question and answer pairs, asked a strong model to produce 52,000 more, and fine-tuned a small open model on them. The result worked surprisingly well. Lesson: it is scalable, but synthetic data is not automatically correct. A model can produce a large number of good examples quickly and a large number of bad ones just as quickly, so quality control stays essential.</li>
+    <li><b>Humans and models work together.</b> It is faster for a person to edit a model's draft than to write from scratch, so the best pipelines combine both.</li>
+    <li><b>The learning rate is higher</b> than at the end of pre-training, so a small dataset has a strong effect. In industry all the weights are updated. (In open-source work, a lighter method called LoRA changes only small add-on weights.)</li>
+  </ul>
+  <div class="board warn"><span class="tag">Limits of SFT</span><p>(1) Cloning humans means you are capped by what humans can write. People can often <i>recognise</i> a better answer more easily than they can write it. (2) Some researchers suspect SFT can encourage hallucination: if a human writes a correct reference that the model never actually learned, the model is being taught to produce <i>plausible-looking</i> references. (3) Writing ideal answers is expensive. These limits motivate the next stage.</p></div>
+
+  <h3>Stage 3: learning from comparisons (RLHF)</h3>
+  <p>The idea of <span class="term" tabindex="0" data-def="Reinforcement Learning from Human Feedback. Humans compare answers, and the model is trained to produce answers people prefer.">RLHF</span> is simple: instead of cloning human answers, <b>maximise human preference</b>. For each prompt, the model produces two answers. A person picks the better one. Try being the labeler:</p>
+
+  <div class="lab" id="labeler">
+    <div class="lab-title">Be a labeler <small>Task: "Write a haiku about paper clips."</small></div>
+    <div class="compare" style="margin-top:12px">
+      <div><h4>Answer A</h4><p style="margin:0">Bent silver ribbon,<br>holding pages together,<br>quiet desk helper.</p><p style="margin:8px 0 0"><button class="btn ghost" data-pick="A" type="button">I prefer A</button></p></div>
+      <div><h4>Answer B</h4><p style="margin:0">Paper clips are good,<br>they hold the papers so well,<br>I like paper clips.</p><p style="margin:8px 0 0"><button class="btn ghost" data-pick="B" type="button">I prefer B</button></p></div>
+    </div>
+    <p id="lab-out" style="margin-bottom:0" aria-live="polite"></p>
+  </div>
+
+  <p>How are those clicks turned into improvement? In the classic recipe, used for the original ChatGPT:</p>
+  <div class="flow">
+    <div class="node"><b>1. SFT</b>fine-tune on example answers</div><span class="arr">→</span>
+    <div class="node"><b>2. Reward model</b>train a classifier to predict which answer humans prefer. Its score is a smooth "reward"</div><span class="arr">→</span>
+    <div class="node"><b>3. Reinforcement learning (PPO)</b>adjust the model to earn higher reward, while a penalty keeps it from drifting too far</div>
+  </div>
+  <p>Why a reward model instead of plain "better or worse" labels? A binary label tells you nothing about <i>how much</i> better. The reward model gives a continuous score and can score new answers without a human. The penalty term prevents <i>over-optimisation</i>: the reward model is only an imperfect copy of human taste, so you do not want to push it to the extreme. Reinforcement learning (PPO) works in theory but is messy in practice, with many fiddly parts.</p>
+
+  <h3>DPO: the simpler alternative</h3>
+  <p><span class="term" tabindex="0" data-def="Direct Preference Optimization. Train directly on pairs of preferred and rejected answers: raise the probability of the preferred one and lower the other.">DPO</span> keeps the goal and drops the reinforcement learning. Take the pairs of (preferred, rejected) answers and directly train the model to make the preferred answer more likely and the rejected one less likely. Under some assumptions it aims at the same optimum as the RLHF recipe, but it is just a form of maximum likelihood, much simpler to run. It is now the standard choice in the open-source community, and widely used elsewhere.</p>
+  <div class="board note"><span class="tag">For your learning</span><p>Focus on the conceptual difference. <b>SFT learns from demonstrations.</b> <b>Preference methods (RLHF, DPO) learn from pairwise judgements.</b> RLHF and DPO are two families of ways to turn preference data into better behaviour.</p></div>
+
+  <h3>Problems with human preference data</h3>
+  <ul>
+    <li><b>Slow and expensive.</b> One study priced it around $300 per 1,000 examples.</li>
+    <li><b>Humans disagree.</b> On a simple choice between two answers, labelers agreed with each other only about two-thirds of the time. Even the paper's authors scored about 67 to 68 percent against each other after hours of discussion.</li>
+    <li><b>People reward the wrong things.</b> They tend to prefer longer answers even when they are not better. This is one reason chat assistants became wordy.</li>
+    <li><b>Whose preferences?</b> The mix of labelers shapes the model. There are also ethics questions about pay and exposure to toxic content.</li>
+  </ul>
+  <p>One response is to use language models as labelers. In that research, models were about 50 times cheaper and agreed with the majority human opinion <i>more</i> than individual humans did, because models vary less. Many teams now combine humans and models.</p>
+
+  <h3>Evaluating a language model</h3>
+  <p>How do you know whether one model is better than another? Perplexity (Chapter 3) works for base models. It stops working after alignment, because aligned models are no longer trained to model a distribution of text, only to produce good answers, and the loss values from different methods cannot be compared. Open-ended answers have no single correct string. So several methods are combined:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Method</th><th>Strength</th><th>Weakness</th></tr></thead><tbody>
+    <tr><td>Human comparison (e.g. Chatbot Arena)</td><td>high-quality judgement on real questions</td><td>slow, expensive, users skew toward tech topics</td></tr>
+    <tr><td>Automated benchmarks (e.g. MMLU)</td><td>repeatable and cheap</td><td>may miss real use; protocols differ; contamination</td></tr>
+    <tr><td>LLM-as-judge (e.g. AlpacaEval)</td><td>scalable: under 3 minutes and $10, 98% correlation with the Arena in one study</td><td>the judge has biases, notably a preference for long answers</td></tr>
+    <tr><td>Task-specific tests</td><td>relevant to your product</td><td>need careful design</td></tr>
+  </tbody></table></div>
+  <div class="board note"><span class="tag">Key lesson</span><p>Evaluation is not one score. It is a <b>measurement design problem</b>.</p></div>
+
+  <p><b>Chatbot Arena</b> is the best-known human test. Users chat with two anonymous models and pick the winner. The results are turned into a rating using the <b>Elo</b> system from chess: you gain more points for beating a stronger opponent. Play it yourself:</p>
+  <div class="lab" id="elo">
+    <div class="lab-title">Mini Arena <small>Two models start at 1000. Vote on each round.</small></div>
+    <div class="two" style="margin-top:10px">
+      <div class="out"><b>Model A</b><br><span id="elo-a" style="font-family:var(--f-display);font-size:1.6rem">1000</span></div>
+      <div class="out"><b>Model B</b><br><span id="elo-b" style="font-family:var(--f-display);font-size:1.6rem">1000</span></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="elo-wa" type="button">A won this round</button><button class="btn" id="elo-wb" type="button">B won this round</button><button class="btn ghost" id="elo-sim" type="button">Simulate 100 rounds (A wins 70%)</button><button class="btn ghost" id="elo-rs" type="button">Reset</button></div>
+    <div class="out" id="elo-out" aria-live="polite"></div>
+  </div>
+
+  <h3>Three evaluation traps</h3>
+  <ul>
+    <li><b>Inconsistent protocols.</b> The same benchmark, scored in different ways, gave one model 63.7% in one setup and 48.8% in another. Always ask how a number was computed.</li>
+    <li><b>Test-set contamination.</b> If benchmark questions leaked into the training data, a high score may reflect memory, not skill. A clever detection trick: if the model finds the test examples more likely in their original order than in a shuffled order, it has probably seen the file. The habit to build: <i>"What exactly did this test measure, and what could have leaked into the answer?"</i></li>
+    <li><b>Judge bias.</b> In one study, GPT-4 judged against itself won 50% of the time by definition. Told to be verbose, it "won" 64.4%. Told to be concise, 20%. Statistical controls for length reduced this problem.</li>
+  </ul>
+
+  <h3>The ecosystem in one paragraph</h3>
+  <p>Models split into <b>closed</b> ones (the weights are private, you use them through a website or API, for example GPT, Claude, Gemini) and <b>open-weights</b> ones (you can download and run them, for example Llama and Mistral). Closed models have usually led on benchmarks while open ones chase them. Your choice depends on your needs for quality, cost, privacy and control. A related point from the Intro talk: models are mostly <i>empirical artefacts</i>. We study them by measuring behaviour, which is why careful evaluation matters so much, and why it gets two chapters (this one and Chapter 9).</p>
+
+  <div class="recap"><h3>Chapter 4 in plain words</h3>
+    <ul>
+      <li>A base model continues text. Post-training turns it into an assistant.</li>
+      <li>SFT: same loss, new data of good example answers. A little data is enough because it mostly teaches style, not facts.</li>
+      <li>RLHF: humans compare answers, a reward model learns the preference, reinforcement learning optimises it. DPO reaches the same goal more simply.</li>
+      <li>Preference data has problems: cost, disagreement, length bias, whose preferences.</li>
+      <li>Evaluation mixes humans, benchmarks, LLM judges and task tests. Watch for inconsistent protocols, contamination and judge bias.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c4"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

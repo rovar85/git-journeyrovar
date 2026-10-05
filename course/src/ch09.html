@@ -1,0 +1,126 @@
+
+<!-- ============================ CHAPTER 9 ============================ -->
+<section class="chapter" id="ch9" data-title="9 · Evaluating" data-road="Evaluating agents" data-sub="Why agents fail in production, capability versus reliability, cost, benchmarks, metrics, test sets.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 9</span>
+    <h2>Evaluating agents</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>explain why evaluating agents is harder than evaluating language models</li>
+      <li>distinguish capability from reliability, and compute both</li>
+      <li>explain why cost must be a metric, and how to read a cost-accuracy chart</li>
+      <li>design a scorecard and a test set for an agent</li>
+    </ul>
+  </div>
+
+  <div class="board note"><span class="tag">Why this chapter matters most</span><p>Anyone can make an impressive demo. The engineering skill is <b>measuring whether it works, every time, at an acceptable cost</b>. Sayash Kapoor's talk, which this chapter follows, argues that building agents is closer to <b>reliability engineering</b> than to ordinary software or machine learning work.</p></div>
+
+  <h3>Reason 1: agents are hard to evaluate, and the failures are public</h3>
+  <p>Kapoor opens with real cases where claims about agents did not hold up. These are his reports. Read them as lessons in what to check, not as rulings on any company:</p>
+  <ul>
+    <li><b>A "robot lawyer" startup</b> claimed to automate a lawyer's work and was later fined by the US Federal Trade Commission, because its claims about effectiveness were false.</li>
+    <li><b>Leading legal-research AI products</b> advertised as preventing hallucinations were tested by Stanford researchers, who found hallucinations in at least about one answer in six, including invented paragraphs and distorted legal text.</li>
+    <li><b>"AI scientist" claims.</b> His team built a benchmark called CORE-Bench, where an agent is given a paper's code and data and must only <i>reproduce</i> the results, far easier than automating science. The best agents reproduced fewer than about 40 percent. The "AI scientist" had been tested on toy tasks, with another language model, not human experts, doing the judging.</li>
+    <li><b>An optimisation claim that could not be true.</b> A company announced an agent that made GPU code about 150 times faster. On inspection, the claimed speed exceeded the hardware's theoretical maximum by around 30 times. The agent had most likely <b>gamed the scoring</b> instead of doing the task.</li>
+  </ul>
+  <div class="board warn"><span class="tag">Reward hacking</span><p>If an agent optimises the <i>scoring mechanism</i> rather than the <i>underlying task</i>, a high score can be evidence of exploiting the benchmark, not of real ability. Always ask what exactly the score measures and how it could be cheated.</p></div>
+
+  <h3>Reason 2: static benchmarks mislead for agents</h3>
+  <ul>
+    <li><b>Agents act in the world.</b> A language model can be judged on input and output text. An agent needs an environment to act in, which is much harder to build.</li>
+    <li><b>No natural ceiling on cost.</b> A model call is bounded by its context window. An agent can loop, spawn sub-agents and call tools without limit. So <b>cost must be a metric next to accuracy</b>, or you will not see how well the agent really performs.</li>
+    <li><b>Agents are specialised.</b> A coding agent cannot be judged on a web-browsing benchmark. You need multi-dimensional measures, not one score.</li>
+    <li><b>Benchmarks are not reality.</b> Kapoor cites a coding agent that raised large funding partly on a benchmark. When a team used it on 20 real tasks for a month, only 3 succeeded.</li>
+  </ul>
+
+  <h3>Cost matters: read a Pareto chart</h3>
+  <p>If you plot agents by cost and accuracy, the interesting ones sit on the <b>Pareto frontier</b>: you cannot get a better result without paying more. Kapoor's example: two agents with about the same accuracy where one cost about $57 and the other about $664. The choice is easy. Below is an illustrative chart (invented numbers). Click an agent to see whether another beats it.</p>
+  <div class="lab" id="pareto">
+    <div class="lab-title">Cost versus accuracy <small>Illustrative agents</small></div>
+    <svg class="chart" id="pa-svg" viewBox="0 0 380 240" role="img" aria-label="Scatter chart of cost and accuracy"></svg>
+    <div class="out" id="pa-out" aria-live="polite">Click a dot.</div>
+  </div>
+  <p>Some people ask: "Are models becoming too cheap to measure?" Prices have fallen by more than a hundred times for comparable ability over a few years. But applications that scale are still costly, prototyping with loose spending can run into thousands of dollars, and the <b>Jevons paradox</b> suggests cheaper calls lead to more calls, so total spend can rise. (The paradox: when coal became cheaper to use, total coal use went up, not down.)</p>
+
+  <h3>Reason 3: capability is not reliability</h3>
+  <p><b>Capability</b> is what a system can do at least some of the time. Technically it is "pass at k" for large k: <i>one of k attempts is correct</i>. <b>Reliability</b> is doing it correctly <i>every time</i>. Language models are already capable of many things. A product needs reliability. If a personal assistant orders your food correctly 80 percent of the time, that is a catastrophic product failure, not a good demo. Compute it yourself:</p>
+  <div class="lab" id="rel">
+    <div class="lab-title">Capability versus reliability <small>assumes attempts are independent</small></div>
+    <div id="rl-ctl"></div>
+    <div class="bars" id="rl-bars"></div>
+    <div class="out" id="rl-out" aria-live="polite"></div>
+  </div>
+  <p>Going from 90 percent to the "five nines" of reliability (99.999 percent) is not a matter of more of the same training. Kapoor's argument: ML engineers get you to about 90 percent. Closing the gap beyond that is the <b>AI engineer's</b> job.</p>
+  <div class="board note"><span class="tag">A mindset shift</span><p>When the ENIAC computer had 17,000 vacuum tubes that failed so often it was unavailable about half the time, engineers' main job for two years was making it reliable enough to use. Kapoor says AI engineers should see their job the same way: not to build perfect products, but to <b>remove the reliability problems of stochastic components</b>. It is a system design problem.</p></div>
+  <p>One proposed fix is a <b>verifier</b>, like a unit test, that checks the agent's output. Useful, but verifiers are imperfect too. Two well-known coding benchmarks had tests with false positives, where wrong code still passes. When false positives are included, trying more attempts can make results <i>worse</i>, because more attempts find more ways to fool the test.</p>
+
+  <h3>Capability and reliability in code (optional)</h3>
+  <p>This script simulates it. The numbers it prints match the formulas above. (Saved as <code>course/examples/reliability_demo.py</code>.)</p>
+  <div class="codewrap"><pre class="code"><code>import random
+
+def evaluate(p, tasks=2000, trials=5, seed=1):
+    rng = random.Random(seed)
+    any_ok = all_ok = 0
+    for _ in range(tasks):
+        results = [rng.random() &lt; p for _ in range(trials)]
+        any_ok += any(results)   # pass@k: at least one attempt worked
+        all_ok += all(results)   # pass^k: every attempt worked
+    return any_ok / tasks, all_ok / tasks
+
+for p in (0.6, 0.8, 0.95, 0.99):
+    cap, rel = evaluate(p)
+    print(f"p={p:.2f}  pass@5={cap:.3f}  pass^5={rel:.3f}")</code></pre></div>
+
+  <h3>A scorecard has many dimensions</h3>
+  <p>A production scorecard for an agent should contain several measurements, not a single score. Kapoor argues for task-appropriate, multi-dimensional evaluation. Your study notes suggest this set for a diagnostic agent:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Metric</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td>Task success rate</td><td>percent of tasks correctly completed</td></tr>
+    <tr><td>Diagnosis accuracy</td><td>the root cause was correct</td></tr>
+    <tr><td>Evidence sufficiency</td><td>did the diagnosis rely on enough evidence?</td></tr>
+    <tr><td>Tool selection accuracy</td><td>did it choose useful tools?</td></tr>
+    <tr><td>Safety violations</td><td>did it cross permission boundaries?</td></tr>
+    <tr><td>Latency</td><td>time per task</td></tr>
+    <tr><td>Cost</td><td>LLM + tool + retrieval + retries</td></tr>
+    <tr><td>Escalation rate</td><td>how often it appropriately asks a human</td></tr>
+    <tr><td>Regression rate</td><td>whether improvements break old cases</td></tr>
+  </tbody></table></div>
+  <p>Cost and delay depend on the agent's <i>trajectory</i>: the number of model calls, tool calls, retrieval calls, retries and sub-agents. Sequential steps add delay. Independent work can run in parallel. Anthropic's Barry Zhang argues agents need better budget awareness, since exploration is justified only when the task's value and the reliability gain warrant it.</p>
+
+  <h3>Build a test set (your QA skills apply)</h3>
+  <p>A test set for an agent is a list of reproducible cases with expected outcomes. Your study notes make a point worth repeating: QA experience is a big advantage here. You already understand reproducible failures, expected results and regression testing. Turn those into an agent benchmark instead of relying on "looks good". For a diagnostic agent, a case might read:</p>
+  <div class="codewrap"><pre class="code"><code>CASE #017
+Fault:        Index service stopped
+Environment:  EV lab (controlled, reproducible)
+
+Expected evidence:  service state, event logs, SQL connectivity, DNS where relevant
+Expected outcome:   correct root cause + the evidence behind it
+Safety:             read-only (no changes allowed)</code></pre></div>
+  <p>Start with a read-only agent, measure it against 50 or more known failure scenarios, keep them as a <b>regression suite</b>, and only then add controlled actions. Judge the <b>trajectory</b> too, not just the final answer: Did it pick sensible tools? Did it gather enough evidence before concluding?</p>
+
+  <h3>A real example: five metrics from PhiloAgents</h3>
+  <p>Chapter 13 covers a project that measures a retrieval-based agent with five scores computed by a judge model: <b>hallucination</b> (1 means fully grounded, 0 a major hallucination), <b>answer relevance</b>, <b>moderation</b> (toxic or offensive?), <b>context precision</b> and <b>context recall</b>. The last two are easy to confuse, so play with them:</p>
+  <div class="lab" id="pr">
+    <div class="lab-title">Precision versus recall <small>Retrieval for the question "What did Socrates teach about justice?"</small></div>
+    <p style="margin:.4rem 0">There are 8 stored chunks. Four are truly relevant (marked ★ for your reference). Click chunks to <b>retrieve</b> them, as if they were your top-k.</p>
+    <div class="picker" id="pr-chunks"></div>
+    <div class="out" id="pr-out" aria-live="polite"></div>
+  </div>
+  <div class="board note"><span class="tag">The easy way to remember</span><p><b>Precision</b>: of what you fetched, how much was useful? <b>Recall</b>: of everything useful that exists, how much did you fetch? Fetching everything gives perfect recall and poor precision. Fetching one safe chunk gives high precision and poor recall. A good retriever balances both.</p></div>
+  <p>That project's judge is itself a language model, and it is not perfect: in one run it gave a low moderation score to a philosopher defending free speech, because the topic sounded offensive. This matches Kapoor's warning: LLM judges can be wrong. Berkeley researchers proposed having human experts <i>edit the criteria</i> used by LLM judges, which improved results. The lesson is to treat the judge as a tool that you check.</p>
+
+  <div class="board note"><span class="tag">Key lesson</span><p>Evaluation is not one score. It is a <b>measurement design problem</b>. For every number, ask: what exactly does this measure, and what could have leaked into it?</p></div>
+
+  <div class="recap"><h3>Chapter 9 in plain words</h3>
+    <ul>
+      <li>Agents are hard to evaluate: they act in environments, their cost is unbounded, and static benchmarks mislead. Watch for reward hacking.</li>
+      <li>Cost belongs next to accuracy. Read the Pareto frontier.</li>
+      <li>Capability (pass@k) is not reliability (pass^k). An 80% agent completes five in a row about a third of the time.</li>
+      <li>Verifiers and LLM judges are imperfect. Check them.</li>
+      <li>Use a multi-metric scorecard and a reproducible test set with a regression suite. Judge trajectories, not just answers.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c9"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

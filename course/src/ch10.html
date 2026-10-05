@@ -1,0 +1,162 @@
+
+<!-- ============================ CHAPTER 10 ============================ -->
+<section class="chapter" id="ch10" data-title="10 · MCP" data-road="MCP: plugging agents into the world" data-sub="Why MCP exists, host, client and server, tools versus resources versus prompts, tool design, security.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 10</span>
+    <h2>MCP: plugging agents into the world</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>explain the problem the Model Context Protocol (MCP) solves</li>
+      <li>draw the host, client and server architecture</li>
+      <li>explain tools, resources and prompts, and who controls each</li>
+      <li>design a good tool, and say how MCP relates to agent frameworks</li>
+      <li>name the main security questions for remote servers</li>
+    </ul>
+  </div>
+
+  <h3>Why MCP exists</h3>
+  <p>The motivation, in the words of Mahesh Murag of Anthropic: <b>models are only as good as the context we give them.</b> A year or so ago you copy-pasted context into chatbots. Then applications began giving models hooks into your data and tools, making them more powerful and personal. But every application built its own integration with every service. If there are N applications and M tools you get N × M custom connections.</p>
+  <p>The Model Context Protocol is an <b>open protocol</b> that standardises how AI applications connect to tools and data. It was inspired by two earlier standards. <b>APIs</b> standardised how web front ends talk to back ends. The <b>Language Server Protocol (LSP)</b> standardised how code editors talk to language-specific tools: build a Go language server once, and every LSP-compatible editor can use it.</p>
+  <div class="compare">
+    <div><h4>Before MCP</h4><p style="margin:0;font-family:var(--f-mono);font-size:.85rem">App A → custom GitHub<br>App A → custom SQL<br>App A → custom Files<br>App B → custom GitHub<br>App B → custom SQL<br>…</p></div>
+    <div><h4>After MCP</h4><p style="margin:0;font-family:var(--f-mono);font-size:.85rem">App → MCP client → MCP server → capability<br><br>Build each server <b>once</b>.<br>Every compatible app can use it.</p></div>
+  </div>
+  <p>Benefits: <b>application developers</b> connect any MCP server with no extra work. <b>Tool and API providers</b> build a server once and see adoption everywhere. <b>Users</b> get more context-rich applications. <b>Enterprises</b> get a clean way to separate teams: one team can own the vector-database server (like a microservice) and everyone else builds on it without asking permission each time.</p>
+
+  <h3>The architecture: host, client, server</h3>
+  <p>This is the fifth diagram to memorise. Click a part:</p>
+  <div class="lab" id="arch">
+    <div class="picker" id="ar-pick" role="group" aria-label="Part of MCP"></div>
+    <div class="out" id="ar-out" aria-live="polite"></div>
+  </div>
+  <div class="board warn"><span class="tag">Do not confuse them</span><p><b>MCP is not the model. MCP is not the agent loop.</b> MCP is a protocol layer for connecting AI applications to external capabilities and context. The model and the loop live elsewhere.</p></div>
+
+  <h3>The three primitives, and who controls each</h3>
+  <p>A server can offer three kinds of things. The key idea is a clean separation of <b>who decides when each is used</b>:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Primitive</th><th>Controlled by</th><th>What it is</th><th>Enterprise Vault example</th></tr></thead><tbody>
+    <tr><td>Tool</td><td>the <b>model</b></td><td>an action the model chooses to call</td><td><code>collect_dtrace(EV01, Indexing)</code></td></tr>
+    <tr><td>Resource</td><td>the <b>application</b></td><td>data the app can attach: files, JSON, images, dynamic info</td><td>attach a troubleshooting document</td></tr>
+    <tr><td>Prompt</td><td>the <b>user</b></td><td>a reusable template the user selects, like a slash command</td><td><code>/investigate-indexing-failure</code></td></tr>
+  </tbody></table></div>
+  <ul>
+    <li><b>Tools</b> are the most familiar: read tools to retrieve data, write tools to take actions, tools that update databases or write files. The server describes them, and the model decides when to call them.</li>
+    <li><b>Resources</b> let the application, not the model, decide what to attach. In Claude Desktop they appear as attachments the user can click. Resources can be static, or dynamic (the server builds them from context). Clients can <b>subscribe</b>, so the server notifies them when a resource changes.</li>
+    <li><b>Prompts</b> are templates packaged by whoever knows the domain. In the Zed editor, a slash command with a pull-request ID expands into a long predefined prompt. Teams use prompts for document Q&amp;A and formatting rules.</li>
+  </ul>
+  <div class="board ask"><span class="tag">Student asks</span><p><b>Why not represent everything as a tool?</b></p><p>Because MCP coordinates the model, the application and the user. The application may need to attach data <i>deterministically</i>, and a human may need to explicitly choose a reusable prompt. Not every interaction should become a model decision. Also, if a call is predetermined (you always want the vector database searched), you do not need a tool at all: just call it. Tools shine when it is ambiguous whether to call. Murag's advice for beginners: start with tools, then add prompts and resources.</p></div>
+
+  <div class="lab" id="prim">
+    <div class="lab-title">Which primitive? <small>Tool, resource or prompt</small></div>
+    <div id="pm-body"></div>
+  </div>
+
+  <h3>One request, step by step</h3>
+  <p>Simplified: here is what happens when an MCP-enabled application helps with a question. (Real messages use a standard JSON format. These examples are shortened.)</p>
+  <div class="lab" id="flowlab"><div id="fl-step"></div></div>
+
+  <h3>How MCP fits with agents</h3>
+  <p>Recall the "augmented LLM" from Anthropic's article: a model with arrows to <b>retrieval</b>, <b>tools</b> and <b>memory</b>, run in a loop. MCP provides that whole bottom layer in a standard way. This means <b>you do not need to build every capability in advance</b>. The agent can discover new ones, even after it starts running. As the agent builder you can focus on the loop, context management, memory, and which model to use.</p>
+  <p>In the workshop's demo, a research task used a small open-source framework. It declared three sub-agents (a web researcher, a fact-checker and a report writer), gave each some ready-made MCP servers (a web-search server, a fetch server and a file-system server), and let an orchestrator plan and delegate. The whole thing was about 80 lines, and <b>none of the servers were written by the builder</b>.</p>
+  <div class="flow">
+    <div class="node"><b>Agent framework</b>loop, state, memory, planning</div><span class="arr">→</span>
+    <div class="node hl"><b>MCP client</b></div><span class="arr">→</span>
+    <div class="node"><b>MCP server</b></div><span class="arr">→</span>
+    <div class="node"><b>EV · SQL · Windows</b></div>
+  </div>
+  <p>So <b>MCP does not replace agent frameworks</b>. The framework manages the control loop and state. MCP gives a common way to discover and use external capabilities. Frameworks such as LangGraph have released adapters for exactly this reason.</p>
+
+  <h3>Designing a good tool (the most important MCP skill)</h3>
+  <p>A good tool is narrow, explicit and predictable. Its name describes the action, its inputs are validated and its output is structured. Compare:</p>
+  <div class="lab" id="tooldesign">
+    <div class="lab-title">Tool design checker <small>Tick the properties a tool has and see what you get</small></div>
+    <div class="two">
+      <div><p style="margin:0 0 4px"><b>A weak tool</b></p><div class="pre-out">name: run_check
+description: checks stuff
+inputs: text (string)
+output: (a huge block of raw terminal text)</div></div>
+      <div><p style="margin:0 0 4px"><b>A good tool</b></p><div class="pre-out">name: get_service_status
+description: Returns the state of one Windows
+  service on one server. Read-only.
+inputs:
+  server: string (e.g. "EV01")
+  service: string
+output:
+  status: string
+  start_type: string
+  error: string | null</div></div>
+    </div>
+    <div class="checks" id="td-checks" style="margin-top:10px"></div>
+    <div class="out" id="td-out" aria-live="polite"></div>
+  </div>
+  <div class="board note"><span class="tag">Engineering rule</span><p><b>Put parsing and deterministic validation in code. Use the model for interpretation and for decisions that genuinely need language and context.</b> Do not make the model read pages of terminal output when your tool can extract the few fields that matter. Structured results improve reliability, evaluation and debugging.</p></div>
+
+  <h3>How many tools can an agent handle?</h3>
+  <p>In the workshop's experience, current models cope well with about 50 to 100 tools, and Claude with a couple of hundred. Beyond that, long tool lists swamp the context. Ideas: a <b>tool that searches tools</b> (RAG over the tool library), or <b>hierarchical groups</b> of tools exposed progressively (finance tools, read tools, write tools). Tool names can also clash across servers, so namespacing is an open topic.</p>
+
+  <h3>An Enterprise Vault MCP server (from your notes)</h3>
+  <p>Here is how your notes organise a diagnostic server. <b>Every tool should be read-only at first.</b> Your first milestone is excellent diagnosis, not automatic fixing.</p>
+  <div class="codewrap"><pre class="code"><code>ev-mcp-server
+├── environment
+│   ├── list_vms
+│   └── get_environment_status
+├── windows
+│   ├── get_service_status
+│   ├── get_event_logs
+│   ├── check_dns
+│   └── check_spn
+├── enterprise_vault
+│   ├── get_ev_service_status
+│   ├── collect_dtrace
+│   ├── get_ev_logs
+│   └── inspect_configuration
+├── database
+│   ├── test_sql_connectivity
+│   └── run_readonly_query
+└── testing
+    ├── run_test
+    └── collect_artifacts</code></pre></div>
+
+  <h3>Advanced ideas from the workshop</h3>
+  <ul>
+    <li><b>Sampling.</b> A server can ask the <i>client</i> to run a model call for it, instead of hosting its own model. The client keeps control over which model is used, the cost and privacy, and may refuse a suspicious request.</li>
+    <li><b>Composability.</b> "Client" and "server" are logical roles, not physical machines. An agent can be a server to one application and a client of other servers, which allows layered systems where each layer specialises. Compounding errors and permissions need managing at each layer.</li>
+    <li><b>Registries and discovery.</b> A central place to find, verify and version servers, similar to package registries. A "well-known" address on a company's website could advertise its official server. Combined with a registry, agents could <i>find tools they were never programmed with</i>, which the speaker called self-evolving agents. This also raises trust questions: you must decide which servers an agent may use.</li>
+    <li><b>Remote servers and authorisation.</b> Early servers ran locally. Remote servers need identity and permission. The workshop described OAuth 2.0, where the server handles the sign-in handshake with the service and holds the token, while the client gets a session token.</li>
+    <li><b>Where logic belongs.</b> Murag's opinion: retry logic and similar business logic are best on the server, because it is closest to the real system and clients may never have seen it before.</li>
+    <li><b>Tool annotations.</b> Extra metadata, such as whether a tool only reads or also writes, so a client knows how risky a call is.</li>
+  </ul>
+
+  <h3>Security and trust for MCP</h3>
+  <p>Once a server is remote, the problem becomes distributed systems and security: identity, authorisation, trust boundaries, rate limits, audit logs and least privilege. Four questions to ask of every tool call:</p>
+  <div class="flow">
+    <div class="node"><b>WHO</b>can call it?</div>
+    <div class="node"><b>WHAT</b>can they call?</div>
+    <div class="node"><b>WHERE</b>can it act?</div>
+    <div class="node"><b>WHAT GETS LOGGED?</b></div>
+  </div>
+  <div class="board warn"><span class="tag">Governance</span><p><b>Never assume a tool is safe just because the model requested it.</b> The authorisation decision belongs to software policy, not to model confidence. Chapter 12 builds on this.</p></div>
+
+  <div class="board warn"><span class="tag">MCP keeps changing: check the current specification</span><p>The workshop you watched was recorded in early 2025, and it said openly that many parts were still evolving (remote servers, stateful versus stateless connections, streaming, registries). Your study notes add that a later specification revision (dated 28 July 2026 in the notes) changed the protocol core, moving toward a stateless request-and-response design, and moved or deprecated some features. <b>I could not verify that claim, so treat it as something to check.</b> The safe learning rule from your notes is a good one: learn the concepts and design philosophy from this chapter, but <b>implement new servers against the current specification and SDK documentation</b>, not by copying old transport or lifecycle snippets.</p></div>
+
+  <h3>Try it yourself (no code)</h3>
+  <ol>
+    <li>Pick a tool from the Enterprise Vault list above. Write its name, one-sentence description, the input fields with types, and the output fields.</li>
+    <li>Mark it read-only or write. For a write tool, what approval would you require?</li>
+    <li>Decide for each of these whether it should be a tool, a resource or a prompt: "the SQL runbook document", "diagnose indexing failure" (as a user-selected template), "restart the indexing service".</li>
+  </ol>
+
+  <div class="recap"><h3>Chapter 10 in plain words</h3>
+    <ul>
+      <li>MCP is an open standard so each tool is wrapped once (a server) and any compatible application (a host with a client) can use it. It flattens the N × M integration problem.</li>
+      <li>Three primitives: tools (model-controlled), resources (application-controlled), prompts (user-controlled).</li>
+      <li>MCP complements agent frameworks. It supplies capabilities, and the framework runs the loop.</li>
+      <li>Good tools are narrow, validated and return structured output. Start read-only.</li>
+      <li>Authorisation is a software policy decision. Ask who, what, where and what gets logged.</li>
+      <li>The protocol evolves. Implement against the current specification.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c10"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

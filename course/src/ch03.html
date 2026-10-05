@@ -1,0 +1,141 @@
+
+<!-- ============================ CHAPTER 3 ============================ -->
+<section class="chapter" id="ch3" data-title="3 · Pre-training" data-road="How a model learns: pre-training" data-sub="Data, loss, gradient descent, scaling laws and the hardware behind it.">
+  <header class="chapter-head">
+    <span class="hand">Chapter 3</span>
+    <h2>How a model learns: pre-training</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>the five ingredients of building an LLM, and which matter most in practice</li>
+      <li>what loss, gradient and learning rate mean, with a worked example</li>
+      <li>how training data is collected and cleaned</li>
+      <li>what scaling laws predict, and why GPUs and systems engineering matter</li>
+    </ul>
+  </div>
+
+  <h3>The five ingredients</h3>
+  <p>When a team builds an LLM, five things decide the result:</p>
+  <div class="flow">
+    <div class="node"><b>1. Architecture</b>the network design (the Transformer)</div>
+    <div class="node"><b>2. Objective</b>what the loss measures, and how it is optimised</div>
+    <div class="node"><b>3. Data</b>what the model learns from</div>
+    <div class="node"><b>4. Evaluation</b>how you know it is improving</div>
+    <div class="node"><b>5. Systems</b>the hardware and software that make training possible</div>
+  </div>
+  <div class="board note"><span class="tag">A surprise from the Stanford lecture</span><p>Universities often focus on architecture and training algorithms because they are fun to invent. In industry, what matters most in practice is <b>data, evaluation and systems</b>. Small architecture tweaks usually change the result less than doing the simple things well, at scale, with good data. Good LLM engineering means all five.</p></div>
+
+  <h3>The objective: predict the next token</h3>
+  <p>A language model assigns probabilities to sequences of tokens. A neat fact about probability, the chain rule, lets us break any sentence's probability into a product of next-token predictions: the chance of the first word, times the chance of the second given the first, times the chance of the third given the first two, and so on. This is why <b>predicting the next token is enough</b>. Models built this way are called <span class="term" tabindex="0" data-def="A model that generates a sequence one token at a time, each time conditioning on everything generated so far.">autoregressive</span>. The training text itself supplies the correct answer at every position, so nobody has to label anything by hand.</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Input so far</th><th>Correct next token</th><th>Model's guess (example)</th></tr></thead><tbody>
+    <tr><td>The database connection</td><td>failed</td><td>failed 0.62 · opened 0.10 · works 0.07 · ...</td></tr>
+  </tbody></table></div>
+  <p>How wrong was the guess? We measure that with the <b>loss</b>. The standard choice is <span class="term" tabindex="0" data-def="A loss that is small when the model gave high probability to the correct token and large when it gave low probability. For one token it is minus the natural log of that probability.">cross-entropy</span>. For a single token it is simply <code>−ln(p)</code>, where p is the probability the model gave to the correct token. Try it:</p>
+
+  <div class="lab" id="loss">
+    <div class="lab-title">Loss calculator <small>loss = −ln(p)</small></div>
+    <div id="ls-ctl"></div>
+    <div class="out" id="ls-out" aria-live="polite"></div>
+  </div>
+  <div class="board note"><span class="tag">Aha</span><p>A probability of 0.9 on the right token gives a small loss. A probability of 0.01 gives a loss about 44 times bigger. Training therefore pushes the model to give higher probability to what really came next. Averaged over many tokens, this loss is the model's training signal.</p></div>
+  <p><b>Perplexity</b> is a friendlier way to read the same number: raise e to the power of the average loss (per token). Intuitively it is <i>how many words the model is hesitating between</i>. A perfect model has perplexity 1. A model with no idea hesitates among the whole vocabulary. On a standard test, perplexity improved from about 70 in 2017 to under 10 by 2023, according to the Stanford lecture. Perplexity depends on the tokenizer, so it is not used to compare different companies' models, but developers still watch it while training.</p>
+
+  <h3>How learning happens: loss, gradient, optimiser</h3>
+  <p>After the guess and the loss, the model needs to know <i>which numbers to change and in which direction</i>. The process has a forward half and a backward half:</p>
+  <div class="flow">
+    <div class="node"><b>Forward</b>input → model → prediction → loss</div><span class="arr">→</span>
+    <div class="node"><b>Backward</b>loss → gradients (backpropagation)</div><span class="arr">→</span>
+    <div class="node"><b>Update</b>optimiser changes the parameters</div><span class="arr">↺</span>
+  </div>
+  <div class="board note"><span class="tag">Three words to keep</span><p><b>Loss</b> = how wrong. <b>Gradient</b> = how the loss would change if you nudged a parameter (a sensitivity). <b>Optimiser</b> = the rule that turns gradients into updates. <b>Backpropagation</b> is the efficient way to compute all the gradients at once.</p></div>
+  <p>The simplest update rule is gradient descent: <code>new = old − learning_rate × gradient</code>. The <b>learning rate</b> sets the size of each step. Modern LLMs use cleverer optimisers from the "Adam" family that adapt the step size, but the role is the same. A few more words you will hear: a <b>batch</b> is a group of examples processed together, a <b>step</b> is one update, and an <b>epoch</b> is one pass over the data (huge LLM runs usually do not repeat data).</p>
+  <p>Here is gradient descent in the smallest possible case. One parameter <code>w</code>, a loss of <code>(w − 3)²</code>, so the best value is 3. Pick a learning rate and take steps:</p>
+
+  <div class="lab" id="gd">
+    <div class="lab-title">Roll down the hill <small>loss = (w − 3)²</small></div>
+    <svg class="chart" id="gd-svg" viewBox="0 0 360 200" role="img" aria-label="Loss curve with steps"></svg>
+    <div id="gd-ctl"></div>
+    <div class="row"><button class="btn" id="gd-step" type="button">Take 1 step</button><button class="btn ghost" id="gd-run" type="button">Take 10 steps</button><button class="btn ghost" id="gd-reset" type="button">Reset</button></div>
+    <div class="out" id="gd-out" aria-live="polite"></div>
+  </div>
+  <p>With a small learning rate, progress is slow but steady. Around 0.5 it lands on the answer immediately. At exactly 1.0 it bounces between two points forever. Above 1.0 it overshoots further each time and blows up. This is why the learning rate is one of the most important settings in training: too small wastes compute, too large makes training unstable.</p>
+
+  <h3>The data: "the internet" is dirty</h3>
+  <p>People say models are trained on "all of the internet". That hides a huge amount of engineering. A random web page does not look like clean prose. It contains menus, footers, truncated sentences, spam and duplicates. A serious data pipeline looks like this. Step through it:</p>
+  <div class="lab" id="data"><div class="lab-title">The data pipeline</div><div id="dt-step"></div></div>
+  <div class="board warn"><span class="tag">Aha</span><p>"More data" does not automatically mean "better model". The model can only learn patterns from what you put into its training distribution. Good data gives better scaling than bad data. This part is also kept secret by companies, partly for competitive reasons and partly because of copyright disputes.</p></div>
+  <p>For scale: early academic datasets had around 150 billion tokens (roughly 800 GB). The best current models train on about 15 trillion tokens. A token count that large is why data work employs many people and a lot of ordinary computers (CPUs), not just GPUs.</p>
+
+  <h3>Scaling laws: bigger works, and it is predictable</h3>
+  <p>Around 2020 researchers showed something remarkable. If you plot a model's test loss against the amount of computing power, the number of parameters, or the amount of training data, on logarithmic axes, you get roughly <b>straight lines</b>. That means you can predict how good a larger model will be before you build it. In classical machine learning you were taught to fear overfitting. With large language models, larger models and more data kept helping, and there was no sign of the trend stopping.</p>
+  <p>Scaling laws change how teams work. The old way: train 30 models for a day each, pick the best. The new way: spend a few days training many <i>small</i> models, fit the curves, and extrapolate to decide the setup for the one huge run that uses most of the budget. They also answer a design question: given a fixed budget, should you train a bigger model or use more data? The well-known Chinchilla study found the training-optimal balance is roughly <b>20 tokens of data per parameter</b>. Companies that will serve a model to millions of users prefer a smaller model trained on much more data (around 150 tokens per parameter in later analysis), because a smaller model is cheaper to run every day.</p>
+  <p>A useful back-of-the-envelope formula: training compute ≈ <b>6 × parameters × tokens</b> floating-point operations. Try the Llama 3 405B example from the lecture and then your own numbers:</p>
+
+  <div class="lab" id="comp">
+    <div class="lab-title">Training cost calculator <small>6 × N × D, with assumptions you can change</small></div>
+    <div class="picker" id="cp-presets"></div>
+    <div id="cp-ctl"></div>
+    <div class="out" id="cp-out" aria-live="polite"></div>
+    <p style="font-size:.88rem;color:var(--muted);margin:8px 0 0">Assumptions: one modern GPU peaks near 10^15 operations per second in 16-bit maths, and real jobs reach roughly 40 to 50 percent of that. Rental price is set to $2 per GPU-hour, a rough lower bound used in the lecture. Real costs differ.</p>
+  </div>
+  <div class="board note"><span class="tag">The bitter lesson</span><p>Because more compute reliably gives better models, and compute keeps getting cheaper, the long-run winners are methods that can use a lot of computation. So: don't over-complicate. Do the simple things well, at scale.</p></div>
+
+  <h3>Systems: why GPUs, and why they sit idle</h3>
+  <ul>
+    <li><b>GPUs versus CPUs.</b> A CPU has a few powerful cores built for low delay. A GPU has thousands of small units built for high throughput. LLM training is mostly huge matrix multiplications, which GPUs do far faster than anything else.</li>
+    <li><b>Memory is the bottleneck.</b> Compute has improved faster than memory and communication, so the arithmetic units often wait for data. A key measure is <b>model FLOPs utilisation</b>: observed throughput divided by the theoretical peak. Around 45 to 50 percent is considered very good, even at the biggest companies.</li>
+    <li><b>Low precision.</b> Store numbers in 16 bits instead of 32 for the heavy maths. Fewer bits means less memory and faster communication. Deep learning tolerates the lost decimals because training is already noisy. The master copy of the weights stays in 32 bits so tiny updates are not lost.</li>
+    <li><b>Operator fusion.</b> Imagine a cook who carries each ingredient back to the pantry after every single chop. A naive program does that with data: send it to the processor, apply one operation, send it back to memory, repeat. A fused operation does several steps in one trip. In PyTorch, <code>torch.compile</code> does this and can make a model around twice as fast.</li>
+  </ul>
+  <div class="board note"><span class="tag">Systems lesson</span><p>Sometimes a software optimisation that reduces memory movement helps more than changing the model architecture. This is the same mindset you need for agents: the work around the model often matters more than the model.</p></div>
+
+  <h3>Try it yourself (optional, runs offline)</h3>
+  <p>Chapter 1's next-word game can be built in twelve lines of Python. This "bigram" model counts which word follows which, then samples new text. A neural network is a far better predictor, but the loop is the same: predict, pick, append, repeat. Run it, then add your own sentences to <code>TEXT</code> and watch the output change. (The file is also saved in the repository as <code>course/examples/tiny_bigram.py</code>.)</p>
+  <div class="codewrap"><pre class="code"><code>import random
+from collections import defaultdict, Counter
+
+TEXT = """
+the students opened their books and the teacher opened the lesson .
+the students opened their laptops and the teacher wrote on the board .
+the teacher asked the students to read the chapter and the students began to read .
+the students wrote their notes and the teacher closed the lesson .
+"""
+words = TEXT.split()
+
+follows = defaultdict(Counter)            # "training": count what follows each word
+for current, nxt in zip(words, words[1:]):
+    follows[current][nxt] += 1
+
+total = sum(follows["students"].values())
+for word, n in follows["students"].most_common():
+    print(f"after 'students': {word:&lt;8} {n}/{total}")
+
+def generate(start="the", length=12, seed=None):   # "inference": sample, append, repeat
+    rng = random.Random(seed)
+    out = [start]
+    for _ in range(length):
+        options = follows.get(out[-1])
+        if not options:
+            break
+        choices, weights = zip(*options.items())
+        out.append(rng.choices(choices, weights=weights)[0])
+    return " ".join(out)
+
+for s in range(3):
+    print(generate(seed=s))</code></pre></div>
+  <p>Questions to answer by experiment: why does the output sometimes look grammatical and sometimes not? What would you need to change to make it remember more than one previous word? (That is the step towards a real language model.)</p>
+
+  <div class="recap"><h3>Chapter 3 in plain words</h3>
+    <ul>
+      <li>Five ingredients: architecture, objective, data, evaluation, systems. In practice data, evaluation and systems dominate.</li>
+      <li>Training objective: predict the next token. Loss = −ln(probability of the true token). Perplexity is its readable form.</li>
+      <li>Learning loop: forward pass, loss, gradients by backpropagation, update with an optimiser. The learning rate must not be too small or too large.</li>
+      <li>Data is cleaned in many steps: extract, filter, remove duplicates, score quality, balance domains.</li>
+      <li>Scaling laws are predictable. Chinchilla: about 20 tokens per parameter. Compute ≈ 6 × N × D.</li>
+      <li>GPUs are matrix machines. Memory movement, low precision and fused operations decide real speed.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c3"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
