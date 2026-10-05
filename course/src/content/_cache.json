@@ -1,4 +1,962 @@
 {
+ "git-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ev-tools && cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init",
+     "o": "Initialized empty Git repository in /home/student/lab/ev-tools/.git/",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"#!/bin/bash\" > check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'echo \"checking EV01\"' >> check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "?? check.sh",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "A  check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -m \"Add EV check script\"",
+     "o": "[main (root-commit) c17d9b0] Add EV check script\n 1 file changed, 2 insertions(+)\n create mode 100644 check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s (%an)'",
+     "o": "Add EV check script (Rohan Student)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'echo \"checking SQL01\"' >> check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": " M check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ git diff",
+     "o": "diff --git a/check.sh b/check.sh\nindex 7610655..a979e49 100644\n--- a/check.sh\n+++ b/check.sh\n@@ -1,2 +1,3 @@\n #!/bin/bash\n echo \"checking EV01\"\n+echo \"checking SQL01\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git diff --staged --stat",
+     "o": " check.sh | 1 +\n 1 file changed, 1 insertion(+)",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -m \"Also check SQL01\"",
+     "o": "[main 5fe602a] Also check SQL01\n 1 file changed, 1 insertion(+)",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%h %s' | sed 's/^[0-9a-f]*/<id>/'",
+     "o": "<id> Also check SQL01\n<id> Add EV check script",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '*.log\\n.env\\nbuild/\\n' > .gitignore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"DB_PASSWORD=hunter2\" > .env",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"noise\" > run.log",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "?? .gitignore",
+     "x": 0
+    },
+    {
+     "c": "$ git add .gitignore && git commit -q -m \"Ignore logs and env files\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-tools",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log -p --format='--- commit: %s' -- check.sh | head -12",
+     "o": "--- commit: Also check SQL01\n\ndiff --git a/check.sh b/check.sh\nindex 7610655..a979e49 100644\n--- a/check.sh\n+++ b/check.sh\n@@ -1,2 +1,3 @@\n #!/bin/bash\n echo \"checking EV01\"\n+echo \"checking SQL01\"\n--- commit: Add EV check script",
+     "x": 0
+    },
+    {
+     "c": "$ git show HEAD~2:check.sh",
+     "o": "#!/bin/bash\necho \"checking EV01\"",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a875a4acc2feed4e"
+ },
+ "git-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ev-branches && cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'server=EV01\\nretries=3\\n' > evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add . && git commit -q -m \"Initial config\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git branch --show-current",
+     "o": "main",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -c feature/more-retries",
+     "o": "Switched to a new branch 'feature/more-retries'",
+     "x": 0
+    },
+    {
+     "c": "$ git branch",
+     "o": "* feature/more-retries\n  main",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/retries=3/retries=5/' evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Raise retries to 5\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"on main:\" ; cat evault.conf",
+     "o": "on main:\nserver=EV01\nretries=3",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q feature/more-retries",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"on feature:\" ; cat evault.conf",
+     "o": "on feature:\nserver=EV01\nretries=5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git merge feature/more-retries",
+     "o": "Updating 369072e..eda731a\nFast-forward\n evault.conf | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)",
+     "x": 0
+    },
+    {
+     "c": "$ git log --graph --format='%s' --all",
+     "o": "* Raise retries to 5\n* Initial config",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git branch -d feature/more-retries",
+     "o": "Deleted branch feature/more-retries (was eda731a).",
+     "x": 0
+    },
+    {
+     "c": "$ git branch",
+     "o": "* main",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q -c feature/timeout",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"timeout=30\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Add timeout 30\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"timeout=60\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Add timeout 60 on main\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git merge feature/timeout",
+     "o": "Auto-merging evault.conf\nCONFLICT (content): Merge conflict in evault.conf\nAutomatic merge failed; fix conflicts and then commit the result.",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"exit status: $?\"",
+     "o": "exit status: 0",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "UU evault.conf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "server=EV01\nretries=5\n<<<<<<< HEAD\ntimeout=60\n=======\ntimeout=30\n>>>>>>> feature/timeout",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-branches",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'server=EV01\\nretries=5\\ntimeout=45\\n' > evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -m \"Merge feature/timeout: settle on 45s\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log --graph --format='%s'",
+     "o": "*   Merge feature/timeout: settle on 45s\n|\\  \n| * Add timeout 30\n* | Add timeout 60 on main\n|/  \n* Raise retries to 5\n* Initial config",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "server=EV01\nretries=5\ntimeout=45",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "25706901b4984c09"
+ },
+ "git-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab && mkdir git-remote && cd git-remote",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init -q --bare shared.git",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git clone -q git-remote/shared.git alice 2>&1 | head -1",
+     "o": "warning: You appear to have cloned an empty repository.",
+     "x": 0
+    },
+    {
+     "c": "$ cd alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git config user.name Alice; git config user.email alice@example.com",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"# EV runbook\" > README.md",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add . && git commit -q -m \"Start runbook\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git push -q -u origin main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status -sb | head -1",
+     "o": "## main...origin/main",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git clone -q git-remote/shared.git bob 2>&1 | head -1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd bob",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git config user.name Bob; git config user.email bob@example.com",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat README.md",
+     "o": "# EV runbook",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Restart order: SQL, then EV\" >> README.md",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Document restart order\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git push -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git fetch -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status -sb | head -1",
+     "o": "## main...origin/main [behind 1]",
+     "x": 0
+    },
+    {
+     "c": "$ git log origin/main --format='%an: %s'",
+     "o": "Bob: Document restart order\nAlice: Start runbook",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git pull -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat README.md",
+     "o": "# EV runbook\nRestart order: SQL, then EV",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Contact: ops@example.com\" >> README.md",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Add contact\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/bob",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Backup: nightly\" >> README.md",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Add backup note\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git push -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git push 2>&1 | grep -E \"rejected|hint\" | head -2",
+     "o": " ! [rejected]        main -> main (fetch first)\nhint: Updates were rejected because the remote contains work that you do not",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git pull --no-rebase -q --no-edit 2>&1 | head -3",
+     "o": "Auto-merging README.md\nCONFLICT (content): Merge conflict in README.md\nAutomatic merge failed; fix conflicts and then commit the result.",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "UU README.md",
+     "x": 0
+    },
+    {
+     "c": "$ cat README.md",
+     "o": "# EV runbook\nRestart order: SQL, then EV\n<<<<<<< HEAD\nContact: ops@example.com\n=======\nBackup: nightly\n>>>>>>> 9965d0579f45090a2c288348b99c8b90a58f673a",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '# EV runbook\\nRestart order: SQL, then EV\\nContact: ops@example.com\\nBackup: nightly\\n' > README.md",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add README.md && git commit -q -m \"Merge Bob's backup note\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git push -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%an: %s' | head -4",
+     "o": "Alice: Merge Bob's backup note\nAlice: Add contact\nBob: Add backup note\nBob: Document restart order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "473ce0e489df32b6"
+ },
+ "git-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"retries=999\" > evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git diff --stat | tail -1",
+     "o": " 1 file changed, 1 insertion(+), 1 deletion(-)",
+     "x": 0
+    },
+    {
+     "c": "$ git restore evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "retries=3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"secret=abc\" > notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git restore --staged notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "?? notes.txt",
+     "x": 0
+    },
+    {
+     "c": "$ rm notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"timeout=30\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Add timeot\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q --amend -m \"Add timeout\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s'",
+     "o": "Add timeout\nInitial config",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"debug=true\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Enable debug\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git revert --no-edit HEAD > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s'",
+     "o": "Revert \"Enable debug\"\nEnable debug\nAdd timeout\nInitial config",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "retries=3\ntimeout=30",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"oops=1\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Bad idea\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git reset --hard HEAD~1",
+     "o": "HEAD is now at fe1e467 Revert \"Enable debug\"",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s' | head -3",
+     "o": "Revert \"Enable debug\"\nEnable debug\nAdd timeout",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "retries=3\ntimeout=30",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"retries=10\" > evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git stash -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short | wc -l",
+     "o": "0",
+     "x": 0
+    },
+    {
+     "c": "$ git stash list | sed 's/:.*WIP/: WIP/'",
+     "o": "stash@{0}: WIP on main: fe1e467 Revert \"Enable debug\"",
+     "x": 0
+    },
+    {
+     "c": "$ git stash pop -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat evault.conf",
+     "o": "retries=10",
+     "x": 0
+    },
+    {
+     "c": "$ git restore evault.conf",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-undo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"important=yes\" >> evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Important work\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git reset -q --hard HEAD~1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git reflog --format='%gs' | head -3",
+     "o": "reset: moving to HEAD~1\ncommit: Important work\nreset: moving to HEAD",
+     "x": 0
+    },
+    {
+     "c": "$ lost=$(git reflog --format='%h %gs' | grep \"commit: Important work\" | cut -d' ' -f1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git reset -q --hard $lost",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s' | head -2",
+     "o": "Important work\nRevert \"Enable debug\"",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "345c5480c7788b40"
+ },
+ "git-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/ev-team",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git tag -a v1.0.0 -m \"First release\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"v2\" > app.txt && git commit -q -am \"Second release prep\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git tag -a v1.1.0 -m \"Second release\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git tag",
+     "o": "v1.0.0\nv1.1.0",
+     "x": 0
+    },
+    {
+     "c": "$ git show v1.0.0:app.txt",
+     "o": "v1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-team",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'line one\\nline two\\n' > notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add . && git commit -q -m \"Add notes\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"line three\" >> notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -q -am \"Extend notes\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git blame -s notes.txt | sed -E 's/^[0-9a-f]+ +/<id> /'",
+     "o": "<id> 1) line one\n<id> 2) line two\n<id> 3) line three",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s' -S\"line three\"",
+     "o": "Extend notes",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-team",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > .git/hooks/pre-commit <<'EOF'\n> #!/bin/bash\n> if git diff --cached | grep -E '^\\+.*(PASSWORD|SECRET|API_KEY)=' > /dev/null; then\n>   echo \"pre-commit: possible secret in staged changes. Commit refused.\"\n>   exit 1\n> fi\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x .git/hooks/pre-commit",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"DB_PASSWORD=hunter2\" > config.env",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add config.env",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -m \"Add config\" ; echo \"exit code: $?\"",
+     "o": "pre-commit: possible secret in staged changes. Commit refused.\nexit code: 1",
+     "x": 0
+    },
+    {
+     "c": "$ git restore --staged config.env; rm config.env",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat <<'EOF'\n> git status -sb              where am I, what changed\n> git add -p                  stage selected pieces of a file\n> git commit -m \"msg\"         record\n> git switch -c name          new branch\n> git pull --rebase           update my branch, keep history linear\n> git push -u origin name     publish a branch\n> git log --graph --oneline --all\n> git restore file            drop uncommitted edit\n> git revert ID               undo shared commit\n> git stash / stash pop       park / resume\n> git reflog                  find lost commits\n> EOF",
+     "o": "git status -sb              where am I, what changed\ngit add -p                  stage selected pieces of a file\ngit commit -m \"msg\"         record\ngit switch -c name          new branch\ngit pull --rebase           update my branch, keep history linear\ngit push -u origin name     publish a branch\ngit log --graph --oneline --all\ngit restore file            drop uncommitted edit\ngit revert ID               undo shared commit\ngit stash / stash pop       park / resume\ngit reflog                  find lost commits",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a0b3c5c54192aeb1"
+ },
  "linux-1": {
   "blocks": [
    [
@@ -61,6 +1019,339 @@
    ]
   ],
   "key": "bf38cb09fc8f7122"
+ },
+ "linux-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ export EV_SERVER=EV01",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"server is $EV_SERVER\"",
+     "o": "server is EV01",
+     "x": 0
+    },
+    {
+     "c": "$ env | grep '^EV_'",
+     "o": "EV_SERVER=EV01",
+     "x": 0
+    },
+    {
+     "c": "$ bash -c 'echo \"child sees: $EV_SERVER\"'",
+     "o": "child sees: EV01",
+     "x": 0
+    },
+    {
+     "c": "$ unset EV_SERVER",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ bash -c 'echo \"after unset: [$EV_SERVER]\"'",
+     "o": "after unset: []",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"$PATH\" | tr ':' '\\n' | head -3",
+     "o": "/usr/local/sbin\n/usr/local/bin\n/usr/sbin",
+     "x": 0
+    },
+    {
+     "c": "$ which ls",
+     "o": "/usr/bin/ls",
+     "x": 0
+    },
+    {
+     "c": "$ type cd",
+     "o": "cd is a shell builtin",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/bin",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '#!/bin/bash\\necho \"my own tool\"\\n' > ~/bin/mytool && chmod +x ~/bin/mytool",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mytool 2>&1 | head -1",
+     "o": "bash: line 39: mytool: command not found",
+     "x": 0
+    },
+    {
+     "c": "$ export PATH=\"$HOME/bin:$PATH\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mytool",
+     "o": "my own tool",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab && rm -f demo_key demo_key.pub",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ssh-keygen -q -t ed25519 -N \"\" -C \"rohan@laptop\" -f demo_key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls demo_key demo_key.pub",
+     "o": "demo_key\ndemo_key.pub",
+     "x": 0
+    },
+    {
+     "c": "$ cut -d' ' -f1,3 demo_key.pub",
+     "o": "ssh-ed25519 rohan@laptop",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %n' demo_key",
+     "o": "600 demo_key",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "11d4bb1dd5a25ed0"
+ },
+ "linux-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ nproc",
+     "o": "4",
+     "x": 0
+    },
+    {
+     "c": "$ awk '{print \"/proc/loadavg has\", NF, \"fields; the first three are the 1, 5 and 15 minute load\"}' /proc/loadavg",
+     "o": "/proc/loadavg has 5 fields; the first three are the 1, 5 and 15 minute load",
+     "x": 0
+    },
+    {
+     "c": "$ free -m | head -1",
+     "o": "               total        used        free      shared  buff/cache   available",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ps -eo pid,comm,%cpu,%mem --sort=-%mem | head -1",
+     "o": "  PID COMMAND         %CPU %MEM",
+     "x": 0
+    },
+    {
+     "c": "$ ps -eo comm --sort=-%mem | head -3 | wc -l",
+     "o": "3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sleep 300 > ~/lab/held.txt &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ lsof ~/lab/held.txt 2>/dev/null | awk 'NR>1{print $1, \"has it open\"}'",
+     "o": "sleep has it open",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ spid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ss -ltnp 2>/dev/null | awk 'NR>1 && /8765/{print \"port 8765 listening\"}'",
+     "o": "port 8765 listening",
+     "x": 0
+    },
+    {
+     "c": "$ kill $spid",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ grep -c ERROR ev/logs/indexing.log",
+     "o": "5",
+     "x": 0
+    },
+    {
+     "c": "$ grep -B1 -A1 \"aborted\" ev/logs/indexing.log | head -6",
+     "o": "2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 09:13:01 INFO  Indexing service stopped\n--\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ awk '/ERROR/{print $2}' ev/logs/indexing.log | cut -c1-2 | sort | uniq -c",
+     "o": "      3 09\n      2 12",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ strace -f -e trace=openat cat /etc/does-not-exist 2>&1 | grep -E 'does-not-exist'",
+     "o": "openat(AT_FDCWD, \"/etc/does-not-exist\", O_RDONLY) = -1 ENOENT (No such file or directory)\ncat: /etc/does-not-exist: No such file or directory",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0c229461ed85c304"
+ },
+ "linux-12": {
+  "blocks": [
+   [
+    {
+     "c": "$ hostname",
+     "o": "vm",
+     "x": 0
+    },
+    {
+     "c": "$ sudo unshare --uts bash -c 'hostname container-demo; hostname'",
+     "o": "container-demo",
+     "x": 0
+    },
+    {
+     "c": "$ hostname",
+     "o": "vm",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo unshare --pid --fork --mount-proc bash -c 'echo \"PID inside: $$\"; ps -e -o pid,comm | head -3'",
+     "o": "PID inside: 1\n    PID COMMAND\n      1 bash\n      2 ps",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo unshare --net bash -c 'ip -brief link'",
+     "o": "lo               DOWN           00:00:00:00:00:00 <LOOPBACK> ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- host:\"",
+     "o": "--- host:",
+     "x": 0
+    },
+    {
+     "c": "$ ip -brief link | awk '{print $1}' | grep -c '^lo$'",
+     "o": "1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat /proc/self/cgroup | head -2",
+     "o": "9:name=systemd:/\n8:pids:/",
+     "x": 0
+    },
+    {
+     "c": "$ ls /sys/fs/cgroup | head -5",
+     "o": "blkio\ncpu\ncpuacct\ncpuset\ndevices",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab && rm -rf ov && mkdir -p ov/lower ov/upper ov/work ov/merged",
+     "o": "rm: cannot remove 'ov/work/work': Permission denied",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"from the image\" > ov/lower/base.txt",
+     "o": "bash: line 36: ov/lower/base.txt: No such file or directory",
+     "x": 1
+    },
+    {
+     "c": "$ sudo mount -t overlay overlay -o lowerdir=ov/lower,upperdir=ov/upper,workdir=ov/work ov/merged",
+     "o": "mount: ov/merged: mount point does not exist.\n       dmesg(1) may have more information after failed mount system call.",
+     "x": 32
+    },
+    {
+     "c": "$ echo \"added by the container\" > ov/merged/new.txt",
+     "o": "bash: line 42: ov/merged/new.txt: No such file or directory",
+     "x": 1
+    },
+    {
+     "c": "$ rm ov/merged/base.txt",
+     "o": "rm: cannot remove 'ov/merged/base.txt': No such file or directory",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"merged view:\"; ls ov/merged",
+     "o": "merged view:\nls: cannot access 'ov/merged': No such file or directory",
+     "x": 2
+    },
+    {
+     "c": "$ echo \"lower (image) untouched:\"; ls ov/lower",
+     "o": "lower (image) untouched:\nls: cannot access 'ov/lower': No such file or directory",
+     "x": 2
+    },
+    {
+     "c": "$ echo \"upper (container changes):\"; sudo ls -a ov/upper | grep -v '^\\.\\.\\?$'",
+     "o": "upper (container changes):\nls: cannot access 'ov/upper': No such file or directory",
+     "x": 1
+    },
+    {
+     "c": "$ sudo umount ov/merged",
+     "o": "umount: ov/merged: no mount point specified.",
+     "x": 32
+    },
+    {
+     "c": "$ sudo rm -rf ov",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d8259a8692d68aad"
  },
  "linux-2": {
   "blocks": [
@@ -1128,5 +2419,1453 @@
    ]
   ],
   "key": "150cb66f05f2660e"
+ },
+ "linux-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ dpkg -s bash | grep -E '^(Package|Status|Priority)'",
+     "o": "Package: bash\nStatus: install ok installed\nPriority: required",
+     "x": 0
+    },
+    {
+     "c": "$ dpkg -S \"$(readlink -f /bin/bash)\"",
+     "o": "bash: /usr/bin/bash",
+     "x": 0
+    },
+    {
+     "c": "$ dpkg -L bash | grep -E '/bin/' | head -3",
+     "o": "/usr/bin/bash\n/usr/bin/bashbug\n/usr/bin/clear_console",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo apt-get install -y -q cowsay > /dev/null 2>&1 && echo \"installed\"",
+     "o": "installed",
+     "x": 0
+    },
+    {
+     "c": "$ dpkg -s cowsay | grep -E '^(Package|Status)'",
+     "o": "Package: cowsay\nStatus: install ok installed",
+     "x": 0
+    },
+    {
+     "c": "$ /usr/games/cowsay \"packages are easy\"",
+     "o": " ___________________\n< packages are easy >\n -------------------\n        \\   ^__^\n         \\  (oo)\\_______\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||",
+     "x": 0
+    },
+    {
+     "c": "$ sudo apt-get remove -y -q cowsay > /dev/null 2>&1 && echo \"removed\"",
+     "o": "removed",
+     "x": 0
+    },
+    {
+     "c": "$ dpkg -s cowsay > /dev/null 2>&1 || echo \"cowsay is no longer installed\"",
+     "o": "cowsay is no longer installed",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "db99e5deb6b83e32"
+ },
+ "linux-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ df -h / | head -1",
+     "o": "Filesystem      Size  Used Avail Use% Mounted on",
+     "x": 0
+    },
+    {
+     "c": "$ findmnt -n -o TARGET,FSTYPE /",
+     "o": "/      ext4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ dd if=/dev/zero of=tiny.img bs=1M count=8 status=none",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkfs.ext4 -q tiny.img",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p mnt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo mount -o loop tiny.img mnt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo chown student mnt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ findmnt -n -o TARGET,FSTYPE mnt",
+     "o": "/home/student/lab/mnt ext4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ dd if=/dev/zero of=mnt/big.dat bs=1M count=100 2>&1 | grep -i \"no space\"",
+     "o": "dd: error writing 'mnt/big.dat': No space left on device",
+     "x": 0
+    },
+    {
+     "c": "$ df -h mnt | awk 'NR==2{print \"use%:\", $5}'",
+     "o": "use%: 70%",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"try to write a new file:\"",
+     "o": "try to write a new file:",
+     "x": 0
+    },
+    {
+     "c": "$ echo hello > mnt/new.txt",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -lh mnt | awk 'NR>1{print $5, $9}'",
+     "o": "2.0M big.dat\n16K lost+found\n6 new.txt",
+     "x": 0
+    },
+    {
+     "c": "$ ls -lh mnt/big.dat | awk '{print $5, $9}'",
+     "o": "2.0M mnt/big.dat",
+     "x": 0
+    },
+    {
+     "c": "$ rm mnt/big.dat",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ df -h mnt | awk 'NR==2{print \"use%:\", $5}'",
+     "o": "use%: 1%",
+     "x": 0
+    },
+    {
+     "c": "$ echo hello > mnt/new.txt && echo \"writing works again\"",
+     "o": "writing works again",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ df -i mnt | awk 'NR==2{print \"inode use%:\", $5}'",
+     "o": "inode use%: 1%",
+     "x": 0
+    },
+    {
+     "c": "$ sudo umount mnt",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab && rm -f orig.txt hard.txt soft.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"version 1\" > orig.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ln orig.txt hard.txt        # hard link",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ln -s orig.txt soft.txt     # symbolic link (shortcut)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -li orig.txt hard.txt soft.txt | awk '{print $1, $2, $10, $11, $12}'",
+     "o": "615248 -rw-r--r-- hard.txt  \n615248 -rw-r--r-- orig.txt  \n615249 lrwxrwxrwx soft.txt -> orig.txt",
+     "x": 0
+    },
+    {
+     "c": "$ cat soft.txt",
+     "o": "version 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm orig.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat hard.txt",
+     "o": "version 1",
+     "x": 0
+    },
+    {
+     "c": "$ cat soft.txt",
+     "o": "cat: soft.txt: No such file or directory",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -czf ev-backup.tar.gz ev/config ev/scripts",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -tzf ev-backup.tar.gz",
+     "o": "ev/config/\nev/config/evault.conf\nev/scripts/\nev/scripts/check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p restore && tar -xzf ev-backup.tar.gz -C restore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ diff -r ev/config restore/ev/config && echo \"restored copy is identical\"",
+     "o": "restored copy is identical",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "7cffc410c024a1b8"
+ },
+ "linux-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > hello.sh <<'EOF'\n> #!/bin/bash\n> echo \"Hello from a script\"\n> echo \"Today the lab folder has $(ls | wc -l) entries\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x hello.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./hello.sh | head -1",
+     "o": "Hello from a script",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > greet.sh <<'EOF'\n> #!/bin/bash\n> name=\"${1:-world}\"\n> echo \"Hello, $name\"\n> echo \"I was given $# argument(s)\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x greet.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./greet.sh",
+     "o": "Hello, world\nI was given 0 argument(s)",
+     "x": 0
+    },
+    {
+     "c": "$ ./greet.sh Rohan",
+     "o": "Hello, Rohan\nI was given 1 argument(s)",
+     "x": 0
+    },
+    {
+     "c": "$ ./greet.sh \"two words\"",
+     "o": "Hello, two words\nI was given 1 argument(s)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > check_file.sh <<'EOF'\n> #!/bin/bash\n> f=\"$1\"\n> if [ -z \"$f\" ]; then\n>   echo \"usage: $0 file\"; exit 2\n> elif [ -d \"$f\" ]; then\n>   echo \"$f is a directory\"\n> elif [ -f \"$f\" ]; then\n>   echo \"$f is a file with $(wc -l < \"$f\") lines\"\n> else\n>   echo \"$f does not exist\"; exit 1\n> fi\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x check_file.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./check_file.sh ev/logs/indexing.log",
+     "o": "ev/logs/indexing.log is a file with 14 lines",
+     "x": 0
+    },
+    {
+     "c": "$ ./check_file.sh ev",
+     "o": "ev is a directory",
+     "x": 0
+    },
+    {
+     "c": "$ ./check_file.sh nothing; echo \"exit code: $?\"",
+     "o": "nothing does not exist\nexit code: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for f in ev/logs/*.log; do\n>   errors=$(grep -c ERROR \"$f\")\n>   echo \"$f: $errors errors\"\n> done",
+     "o": "ev/logs/indexing.log: 5 errors\nev/logs/storage.log: 1 errors",
+     "x": 0
+    },
+    {
+     "c": "$ n=3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ while [ $n -gt 0 ]; do echo \"countdown $n\"; n=$((n-1)); done",
+     "o": "countdown 3\ncountdown 2\ncountdown 1",
+     "x": 0
+    },
+    {
+     "c": "$ for host in EV01 SQL01 FS01; do echo \"would ping $host\"; done",
+     "o": "would ping EV01\nwould ping SQL01\nwould ping FS01",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > svc.sh <<'EOF'\n> #!/bin/bash\n> say() { echo \"[$(basename \"$0\")] $*\"; }\n> case \"$1\" in\n>   start) say \"starting EV services\" ;;\n>   stop)  say \"stopping EV services\" ;;\n>   *)     say \"usage: start|stop\"; exit 1 ;;\n> esac\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x svc.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./svc.sh start",
+     "o": "[svc.sh] starting EV services",
+     "x": 0
+    },
+    {
+     "c": "$ ./svc.sh stop",
+     "o": "[svc.sh] stopping EV services",
+     "x": 0
+    },
+    {
+     "c": "$ ./svc.sh oops; echo \"exit code: $?\"",
+     "o": "[svc.sh] usage: start|stop\nexit code: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > unsafe.sh <<'EOF'\n> #!/bin/bash\n> set -euo pipefail\n> echo \"step 1\"\n> false\n> echo \"step 2 (never printed)\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ bash unsafe.sh; echo \"exit code: $?\"",
+     "o": "step 1\nexit code: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > report.sh <<'EOF'\n> #!/bin/bash\n> set -euo pipefail\n> log=\"${1:?usage: report.sh logfile}\"\n> errors=$(grep -c ERROR \"$log\" || true)\n> warns=$(grep -c WARN \"$log\" || true)\n> echo \"file: $(basename \"$log\")\"\n> echo \"errors: $errors  warnings: $warns\"\n> if [ \"$errors\" -gt 0 ]; then\n>   echo \"last error:\"; grep ERROR \"$log\" | tail -1\n>   exit 1\n> fi\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x report.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./report.sh ev/logs/indexing.log; echo \"exit code: $?\"",
+     "o": "file: indexing.log\nerrors: 5  warnings: 2\nlast error:\n2026-09-30 12:15:42 ERROR Indexing task aborted\nexit code: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f15158870889c598"
+ },
+ "networking-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ ip -brief link show lo",
+     "o": "lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> ",
+     "x": 0
+    },
+    {
+     "c": "$ ip -brief addr show lo",
+     "o": "lo               UNKNOWN        127.0.0.1/8 ",
+     "x": 0
+    },
+    {
+     "c": "$ ip route show | wc -l",
+     "o": "3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 -m http.server 8099 --bind 127.0.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -o /dev/null -w \"HTTP status: %{http_code}\\n\" http://127.0.0.1:8099/",
+     "o": "HTTP status: 200",
+     "x": 0
+    },
+    {
+     "c": "$ ss -ltn | awk '$4 ~ /:8099$/ {print \"listening on\", $4}'",
+     "o": "listening on 127.0.0.1:8099",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "ef9c3c8d21c653ee"
+ },
+ "networking-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> ip = ipaddress.ip_address(\"192.168.1.10\")\n> print(\"as a number:\", int(ip))\n> print(\"as binary  :\", \".\".join(f\"{o:08b}\" for o in ip.packed))\n> EOF",
+     "o": "as a number: 3232235786\nas binary  : 11000000.10101000.00000001.00001010",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> for cidr in [\"192.168.1.10/24\", \"10.0.5.77/26\", \"172.16.0.9/30\"]:\n>     n = ipaddress.ip_interface(cidr).network\n>     hosts = list(n.hosts())\n>     print(f\"{cidr:16} network={n.network_address}  broadcast={n.broadcast_address}  usable={len(hosts)}  range={hosts[0]} - {hosts[-1]}\")\n> EOF",
+     "o": "192.168.1.10/24  network=192.168.1.0  broadcast=192.168.1.255  usable=254  range=192.168.1.1 - 192.168.1.254\n10.0.5.77/26     network=10.0.5.64  broadcast=10.0.5.127  usable=62  range=10.0.5.65 - 10.0.5.126\n172.16.0.9/30    network=172.16.0.8  broadcast=172.16.0.11  usable=2  range=172.16.0.9 - 172.16.0.10",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> def same(a, b, prefix):\n>     net = ipaddress.ip_network(f\"{a}/{prefix}\", strict=False)\n>     return ipaddress.ip_address(b) in net\n> print(\"10.0.0.5 and 10.0.0.200 on /24 :\", same(\"10.0.0.5\", \"10.0.0.200\", 24))\n> print(\"10.0.0.5 and 10.0.1.5   on /24 :\", same(\"10.0.0.5\", \"10.0.1.5\", 24))\n> print(\"10.0.0.5 and 10.0.1.5   on /23 :\", same(\"10.0.0.5\", \"10.0.1.5\", 23))\n> EOF",
+     "o": "10.0.0.5 and 10.0.0.200 on /24 : True\n10.0.0.5 and 10.0.1.5   on /24 : False\n10.0.0.5 and 10.0.1.5   on /23 : True",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> for a in [\"10.1.2.3\", \"172.20.0.5\", \"192.168.0.9\", \"169.254.10.1\", \"8.8.8.8\"]:\n>     ip = ipaddress.ip_address(a)\n>     print(f\"{a:14} private={ip.is_private} link_local={ip.is_link_local}\")\n> EOF",
+     "o": "10.1.2.3       private=True link_local=False\n172.20.0.5     private=True link_local=False\n192.168.0.9    private=True link_local=False\n169.254.10.1   private=True link_local=True\n8.8.8.8        private=False link_local=False",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "22b91fe1d7824568"
+ },
+ "networking-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ sudo ip netns add red",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns add blue",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ip netns list | sort",
+     "o": "blue\nred",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec red ip -brief link",
+     "o": "lo               DOWN           00:00:00:00:00:00 <LOOPBACK> ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip link add vr type veth peer name vb",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set vr netns red",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set vb netns blue",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n red  addr add 10.0.0.1/24 dev vr",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue addr add 10.0.0.2/24 dev vb",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n red  link set vr up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue link set vb up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n red  -brief addr show vr",
+     "o": "vr@if27          UP             10.0.0.1/24 ",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue -brief addr show vb",
+     "o": "vb@if28          UP             10.0.0.2/24 ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec red ping -c 2 -W 1 10.0.0.2",
+     "o": "PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.\n64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=0.455 ms\n64 bytes from 10.0.0.2: icmp_seq=2 ttl=64 time=0.043 ms\n\n--- 10.0.0.2 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss, time 1014ms\nrtt min/avg/max/mdev = 0.043/0.249/0.455/0.206 ms",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec red ip neigh show | awk '{print $1, $4==\"lladdr\" ? \"has a MAC\" : $4, $NF}'",
+     "o": "10.0.0.2 has a MAC REACHABLE",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip -n blue link set vb down",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec red ping -c 1 -W 1 10.0.0.2 2>&1 | tail -2",
+     "o": "1 packets transmitted, 0 received, 100% packet loss, time 0ms",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue link set vb up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue addr flush dev vb",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue addr add 10.0.1.2/24 dev vb",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec red ping -c 1 -W 1 10.0.0.2 2>&1 | tail -2",
+     "o": "1 packets transmitted, 0 received, 100% packet loss, time 0ms",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec red ping -c 1 -W 1 10.0.1.2 2>&1 | tail -2",
+     "o": "ping: connect: Network is unreachable",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip -n blue addr flush dev vb",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue link set vb down",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del red",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del blue",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add br0 type bridge",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set br0 up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for h in red blue green; do\n>   sudo ip netns add $h\n>   sudo ip link add v-$h type veth peer name p-$h\n>   sudo ip link set v-$h netns $h\n>   sudo ip link set p-$h master br0\n>   sudo ip link set p-$h up\n>   sudo ip -n $h link set v-$h up\n> done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n red   addr add 10.0.0.1/24 dev v-red",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n blue  addr add 10.0.0.2/24 dev v-blue",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n green addr add 10.0.0.3/24 dev v-green",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec red ping -c 1 -W 1 10.0.0.2 | grep -c \"1 received\"",
+     "o": "1",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec red ping -c 1 -W 1 10.0.0.3 | grep -c \"1 received\"",
+     "o": "1",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec green ping -c 1 -W 1 10.0.0.2 | grep -c \"1 received\"",
+     "o": "1",
+     "x": 0
+    },
+    {
+     "c": "$ bridge link | awk '{print $2}' | sed 's/@.*//' | sort",
+     "o": "p-blue\np-green\np-red",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for h in red blue green; do sudo ip netns del $h; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link del br0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "98e0514042a3b5f4"
+ },
+ "networking-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ for n in a r b; do sudo ip netns add $n; sudo ip -n $n link set lo up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add a-r type veth peer name r-a",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add b-r type veth peer name r-b",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set a-r netns a; sudo ip link set r-a netns r",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set b-r netns b; sudo ip link set r-b netns r",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n a addr add 10.1.0.2/24 dev a-r",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n r addr add 10.1.0.1/24 dev r-a",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n r addr add 10.2.0.1/24 dev r-b",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n b addr add 10.2.0.2/24 dev b-r",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for p in \"a a-r\" \"r r-a\" \"r r-b\" \"b b-r\"; do set -- $p; sudo ip -n $1 link set $2 up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec a ip route",
+     "o": "10.1.0.0/24 dev a-r proto kernel scope link src 10.1.0.2 ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec a ping -c 1 -W 1 10.2.0.2 2>&1 | tail -1",
+     "o": "ping: connect: Network is unreachable",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip -n a route add default via 10.1.0.1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n b route add default via 10.2.0.1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec a ip route",
+     "o": "default via 10.1.0.1 dev a-r \n10.1.0.0/24 dev a-r proto kernel scope link src 10.1.0.2 ",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec a ping -c 1 -W 1 10.2.0.2 2>&1 | tail -2",
+     "o": "1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.414/0.414/0.414/0.000 ms",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec r sysctl -w net.ipv4.ip_forward=1",
+     "o": "net.ipv4.ip_forward = 1",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec a ping -c 2 -W 1 10.2.0.2 | grep -E \"received\"",
+     "o": "2 packets transmitted, 2 received, 0% packet loss, time 1003ms",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec a traceroute -n -m 3 10.2.0.2 | awk '{print $1, $2}'",
+     "o": "traceroute to\n1 10.1.0.1\n2 10.2.0.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec r ip route",
+     "o": "10.1.0.0/24 dev r-a proto kernel scope link src 10.1.0.1 \n10.2.0.0/24 dev r-b proto kernel scope link src 10.2.0.1 ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for n in a r b; do sudo ip netns del $n; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9ec028badc1ea9da"
+ },
+ "networking-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ for n in srv cli; do sudo ip netns add $n; sudo ip -n $n link set lo up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add s0 type veth peer name c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set s0 netns srv; sudo ip link set c0 netns cli",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n srv addr add 10.9.0.1/24 dev s0; sudo ip -n cli addr add 10.9.0.2/24 dev c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n srv link set s0 up; sudo ip -n cli link set c0 up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv python3 -m http.server 8080 --bind 10.9.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv ss -ltn | awk 'NR==1 || /8080/ {print $1, $4}'",
+     "o": "State Local\nLISTEN 10.9.0.1:8080",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec cli curl -s -o /dev/null -w \"curl: HTTP %{http_code}\\n\" http://10.9.0.1:8080/",
+     "o": "curl: HTTP 200",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli nc -zv 10.9.0.1 8080 2>&1 | tail -1",
+     "o": "Connection to 10.9.0.1 8080 port [tcp/http-alt] succeeded!",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli bash -c 'timeout 2 bash -c \"</dev/tcp/10.9.0.1/8080\" && echo \"bash /dev/tcp: open\"'",
+     "o": "bash /dev/tcp: open",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"-- nothing listening on port 9999:\"",
+     "o": "-- nothing listening on port 9999:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli nc -zv -w 2 10.9.0.1 9999 2>&1 | tail -1",
+     "o": "nc: connect to 10.9.0.1 port 9999 (tcp) failed: Connection refused",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- host that does not exist on the network:\"",
+     "o": "-- host that does not exist on the network:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli nc -zv -w 2 10.9.0.77 8080 2>&1 | tail -1",
+     "o": "nc: connect to 10.9.0.77 port 8080 (tcp) timed out: Operation now in progress",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec srv timeout 5 tcpdump -n -l -i s0 'tcp port 8080' 2>/dev/null | awk '{print $3, \">\", $5, $7}' | sed 's/:$//' | head -4 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli curl -s -o /dev/null http://10.9.0.1:8080/",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ wait %2 2>/dev/null",
+     "o": "10.9.0.2.37282 > 10.9.0.1.8080: [S],\n10.9.0.1.8080 > 10.9.0.2.37282: [S.],\n10.9.0.2.37282 > 10.9.0.1.8080: [.],\n10.9.0.2.37282 > 10.9.0.1.8080: [P.],",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec srv bash -c 'timeout 3 nc -u -l 10.9.0.1 5353 > /tmp/udp.out &'",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"hello over UDP\" | sudo ip netns exec cli nc -u -w 1 10.9.0.1 5353",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat /tmp/udp.out; sudo rm -f /tmp/udp.out",
+     "o": "hello over UDP",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns pids srv | xargs -r sudo kill",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del srv; sudo ip netns del cli",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "dda3727de2e3aee6"
+ },
+ "networking-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ grep '^hosts:' /etc/nsswitch.conf",
+     "o": "hosts:          files dns",
+     "x": 0
+    },
+    {
+     "c": "$ cat /etc/hosts | head -3",
+     "o": "127.0.0.1 localhost\n160.79.104.10 api.anthropic.com\n127.0.0.1 runsc",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"10.0.0.20 sql01.lab\" | sudo tee -a /etc/hosts > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ getent hosts sql01.lab",
+     "o": "10.0.0.20       sql01.lab",
+     "x": 0
+    },
+    {
+     "c": "$ sudo sed -i '/sql01.lab/d' /etc/hosts",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ getent hosts sql01.lab || echo \"no answer: name does not resolve\"",
+     "o": "no answer: name does not resolve",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for n in dns cli; do sudo ip netns add $n; sudo ip -n $n link set lo up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add d0 type veth peer name c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set d0 netns dns; sudo ip link set c0 netns cli",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n dns addr add 10.7.0.1/24 dev d0; sudo ip -n cli addr add 10.7.0.2/24 dev c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n dns link set d0 up; sudo ip -n cli link set c0 up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec dns dnsmasq --no-daemon --no-resolv --no-hosts --listen-address=10.7.0.1 --bind-interfaces \\\n>   --local=/lab/ --address=/sql01.lab/10.0.0.20 --address=/ev01.lab/10.0.0.10 --cname=www.lab,ev01.lab \\\n>   --pid-file=/tmp/dnsmasq-lab.pid > /tmp/dnsmasq-lab.log 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.1 sql01.lab A +short",
+     "o": "10.0.0.20",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.1 ev01.lab A +short",
+     "o": "10.0.0.10",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.1 www.lab +short",
+     "o": "ev01.lab.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.1 sql01.lab A +noall +answer +comments | grep -v \"^;; OPT\\|^;; flags\\|^$\" | sed 's/id: [0-9]*/id: NNNN/'",
+     "o": ";; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: NNNN\n; EDNS: version: 0, flags:; udp: 1232\n;; ANSWER SECTION:\nsql01.lab.\t\t0\tIN\tA\t10.0.0.20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"-- a name the server does not know:\"",
+     "o": "-- a name the server does not know:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.1 nosuch.lab A +noall +comments | grep -o \"status: [A-Z]*\"",
+     "o": "status: NXDOMAIN",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- a DNS server that is not there:\"",
+     "o": "-- a DNS server that is not there:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli dig @10.7.0.99 sql01.lab +time=1 +tries=1 2>&1 | grep -E \"timed out|no servers\" | head -1",
+     "o": ";; communications error to 10.7.0.99#53: timed out",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo pkill -f \"[d]nsmasq.*sql01.lab\" ; sleep 0.3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del dns; sudo ip netns del cli",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo rm -f /tmp/dnsmasq-lab.log /tmp/dnsmasq-lab.pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "cc030e9d6c84ca9e"
+ },
+ "networking-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ for n in srv cli; do sudo ip netns add $n; sudo ip -n $n link set lo up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add s0 type veth peer name c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set s0 netns srv; sudo ip link set c0 netns cli",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n srv addr add 10.9.0.1/24 dev s0; sudo ip -n cli addr add 10.9.0.2/24 dev c0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n srv link set s0 up; sudo ip -n cli link set c0 up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv python3 -m http.server 8080 --bind 10.9.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv python3 -m http.server 9090 --bind 10.9.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for p in 8080 9090; do sudo ip netns exec cli nc -zv -w 2 10.9.0.1 $p 2>&1 | tail -1; done",
+     "o": "Connection to 10.9.0.1 8080 port [tcp/http-alt] succeeded!\nConnection to 10.9.0.1 9090 port [tcp/*] succeeded!",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec srv nft -f - <<'EOF'\n> table inet filter {\n>   chain input {\n>     type filter hook input priority 0; policy drop;\n>     iif lo accept\n>     ct state established,related accept\n>     icmp type echo-request accept\n>     tcp dport 8080 accept\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv nft list chain inet filter input",
+     "o": "table inet filter {\n\tchain input {\n\t\ttype filter hook input priority filter; policy drop;\n\t\tiif \"lo\" accept\n\t\tct state established,related accept\n\t\ticmp type echo-request accept\n\t\ttcp dport 8080 accept\n\t}\n}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for p in 8080 9090; do sudo ip netns exec cli nc -zv -w 2 10.9.0.1 $p 2>&1 | tail -1; done",
+     "o": "Connection to 10.9.0.1 8080 port [tcp/http-alt] succeeded!\nnc: connect to 10.9.0.1 port 9090 (tcp) timed out: Operation now in progress",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec srv nft add rule inet filter input tcp dport 9090 reject with tcp reset",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli nc -zv -w 2 10.9.0.1 9090 2>&1 | tail -1",
+     "o": "nc: connect to 10.9.0.1 port 9090 (tcp) failed: Connection refused",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec srv nft flush ruleset",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec cli nc -zv -w 2 10.9.0.1 9090 2>&1 | tail -1",
+     "o": "Connection to 10.9.0.1 9090 port [tcp/*] succeeded!",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo pkill -f \"[h]ttp.server\" ; for n in srv cli; do sudo ip netns del $n; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for n in inside gw outside; do sudo ip netns add $n; sudo ip -n $n link set lo up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add i0 type veth peer name g0; sudo ip link set i0 netns inside; sudo ip link set g0 netns gw",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add g1 type veth peer name o0; sudo ip link set g1 netns gw; sudo ip link set o0 netns outside",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n inside addr add 10.1.0.2/24 dev i0;  sudo ip -n gw addr add 10.1.0.1/24 dev g0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n gw addr add 192.0.2.1/24 dev g1;     sudo ip -n outside addr add 192.0.2.2/24 dev o0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for p in \"inside i0\" \"gw g0\" \"gw g1\" \"outside o0\"; do set -- $p; sudo ip -n $1 link set $2 up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n inside route add default via 10.1.0.1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec gw sysctl -qw net.ipv4.ip_forward=1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec outside python3 -c \"\n> import http.server\n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         self.send_response(200); self.end_headers()\n>         self.wfile.write(('you connected from ' + self.client_address[0] + '\\n').encode())\n>     def log_message(self, *a): pass\n> http.server.HTTPServer(('192.0.2.2', 8000), H).serve_forever()\" &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- without NAT:\"",
+     "o": "-- without NAT:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec inside curl -s -m 2 http://192.0.2.2:8000/ || echo \"no reply (the outside host has no route back to 10.1.0.0/24)\"",
+     "o": "no reply (the outside host has no route back to 10.1.0.0/24)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo ip netns exec gw nft -f - <<'EOF'\n> table ip nat {\n>   chain postrouting {\n>     type nat hook postrouting priority 100;\n>     oif \"g1\" masquerade\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- with NAT:\"",
+     "o": "-- with NAT:",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec inside curl -s -m 2 http://192.0.2.2:8000/",
+     "o": "you connected from 192.0.2.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo pkill -f \"[H]TTPServer\" ; sudo ip netns pids outside | xargs -r sudo kill",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for n in inside gw outside; do sudo ip netns del $n; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d61bc161c962b883"
+ },
+ "networking-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ python3 -m http.server 8077 --bind 127.0.0.1 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -v -o /dev/null http://127.0.0.1:8077/ 2>&1 | grep -E '^(> |< )' | grep -vE '(Date|Server|Last-Modified|Content-Length):' | tr -d '\\r'",
+     "o": "> GET / HTTP/1.1\n> Host: 127.0.0.1:8077\n> User-Agent: curl/8.5.0\n> Accept: */*\n> \n< HTTP/1.0 200 OK\n< Content-type: text/html; charset=utf-8\n< ",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -o /dev/null -w \"missing page -> HTTP %{http_code}\\n\" http://127.0.0.1:8077/nope",
+     "o": "missing page -> HTTP 404",
+     "x": 0
+    },
+    {
+     "c": "$ pkill -f \"[h]ttp.server 8077\"",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab && rm -f ev.key ev.crt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl req -x509 -newkey rsa:2048 -nodes -keyout ev.key -out ev.crt -days 365 \\\n>   -subj \"/CN=ev01.corp.local\" -addext \"subjectAltName=DNS:ev01.corp.local\" 2>/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl x509 -in ev.crt -noout -subject -issuer -ext subjectAltName | sed 's/^ *//'",
+     "o": "subject=CN = ev01.corp.local\nissuer=CN = ev01.corp.local\nX509v3 Subject Alternative Name: \nDNS:ev01.corp.local",
+     "x": 0
+    },
+    {
+     "c": "$ openssl x509 -in ev.crt -noout -dates | sed 's/=.*20/=...20/' | cut -c1-12",
+     "o": "notBefore=..\nnotAfter=...",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %n' ev.key ev.crt",
+     "o": "600 ev.key\n644 ev.crt",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl s_server -quiet -accept 8443 -cert ev.crt -key ev.key -www > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- strict client (does not trust the signer):\"",
+     "o": "-- strict client (does not trust the signer):",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -m 3 https://127.0.0.1:8443/ -o /dev/null -w \"%{http_code}\\n\" 2>&1 | head -1",
+     "o": "000",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sS -m 3 https://127.0.0.1:8443/ -o /dev/null 2>&1 | grep -o \"certificate[^,]*\\|SSL certificate problem[^(]*\" | head -1",
+     "o": "SSL certificate problem: self-signed certificate",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- client told to trust this certificate, but name mismatch (IP, not ev01.corp.local):\"",
+     "o": "-- client told to trust this certificate, but name mismatch (IP, not ev01.corp.local):",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sS -m 3 --cacert ev.crt https://127.0.0.1:8443/ -o /dev/null 2>&1 | head -1",
+     "o": "curl: (60) SSL: no alternative certificate subject name matches target host name '127.0.0.1'",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"-- client trusting it and using the right name:\"",
+     "o": "-- client trusting it and using the right name:",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -m 3 --cacert ev.crt --resolve ev01.corp.local:8443:127.0.0.1 https://ev01.corp.local:8443/ -o /dev/null -w \"HTTP %{http_code}\\n\"",
+     "o": "HTTP 200",
+     "x": 0
+    },
+    {
+     "c": "$ pkill -f \"[o]penssl s_server\"",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "7d22bd7f9fe331e1"
  }
 }

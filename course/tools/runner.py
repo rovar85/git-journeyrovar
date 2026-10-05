@@ -35,7 +35,7 @@ def split_units(text):
         cur.append(line)
         candidate = "\n".join(cur)
         r = subprocess.run(["bash", "-n"], input=candidate, capture_output=True, text=True)
-        ok = r.returncode == 0 and "here-document" not in r.stderr
+        ok = r.returncode == 0 and "here-document" not in r.stderr and not line.rstrip().endswith("\\")
         if ok:
             units.append(("cmd", candidate))
             cur = []
