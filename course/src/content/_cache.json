@@ -1,4 +1,1060 @@
 {
+ "docker-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker version --format 'client {{.Client.Version}} / server {{.Server.Version}}'",
+     "o": "client 29.6.2 / server 29.6.2",
+     "x": 0
+    },
+    {
+     "c": "$ docker images --format '{{.Repository}}:{{.Tag}}' | sort",
+     "o": "alpine:3.20\nbusybox:latest",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm busybox echo \"hello from inside a container\"",
+     "o": "hello from inside a container",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm busybox sh -c 'echo \"I am: $(hostname)\"; echo \"my pid: $$\"; ps | head -3; cat /etc/os-release | head -1'",
+     "o": "I am: 4bd319f2edb8\nmy pid: 1\nPID   USER     TIME  COMMAND\n    1 root      0:00 sh -c echo \"I am: $(hostname)\"; echo \"my pid: $$\"; ps | head -3; cat /etc/os-release | head -1\n    8 root      0:00 ps\ncat: can't open '/etc/os-release': No such file or directory",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name web busybox sh -c 'echo started; i=0; while true; do i=$((i+1)); echo \"tick $i\"; sleep 1; done'",
+     "o": "481f2b51a9ed72f4e29f51392948dfbd686018547ca0462f3ad7ed363b251b74",
+     "x": 0
+    },
+    {
+     "c": "$ docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}' | sed 's/Up [0-9]* [a-z]*/Up .../'",
+     "o": "NAMES     IMAGE     STATUS\nweb       busybox   Up Less than a second",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker logs web | head -4",
+     "o": "started\ntick 1\ntick 2\ntick 3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker exec web sh -c 'echo \"running inside web: $(hostname)\"; ls /'",
+     "o": "running inside web: 481f2b51a9ed\nbin\ndev\netc\nhome\nlib\nlib64\nproc\nroot\nsys\ntmp\nusr\nvar",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'state={{.State.Status}} image={{.Config.Image}}' web",
+     "o": "state=running image=busybox",
+     "x": 0
+    },
+    {
+     "c": "$ docker stop web",
+     "o": "web",
+     "x": 0
+    },
+    {
+     "c": "$ docker ps -a --format '{{.Names}}: {{.Status}}' | sed 's/Exited ([0-9]*) .*/Exited/'",
+     "o": "web: Exited",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm web",
+     "o": "web",
+     "x": 0
+    },
+    {
+     "c": "$ docker ps -a | wc -l",
+     "o": "1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --name tmp busybox sh -c 'echo \"important data\" > /data.txt'",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker start -a tmp > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker cp tmp:/data.txt - | tar -xO 2>/dev/null",
+     "o": "important data",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm tmp > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm busybox ls /data.txt 2>&1 | tail -1",
+     "o": "ls: /data.txt: No such file or directory",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --name bad busybox sh -c 'echo \"failing\"; exit 3'",
+     "o": "failing",
+     "x": 3
+    },
+    {
+     "c": "$ docker inspect -f 'exit code: {{.State.ExitCode}}' bad",
+     "o": "exit code: 3",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm bad > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm busybox no-such-command 2>&1 | tail -1",
+     "o": "Run 'docker run --help' for more information",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8cec274ce70a19c7"
+ },
+ "docker-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker image ls busybox --format '{{.Repository}}:{{.Tag}}  {{.Size}}'",
+     "o": "busybox:latest  6.81MB",
+     "x": 0
+    },
+    {
+     "c": "$ docker history busybox --format '{{.CreatedBy}}' | cut -c1-70",
+     "o": "BusyBox 1.38.0 (glibc), Debian 13",
+     "x": 0
+    },
+    {
+     "c": "$ docker image inspect busybox --format 'layers: {{len .RootFS.Layers}}  os/arch: {{.Os}}/{{.Architecture}}'",
+     "o": "layers: 1  os/arch: linux/amd64",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker tag busybox ev-tools:1.0",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker tag busybox ev-tools:latest",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker image ls ev-tools --format '{{.Repository}}:{{.Tag}}' | sort",
+     "o": "ev-tools:1.0\nev-tools:latest",
+     "x": 0
+    },
+    {
+     "c": "$ docker image inspect ev-tools:1.0 busybox --format '{{.Id}}' | uniq | wc -l",
+     "o": "1",
+     "x": 0
+    },
+    {
+     "c": "$ docker rmi ev-tools:1.0 ev-tools:latest | sed 's/sha256:.*/.../'",
+     "o": "Untagged: ev-tools:1.0\nUntagged: ev-tools:latest",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker save busybox -o busybox.tar",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -tf busybox.tar | head -4 | sed 's/[0-9a-f]\\{64\\}/<id>/'",
+     "o": "blobs/\nblobs/sha256/\nblobs/sha256/<id>\nblobs/sha256/<id>",
+     "x": 0
+    },
+    {
+     "c": "$ ls -lh busybox.tar | awk '{print \"tar size:\", $5}'",
+     "o": "tar size: 2.2M",
+     "x": 0
+    },
+    {
+     "c": "$ rm busybox.tar",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker system df --format 'table {{.Type}}\\t{{.Active}}\\t{{.Reclaimable}}' | sed 's/([0-9]*%)//'",
+     "o": "TYPE            ACTIVE    RECLAIMABLE\nImages          0         18.99MB \nContainers      0         0B\nLocal Volumes   0         0B\nBuild Cache     0         0B",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "b9603e551d7a9f00"
+ },
+ "docker-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker run -d --name web -p 8081:80 busybox sh -c 'mkdir -p /www; echo \"hello from EV web\" > /www/index.html; httpd -f -p 80 -h /www'",
+     "o": "5e17f85e9434c70dedd73726131f7642378016eac019522ff0d2159b7bc483bb",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://localhost:8081/",
+     "o": "hello from EV web",
+     "x": 0
+    },
+    {
+     "c": "$ docker port web",
+     "o": "80/tcp -> 0.0.0.0:8081",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s -o /dev/null -w \"wrong port 8082: curl exit %{exitcode}\\n\" http://localhost:8082/ ; true",
+     "o": "wrong port 8082: curl exit 7",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f web > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm -e EV_SERVER=EV01 -e RETRIES=5 busybox sh -c 'echo \"server=$EV_SERVER retries=$RETRIES\"'",
+     "o": "server=EV01 retries=5",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'EV_SERVER=EV02\\nRETRIES=9\\n' > ~/lab/app.env",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --env-file ~/lab/app.env busybox sh -c 'echo \"server=$EV_SERVER retries=$RETRIES\"'",
+     "o": "server=EV02 retries=9",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm --memory 64m --cpus 0.5 busybox sh -c 'cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || cat /sys/fs/cgroup/memory.max'",
+     "o": "67108864",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --name hog --memory 16m --memory-swap 16m busybox sh -c 'x=$(head -c 40000000 /dev/zero | tr \"\\0\" \"a\"); echo \"should not get here\"' ; echo \"exit code: $?\"",
+     "o": "exit code: 137",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'OOMKilled={{.State.OOMKilled}}' hog",
+     "o": "OOMKilled=true",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm hog > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name flaky --restart on-failure:3 busybox sh -c 'echo \"crashing\"; exit 1' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'restarts so far: {{.RestartCount}}  status: {{.State.Status}}' flaky",
+     "o": "restarts so far: 3  status: exited",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f flaky > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name hc --health-cmd 'test -f /ready' --health-interval 1s --health-retries 2 busybox sh -c 'sleep 3; touch /ready; sleep 60' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'after 2s: {{.State.Health.Status}}' hc",
+     "o": "after 2s: starting",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'after 6s: {{.State.Health.Status}}' hc",
+     "o": "after 6s: healthy",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f hc > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm busybox id",
+     "o": "uid=0(root) gid=0(root) groups=0(root),10(wheel)",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --user 1000:1000 busybox id",
+     "o": "uid=1000 gid=1000 groups=1000",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --read-only --user 1000:1000 busybox sh -c 'touch /x 2>&1 | head -1'",
+     "o": "touch: /x: Read-only file system",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a8b48e83e1a5bb12"
+ },
+ "docker-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/ev-web",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir site",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"<h1>EV status page</h1>\" > site/index.html",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:latest\n> WORKDIR /www\n> COPY site/ /www/\n> ENV GREETING=\"hello\"\n> EXPOSE 80\n> CMD [\"httpd\", \"-f\", \"-p\", \"80\", \"-h\", \"/www\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t ev-web:1 . | sed 's/sha256:.*/<image id>/'",
+     "o": "<image id>",
+     "x": 0
+    },
+    {
+     "c": "$ docker images ev-web --format '{{.Repository}}:{{.Tag}}'",
+     "o": "ev-web:1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name ev-web -p 8090:80 ev-web:1 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://localhost:8090/",
+     "o": "<h1>EV status page</h1>",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f ev-web > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-web",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile.echo <<'EOF'\n> FROM busybox:latest\n> ENTRYPOINT [\"echo\", \"EV says:\"]\n> CMD [\"nothing\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t ev-echo -f Dockerfile.echo . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm ev-echo",
+     "o": "EV says: nothing",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm ev-echo \"restart indexing\"",
+     "o": "EV says: restart indexing",
+     "x": 0
+    },
+    {
+     "c": "$ docker rmi ev-echo > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-web",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:latest\n> WORKDIR /app\n> COPY requirements.txt .\n> RUN echo \"installing dependencies (slow)...\" && sleep 1 && cat requirements.txt | wc -l > /deps.count\n> COPY app.sh .\n> CMD [\"sh\", \"app.sh\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"flask\" > requirements.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'echo \"app v1\"' > app.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== first build\"",
+     "o": "=== first build",
+     "x": 0
+    },
+    {
+     "c": "$ bstat() {\n>   docker build --progress=plain \"$@\" . 2>&1 | awk '\n>     /^#[0-9]+ \\[[0-9]+\\/[0-9]+\\]/ && !/ FROM / { id=$1; $1=\"\"; name[id]=$0; order[++n]=id }\n>     /^#[0-9]+ CACHED/ { cached[$1]=1 }\n>     END { for (i=1;i<=n;i++) { id=order[i]; printf \"%-7s%s\\n\", (cached[id] ? \"CACHED\" : \"RAN\"), substr(name[id],1,58) } }'\n> }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ bstat -t ev-web:2",
+     "o": "RAN     [2/5] WORKDIR /app\nRAN     [3/5] COPY requirements.txt .\nRAN     [4/5] RUN echo \"installing dependencies (slow)...\" && sle\nRAN     [5/5] COPY app.sh .",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== change only the app code\"",
+     "o": "=== change only the app code",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'echo \"app v2\"' > app.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ bstat -t ev-web:3",
+     "o": "CACHED  [2/5] WORKDIR /app\nCACHED  [3/5] COPY requirements.txt .\nCACHED  [4/5] RUN echo \"installing dependencies (slow)...\" && sle\nRAN     [5/5] COPY app.sh .",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-web",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '.git\\n*.log\\n.env\\n' > .dockerignore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile.multi <<'EOF'\n> # Stage 1: \"build\" (pretend this has compilers, test tools, large caches)\n> FROM busybox:latest AS build\n> RUN echo \"compiled artefact\" > /artefact.txt && head -c 3000000 /dev/zero > /big-build-cache\n> \n> # Stage 2: final image: only what we need\n> FROM busybox:latest\n> COPY --from=build /artefact.txt /artefact.txt\n> CMD [\"cat\", \"/artefact.txt\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t ev-multi -f Dockerfile.multi . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm ev-multi",
+     "o": "compiled artefact",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm ev-multi ls /big-build-cache 2>&1 | tail -1",
+     "o": "ls: /big-build-cache: No such file or directory",
+     "x": 0
+    },
+    {
+     "c": "$ docker rmi ev-multi > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-web",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'FROM busybox\\nENV DB_PASSWORD=hunter2\\n' > Dockerfile.leaky",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t ev-leaky -f Dockerfile.leaky . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker history ev-leaky --format '{{.CreatedBy}}' | grep -o 'DB_PASSWORD=[a-z0-9]*'",
+     "o": "DB_PASSWORD=hunter2",
+     "x": 0
+    },
+    {
+     "c": "$ docker rmi ev-leaky > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "cf58cb55824804d0"
+ },
+ "docker-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker volume create evdata",
+     "o": "evdata",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v evdata:/data busybox sh -c 'echo \"index entry 1\" > /data/index.db; ls /data'",
+     "o": "index.db",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v evdata:/data busybox cat /data/index.db",
+     "o": "index entry 1",
+     "x": 0
+    },
+    {
+     "c": "$ docker volume ls --format '{{.Name}}' | grep evdata",
+     "o": "evdata",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker volume inspect evdata --format 'driver={{.Driver}} mountpoint={{.Mountpoint}}'",
+     "o": "driver=local mountpoint=/var/lib/docker/volumes/evdata/_data",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"retries=3\" > ~/lab/conf/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v ~/lab/conf:/etc/ev:ro busybox sh -c 'cat /etc/ev/evault.conf; echo \"x\" > /etc/ev/new.conf' 2>&1",
+     "o": "retries=3\nsh: line 0: can't create /etc/ev/new.conf: Read-only file system",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"--- edit on host, container sees it:\"",
+     "o": "--- edit on host, container sees it:",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"retries=7\" > ~/lab/conf/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v ~/lab/conf:/etc/ev:ro busybox cat /etc/ev/evault.conf",
+     "o": "retries=7",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v evdata:/data -v ~/lab:/backup busybox tar -czf /backup/evdata-backup.tar.gz -C /data .",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -lh evdata-backup.tar.gz | awk '{print \"backup file exists:\", $9}'",
+     "o": "backup file exists: evdata-backup.tar.gz",
+     "x": 0
+    },
+    {
+     "c": "$ docker volume create evbackup > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v evbackup:/data -v ~/lab:/backup busybox sh -c 'tar -xzf /backup/evdata-backup.tar.gz -C /data && cat /data/index.db'",
+     "o": "index entry 1",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f evdata-backup.tar.gz",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run --rm --tmpfs /scratch:size=1m busybox sh -c 'echo secret > /scratch/t; df -h /scratch | tail -1 | awk \"{print \\\"tmpfs size:\\\", \\$2}\"'",
+     "o": "tmpfs size: 1.0M",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name writer -v evdata:/data busybox sh -c 'while true; do date +%s > /data/heartbeat; sleep 1; done' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v evdata:/data:ro busybox sh -c 'test -s /data/heartbeat && echo \"reader sees the writer heartbeat\"'",
+     "o": "reader sees the writer heartbeat",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f writer > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker volume rm evdata evbackup",
+     "o": "evdata\nevbackup",
+     "x": 0
+    },
+    {
+     "c": "$ docker volume ls -q | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "1af16b4487d0f5c3"
+ },
+ "docker-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker network ls --format '{{.Name}} ({{.Driver}})' | sort",
+     "o": "bridge (bridge)\nhost (host)\nnone (null)",
+     "x": 0
+    },
+    {
+     "c": "$ docker network inspect bridge --format 'subnet {{(index .IPAM.Config 0).Subnet}}'",
+     "o": "subnet 172.17.0.0/16",
+     "x": 0
+    },
+    {
+     "c": "$ ip -brief addr show docker0 | awk '{print $1, $2}'",
+     "o": "docker0 DOWN",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker network create evnet > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name db --network evnet busybox sh -c 'mkdir -p /www; echo \"pretend SQL answer\" > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name web --network evnet busybox sleep 300 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker exec web wget -q -O - http://db/",
+     "o": "pretend SQL answer",
+     "x": 0
+    },
+    {
+     "c": "$ docker exec web nslookup db 2>/dev/null | grep -E \"^Name|^Address\" | head -2 | sed 's/[0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*/<ip>/'",
+     "o": "Address:\t<ip>:53\nName:\tdb",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name old --network bridge busybox sleep 300 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker exec old wget -q -T 2 -O - http://db/ 2>&1 | head -1",
+     "o": "wget: bad address 'db'",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f old > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name pub -p 8085:80 busybox sh -c 'mkdir -p /www; echo ok > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo iptables -t nat -S DOCKER | grep \"dport 8085\" | sed 's/172\\.[0-9]*\\.[0-9]*\\.[0-9]*/<container-ip>/'",
+     "o": "-A DOCKER ! -i docker0 -p tcp -m tcp --dport 8085 -j DNAT --to-destination <container-ip>:80",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://localhost:8085/",
+     "o": "ok",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f pub > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker network create backnet > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f db web > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name db --network backnet busybox sleep 300 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name app --network evnet busybox sleep 300 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker network connect backnet app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name web --network evnet busybox sleep 300 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo -n \"app -> db:  \"; docker exec app ping -c1 -W1 db > /dev/null 2>&1 && echo reachable || echo blocked",
+     "o": "app -> db:  reachable",
+     "x": 0
+    },
+    {
+     "c": "$ echo -n \"web -> app: \"; docker exec web ping -c1 -W1 app > /dev/null 2>&1 && echo reachable || echo blocked",
+     "o": "web -> app: reachable",
+     "x": 0
+    },
+    {
+     "c": "$ echo -n \"web -> db:  \"; docker exec web ping -c1 -W1 db > /dev/null 2>&1 && echo reachable || echo blocked",
+     "o": "web -> db:  blocked",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker rm -f web app db > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker network rm evnet backnet",
+     "o": "evnet\nbacknet",
+     "x": 0
+    },
+    {
+     "c": "$ docker network ls -q | wc -l",
+     "o": "3",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "ff5045a39c5440db"
+ },
+ "docker-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/evapp",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"<h1>EV status via Compose</h1>\" > site/index.html",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > compose.yaml <<'EOF'\n> name: evapp\n> services:\n>   web:\n>     image: busybox\n>     command: [\"httpd\", \"-f\", \"-p\", \"80\", \"-h\", \"/www\"]\n>     ports:\n>       - \"8095:80\"\n>     volumes:\n>       - ./site:/www:ro\n>     environment:\n>       - EV_ENV=lab\n>     depends_on:\n>       checker:\n>         condition: service_started\n>     networks: [front]\n>   checker:\n>     image: busybox\n>     command: [\"sh\", \"-c\", \"while true; do wget -q -O /dev/null http://web/ && echo web-ok || echo web-down; sleep 2; done\"]\n>     networks: [front]\n>     restart: unless-stopped\n> networks:\n>   front: {}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose config --quiet && echo \"compose file is valid\"",
+     "o": "compose file is valid",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/evapp",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose up -d 2>&1 | grep -E \"Started|Running|Created\" | sed 's/ [0-9.]*s$//' | sort",
+     "o": " Container evapp-checker-1 Created \n Container evapp-checker-1 Started \n Container evapp-web-1 Created \n Container evapp-web-1 Started \n Network evapp_front Created ",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose ps --format '{{.Service}}: {{.State}}' | sort",
+     "o": "checker: running\nweb: running",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://localhost:8095/",
+     "o": "<h1>EV status via Compose</h1>",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose logs checker 2>&1 | grep -q web-ok && echo \"checker log contains: web-ok\"",
+     "o": "checker log contains: web-ok",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/evapp",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose down 2>&1 | grep -E \"Removed|Stopped\" | sed 's/ [0-9.]*s$//' | sort | uniq | wc -l",
+     "o": "5",
+     "x": 0
+    },
+    {
+     "c": "$ docker ps -a | wc -l",
+     "o": "1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "253e4fca79c76547"
+ },
+ "docker-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker run --rm --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m --pids-limit 20 busybox sh -c 'id; echo \"write test:\"; touch /x 2>&1 | head -1; echo \"chown test:\"; chown 0:0 /tmp 2>&1 | head -1'",
+     "o": "uid=10001 gid=10001 groups=10001\nwrite test:\ntouch: /x: Read-only file system\nchown test:\nchown: /tmp: Read-only file system",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker run -d --name chatty --log-opt max-size=10k --log-opt max-file=2 busybox sh -c 'i=0; while true; do i=$((i+1)); echo \"line $i padding padding padding padding padding\"; done' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect chatty --format 'log driver: {{.HostConfig.LogConfig.Type}}  options: {{.HostConfig.LogConfig.Config}}'",
+     "o": "log driver: json-file  options: map[max-file:2 max-size:10k]",
+     "x": 0
+    },
+    {
+     "c": "$ docker logs chatty --tail 1 | grep -c '^line'",
+     "o": "0",
+     "x": 1
+    },
+    {
+     "c": "$ docker rm -f chatty > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"### 1. wrong command\"",
+     "o": "### 1. wrong command",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --name f1 busybox nosuchprogram 2>&1 | tail -1 | cut -c1-90",
+     "o": "Run 'docker run --help' for more information",
+     "x": 0
+    },
+    {
+     "c": "$ docker inspect -f 'exit={{.State.ExitCode}}' f1",
+     "o": "exit=127",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"### 2. crashes on start: read the logs and exit code\"",
+     "o": "### 2. crashes on start: read the logs and exit code",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --name f2 busybox sh -c 'echo \"FATAL: cannot open /etc/ev/evault.conf\" >&2; exit 2'",
+     "o": "FATAL: cannot open /etc/ev/evault.conf",
+     "x": 2
+    },
+    {
+     "c": "$ docker inspect -f 'exit={{.State.ExitCode}}' f2",
+     "o": "exit=2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"### 3. fix by supplying the missing config\"",
+     "o": "### 3. fix by supplying the missing config",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p ~/lab/etc-ev && echo \"ok=1\" > ~/lab/etc-ev/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v ~/lab/etc-ev:/etc/ev:ro busybox sh -c 'test -r /etc/ev/evault.conf && echo \"config found, service would start\"'",
+     "o": "config found, service would start",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm f1 f2 > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker ps -aq | wc -l",
+     "o": "0",
+     "x": 0
+    },
+    {
+     "c": "$ docker system df --format '{{.Type}}: {{.Reclaimable}}' | sed 's/ ([0-9]*%)//'",
+     "o": "Images: 12.24MB\nContainers: 0B\nLocal Volumes: 0B\nBuild Cache: 36.99kB",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e8aa8d0768f0df34"
+ },
  "git-1": {
   "blocks": [
    [
