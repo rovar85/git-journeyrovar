@@ -1,0 +1,810 @@
+<title>Agent School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Caveat:wght@600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a classroom. Whiteboard in light mode, blackboard in dark mode.
+   A sticky chapter strip on top, wide reading column, teacher's margin notes in handwriting. */
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --surface2:#E9EEEC; --ink:#16212A; --muted:#566570;
+  --line:#CFD8D6; --accent:#1B5BD1; --accent-soft:#DCE8FB; --mark:#FFE88A;
+  --note:#B5342B; --good:#17803F; --good-soft:#DDF3E5; --bad:#B8322A; --bad-soft:#FBE3E0;
+  --code-bg:#EEF2F1;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-hand:"Caveat","Bradley Hand","Segoe Print",cursive;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1B19; --surface:#162624; --surface2:#1D312E; --ink:#E9EDE6; --muted:#9DB0A8;
+    --line:#2C443F; --accent:#8DB8FF; --accent-soft:#1E3556; --mark:#5E4E10;
+    --note:#F3CB55; --good:#6FD39A; --good-soft:#173A29; --bad:#FF9188; --bad-soft:#4A211E;
+    --code-bg:#122220; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1B19; --surface:#162624; --surface2:#1D312E; --ink:#E9EDE6; --muted:#9DB0A8;
+  --line:#2C443F; --accent:#8DB8FF; --accent-soft:#1E3556; --mark:#5E4E10;
+  --note:#F3CB55; --good:#6FD39A; --good-soft:#173A29; --bad:#FF9188; --bad-soft:#4A211E;
+  --code-bg:#122220; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.65;margin:0;padding-inline:16px}
+.wrap{max-width:760px;margin-inline:auto;padding-block:0 80px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.7rem,5vw,2.3rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.3rem;font-weight:700;margin-top:2.2rem;margin-bottom:.4rem}
+p{margin:.85rem 0}
+a{color:var(--accent)}
+ul,ol{padding-left:1.3rem}
+li{margin:.35rem 0}
+code,.mono{font-family:var(--f-mono);font-size:.88em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+b,strong{font-weight:700}
+mark{background:var(--mark);color:inherit;padding:0 .15em;border-radius:3px}
+
+/* top strip */
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-16px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.strip-in{max-width:760px;margin-inline:auto;display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--f-display);font-weight:800;white-space:nowrap}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.chips::-webkit-scrollbar{display:none}
+.chips a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.85rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line)}
+.chips a.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.bar{height:3px;background:var(--line);margin-inline:-16px}
+.bar i{display:block;height:100%;width:0;background:var(--accent)}
+
+/* hero */
+.hero{padding-block:48px 28px}
+.hand{font-family:var(--f-hand);font-size:1.5rem;color:var(--note);line-height:1.1}
+.lede{font-size:1.2rem;color:var(--muted);max-width:34em}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.facts span{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:.9rem}
+
+/* chapters */
+.chapter{padding-top:56px;border-top:1px dashed var(--line);margin-top:56px}
+.chapter-head .hand{display:block;margin-bottom:6px}
+.goals{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:22px 0}
+.goals b{font-family:var(--f-display)}
+.goals ul{margin:.4rem 0 0}
+
+/* teacher board callouts */
+.board{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:8px;padding:14px 18px;margin:22px 0}
+.board.note{border-left-color:var(--note)}
+.board.warn{border-left-color:var(--bad)}
+.board .tag{font-family:var(--f-hand);font-size:1.35rem;color:var(--note);display:block;line-height:1}
+.board p:first-of-type{margin-top:.4rem}
+.board p:last-child{margin-bottom:0}
+
+/* widgets */
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin:26px 0}
+.lab-title{font-family:var(--f-display);font-weight:700;font-size:1.05rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.lab-title small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.85rem}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--bg);border:0;border-radius:8px;padding:8px 16px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);padding:6px 14px;border-radius:8px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
+.sentence{font-size:1.25rem;margin:14px 0;padding:14px;background:var(--surface2);border-radius:8px;min-height:3.4em}
+.sentence .new{background:var(--mark);border-radius:3px}
+.opts{display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:7.5em 1fr 3em;gap:10px;align-items:center;background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);text-align:left}
+.opt:hover{border-color:var(--accent)}
+.opt .w{font-family:var(--f-mono);font-weight:600}
+.opt .track{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.opt .fill{display:block;height:100%;background:var(--accent);border-radius:6px}
+.opt .pc{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+
+.files{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.file{border:2px solid var(--ink);border-radius:8px;padding:12px;background:var(--surface2)}
+.file b{font-family:var(--f-mono);font-size:.95rem;display:block}
+.file .big{font-family:var(--f-display);font-weight:800;font-size:1.8rem;line-height:1.1;margin-top:6px;font-variant-numeric:tabular-nums}
+@media (max-width:520px){.files{grid-template-columns:1fr}.opt{grid-template-columns:6em 1fr 2.6em}}
+
+.flow{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:16px 0}
+.flow .node{flex:1 1 130px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:.92rem}
+.flow .node b{display:block;font-family:var(--f-display);margin-bottom:2px}
+.flow .arr{align-self:center;color:var(--muted);font-size:1.3rem}
+.flow .node.hl{border-color:var(--accent);background:var(--accent-soft)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+.tabs button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:8px 8px 0 0;padding:8px 14px;font-weight:700}
+.tabs button[aria-selected="true"]{background:var(--surface);border-bottom-color:var(--surface);color:var(--accent)}
+.panel{border:1px solid var(--line);border-radius:0 8px 8px 8px;padding:14px 16px;background:var(--surface);margin-top:-1px}
+.kv{display:grid;grid-template-columns:7.5em 1fr;gap:4px 12px;margin:0}
+.kv dt{color:var(--muted);font-size:.9rem}
+.kv dd{margin:0}
+@media (max-width:520px){.kv{grid-template-columns:1fr}.kv dd{margin-bottom:8px}}
+
+.chat{display:grid;gap:8px;margin-top:10px}
+.bubble{border-radius:10px;padding:8px 12px;max-width:100%;font-size:.95rem;border:1px solid var(--line);background:var(--surface2)}
+.bubble .who{font-family:var(--f-hand);font-size:1.15rem;color:var(--note);display:block;line-height:1}
+.bubble.model{background:var(--accent-soft)}
+.bubble.sw{background:var(--surface);border-style:dashed}
+.bubble pre{margin:4px 0 0;white-space:pre-wrap;word-break:break-word;font-family:var(--f-mono);font-size:.85rem}
+
+.promptbox{font-family:var(--f-mono);font-size:.88rem;background:var(--code-bg);border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-word;min-height:5em}
+.promptbox .add{background:var(--mark);border-radius:3px}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer}
+.checks input{margin-top:.45em;width:18px;height:18px;accent-color:var(--accent)}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.compare{grid-template-columns:1fr}}
+.compare>div{background:var(--surface2);border-radius:8px;padding:12px;font-size:.95rem}
+.compare h4{margin:0 0 6px;font-family:var(--f-display)}
+
+/* quiz */
+.quiz{border:2px solid var(--ink);border-radius:12px;padding:16px 18px;margin:30px 0;background:var(--surface)}
+.quiz h3{margin:0 0 4px;font-size:1.15rem}
+.q{margin-top:16px}
+.q p{margin:.3rem 0;font-weight:700}
+.q .choices{display:grid;gap:6px;margin-top:8px}
+.q .choices button{text-align:left;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px}
+.q .choices button.right{background:var(--good-soft);border-color:var(--good)}
+.q .choices button.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.q .fb{font-size:.95rem;margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--surface2)}
+.score{margin-top:14px;font-family:var(--f-hand);font-size:1.5rem;color:var(--note)}
+
+/* glossary tooltip */
+.term{border-bottom:2px dotted var(--accent);cursor:help;position:relative}
+.term:hover::after,.term:focus::after{content:attr(data-def);position:absolute;left:0;top:calc(100% + 6px);width:min(280px,70vw);z-index:10;background:var(--ink);color:var(--bg);font-size:.85rem;line-height:1.4;padding:8px 10px;border-radius:8px;font-weight:400}
+
+.recap{background:var(--accent-soft);border-radius:12px;padding:16px 20px;margin:30px 0}
+.recap h3{margin:0 0 6px;font-size:1.15rem}
+
+.road{display:grid;gap:10px;margin-top:18px}
+.road div{display:flex;gap:12px;align-items:baseline;border:1px dashed var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.road span{font-family:var(--f-hand);font-size:1.4rem;color:var(--note);min-width:2.2em}
+.road small{color:var(--muted);display:block}
+.gloss dt{font-weight:700;font-family:var(--f-display);margin-top:14px}
+.gloss dd{margin:2px 0 0;color:var(--muted)}
+footer{margin-top:60px;color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="strip">
+  <div class="strip-in">
+    <span class="brand">Agent School</span>
+    <nav class="chips" id="chips" aria-label="Chapters"></nav>
+  </div>
+</div>
+<div class="bar"><i id="barfill"></i></div>
+
+<div class="wrap">
+
+<section class="hero" id="top">
+  <span class="hand">Welcome, class. Take a seat.</span>
+  <h1>From "what is ChatGPT?" to building AI agents</h1>
+  <p class="lede">A course for complete beginners. We start with how a language model works, and we finish by understanding how AI agents are built, tested and connected to the real world. No coding background needed.</p>
+  <div class="facts">
+    <span>Part 1 of the course is ready: Chapters 1 to 4</span>
+    <span>Each chapter ends with a short quiz</span>
+    <span>Hover or tap dotted words for a definition</span>
+  </div>
+
+  <div class="board note" style="margin-top:28px">
+    <span class="tag">How to use this page</span>
+    <p>Read one chapter at a time. Play with the demos, because they are the fastest way to understand. Answer the quiz before you move on. If a quiz question surprises you, re-read that section. That is the point of the quiz.</p>
+  </div>
+
+  <h3>The whole course at a glance</h3>
+  <div class="road">
+    <div><span>1</span><p style="margin:0"><b>What is a language model?</b><small>It is a next-word predictor. Ready.</small></p></div>
+    <div><span>2</span><p style="margin:0"><b>How a language model is made</b><small>Pre-training, fine-tuning and human feedback. Ready.</small></p></div>
+    <div><span>3</span><p style="margin:0"><b>Talking to a model: prompting</b><small>The habits that make answers better. Ready.</small></p></div>
+    <div><span>4</span><p style="margin:0"><b>Fixing a model's weaknesses</b><small>Retrieval (RAG) and tool use. Ready.</small></p></div>
+    <div><span>5</span><p style="margin:0"><b>What is an AI agent?</b><small>Reasoning plus acting, planning, reflection, multi-agent teams. Coming next.</small></p></div>
+    <div><span>6</span><p style="margin:0"><b>Building effective agents</b><small>When to use an agent, and when not to. Coming next.</small></p></div>
+    <div><span>7</span><p style="margin:0"><b>Evaluating agents</b><small>How do you know an agent is good? Coming next.</small></p></div>
+    <div><span>8</span><p style="margin:0"><b>MCP: plugging agents into the world</b><small>Coming next.</small></p></div>
+    <div><span>9</span><p style="margin:0"><b>Build an agent from scratch</b><small>Coming next.</small></p></div>
+    <div><span>10</span><p style="margin:0"><b>Capstone: a village of AI philosophers</b><small>A full project that uses everything. Coming next.</small></p></div>
+  </div>
+</section>
+
+<!-- ============================ CHAPTER 1 ============================ -->
+<section class="chapter" id="ch1" data-title="1 · Language model">
+  <header class="chapter-head">
+    <span class="hand">Chapter 1</span>
+    <h2>What is a language model?</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>what a language model does, in one sentence</li>
+      <li>what "a model" physically is on a computer</li>
+      <li>why a model sometimes makes things up</li>
+    </ul>
+  </div>
+
+  <h3>Start with a game you already play</h3>
+  <p>Finish this sentence: <i>"The students opened their ___."</i></p>
+  <p>You probably thought of "books" or "laptops". You did not think of "volcano". Without any effort you ranked the possible next words by how likely they are.</p>
+  <p>That is the entire job of a <span class="term" tabindex="0" data-def="A computer program that has learned patterns in text well enough to predict which word is likely to come next.">language model</span>. You give it some text. It gives back its best guess for what comes next, with a probability for each candidate. Everything else you have seen ChatGPT or Claude do is built on top of this one trick.</p>
+
+  <div class="lab" id="nextword">
+    <div class="lab-title">Try it: be the language model <small>(the percentages are made up for teaching)</small></div>
+    <p style="margin:.5rem 0">Click a word to add it to the sentence. Watch the choices change each time.</p>
+    <div class="sentence" id="nw-sentence" aria-live="polite"></div>
+    <div class="opts" id="nw-opts"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="nw-sample">Let the model pick (weighted by chance)</button>
+      <button class="btn ghost" id="nw-reset">Start over</button>
+    </div>
+    <p id="nw-msg" style="color:var(--muted);font-size:.95rem;margin-bottom:0"></p>
+  </div>
+
+  <div class="board note">
+    <span class="tag">Teacher's note</span>
+    <p>Notice two things. First, the model never "decides what it wants to say". It only scores possible next words. Second, when it picks one, that word is added to the text and the whole thing is fed back in to get the next word. A long answer is just this loop repeated hundreds of times. Press "Let the model pick" a few times and you will see it.</p>
+  </div>
+
+  <h3>Words are really "tokens"</h3>
+  <p>Strictly speaking, models do not read whole words. They read <span class="term" tabindex="0" data-def="A small piece of text, often a whole word or part of a word, that the model treats as one unit. Each token gets a number.">tokens</span>, which are small pieces of text. A common word like "books" is usually one token. A rare or long word may be split into several pieces. Each piece is given an ID number, and the model works with the numbers. For now, when you read "word", think "token". We will keep saying "word" because it is easier.</p>
+
+  <h3>What is a "model", physically?</h3>
+  <p>This surprises almost everyone. A model such as Meta's Llama 2 70B, an open model whose details were published, is just <b>two files</b> on a computer:</p>
+  <ol>
+    <li><b>A parameters file.</b> A very long list of numbers. These numbers are the "knowledge" of the model.</li>
+    <li><b>A small program.</b> It takes your text and those numbers and calculates the next-word probabilities. For this model, the program is only about 500 lines of code.</li>
+  </ol>
+  <p>The "70B" means 70 billion parameters. Each one is stored in 2 bytes. So the size is easy to calculate yourself:</p>
+
+  <div class="lab" id="params">
+    <div class="lab-title">Calculator: how big is the parameters file?</div>
+    <div class="row seg" id="p-seg" role="group" aria-label="Model size"></div>
+    <div class="files">
+      <div class="file"><b>parameters</b><span class="big" id="p-gb">140 GB</span><span id="p-math" style="color:var(--muted);font-size:.9rem"></span></div>
+      <div class="file"><b>run program</b><span class="big">~500 lines</span><span style="color:var(--muted);font-size:.9rem">of plain code, no internet needed</span></div>
+    </div>
+    <p id="p-note" style="margin-bottom:0;font-size:.95rem"></p>
+  </div>
+
+  <p>With those two files on a laptop, you could run the model with no internet connection. The program is simple and well understood. All the magic is in the numbers. The next chapter explains where the numbers come from.</p>
+
+  <h3>Why does predicting words make a model smart?</h3>
+  <p>Imagine the model reads a Wikipedia article about a famous inventor and has to guess the next word at every position. To guess well, it needs to know when she was born, what she invented, and who she worked with. Nobody wrote these facts into the model. The model absorbed them because they help it predict. A simple-sounding goal forces the model to learn a lot about the world, and it stores that learning in its parameters.</p>
+  <p>You can think of the parameters as a <b>blurry zip file of the internet</b>. Unlike a real zip file, it is lossy: you get the gist of the text, not an exact copy.</p>
+
+  <h3>Why it sometimes makes things up (hallucination)</h3>
+  <p>Because the model is a blurry memory that fills in plausible words, it sometimes writes something that sounds right and is false. This is called a <span class="term" tabindex="0" data-def="When a model states something that sounds confident and plausible but is not true.">hallucination</span>. A classic example is asking it for a book's ISBN number. The model knows an ISBN looks like a number of a certain length, so it produces a number of that shape. It may not exist.</p>
+  <div class="board warn">
+    <span class="tag">Remember this</span>
+    <p>A language model produces the most <i>plausible</i> text, not the most <i>true</i> text. Most of what you will learn in this course (retrieval, tools, evaluation, agents) exists to close the gap between plausible and true.</p>
+  </div>
+
+  <p>One more oddity. Researchers do not fully understand what each of the billions of numbers does. We can measure that the model gets better at predicting, but we cannot point at a number and say "this one stores the capital of France". So we treat models like something we test by experiment: give it inputs, look at outputs, and measure how often it is right. This is why <b>evaluation</b> gets its own chapter later.</p>
+
+  <div class="recap"><h3>Chapter 1 in plain words</h3>
+    <ul>
+      <li>A language model predicts the next token, over and over.</li>
+      <li>The model is a big file of numbers plus a small program.</li>
+      <li>Learning to predict forces it to absorb knowledge, but only as a blurry memory.</li>
+      <li>So it can state false things confidently (hallucination).</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c1">
+    <h3>Check yourself</h3>
+    <div class="score" hidden></div>
+  </div>
+</section>
+
+<!-- ============================ CHAPTER 2 ============================ -->
+<section class="chapter" id="ch2" data-title="2 · How it's made">
+  <header class="chapter-head">
+    <span class="hand">Chapter 2</span>
+    <h2>How a language model is made</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>the difference between a "base model" and an "assistant"</li>
+      <li>what pre-training, fine-tuning and human feedback each do</li>
+      <li>why companies only pre-train rarely but fine-tune often</li>
+    </ul>
+  </div>
+
+  <h3>The learning loop in three words: guess, compare, nudge</h3>
+  <p>Where do the billions of numbers come from? From training. Picture the model as a student doing a huge fill-in-the-blank exercise:</p>
+  <div class="flow">
+    <div class="node"><b>1. Guess</b>Show the model some text with the last word hidden. It guesses the probabilities.</div><span class="arr">→</span>
+    <div class="node"><b>2. Compare</b>Check the real next word. Did the model give it a high probability?</div><span class="arr">→</span>
+    <div class="node"><b>3. Nudge</b>Adjust the numbers slightly so the real word would have scored higher.</div>
+  </div>
+  <p>Repeat this for a gigantic amount of text and the numbers slowly settle into a useful state. No human tells the model what any individual number should be. The only instruction is "get better at predicting".</p>
+
+  <h3>Two big stages (and one optional)</h3>
+  <p>Click through the stages. Each one uses the same guess, compare, nudge loop. What changes is the <b>data</b>.</p>
+
+  <div class="lab" id="stages">
+    <div class="lab-title">The assembly line</div>
+    <div class="tabs" role="tablist" id="st-tabs"></div>
+    <div class="panel" id="st-panel" role="tabpanel"></div>
+  </div>
+
+  <h3>Base model versus assistant: why we need stage 2</h3>
+  <p>After stage 1 you have a <b>base model</b>. It is an expert at continuing internet text, and nothing else. Ask it a question and it may continue with more questions, because a list of questions is a very normal thing to find on the internet. Stage 2 teaches it a new habit: when a user asks something, reply like a helpful assistant.</p>
+  <div class="compare">
+    <div><h4>Base model (after stage 1)</h4><p style="margin:0">You: <i>What is the capital of France?</i><br>Model: <i>What is the capital of Germany? What is the capital of Spain? What is…</i></p></div>
+    <div><h4>Assistant (after stage 2)</h4><p style="margin:0">You: <i>What is the capital of France?</i><br>Model: <i>The capital of France is Paris.</i></p></div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted)">This pair is an illustration of the behaviour, not a recording of a real model.</p>
+
+  <p>Here is the neat part. The 100,000 or so example conversations are tiny compared with the internet, but they are enough. The model's knowledge from stage 1 stays; stage 2 only changes the <i>style</i> of how it answers. Pre-training is about <b>knowledge</b>. Fine-tuning is about <b>behaviour</b>, which people also call alignment.</p>
+
+  <h3>Stage 3: learning from comparisons</h3>
+  <p>Writing a perfect answer from scratch is hard. Picking the better of two answers is much easier. Companies use this fact to improve models further. It is called <span class="term" tabindex="0" data-def="Reinforcement Learning from Human Feedback. People compare answers, and the model is nudged toward the kind of answers people prefer.">RLHF</span>. Try being the labeler:</p>
+
+  <div class="lab" id="labeler">
+    <div class="lab-title">Be a labeler <small>Task: "Write a haiku about paper clips."</small></div>
+    <div class="compare" style="margin-top:12px">
+      <div><h4>Answer A</h4><p style="margin:0">Bent silver ribbon,<br>holding pages together,<br>quiet desk helper.</p><p style="margin:8px 0 0"><button class="btn ghost" data-pick="A">I prefer A</button></p></div>
+      <div><h4>Answer B</h4><p style="margin:0">Paper clips are good,<br>they hold the papers so well,<br>I like paper clips.</p><p style="margin:8px 0 0"><button class="btn ghost" data-pick="B">I prefer B</button></p></div>
+    </div>
+    <p id="lab-out" style="margin-bottom:0" aria-live="polite"></p>
+  </div>
+
+  <h3>Why cost and frequency differ so much</h3>
+  <p>The numbers below describe Llama 2 70B, an older model whose training details were published. Today's best models cost ten times more or beyond, which means tens or even hundreds of millions of dollars.</p>
+  <div class="lab" id="cost">
+    <div class="lab-title">Stage 1 versus stage 2</div>
+    <div class="compare" style="margin-top:10px">
+      <div><h4>Pre-training</h4><ul style="margin:0;padding-left:1.1rem"><li>About 10 terabytes of text</li><li>About 6,000 GPUs for about 12 days</li><li>Roughly $2 million</li><li>Done rarely: once every few months or a year</li></ul></div>
+      <div><h4>Fine-tuning</h4><ul style="margin:0;padding-left:1.1rem"><li>About 100,000 quality conversations</li><li>Hours to about a day of computing</li><li>Much cheaper</li><li>Repeated often: weekly, even daily</li></ul></div>
+    </div>
+  </div>
+  <p>Companies improve their assistants in a loop. Deploy, watch for bad answers, have a person write the correct answer for each bad case, add it to the fine-tuning data, and train again. Because fine-tuning is cheap, this loop runs quickly.</p>
+
+  <h3>Open models and closed models</h3>
+  <p>Some companies, like Meta with Llama, release the parameters file so anyone can run or fine-tune the model. These are called <b>open-weights</b> models. Others, like OpenAI and Anthropic, keep the weights private and let you use the model through a website or an <span class="term" tabindex="0" data-def="Application Programming Interface. A way for one program to send a request to another program over the internet and get an answer back.">API</span>. Closed models have usually been stronger, and open ones are catching up. Which one is right depends on your task.</p>
+
+  <h3>One more idea: scaling</h3>
+  <p>Researchers found that how well a model predicts the next word depends mainly on two things: how many parameters it has and how much text it was trained on. Make both larger and it reliably gets better, without needing new inventions. That is why companies are racing to get more computers and more data.</p>
+
+  <div class="recap"><h3>Chapter 2 in plain words</h3>
+    <ul>
+      <li>Training is guess, compare, nudge, repeated at enormous scale.</li>
+      <li>Stage 1 (pre-training) on internet text gives knowledge: a base model.</li>
+      <li>Stage 2 (fine-tuning) on human-written conversations gives helpful behaviour: an assistant.</li>
+      <li>Stage 3 (RLHF) uses human comparisons to polish answers.</li>
+      <li>Stage 1 is rare and costly. Stages 2 and 3 are quick and repeated.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c2"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+<!-- ============================ CHAPTER 3 ============================ -->
+<section class="chapter" id="ch3" data-title="3 · Prompting">
+  <header class="chapter-head">
+    <span class="hand">Chapter 3</span>
+    <h2>Talking to a model: prompting</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can:</b>
+    <ul>
+      <li>explain what an API call to a model looks like</li>
+      <li>use five habits that improve any prompt</li>
+      <li>describe why measuring results matters from day one</li>
+    </ul>
+  </div>
+
+  <h3>How software talks to a model</h3>
+  <p>When you use a chat website, you type text and get text back. Programs do the same through an API:</p>
+  <div class="flow">
+    <div class="node"><b>Your software</b>Builds the text of a request</div><span class="arr">→</span>
+    <div class="node"><b>Model provider</b>Runs the model on powerful computers</div><span class="arr">→</span>
+    <div class="node"><b>Generated text</b>Returns to your software</div><span class="arr">→</span>
+    <div class="node"><b>Your software</b>Reads the text and uses it, or sends another request</div>
+  </div>
+  <p>The input is free-form text, written in ordinary language. The text you send is called a <span class="term" tabindex="0" data-def="The text you send to a model to tell it what you want.">prompt</span>. Writing it well is called prompting, and it is the single biggest lever you have. The same model can give a poor or an excellent answer depending on the prompt.</p>
+
+  <h3>Five habits of good prompts</h3>
+
+  <h3 style="margin-top:1.4rem">Habit 1: be clear and detailed</h3>
+  <p>The model cannot read your mind. "Write about our bottle" leaves it guessing the length, the audience, the tone and the facts. Say what you want.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 2: show examples</h3>
+  <p>Give one or two sample inputs and outputs in the style you want, then ask your real question. This is called <span class="term" tabindex="0" data-def="Giving the model a few worked examples inside the prompt so it copies the pattern.">few-shot prompting</span>. Showing is often stronger than describing.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 3: give it the facts</h3>
+  <p>If the answer depends on specific information, paste that information in, and tell the model to use only that. Add "if the answer is not in the text, say you cannot find it". This cuts down hallucination a lot, and it is the seed of the technique in Chapter 4.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 4: let it think before it answers</h3>
+  <p>Asking for the answer immediately gives the model no room to work. Ask it to reason first. This is called <span class="term" tabindex="0" data-def="Asking the model to write out its reasoning steps before the final answer. Often called CoT.">chain of thought</span>. A well-known case: ask a mid-sized model "is this student's maths solution correct?" and it may just agree. Ask it to first work out its own solution, then compare, and it checks properly. The written steps are part of the text the model reads when it produces the next words, so they genuinely help.</p>
+
+  <h3 style="margin-top:1.4rem">Habit 5: split big jobs into small steps</h3>
+  <p>One prompt with five tasks often goes badly. Five prompts with one task each, where the output of each feeds the next, works better. This is called <span class="term" tabindex="0" data-def="Running a sequence of simple prompts where each one uses the previous answer.">prompt chaining</span>.</p>
+  <div class="flow">
+    <div class="node"><b>Prompt 1</b>Extract the key facts</div><span class="arr">→</span>
+    <div class="node"><b>Prompt 2</b>Outline using those facts</div><span class="arr">→</span>
+    <div class="node"><b>Prompt 3</b>Write the final text from the outline</div>
+  </div>
+
+  <div class="lab" id="promptlab">
+    <div class="lab-title">Prompt lab <small>Tick habits and watch the prompt grow</small></div>
+    <div class="checks" id="pl-checks"></div>
+    <p style="margin:.6rem 0 .3rem;font-weight:700">Your prompt:</p>
+    <div class="promptbox" id="pl-box" aria-live="polite"></div>
+    <p id="pl-why" style="margin-bottom:0;font-size:.95rem"></p>
+  </div>
+
+  <h3>Two engineering habits that beginners skip</h3>
+  <ul>
+    <li><b>Keep logs.</b> Record the prompts you sent and the answers you got. When something goes wrong, the log is how you find out why.</li>
+    <li><b>Measure from the start.</b> Make a small set of questions with the answers you expect, and score your system against it each time you change something. Humans can do the scoring, but that is slow and costly, so people often ask a second model to grade the answers. That is called <span class="term" tabindex="0" data-def="Using one language model to score the outputs of another.">LLM-as-a-judge</span>. Models improve and get retired quickly. If you can measure, you can switch to a better model with confidence.</li>
+  </ul>
+
+  <h3>A cost-saving trick: the router</h3>
+  <p>Not every question needs the biggest model. A small piece of software (or a small model) can look at each incoming request and send it to the right prompt and the right model. Simple questions go to a cheap model. Hard ones go to a strong model. This lowers cost and often improves quality.</p>
+
+  <div class="recap"><h3>Chapter 3 in plain words</h3>
+    <ul>
+      <li>Software talks to a model by sending text and reading text back.</li>
+      <li>Good prompts are clear, show examples, supply facts, allow thinking and split big jobs.</li>
+      <li>Keep logs and measure results from the first day.</li>
+      <li>A router can send easy requests to cheap models.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c3"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+<!-- ============================ CHAPTER 4 ============================ -->
+<section class="chapter" id="ch4" data-title="4 · Weaknesses & fixes">
+  <header class="chapter-head">
+    <span class="hand">Chapter 4</span>
+    <h2>Fixing a model's weaknesses</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this chapter you can explain:</b>
+    <ul>
+      <li>five common weaknesses of language models</li>
+      <li>how retrieval-augmented generation (RAG) works, step by step</li>
+      <li>how tool use (function calling) lets a model act on the world</li>
+    </ul>
+  </div>
+
+  <h3>Five weaknesses</h3>
+  <p>Even a strong model has limits. Knowing them tells you why the techniques in this chapter exist.</p>
+  <ol>
+    <li><b>Hallucination.</b> It can state false things confidently, especially in maths and specific facts.</li>
+    <li><b>Knowledge cut-off.</b> Its training data stops at some date. It has not seen recent news.</li>
+    <li><b>No sources.</b> It can answer, but it cannot tell you which document the answer came from.</li>
+    <li><b>No private data.</b> It was trained on public text. It has never seen your company's documents.</li>
+    <li><b>Limited context.</b> It can only read so much text at once. Longer inputs cost more and respond slower.</li>
+  </ol>
+
+  <h3>Fix 1: Retrieval-Augmented Generation (RAG)</h3>
+  <p>The idea is simple. Do not ask the model to remember. Look up the relevant pages first, then hand them to the model with the question. It is an open-book exam instead of a closed-book exam. You already used the prompt side of this in Chapter 3, habit 3. RAG adds the automatic "look up" step.</p>
+
+  <div class="lab" id="rag">
+    <div class="lab-title">RAG step by step <small>Example: a company help desk</small></div>
+    <div class="row" style="margin:10px 0">
+      <button class="btn ghost" id="rag-prev">Back</button>
+      <button class="btn" id="rag-next">Next step</button>
+      <span id="rag-count" style="color:var(--muted)"></span>
+    </div>
+    <div id="rag-body" aria-live="polite"></div>
+  </div>
+
+  <div class="board note">
+    <span class="tag">Words you will hear</span>
+    <p><b>Chunk</b>: a small piece of a document, like one paragraph. <b>Embedding</b>: a list of numbers that represents the meaning of a piece of text, so texts with similar meaning get similar numbers. <b>Vector database</b>: a store that can quickly find the stored chunks whose numbers are closest to a question's numbers. <b>Top-k</b>: the k best matches, for example the best 3.</p>
+  </div>
+  <p>There are other ways to retrieve. You can search the web instead of your own files. You can also turn your documents into a <i>knowledge graph</i> (things and the relationships between them), which is called graph RAG. The common pattern is the same: find relevant material, put it in the prompt.</p>
+
+  <h3>What RAG fixes</h3>
+  <ul>
+    <li>Less hallucination, because the answer comes from supplied text.</li>
+    <li>Citations are possible, because you know which chunk was used.</li>
+    <li>Your private documents become usable.</li>
+    <li>You only send a few relevant chunks, so the context stays short.</li>
+  </ul>
+
+  <h3>Fix 2: Tool use (function calling)</h3>
+  <p>A language model takes text in and gives text out. On its own it cannot check the weather, send an email or run a calculation reliably. Tool use gives it hands.</p>
+  <p>You tell the model, in the prompt, which tools exist and the exact format to use when it wants one. When the model decides a tool is needed, it writes a request in that format. <b>Your software</b> (not the model) notices the request, runs the real function, and passes the result back to the model. Then the model writes the final answer for the user. Step through it:</p>
+
+  <div class="lab" id="tool">
+    <div class="lab-title">Tool use step by step <small>Question: "What's the weather in San Francisco?"</small></div>
+    <div class="row" style="margin:10px 0">
+      <button class="btn ghost" id="tool-prev">Back</button>
+      <button class="btn" id="tool-next">Next step</button>
+      <span id="tool-count" style="color:var(--muted)"></span>
+    </div>
+    <div class="chat" id="tool-chat" aria-live="polite"></div>
+    <p id="tool-explain" style="margin-bottom:0;font-size:.95rem"></p>
+  </div>
+
+  <div class="board warn">
+    <span class="tag">Common mistake</span>
+    <p>Beginners think the model itself calls the weather service. It does not. The model only writes text that <i>asks</i> for the call. Your own program does the calling. This split matters a lot for safety, because your software decides what is allowed to run.</p>
+  </div>
+
+  <p>The same idea covers writing code. The model can write a small program to do a calculation or draw a chart, and your software runs it in a protected area called a <span class="term" tabindex="0" data-def="A locked-down environment where code can run without being able to harm the rest of the system.">sandbox</span>, then returns the output to the model.</p>
+
+  <h3>Where this leads</h3>
+  <p>Put the pieces together. A model that can <b>retrieve</b> information, <b>use tools</b>, and <b>look at the results and decide what to do next</b> is no longer just answering. It is working on a task. That is the starting point for the next chapter, where we meet AI agents.</p>
+
+  <div class="recap"><h3>Chapter 4 in plain words</h3>
+    <ul>
+      <li>Models hallucinate, go out of date, cite nothing, miss private data and have limited reading room.</li>
+      <li>RAG looks up relevant chunks and puts them into the prompt.</li>
+      <li>Tool use lets the model ask your software to run functions and return results.</li>
+      <li>Combine retrieval, tools and a loop, and you are close to an agent.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c4"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+<section class="chapter" id="next" data-title="Next">
+  <span class="hand">That is Part 1</span>
+  <h2>Coming next: AI agents</h2>
+  <p>Chapters 5 to 10 will cover what an agent is, how to design one that works, how to test it, how MCP connects agents to other software, how to build one from scratch, and a final project with a simulated village of AI philosophers. Tell your teacher which chapter you want next, or what felt confusing in Part 1, and it will be adjusted.</p>
+
+  <h3>Glossary</h3>
+  <dl class="gloss">
+    <dt>Language model (LLM)</dt><dd>A program that predicts the next token in a piece of text. "LLM" means large language model.</dd>
+    <dt>Token</dt><dd>A small piece of text, often a word or part of one, that the model treats as one unit.</dd>
+    <dt>Parameters (weights)</dt><dd>The billions of numbers inside a model that store what it learned.</dd>
+    <dt>Pre-training</dt><dd>Stage 1: learning to predict the next token from a huge amount of internet text.</dd>
+    <dt>Fine-tuning</dt><dd>Stage 2: training on a smaller set of high-quality example conversations so the model behaves like an assistant.</dd>
+    <dt>RLHF</dt><dd>Using human comparisons of answers to improve a model further.</dd>
+    <dt>Hallucination</dt><dd>A confident answer that is not true.</dd>
+    <dt>Prompt</dt><dd>The text you send to a model.</dd>
+    <dt>Few-shot prompting</dt><dd>Including a few examples in the prompt.</dd>
+    <dt>Chain of thought</dt><dd>Asking the model to reason in steps before answering.</dd>
+    <dt>Prompt chaining</dt><dd>Splitting a task into a series of simple prompts.</dd>
+    <dt>LLM-as-a-judge</dt><dd>Using a model to score the outputs of another model.</dd>
+    <dt>API</dt><dd>A way for programs to send requests to each other and receive answers.</dd>
+    <dt>RAG</dt><dd>Retrieval-Augmented Generation: look up relevant text and give it to the model with the question.</dd>
+    <dt>Embedding</dt><dd>A list of numbers that captures the meaning of a text, used to find similar texts.</dd>
+    <dt>Tool use / function calling</dt><dd>The model writes a structured request, your software runs it and returns the result.</dd>
+    <dt>Sandbox</dt><dd>A protected place where generated code can run safely.</dd>
+  </dl>
+
+  <footer>
+    <p>This course is built from public talks. Part 1 draws mainly on Andrej Karpathy's "[1hr Talk] Intro to Large Language Models", the Stanford CS229 lecture "Building Large Language Models", and Insop Song's Stanford webinar "Agentic AI: A Progression of Language Model Usage". Explanations and examples are rewritten for beginners. Numbers shown in the next-word demo are invented for teaching.</p>
+    <p><a href="https://www.youtube.com/watch?v=zjkBMFhNj_g">Intro to Large Language Models</a> · <a href="https://www.youtube.com/watch?v=9vM4p9NN0Ts">Stanford CS229: Building LLMs</a> · <a href="https://www.youtube.com/watch?v=kJLiOGle3Lw">Stanford Webinar: Agentic AI</a></p>
+  </footer>
+</section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+  function store(k,v){try{if(v===undefined){return localStorage.getItem(k)}localStorage.setItem(k,v)}catch(e){return null}}
+
+  /* chapter chips + progress */
+  var chips=$("#chips");
+  $$(".chapter").forEach(function(c){
+    var a=document.createElement("a");a.href="#"+c.id;a.textContent=c.dataset.title;a.dataset.t=c.id;chips.appendChild(a);
+  });
+  function onScroll(){
+    var h=document.documentElement.scrollHeight-innerHeight;
+    $("#barfill").style.width=(h>0?Math.min(100,scrollY/h*100):0)+"%";
+    var cur=null;
+    $$(".chapter").forEach(function(c){if(c.getBoundingClientRect().top<140)cur=c.id});
+    $$("a",chips).forEach(function(a){
+      var on=a.dataset.t===cur;a.classList.toggle("on",on);
+      if(on&&a.scrollIntoView){var box=chips.getBoundingClientRect(),r=a.getBoundingClientRect();if(r.left<box.left||r.right>box.right){chips.scrollLeft+=r.left-box.left-20}}
+    });
+  }
+  addEventListener("scroll",onScroll,{passive:true});onScroll();
+
+  /* ---------- Chapter 1: next-word demo ---------- */
+  var FALLBACK=[["and",.30],["the",.25],["to",.20],[".",.25]];
+  var NW={
+    "":[["books",.38],["laptops",.24],["notebooks",.16],["textbooks",.12],["minds",.10]],
+    "books":[["and",.34],["to",.22],[".",.20],["before",.14],["again",.10]],
+    "laptops":[["and",.33],["to",.24],[".",.23],["during",.12],["quickly",.08]],
+    "notebooks":[["and",.36],["to",.22],[".",.22],["carefully",.12],["slowly",.08]],
+    "textbooks":[["and",.35],["to",.25],[".",.20],["on",.12],["again",.08]],
+    "minds":[["to",.30],["and",.26],[".",.24],["during",.12],["slowly",.08]],
+    "and":[["began",.28],["started",.24],["took",.20],["wrote",.16],["listened",.12]],
+    "to":[["the",.34],["page",.20],["chapter",.18],["a",.16],["today's",.12]],
+    "the":[["first",.25],["teacher",.22],["lesson",.20],["next",.18],["whole",.15]]
+  };
+  var ctx=[];
+  function nwRender(){
+    var s=$("#nw-sentence");
+    var base="The students opened their";
+    var html=base+(ctx.length?" "+ctx.map(function(w,i){return i===ctx.length-1?'<span class="new">'+esc(w)+"</span>":esc(w)}).join(" ").replace(/ \./g,"."):"");
+    s.innerHTML=html;
+    var last=ctx.length?ctx[ctx.length-1]:"";
+    var done=last===".";
+    var opts=done?[]:(NW[last]||FALLBACK);
+    var box=$("#nw-opts");box.innerHTML="";
+    opts.forEach(function(o){
+      var b=document.createElement("button");b.className="opt";b.type="button";
+      b.innerHTML='<span class="w">'+esc(o[0])+'</span><span class="track"><span class="fill" style="width:'+Math.round(o[1]*100/0.4*0.8)+'%"></span></span><span class="pc">'+Math.round(o[1]*100)+"%</span>";
+      b.addEventListener("click",function(){ctx.push(o[0]);nwRender()});
+      box.appendChild(b);
+    });
+    $("#nw-sample").disabled=done;
+    $("#nw-msg").textContent=done?"The sentence ended. A real model keeps going until it picks a special stop token, and long answers are made the same way: one pick at a time.":(ctx.length>=12?"That is a long sentence. Real models do this for hundreds of tokens.":"Each bar is the model's estimated chance for that next word.");
+  }
+  function pick(list){var r=Math.random(),t=0;for(var i=0;i<list.length;i++){t+=list[i][1];if(r<=t)return list[i][0]}return list[list.length-1][0]}
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  $("#nw-sample").addEventListener("click",function(){
+    var last=ctx.length?ctx[ctx.length-1]:"";if(last===".")return;
+    ctx.push(pick(NW[last]||FALLBACK));nwRender();
+  });
+  $("#nw-reset").addEventListener("click",function(){ctx=[];nwRender()});
+  nwRender();
+
+  /* ---------- Chapter 1: params calculator ---------- */
+  var sizes=[7,13,34,70],curSize=70;
+  var seg=$("#p-seg");
+  sizes.forEach(function(n){
+    var b=document.createElement("button");b.type="button";b.textContent=n+"B";b.setAttribute("aria-pressed",n===curSize);
+    b.addEventListener("click",function(){curSize=n;pcalc()});seg.appendChild(b);
+  });
+  function pcalc(){
+    $$("button",seg).forEach(function(b,i){b.setAttribute("aria-pressed",sizes[i]===curSize)});
+    var gb=curSize*2;
+    $("#p-gb").textContent=gb+" GB";
+    $("#p-math").textContent=curSize+" billion × 2 bytes = "+gb+" billion bytes";
+    $("#p-note").textContent=curSize===70?"The biggest Llama 2 model. The file is far larger than the memory of a typical laptop, so running it is slow there.":(curSize===7?"The smallest Llama 2 model. This size can run on an ordinary modern laptop.":"A middle size. Bigger models know more but need more storage and more computing power.");
+  }
+  pcalc();
+
+  /* ---------- Chapter 2: stages ---------- */
+  var STAGES=[
+    {t:"Stage 1: Pre-training",d:[["Goal","Learn the patterns and knowledge of language."],["Data","Huge amounts of internet text (about 10 TB for Llama 2 70B). Quantity matters most, quality is mixed."],["Compute","About 6,000 GPUs for about 12 days. Roughly $2 million."],["How often","Rarely. Once every few months or a year."],["Result","A <b>base model</b>: a text continuer with lots of knowledge."]]},
+    {t:"Stage 2: Fine-tuning",d:[["Goal","Teach the model to answer like a helpful assistant."],["Data","About 100,000 high-quality conversations, written by people who follow detailed labeling instructions. Quality matters most."],["Compute","Far smaller. About a day."],["How often","Often. Companies fix bad answers and retrain weekly or even daily."],["Result","An <b>assistant model</b> you can chat with."]]},
+    {t:"Stage 3: Human feedback (optional)",d:[["Goal","Polish answers using what people prefer."],["Data","Comparisons: people look at several answers to the same question and pick the best."],["Why comparisons","Choosing the better of two answers is much easier than writing the perfect answer."],["Name","RLHF: reinforcement learning from human feedback."],["Result","A model that tends to produce answers people like more."]]}
+  ];
+  var curStage=0;
+  function stRender(){
+    var tabs=$("#st-tabs");tabs.innerHTML="";
+    STAGES.forEach(function(s,i){
+      var b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",i===curStage);b.textContent=s.t.split(":")[0];
+      b.addEventListener("click",function(){curStage=i;stRender()});tabs.appendChild(b);
+    });
+    var p=$("#st-panel");
+    p.innerHTML='<p style="margin-top:0"><b>'+STAGES[curStage].t+'</b></p><dl class="kv">'+STAGES[curStage].d.map(function(r){return "<dt>"+r[0]+"</dt><dd>"+r[1]+"</dd>"}).join("")+"</dl>";
+  }
+  stRender();
+
+  /* labeler */
+  $$("#labeler [data-pick]").forEach(function(b){
+    b.addEventListener("click",function(){
+      $("#lab-out").innerHTML="You picked <b>"+b.dataset.pick+"</b>. That click is one <b>comparison label</b>. Collect thousands of these from many people and the system learns what kind of answer humans tend to prefer. Neither answer is wrong. The point is that choosing was easy, while writing the best haiku from scratch would have been hard.";
+    });
+  });
+
+  /* ---------- Chapter 3: prompt lab ---------- */
+  var BASE="Write about our water bottle.";
+  var HABITS=[
+    {id:"clear",label:"Be clear and detailed",add:"Write a description of about 50 words for a 1-litre insulated steel water bottle. The readers are hikers. Use a friendly tone and mention that it keeps drinks cold for 24 hours.",why:"Now the model knows the length, the product, the audience, the tone and a key fact. Nothing is left to guesswork."},
+    {id:"fewshot",label:"Show an example",add:"Example of the style I want:\nProduct: bamboo toothbrush\nDescription: Gentle on teeth, kinder to the planet. Soft bristles, plastic-free handle.",why:"The model copies the length, rhythm and tone of your example. Showing beats describing."},
+    {id:"facts",label:"Give it the facts and a safety rule",add:"Use only these facts: steel body, 1 litre, 24 hours cold, fits car cup holders. If something is not listed, do not invent it.",why:"The model now writes from supplied facts and is told not to invent others. This reduces hallucination."},
+    {id:"think",label:"Ask it to think first",add:"First list the three benefits hikers care about most. Then write the description using those benefits.",why:"The written list becomes part of the text the model reads, so the final description is better organised."}
+  ];
+  var plc=$("#pl-checks");
+  HABITS.forEach(function(h){
+    var l=document.createElement("label");
+    l.innerHTML='<input type="checkbox" id="pl-'+h.id+'"> <span>'+h.label+"</span>";
+    l.querySelector("input").addEventListener("change",plRender);plc.appendChild(l);
+  });
+  function plRender(){
+    var parts=[],why=[];
+    var clear=$("#pl-clear").checked;
+    parts.push(clear?'<span class="add">'+esc(HABITS[0].add)+"</span>":esc(BASE));
+    if(clear)why.push(HABITS[0].why);
+    HABITS.slice(1).forEach(function(h){
+      if($("#pl-"+h.id).checked){parts.push('<span class="add">'+esc(h.add)+"</span>");why.push(h.why)}
+    });
+    $("#pl-box").innerHTML=parts.join("\n\n");
+    $("#pl-why").textContent=why.length?why.join(" "):"With no habits ticked, the model has to guess almost everything. Tick a box to improve it.";
+  }
+  plRender();
+
+  /* ---------- Chapter 4: RAG stepper ---------- */
+  var RAG=[
+    {t:"Prepare (done once, ahead of time)",b:"<p>Your company has many documents: refund policy, shipping rules, product guides. Cut each into small <b>chunks</b>. Turn each chunk into an <b>embedding</b> (a list of numbers that captures its meaning). Store the chunks and their numbers in a <b>vector database</b>.</p><div class='flow'><div class='node'>Documents</div><span class='arr'>→</span><div class='node'>Chunks</div><span class='arr'>→</span><div class='node hl'>Embeddings in a vector database</div></div>"},
+    {t:"A question arrives",b:"<p>A customer asks: <i>\"Can I return a jacket I bought three weeks ago?\"</i> The system turns this question into an embedding too, using the same method.</p><div class='flow'><div class='node hl'>Question</div><span class='arr'>→</span><div class='node'>Question embedding</div></div>"},
+    {t:"Search for the closest chunks",b:"<p>The database finds the stored chunks whose numbers are nearest to the question's numbers. This is a <b>nearest-neighbour search</b>. Keep the best few, for example the top 3. Say it finds the returns policy, the clothing exceptions, and the refund timeline.</p><div class='flow'><div class='node'>Question embedding</div><span class='arr'>→</span><div class='node hl'>Top-3 chunks</div></div>"},
+    {t:"Build the prompt",b:"<p>Software writes a prompt that contains the chunks and the question, plus the safety rule from Chapter 3.</p><div class='promptbox'>Answer using only the text below. If the answer is not there, say you cannot find it.\n\n[chunk 1: returns policy]\n[chunk 2: clothing exceptions]\n[chunk 3: refund timeline]\n\nQuestion: Can I return a jacket I bought three weeks ago?</div>"},
+    {t:"The model answers, with sources",b:"<p>The model reads the chunks and writes an answer based on them. Because you know which chunks you supplied, you can show the customer where the answer came from. Fewer made-up policies, and your private documents did the work.</p><div class='bubble model'><span class='who'>model</span>Yes. Clothing can be returned within 30 days if unworn, so three weeks is fine. (Source: returns policy, clothing exceptions.)</div>"}
+  ];
+  var ragI=0;
+  function ragRender(){
+    $("#rag-count").textContent="Step "+(ragI+1)+" of "+RAG.length;
+    $("#rag-body").innerHTML="<p style='margin:0 0 6px'><b>"+RAG[ragI].t+"</b></p>"+RAG[ragI].b;
+    $("#rag-prev").disabled=ragI===0;$("#rag-next").disabled=ragI===RAG.length-1;
+  }
+  $("#rag-prev").addEventListener("click",function(){if(ragI>0){ragI--;ragRender()}});
+  $("#rag-next").addEventListener("click",function(){if(ragI<RAG.length-1){ragI++;ragRender()}});
+  ragRender();
+
+  /* ---------- Chapter 4: tool stepper ---------- */
+  var TOOL=[
+    {c:"user",w:"user",x:"What's the weather in San Francisco?",e:"The user asks something the model cannot know from training. Weather changes every hour."},
+    {c:"model",w:"model (text only)",x:'{"tool": "get_weather", "city": "San Francisco"}',e:"The prompt told the model which tools exist and what format to use. The model writes a structured request. It has not called anything yet. It only wrote text."},
+    {c:"sw",w:"your software",x:"Spots the request, then calls the real weather service with city = San Francisco.",e:"Your program reads the model's text, checks it is an allowed tool, and runs the real function. This is the part that actually touches the outside world."},
+    {c:"sw",w:"weather service replies",x:'{"temperature_c": 17, "sky": "foggy"}',e:"The service returns raw data. (These values are examples.)"},
+    {c:"sw",w:"your software",x:"Adds the result to the conversation and asks the model to continue.",e:"The model now sees the real data as part of its input."},
+    {c:"model",w:"model",x:"It's about 17°C and foggy in San Francisco right now, so bring a light jacket.",e:"The model turns the raw data into a friendly answer. Done."}
+  ];
+  var toolI=0;
+  function toolRender(){
+    var box=$("#tool-chat");box.innerHTML="";
+    TOOL.slice(0,toolI+1).forEach(function(m,i){
+      var d=document.createElement("div");d.className="bubble "+m.c;
+      d.innerHTML='<span class="who">'+esc(m.w)+"</span>"+(m.x.charAt(0)==="{"?"<pre>"+esc(m.x)+"</pre>":esc(m.x));
+      if(i===toolI)d.style.outline="2px solid var(--accent)";
+      box.appendChild(d);
+    });
+    $("#tool-explain").innerHTML="<b>What is happening:</b> "+esc(TOOL[toolI].e);
+    $("#tool-count").textContent="Step "+(toolI+1)+" of "+TOOL.length;
+    $("#tool-prev").disabled=toolI===0;$("#tool-next").disabled=toolI===TOOL.length-1;
+  }
+  $("#tool-prev").addEventListener("click",function(){if(toolI>0){toolI--;toolRender()}});
+  $("#tool-next").addEventListener("click",function(){if(toolI<TOOL.length-1){toolI++;toolRender()}});
+  toolRender();
+
+  /* ---------- quizzes ---------- */
+  var QUIZ={
+    c1:[
+      {q:"In one sentence, what does a language model do?",o:["Looks up answers in a database of facts","Predicts the most likely next token given the text so far","Understands the world the way a person does"],a:1,f:"Right answer: it predicts the next token. Long replies come from repeating that step, feeding each new word back in."},
+      {q:"What is a large language model, physically, on a computer?",o:["A giant program with millions of lines of code","A parameters file (the numbers) plus a small program that uses it","A live connection to the internet"],a:1,f:"Two files: the parameters and a small program. The knowledge lives in the numbers."},
+      {q:"A 7-billion-parameter model stores each parameter in 2 bytes. About how big is its parameters file?",o:["7 GB","14 GB","140 GB"],a:1,f:"7 billion × 2 bytes = 14 billion bytes, about 14 GB. The 70B model is 140 GB."},
+      {q:"Why can a model state a false fact confidently?",o:["It is lying on purpose","It produces plausible text from a blurry memory, which is not the same as true text","It always copies from a wrong website"],a:1,f:"It is optimised to produce plausible continuations. That is why we add retrieval, tools and evaluation later."}
+    ],
+    c2:[
+      {q:"What is the main job of pre-training (stage 1)?",o:["Teach the model to be polite","Build broad knowledge by predicting the next token on a huge amount of text","Collect human comparisons"],a:1,f:"Pre-training is about knowledge. Politeness and format come in stage 2."},
+      {q:"What does fine-tuning change?",o:["It adds all the knowledge from scratch","It mainly changes behaviour, so the model answers like a helpful assistant","It makes the model physically smaller"],a:1,f:"Same learning loop, different data: a smaller set of high-quality conversations."},
+      {q:"Why do companies use comparisons (RLHF)?",o:["Choosing the better of two answers is easier than writing a perfect one","Computers cannot read answers","It is free"],a:0,f:"Comparisons are easier for people, so you can gather lots of useful feedback."},
+      {q:"Which stage do companies repeat most often?",o:["Pre-training, every week","Fine-tuning, because it is much cheaper","Neither is ever repeated"],a:1,f:"Fine-tuning takes about a day, so teams can fix bad answers and retrain frequently."}
+    ],
+    c3:[
+      {q:"Which prompt is better?",o:["Write about our bottle.","Write a 50-word description of our 1-litre steel bottle for hikers in a friendly tone.","Bottle."],a:1,f:"Detail removes guesswork. The model cannot read your mind."},
+      {q:"You paste a company policy into the prompt and add \"if the answer is not in the text, say you cannot find it\". What are you mainly reducing?",o:["Cost","Hallucination","Speed"],a:1,f:"Grounding the answer in supplied text, with permission to say \"not found\", reduces made-up answers."},
+      {q:"Why does asking a model to reason step by step often help?",o:["The written steps become part of the text the model reads when it continues","It makes the model run faster","It unlocks a secret mode"],a:0,f:"The model's own earlier words are context for its later words, so a good plan helps."},
+      {q:"What is a router?",o:["A device that connects to Wi-Fi","Software that sends each request to the most suitable prompt or model","A kind of database"],a:1,f:"A router sends simple requests to cheap models and hard ones to strong models."}
+    ],
+    c4:[
+      {q:"What problem does RAG mainly address?",o:["Making the model larger","Letting the model use fresh or private documents and show sources","Making the screen brighter"],a:1,f:"RAG looks up relevant text and gives it to the model, like an open-book exam."},
+      {q:"In RAG, what is stored in a vector database?",o:["Chunks of text with their embeddings (number lists that capture meaning)","Only user passwords","Copies of the model"],a:0,f:"The database finds chunks whose embeddings are nearest to the question's embedding."},
+      {q:"In tool use, who actually calls the weather service?",o:["The language model","Your software, after reading the model's request","The user's phone"],a:1,f:"The model only writes the request as text. Your software runs the real function and returns the result."},
+      {q:"A model that can retrieve, use tools, and decide what to do next after seeing results is moving toward which idea?",o:["A calculator","An AI agent","A bigger file"],a:1,f:"That loop of acting and observing is what Chapter 5 is about."}
+    ]
+  };
+  $$(".quiz").forEach(function(box){
+    var id=box.dataset.quiz,qs=QUIZ[id],got=0,done=0;
+    var score=$(".score",box);
+    qs.forEach(function(q,qi){
+      var d=document.createElement("div");d.className="q";
+      d.innerHTML="<p>"+(qi+1)+". "+esc(q.q)+'</p><div class="choices"></div><div class="fb" hidden></div>';
+      var ch=$(".choices",d),fb=$(".fb",d);
+      q.o.forEach(function(opt,oi){
+        var b=document.createElement("button");b.type="button";b.textContent=opt;
+        b.addEventListener("click",function(){
+          if(d.dataset.answered)return;d.dataset.answered=1;done++;
+          var btns=$$("button",ch);
+          btns[q.a].classList.add("right");
+          if(oi===q.a){got++;fb.textContent="Correct. "+q.f}else{b.classList.add("wrong");fb.textContent="Not quite. "+q.f}
+          fb.hidden=false;
+          if(done===qs.length){score.hidden=false;score.textContent="You got "+got+" of "+qs.length+(got===qs.length?". Excellent, on to the next chapter!":". Re-read the parts behind the ones you missed, then continue.");store("agentschool-"+id,String(got))}
+        });
+        ch.appendChild(b);
+      });
+      box.insertBefore(d,score);
+    });
+  });
+})();
+</script>
