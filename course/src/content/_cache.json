@@ -1,4 +1,794 @@
 {
+ "ansible-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ ssh ev01 'echo \"logged in to $(hostname) as $(whoami) on port 2222\"'",
+     "o": "logged in to vm as student on port 2222",
+     "x": 0
+    },
+    {
+     "c": "$ ssh sql01 'echo \"logged in as $(whoami) on port 2223\"'",
+     "o": "logged in as student on port 2223",
+     "x": 0
+    },
+    {
+     "c": "$ ansible --version | head -1",
+     "o": "ansible [core 2.19.13]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans && cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> \n> [sqlservers]\n> sql01 ansible_host=127.0.0.1 ansible_port=2223\n> \n> [prod:children]\n> evservers\n> sqlservers\n> \n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ansible.cfg <<'EOF'\n> [defaults]\n> inventory = inventory.ini\n> interpreter_python = auto_silent\n> host_key_checking = False\n> retry_files_enabled = False\n> \n> [ssh_connection]\n> usetty = False\n> pipelining = True\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-inventory --graph",
+     "o": "@all:\n  |--@ungrouped:\n  |--@prod:\n  |  |--@evservers:\n  |  |  |--ev01\n  |  |--@sqlservers:\n  |  |  |--sql01",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible all -m ping",
+     "o": "ev01 | SUCCESS => {\n    \"ansible_facts\": {\n        \"discovered_interpreter_python\": \"/usr/bin/python3.13\"\n    },\n    \"changed\": false,\n    \"ping\": \"pong\"\n}\nsql01 | SUCCESS => {\n    \"ansible_facts\": {\n        \"discovered_interpreter_python\": \"/usr/bin/python3.13\"\n    },\n    \"changed\": false,\n    \"ping\": \"pong\"\n}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible evservers -m command -a \"uname -s\"",
+     "o": "ev01 | CHANGED | rc=0 >>\nLinux",
+     "x": 0
+    },
+    {
+     "c": "$ ansible all -m shell -a \"echo \\$((6*7))\"",
+     "o": "sql01 | CHANGED | rc=0 >>\n42\nev01 | CHANGED | rc=0 >>\n42",
+     "x": 0
+    },
+    {
+     "c": "$ ansible sqlservers -m setup -a \"filter=ansible_distribution*\" | head -8",
+     "o": "sql01 | SUCCESS => {\n    \"ansible_facts\": {\n        \"ansible_distribution\": \"Ubuntu\",\n        \"ansible_distribution_file_parsed\": true,\n        \"ansible_distribution_file_path\": \"/etc/os-release\",\n        \"ansible_distribution_file_variety\": \"Debian\",\n        \"ansible_distribution_major_version\": \"24\",\n        \"ansible_distribution_release\": \"noble\",",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible 'prod:!sqlservers' --list-hosts",
+     "o": "  hosts (1):\n    ev01",
+     "x": 0
+    },
+    {
+     "c": "$ ansible all --limit sql01 -m command -a \"echo only-sql01\" | grep -o \"only-sql01\"",
+     "o": "only-sql01",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -m file -a \"path=/tmp/ev-demo-dir state=directory mode=0750\" | grep -E '\"changed\"'",
+     "o": "    \"changed\": true,",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -m file -a \"path=/tmp/ev-demo-dir state=directory mode=0750\" | grep -E '\"changed\"'",
+     "o": "    \"changed\": false,",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -m file -a \"path=/tmp/ev-demo-dir state=absent\" | grep -E '\"changed\"'",
+     "o": "    \"changed\": true,",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0b9e33d8744b6a9d"
+ },
+ "ansible-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans && cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> [sqlservers]\n> sql01 ansible_host=127.0.0.1 ansible_port=2223\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ansible.cfg <<'EOF'\n> [defaults]\n> inventory = inventory.ini\n> interpreter_python = auto_silent\n> host_key_checking = False\n> retry_files_enabled = False\n> \n> [ssh_connection]\n> usetty = False\n> pipelining = True\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf /tmp/ev01-conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > site.yml <<'EOF'\n> - name: Prepare EV servers\n>   hosts: evservers\n>   gather_facts: false\n>   tasks:\n>     - name: Create the config folder\n>       ansible.builtin.file:\n>         path: /tmp/ev01-conf\n>         state: directory\n>         mode: \"0750\"\n> \n>     - name: Write the EV config file\n>       ansible.builtin.copy:\n>         dest: /tmp/ev01-conf/evault.conf\n>         content: |\n>           server=EV01\n>           retries=3\n>         mode: \"0640\"\n> \n>     - name: Make sure retries is set to 5\n>       ansible.builtin.lineinfile:\n>         path: /tmp/ev01-conf/evault.conf\n>         regexp: '^retries='\n>         line: retries=5\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml",
+     "o": "\nPLAY [Prepare EV servers] ******************************************************\n\nTASK [Create the config folder] ************************************************\nchanged: [ev01]\n\nTASK [Write the EV config file] ************************************************\nchanged: [ev01]\n\nTASK [Make sure retries is set to 5] *******************************************\nchanged: [ev01]\n\nPLAY RECAP *********************************************************************\nev01                       : ok=3    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | tail -3",
+     "o": "PLAY RECAP *********************************************************************\nev01                       : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'cat /tmp/ev01-conf/evault.conf'",
+     "o": "server=EV01\nretries=5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i '/Make sure retries/,$d' site.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/retries=3/retries=5/' site.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | tail -2",
+     "o": "ev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | tail -2",
+     "o": "ev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/retries=5/retries=9/' site.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml --check --diff | grep -E '^(TASK|changed|ok|\\+|-|PLAY RECAP|ev01)' | grep -v '^[-+]{3}'",
+     "o": "TASK [Create the config folder] ************************************************\nok: [ev01]\nTASK [Write the EV config file] ************************************************\n--- before: /tmp/ev01-conf/evault.conf\n+++ after: /tmp/ev01-conf/evault.conf\n-retries=5\n+retries=9\nchanged: [ev01]\nPLAY RECAP *********************************************************************\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'grep retries /tmp/ev01-conf/evault.conf'",
+     "o": "retries=5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | tail -2",
+     "o": "ev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'grep retries /tmp/ev01-conf/evault.conf'",
+     "o": "retries=9",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > who.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   tasks:\n>     - name: Who am I?\n>       ansible.builtin.command: whoami\n>       register: me\n>       changed_when: false\n>     - name: Who am I with become?\n>       ansible.builtin.command: whoami\n>       become: true\n>       register: me_root\n>       changed_when: false\n>     - name: Show both\n>       ansible.builtin.debug:\n>         msg: \"normal={{ me.stdout }} escalated={{ me_root.stdout }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook who.yml | grep -E 'msg|normal'",
+     "o": "    \"msg\": \"normal=student escalated=root\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > fail.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   tasks:\n>     - name: This works\n>       ansible.builtin.debug:\n>         msg: \"first\"\n>     - name: This fails\n>       ansible.builtin.command: ls /nonexistent-folder\n>     - name: This is never reached\n>       ansible.builtin.debug:\n>         msg: \"third\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook fail.yml 2>&1 | grep -E \"TASK|fatal|PLAY RECAP|ev01 \" | sed 's/ => .*//' | cut -c1-100",
+     "o": "TASK [This works] **************************************************************\nTASK [This fails] **************************************************************\nfatal: [ev01]: FAILED!\nPLAY RECAP *********************************************************************\nev01                       : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "816cd8b8b4e9498d"
+ },
+ "ansible-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans2/group_vars ~/lab/ans2/host_vars && cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> [sqlservers]\n> sql01 ansible_host=127.0.0.1 ansible_port=2223\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '[defaults]\\ninventory = inventory.ini\\ninterpreter_python = auto_silent\\nretry_files_enabled = False\\n[ssh_connection]\\nusetty = False\\npipelining = True\\n' > ansible.cfg",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'app_name: evault\\nmax_retries: 3\\nbase_dir: /tmp/lab-hosts/{{ inventory_hostname }}\\n' > group_vars/all.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'max_retries: 7\\nrole_note: indexing server\\n' > host_vars/ev01.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'role_note: database server\\n' > host_vars/sql01.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > vars.yml <<'EOF'\n> - hosts: all\n>   gather_facts: false\n>   tasks:\n>     - name: Show variables for each host\n>       ansible.builtin.debug:\n>         msg: \"{{ inventory_hostname }}: {{ role_note }}, max_retries={{ max_retries }}, dir={{ base_dir }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook vars.yml | grep msg",
+     "o": "    \"msg\": \"ev01: indexing server, max_retries=7, dir=/tmp/lab-hosts/ev01\"\n    \"msg\": \"sql01: database server, max_retries=3, dir=/tmp/lab-hosts/sql01\"",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook vars.yml -e max_retries=1 | grep msg | cut -d, -f2",
+     "o": " max_retries=1\n max_retries=1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > facts.yml <<'EOF'\n> - hosts: ev01\n>   tasks:\n>     - name: Show some facts\n>       ansible.builtin.debug:\n>         msg: \"{{ ansible_distribution }} {{ ansible_distribution_major_version }}, family={{ ansible_os_family }}\"\n>     - name: Only on Debian-family systems\n>       ansible.builtin.debug:\n>         msg: \"this is a Debian-family host: use apt\"\n>       when: ansible_os_family == \"Debian\"\n>     - name: Only on Red Hat family systems\n>       ansible.builtin.debug:\n>         msg: \"this is a Red Hat family host: use dnf\"\n>       when: ansible_os_family == \"RedHat\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook facts.yml | grep -E \"msg|skipping\"",
+     "o": "    \"msg\": \"Ubuntu 24, family=Debian\"\n    \"msg\": \"this is a Debian-family host: use apt\"\nskipping: [ev01]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > loop.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   vars:\n>     folders: [logs, config, archive]\n>   tasks:\n>     - name: Create several folders\n>       ansible.builtin.file:\n>         path: \"{{ base_dir }}/{{ item }}\"\n>         state: directory\n>       loop: \"{{ folders }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf /tmp/lab-hosts",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook loop.yml | grep -E \"ok|changed\" | head -5",
+     "o": "changed: [ev01] => (item=logs)\nchanged: [ev01] => (item=config)\nchanged: [ev01] => (item=archive)\nev01                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ls /tmp/lab-hosts/ev01",
+     "o": "archive\nconfig\nlogs",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p templates",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > templates/evault.conf.j2 <<'EOF'\n> # Managed by Ansible. Do not edit by hand.\n> server={{ inventory_hostname }}\n> role={{ role_note }}\n> retries={{ max_retries }}\n> {% if max_retries > 5 %}\n> # high retry count: network is unreliable\n> {% endif %}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tmpl.yml <<'EOF'\n> - hosts: all\n>   gather_facts: false\n>   tasks:\n>     - name: Ensure the folder exists\n>       ansible.builtin.file:\n>         path: \"{{ base_dir }}\"\n>         state: directory\n>     - name: Render config\n>       ansible.builtin.template:\n>         src: evault.conf.j2\n>         dest: \"{{ base_dir }}/evault.conf\"\n>         mode: \"0640\"\n>       notify: Report change\n>   handlers:\n>     - name: Report change\n>       ansible.builtin.debug:\n>         msg: \"config changed on {{ inventory_hostname }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook tmpl.yml | grep -E \"RUNNING HANDLER|msg|PLAY RECAP|ok=\"",
+     "o": "RUNNING HANDLER [Report change] ************************************************\n    \"msg\": \"config changed on ev01\"\n    \"msg\": \"config changed on sql01\"\nPLAY RECAP *********************************************************************\nev01                       : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nsql01                      : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- rendered for ev01:\"; cat /tmp/lab-hosts/ev01/evault.conf",
+     "o": "--- rendered for ev01:\n# Managed by Ansible. Do not edit by hand.\nserver=ev01\nrole=indexing server\nretries=7\n# high retry count: network is unreliable",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- rendered for sql01:\"; cat /tmp/lab-hosts/sql01/evault.conf",
+     "o": "--- rendered for sql01:\n# Managed by Ansible. Do not edit by hand.\nserver=sql01\nrole=database server\nretries=3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- second run: no change, so the handler does not run\"",
+     "o": "--- second run: no change, so the handler does not run",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook tmpl.yml | grep -E \"RUNNING HANDLER|PLAY RECAP|ok=\"",
+     "o": "PLAY RECAP *********************************************************************\nev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nsql01                      : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/max_retries: 7/max_retries: 8/' host_vars/ev01.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after changing a variable: the handler runs for ev01 only\"",
+     "o": "--- after changing a variable: the handler runs for ev01 only",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook tmpl.yml | grep -E \"RUNNING HANDLER|msg\"",
+     "o": "RUNNING HANDLER [Report change] ************************************************\n    \"msg\": \"config changed on ev01\"",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "aac239694b101290"
+ },
+ "ansible-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans3/roles && cd ~/lab/ans3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '[defaults]\\ninventory = inventory.ini\\ninterpreter_python = auto_silent\\nroles_path = roles\\nretry_files_enabled = False\\n[ssh_connection]\\nusetty = False\\npipelining = True\\n' > ansible.cfg",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd roles && ansible-galaxy role init ev_indexing 2>&1 | sed 's/ was created.*/ created/'",
+     "o": "- Role ev_indexing created",
+     "x": 0
+    },
+    {
+     "c": "$ find ev_indexing -type f | sort",
+     "o": "ev_indexing/README.md\nev_indexing/defaults/main.yml\nev_indexing/handlers/main.yml\nev_indexing/meta/main.yml\nev_indexing/tasks/main.yml\nev_indexing/tests/inventory\nev_indexing/tests/test.yml\nev_indexing/vars/main.yml",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans3/roles/ev_indexing",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > defaults/main.yml <<'EOF'\n> ev_base_dir: /tmp/ev-role-demo\n> ev_index_threads: 4\n> ev_log_level: info\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > templates/indexing.conf.j2 <<'EOF'\n> # Managed by Ansible role ev_indexing\n> threads={{ ev_index_threads }}\n> log_level={{ ev_log_level }}\n> host={{ inventory_hostname }}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tasks/main.yml <<'EOF'\n> - name: Create service folders\n>   ansible.builtin.file:\n>     path: \"{{ ev_base_dir }}/{{ item }}\"\n>     state: directory\n>     mode: \"0750\"\n>   loop: [conf, logs]\n>   tags: [folders]\n> \n> - name: Render indexing config\n>   ansible.builtin.template:\n>     src: indexing.conf.j2\n>     dest: \"{{ ev_base_dir }}/conf/indexing.conf\"\n>     mode: \"0640\"\n>   notify: Restart indexing\n>   tags: [config]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > handlers/main.yml <<'EOF'\n> - name: Restart indexing\n>   ansible.builtin.debug:\n>     msg: \"pretend: systemctl restart ev-indexing\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf tests",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/ans3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > site.yml <<'EOF'\n> - hosts: evservers\n>   gather_facts: false\n>   roles:\n>     - ev_indexing\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf /tmp/ev-role-demo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | grep -E \"TASK|changed:|RUNNING|msg|ok=\"  | sed 's/ \\*\\*\\*.*//'",
+     "o": "TASK [ev_indexing : Create service folders]\nchanged: [ev01] => (item=conf)\nchanged: [ev01] => (item=logs)\nTASK [ev_indexing : Render indexing config]\nchanged: [ev01]\nRUNNING HANDLER [ev_indexing : Restart indexing]\n    \"msg\": \"pretend: systemctl restart ev-indexing\"\nev01                       : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | grep -E \"ok=\"",
+     "o": "ev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml -e ev_index_threads=8 | grep -E \"RUNNING|ok=\"",
+     "o": "RUNNING HANDLER [ev_indexing : Restart indexing] *******************************\nev01                       : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'cat /tmp/ev-role-demo/conf/indexing.conf'",
+     "o": "# Managed by Ansible role ev_indexing\nthreads=8\nlog_level=info\nhost=ev01",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml --list-tags | grep -E \"TASK TAGS\"",
+     "o": "      TASK TAGS: [config, folders]",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml --tags config -e ev_log_level=debug | grep -E \"TASK|changed:|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "TASK [ev_indexing : Render indexing config]\nchanged: [ev01]\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml --skip-tags folders | grep -E \"TASK\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "TASK [ev_indexing : Render indexing config]",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "31256219b3dc2af3"
+ },
+ "ansible-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans4/group_vars && cd ~/lab/ans4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '[defaults]\\ninventory = inventory.ini\\ninterpreter_python = auto_silent\\nvault_password_file = .vault_pass\\nretry_files_enabled = False\\n[ssh_connection]\\nusetty = False\\npipelining = True\\n' > ansible.cfg",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"lab-only-vault-password\" > .vault_pass && chmod 600 .vault_pass",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'db_password: S3cr3t-for-the-demo\\napi_token: abc123\\n' > group_vars/secrets.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- before:\"; cat group_vars/secrets.yml",
+     "o": "--- before:\ndb_password: S3cr3t-for-the-demo\napi_token: abc123",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-vault encrypt group_vars/secrets.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after:\"; head -3 group_vars/secrets.yml | cut -c1-60",
+     "o": "--- after:\n$ANSIBLE_VAULT;1.1;AES256\n616630323564643336653833616531653037333839646338646630303237\n3631363532326537393065353131313336653233663064340a3065613230",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-vault view group_vars/secrets.yml",
+     "o": "db_password: S3cr3t-for-the-demo\napi_token: abc123",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mv group_vars/secrets.yml group_vars/all.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > use.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   tasks:\n>     - name: Write a connection file containing the secret\n>       ansible.builtin.copy:\n>         dest: /tmp/ev-conn.ini\n>         content: |\n>           [db]\n>           user=evsvc\n>           password={{ db_password }}\n>         mode: \"0600\"\n>       no_log: true\n> \n>     - name: Prove the secret reached the host without printing it here\n>       ansible.builtin.command: grep -c \"^password=\" /tmp/ev-conn.ini\n>       register: found\n>       changed_when: false\n> \n>     - name: Report\n>       ansible.builtin.debug:\n>         msg: \"password line present: {{ found.stdout == '1' }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook use.yml | grep -E \"TASK|changed:|msg|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "TASK [Write a connection file containing the secret]\nchanged: [ev01]\nTASK [Prove the secret reached the host without printing it here]\nTASK [Report]\n    \"msg\": \"password line present: True\"\nev01                       : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'stat -c \"%a %n\" /tmp/ev-conn.ini; rm -f /tmp/ev-conn.ini'",
+     "o": "600 /tmp/ev-conn.ini",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"wrong-password\" > /tmp/wrong_pass",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ (cd ~ && ansible-vault view ~/lab/ans4/group_vars/all.yml --vault-password-file /tmp/wrong_pass 2>&1 | head -2)",
+     "o": "[ERROR]: Decryption failed (no vault secrets were found that could decrypt). for /home/student/lab/ans4/group_vars/all.yml",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f /tmp/wrong_pass",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f80dc04d4586a5d6"
+ },
+ "ansible-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/ans5 && cd ~/lab/ans5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.ini <<'EOF'\n> [evservers]\n> ev01 ansible_host=127.0.0.1 ansible_port=2222\n> ev02 ansible_host=127.0.0.1 ansible_port=2222\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '[defaults]\\ninventory = inventory.ini\\ninterpreter_python = auto_silent\\nretry_files_enabled = False\\n[ssh_connection]\\nusetty = False\\npipelining = True\\n' > ansible.cfg",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > admin.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   become: true\n>   tasks:\n>     - name: Group for the EV team\n>       ansible.builtin.group:\n>         name: evteam\n>         state: present\n> \n>     - name: Service account\n>       ansible.builtin.user:\n>         name: evsvc\n>         groups: evteam\n>         shell: /usr/sbin/nologin\n>         create_home: false\n>         state: present\n> \n>     - name: Shared folder owned by the group\n>       ansible.builtin.file:\n>         path: /srv/evshare\n>         state: directory\n>         group: evteam\n>         mode: \"2770\"\n> \n>     - name: Nightly backup entry\n>       ansible.builtin.cron:\n>         name: \"EV nightly backup\"\n>         minute: \"30\"\n>         hour: \"2\"\n>         job: \"/opt/ev/backup.sh >> /var/log/ev-backup.log 2>&1\"\n>         user: evsvc\n>         cron_file: ev-backup\n> \n>     - name: Banner paragraph managed in a shared file\n>       ansible.builtin.blockinfile:\n>         path: /etc/motd\n>         create: true\n>         marker: \"# {mark} ANSIBLE MANAGED EV BLOCK\"\n>         block: |\n>           Authorised EV administrators only.\n>           Changes are made through Ansible.\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook admin.yml | grep -E \"^(changed|ok)|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "changed: [ev01]\nchanged: [ev01]\nchanged: [ev01]\nchanged: [ev01]\nchanged: [ev01]\nev01                       : ok=5    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- second run:\"",
+     "o": "--- second run:",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook admin.yml | grep -E \"ok=\"",
+     "o": "ev01                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'id evsvc | cut -d\" \" -f1,3; stat -c \"%a %G %n\" /srv/evshare; sudo cat /etc/cron.d/ev-backup | tail -1; grep -c ANSIBLE /etc/motd'",
+     "o": "uid=30034(evsvc) groups=30035(evsvc),30034(evteam)\n2770 evteam /srv/evshare\n30 2 * * * evsvc /opt/ev/backup.sh >> /var/log/ev-backup.log 2>&1\n2",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -b -m user -a \"name=evsvc state=absent\" | grep -o '\"changed\": [a-z]*'",
+     "o": "\"changed\": true",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -b -m group -a \"name=evteam state=absent\" | grep -o '\"changed\": [a-z]*'",
+     "o": "\"changed\": true",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -b -m file -a \"path=/srv/evshare state=absent\" | grep -o '\"changed\": [a-z]*'",
+     "o": "\"changed\": true",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -b -m file -a \"path=/etc/cron.d/ev-backup state=absent\" | grep -o '\"changed\": [a-z]*'",
+     "o": "\"changed\": true",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev01 -b -m copy -a \"content='' dest=/etc/motd\" | grep -o '\"changed\": [a-z]*'",
+     "o": "\"changed\": true",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rolling.yml <<'EOF'\n> - hosts: evservers\n>   gather_facts: false\n>   serial: 1                  # one host at a time\n>   tasks:\n>     - name: Take host out of rotation (pretend)\n>       ansible.builtin.debug:\n>         msg: \"draining {{ inventory_hostname }}\"\n>     - name: Upgrade (pretend)\n>       ansible.builtin.debug:\n>         msg: \"upgrading {{ inventory_hostname }}\"\n>     - name: Health check before moving on\n>       ansible.builtin.command: \"true\"\n>       changed_when: false\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook rolling.yml | grep -E \"^PLAY|msg\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "PLAY [evservers]\n    \"msg\": \"draining ev01\"\n    \"msg\": \"upgrading ev01\"\nPLAY [evservers]\n    \"msg\": \"draining ev02\"\n    \"msg\": \"upgrading ev02\"\nPLAY RECAP",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook admin.yml --syntax-check",
+     "o": "\nplaybook: admin.yml",
+     "x": 0
+    },
+    {
+     "c": "$ printf -- '- hosts: ev01\\n  tasks:\\n    - debug: msg=x\\n   bad_indent: true\\n' > broken.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook broken.yml --syntax-check 2>&1 | grep -iE \"ERROR|syntax\" | head -2",
+     "o": "[ERROR]: YAML parsing failed: While parsing a block mapping did not find expected key.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "504259fdd106b939"
+ },
  "docker-1": {
   "blocks": [
    [

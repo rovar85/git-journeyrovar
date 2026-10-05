@@ -48,6 +48,7 @@ def display_cmd(cmd):
     return "$ " + lines[0] + "".join("\n> " + l for l in lines[1:])
 
 NORMALIZE = [
+    (re.compile(r"/home/[A-Za-z0-9_-]+/\.lesson-tmp/run\.sh: line (\d+):"), r"bash: line \1:"),
     (re.compile(r"\bstudent@[A-Za-z0-9-]+"), "student@lab"),
 ]
 
@@ -88,8 +89,14 @@ def run_lesson(lesson_id, setup, blocks):
     env = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": HOME, "USER": USER,
            "LOGNAME": USER, "LANG": "C.UTF-8", "TERM": "dumb", "SHELL": "/bin/bash", "ANSIBLE_NOCOLOR": "1",
            "NO_COLOR": "1", "ANSIBLE_FORCE_COLOR": "0", "PYTHONUNBUFFERED": "1"}
-    p = subprocess.run(["runuser", "-u", USER, "--", "env", "-i"] + [f"{k}={v}" for k, v in env.items()] + ["bash", "--noprofile", "--norc", "-s"],
-                       input=full, capture_output=True, text=True, cwd="/", timeout=1500, start_new_session=True)
+    tmpdir = os.path.join(HOME, ".lesson-tmp")
+    os.makedirs(tmpdir, exist_ok=True)
+    script_path = os.path.join(tmpdir, "run.sh")
+    with open(script_path, "w") as fh:
+        fh.write(full)
+    subprocess.run(["chown", "-R", f"{USER}:{USER}", tmpdir])
+    p = subprocess.run(["runuser", "-u", USER, "--", "env", "-i"] + [f"{k}={v}" for k, v in env.items()] + ["bash", "--noprofile", "--norc", script_path],
+                       stdin=subprocess.DEVNULL, capture_output=True, text=True, cwd="/", timeout=1500, start_new_session=True)
     raw = p.stdout
     outputs = {}
     for m in re.finditer(r"@@S:(\d+)@@\n(.*?)\n@@E:\1:(\d+)@@", raw, re.S):
