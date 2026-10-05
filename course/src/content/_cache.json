@@ -789,6 +789,450 @@
   ],
   "key": "504259fdd106b939"
  },
+ "capstone-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker rm -f registry > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name registry -p 127.0.0.1:5000:5000 registry:2 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf ~/lab/ev-platform && mkdir -p ~/lab/ev-platform/{terraform,ansible,app/site,k8s} && cd ~/lab/ev-platform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init -q && git config user.name Ops && git config user.email ops@example.com",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"repository layout:\"; ls",
+     "o": "repository layout:\nansible\napp\nk8s\nterraform",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform/terraform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"servers\" {\n>   type = map(object({ port = number, role = string }))\n>   default = {\n>     ev01  = { port = 2222, role = \"evservers\" }\n>     sql01 = { port = 2223, role = \"sqlservers\" }\n>   }\n> }\n> \n> locals {\n>   inventory = templatefile(\"${path.module}/inventory.tftpl\", { servers = var.servers })\n> }\n> \n> resource \"terraform_data\" \"inventory\" {\n>   input = local.inventory\n>   provisioner \"local-exec\" {\n>     command = \"printf '%s' \\\"$CONTENT\\\" > ../ansible/inventory.ini\"\n>     environment = { CONTENT = self.input }\n>   }\n> }\n> \n> output \"hosts\" {\n>   value = keys(var.servers)\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.tftpl <<'EOF'\n> %{ for role in distinct([for s in servers : s.role]) ~}\n> [${role}]\n> %{ for name, s in servers ~}\n> %{ if s.role == role ~}\n> ${name} ansible_host=127.0.0.1 ansible_port=${s.port}\n> %{ endif ~}\n> %{ endfor ~}\n> \n> %{ endfor ~}\n> [all:vars]\n> ansible_user=student\n> ansible_ssh_private_key_file=~/sshlab/client_key\n> ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform fmt > /dev/null && terraform fmt -check && echo \"fmt: ok\"",
+     "o": "fmt: ok",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1 && terraform validate",
+     "o": "Success! The configuration is valid.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete|hosts\"",
+     "o": "Plan: 1 to add, 0 to change, 0 to destroy.\n  + hosts = [\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.\nhosts = tolist([",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- inventory written by Terraform:\"",
+     "o": "--- inventory written by Terraform:",
+     "x": 0
+    },
+    {
+     "c": "$ cat ../ansible/inventory.ini",
+     "o": "[evservers]\nev01 ansible_host=127.0.0.1 ansible_port=2222\n\n[sqlservers]\nsql01 ansible_host=127.0.0.1 ansible_port=2223\n\n[all:vars]\nansible_user=student\nansible_ssh_private_key_file=~/sshlab/client_key\nansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform/ansible",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '[defaults]\\ninventory = inventory.ini\\ninterpreter_python = auto_silent\\nretry_files_enabled = False\\n[ssh_connection]\\nusetty = False\\npipelining = True\\n' > ansible.cfg",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p group_vars templates",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'base_dir: /tmp/capstone/{{ inventory_hostname }}\\nev_threads: 4\\n' > group_vars/all.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'ev_threads: 8\\n' > group_vars/evservers.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > templates/evault.conf.j2 <<'EOF'\n> # Managed by Ansible\n> server={{ inventory_hostname }}\n> threads={{ ev_threads }}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > site.yml <<'EOF'\n> - hosts: all\n>   gather_facts: false\n>   tasks:\n>     - name: Folders exist\n>       ansible.builtin.file:\n>         path: \"{{ base_dir }}/{{ item }}\"\n>         state: directory\n>         mode: \"0750\"\n>       loop: [conf, logs]\n> \n>     - name: Config file rendered\n>       ansible.builtin.template:\n>         src: evault.conf.j2\n>         dest: \"{{ base_dir }}/conf/evault.conf\"\n>         mode: \"0640\"\n>       notify: Pretend restart\n> \n>   handlers:\n>     - name: Pretend restart\n>       ansible.builtin.debug:\n>         msg: \"restart service on {{ inventory_hostname }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf /tmp/capstone",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml --syntax-check | tail -1",
+     "o": "playbook: site.yml",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook site.yml | grep -E \"^(changed|ok)|RUNNING HANDLER|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "changed: [sql01] => (item=conf)\nchanged: [ev01] => (item=conf)\nchanged: [sql01] => (item=logs)\nchanged: [ev01] => (item=logs)\nchanged: [sql01]\nchanged: [ev01]\nRUNNING HANDLER [Pretend restart]\nok: [ev01] => {\nok: [sql01] => {\nev01                       : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nsql01                      : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'cat /tmp/capstone/ev01/conf/evault.conf'",
+     "o": "# Managed by Ansible\nserver=ev01\nthreads=8",
+     "x": 0
+    },
+    {
+     "c": "$ ssh sql01 'cat /tmp/capstone/sql01/conf/evault.conf'",
+     "o": "# Managed by Ansible\nserver=sql01\nthreads=4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform/app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > site/index.html <<'EOF'\n> <h1>EV status</h1>\n> version: 1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:1.37\n> COPY site/ /www/\n> CMD [\"httpd\", \"-f\", \"-p\", \"8080\", \"-h\", \"/www\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > test.sh <<'EOF'\n> #!/bin/bash\n> grep -q '^version: [0-9]' site/index.html\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x test.sh && ./test.sh && echo \"unit test: ok\"",
+     "o": "unit test: ok",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t localhost:5000/ev/status:1 . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker push -q localhost:5000/ev/status:1 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:5000/v2/ev/status/tags/list",
+     "o": "{\"name\":\"ev/status\",\"tags\":[\"1\"]}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform/k8s",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > deploy.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: ev-status}\n> spec:\n>   replicas: 2\n>   selector:\n>     matchLabels: {app: ev-status}\n>   template:\n>     metadata:\n>       labels: {app: ev-status}\n>     spec:\n>       containers:\n>       - name: web\n>         image: localhost:5000/ev/status:1\n>         ports: [{containerPort: 8080}]\n>         readinessProbe:\n>           httpGet: {path: /, port: 8080}\n>           periodSeconds: 2\n>         resources:\n>           requests: {cpu: 50m, memory: 16Mi}\n>           limits: {memory: 64Mi}\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata: {name: ev-status}\n> spec:\n>   selector: {app: ev-status}\n>   ports: [{port: 80, targetPort: 8080}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f deploy.yaml",
+     "o": "deployment.apps/ev-status created\nservice/ev-status created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/ev-status --timeout=120s | tail -1",
+     "o": "deployment \"ev-status\" successfully rolled out",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run verify --image=busybox:1.37 --restart=Never -- sh -c 'wget -qO- http://ev-status | tail -1'",
+     "o": "pod/verify created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/verify --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"service answered: $(kubectl logs verify)\"",
+     "o": "service answered: version: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pipeline.sh <<'EOF'\n> #!/bin/bash\n> set -euo pipefail\n> cd \"$(dirname \"$0\")\"\n> step() { echo; echo \"=== $1\"; }\n> \n> step \"terraform\"\n> (cd terraform && terraform fmt -check > /dev/null && terraform validate > /dev/null && terraform apply -auto-approve | grep -E \"Apply complete\")\n> \n> step \"ansible\"\n> (cd ansible && ansible-playbook site.yml | grep -E \"ok=\")\n> \n> step \"test and build\"\n> (cd app && ./test.sh && docker build -q -t localhost:5000/ev/status:${VERSION:-1} . > /dev/null && docker push -q localhost:5000/ev/status:${VERSION:-1} > /dev/null && echo \"image ev/status:${VERSION:-1} pushed\")\n> \n> step \"deploy\"\n> sed \"s#ev/status:[0-9]*#ev/status:${VERSION:-1}#\" k8s/deploy.yaml | kubectl apply -f - | grep -v unchanged || true\n> kubectl rollout status deployment/ev-status --timeout=120s | tail -1\n> \n> step \"verify\"\n> kubectl delete pod verify --ignore-not-found > /dev/null\n> kubectl run verify --image=busybox:1.37 --restart=Never -- sh -c 'wget -qO- http://ev-status | tail -1' > /dev/null\n> kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/verify --timeout=60s > /dev/null\n> echo \"service says: $(kubectl logs verify)\"\n> echo; echo \"PIPELINE OK\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x pipeline.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '.terraform/\\n*.tfstate*\\n' > .gitignore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add -A && git commit -q -m \"EV lab as code: terraform, ansible, app, k8s, pipeline\" && git log --format='committed: %s'",
+     "o": "committed: EV lab as code: terraform, ansible, app, k8s, pipeline",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./pipeline.sh 2>&1 | sed -E 's/ok=([0-9]+) +changed=([0-9]+).*/ok=\\1 changed=\\2/'",
+     "o": "\n=== terraform\nApply complete! Resources: 0 added, 0 changed, 0 destroyed.\n\n=== ansible\nev01                       : ok=2 changed=0\nsql01                      : ok=2 changed=0\n\n=== test and build\nimage ev/status:1 pushed\n\n=== deploy\ndeployment \"ev-status\" successfully rolled out\n\n=== verify\nservice says: version: 1\n\nPIPELINE OK",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/version: 1/version: 2/' app/site/index.html",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/ev_threads: 8/ev_threads: 12/' ansible/group_vars/evservers.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -qam \"Release 2: faster indexing, new page\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ VERSION=2 ./pipeline.sh 2>&1 | sed -E 's/ok=([0-9]+) +changed=([0-9]+).*/ok=\\1 changed=\\2/'",
+     "o": "\n=== terraform\nApply complete! Resources: 0 added, 0 changed, 0 destroyed.\n\n=== ansible\nev01                       : ok=3 changed=1\nsql01                      : ok=2 changed=0\n\n=== test and build\nimage ev/status:2 pushed\n\n=== deploy\ndeployment.apps/ev-status configured\ndeployment \"ev-status\" successfully rolled out\n\n=== verify\nservice says: version: 2\n\nPIPELINE OK",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'grep threads /tmp/capstone/ev01/conf/evault.conf'",
+     "o": "threads=12",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-platform",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ (cd terraform && terraform destroy -auto-approve | grep \"Destroy complete\")",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete namespace capstone --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f registry > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'rm -rf /tmp/capstone'",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"environment removed; the repository can rebuild it with ./pipeline.sh\"",
+     "o": "environment removed; the repository can rebuild it with ./pipeline.sh",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "5f203f90b5e21c0a"
+ },
+ "capstone-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"1) What does the log say, and when did it start?\"",
+     "o": "1) What does the log say, and when did it start?",
+     "x": 0
+    },
+    {
+     "c": "$ grep -E \"ERROR\" ev/logs/indexing.log | head -3",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"2) How often per hour (is it constant or since a change)?\"",
+     "o": "2) How often per hour (is it constant or since a change)?",
+     "x": 0
+    },
+    {
+     "c": "$ grep ERROR ev/logs/indexing.log | awk '{print substr($2,1,2)\":00\"}' | sort | uniq -c",
+     "o": "      3 09:00\n      2 12:00",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"3) Name or network? Resolve it the way the application would, then test the port\"",
+     "o": "3) Name or network? Resolve it the way the application would, then test the port",
+     "x": 0
+    },
+    {
+     "c": "$ getent hosts SQL01 || echo \"   -> the name SQL01 does not resolve on this machine: a DNS or hosts-file problem, not SQL Server itself\"",
+     "o": "   -> the name SQL01 does not resolve on this machine: a DNS or hosts-file problem, not SQL Server itself",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"4) What changed? (the config file the service reads)\"",
+     "o": "4) What changed? (the config file the service reads)",
+     "x": 0
+    },
+    {
+     "c": "$ cat ev/config/evault.conf | head -4",
+     "o": "# Enterprise Vault server settings (pretend)\nserver_name = EV01\nsql_server = SQL01\nindexing_enabled = true",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "41212a0473c1e54c"
+ },
+ "cloud-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> for pct in [99.0, 99.9, 99.95, 99.99, 99.999]:\n>     down_min = (1 - pct/100) * 365 * 24 * 60\n>     print(f\"{pct:7}%  ->  {down_min:8.1f} minutes of downtime per year  ({down_min/60:6.2f} hours)\")\n> print()\n> # Components in a chain multiply: web (99.95) -> app (99.95) -> db (99.9)\n> chain = 0.9995 * 0.9995 * 0.999\n> print(f\"Chain of 99.95% x 99.95% x 99.9%  = {chain*100:.3f}%\")\n> # Redundant components: probability BOTH fail is small\n> single = 0.99\n> pair = 1 - (1 - single) ** 2\n> print(f\"One server at 99%      = {single*100:.2f}%\")\n> print(f\"Two independent at 99% = {pair*100:.2f}%  (redundancy across zones)\")\n> EOF",
+     "o": "   99.0%  ->    5256.0 minutes of downtime per year  ( 87.60 hours)\n   99.9%  ->     525.6 minutes of downtime per year  (  8.76 hours)\n  99.95%  ->     262.8 minutes of downtime per year  (  4.38 hours)\n  99.99%  ->      52.6 minutes of downtime per year  (  0.88 hours)\n 99.999%  ->       5.3 minutes of downtime per year  (  0.09 hours)\n\nChain of 99.95% x 99.95% x 99.9%  = 99.800%\nOne server at 99%      = 99.00%\nTwo independent at 99% = 99.99%  (redundancy across zones)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> hours_month = 730\n> vm_on_demand = 0.17          # illustrative price per hour, not a real quote\n> servers = 6\n> print(\"Illustrative monthly cost for\", servers, \"servers at $%.2f/hour\" % vm_on_demand)\n> for label, factor in [(\"on-demand\", 1.0), (\"1-year commitment (~35% off)\", 0.65), (\"spot (~70% off)\", 0.30)]:\n>     print(f\"  {label:32} ${servers*vm_on_demand*hours_month*factor:9.2f} per month\")\n> print()\n> print(\"Running a test environment only office hours (50 of 168 hours/week):\")\n> print(f\"  always on : ${vm_on_demand*hours_month:8.2f} per server per month\")\n> print(f\"  scheduled : ${vm_on_demand*hours_month*50/168:8.2f} per server per month\")\n> EOF",
+     "o": "Illustrative monthly cost for 6 servers at $0.17/hour\n  on-demand                        $   744.60 per month\n  1-year commitment (~35% off)     $   483.99 per month\n  spot (~70% off)                  $   223.38 per month\n\nRunning a test environment only office hours (50 of 168 hours/week):\n  always on : $  124.10 per server per month\n  scheduled : $   36.93 per server per month",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "ec95f7f693d24d1d"
+ },
+ "cloud-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> vpc = ipaddress.ip_network(\"10.20.0.0/16\")\n> subnets = list(vpc.subnets(new_prefix=24))\n> plan = []\n> zones = [\"a\", \"b\"]\n> tiers = [\"public\", \"app\", \"data\"]\n> i = 0\n> for tier in tiers:\n>     for z in zones:\n>         plan.append((f\"{tier}-{z}\", subnets[i]))\n>         i += 1\n> print(\"VPC\", vpc, \"has\", len(subnets), \"possible /24 subnets; using\", len(plan))\n> for name, net in plan:\n>     print(f\"  {name:10} {str(net):16} usable hosts: {net.num_addresses - 2:4}\")\n> print()\n> print(\"Reserved by many clouds per subnet: first 4 and last 1 address (AWS keeps 5)\")\n> print(\"Free space left for growth:\", len(subnets) - len(plan), \"more /24 subnets\")\n> EOF",
+     "o": "VPC 10.20.0.0/16 has 256 possible /24 subnets; using 6\n  public-a   10.20.0.0/24     usable hosts:  254\n  public-b   10.20.1.0/24     usable hosts:  254\n  app-a      10.20.2.0/24     usable hosts:  254\n  app-b      10.20.3.0/24     usable hosts:  254\n  data-a     10.20.4.0/24     usable hosts:  254\n  data-b     10.20.5.0/24     usable hosts:  254\n\nReserved by many clouds per subnet: first 4 and last 1 address (AWS keeps 5)\nFree space left for growth: 250 more /24 subnets",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> rules = [\n>     {\"name\": \"web-https\",   \"port\": 443,  \"source\": \"0.0.0.0/0\"},\n>     {\"name\": \"app-from-lb\", \"port\": 8080, \"source\": \"sg-lb\"},\n>     {\"name\": \"ssh-admin\",   \"port\": 22,   \"source\": \"0.0.0.0/0\"},\n>     {\"name\": \"db-sql\",      \"port\": 1433, \"source\": \"sg-app\"},\n>     {\"name\": \"rdp-office\",  \"port\": 3389, \"source\": \"203.0.113.0/24\"},\n>     {\"name\": \"db-oops\",     \"port\": 5432, \"source\": \"0.0.0.0/0\"},\n> ]\n> sensitive = {22: \"SSH\", 3389: \"RDP\", 1433: \"SQL Server\", 5432: \"PostgreSQL\", 3306: \"MySQL\"}\n> print(\"Findings (sensitive ports open to the whole internet):\")\n> found = False\n> for r in rules:\n>     if r[\"source\"] == \"0.0.0.0/0\" and r[\"port\"] in sensitive:\n>         print(f\"  RISK  {r['name']}: {sensitive[r['port']]} (port {r['port']}) open to 0.0.0.0/0\")\n>         found = True\n> if not found:\n>     print(\"  none\")\n> EOF",
+     "o": "Findings (sensitive ports open to the whole internet):\n  RISK  ssh-admin: SSH (port 22) open to 0.0.0.0/0\n  RISK  db-oops: PostgreSQL (port 5432) open to 0.0.0.0/0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> import json\n> policy = json.loads(\"\"\"\n> {\n>   \"Version\": \"2012-10-17\",\n>   \"Statement\": [\n>     {\"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\", \"s3:ListBucket\"],\n>      \"Resource\": [\"arn:aws:s3:::ev-archive\", \"arn:aws:s3:::ev-archive/*\"]},\n>     {\"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\"},\n>     {\"Effect\": \"Allow\", \"Action\": \"iam:*\", \"Resource\": \"*\"}\n>   ]\n> }\"\"\")\n> print(\"Review of the policy:\")\n> for i, st in enumerate(policy[\"Statement\"], 1):\n>     actions = st[\"Action\"] if isinstance(st[\"Action\"], list) else [st[\"Action\"]]\n>     res = st[\"Resource\"] if isinstance(st[\"Resource\"], list) else [st[\"Resource\"]]\n>     flags = []\n>     if any(a == \"*\" or a.endswith(\":*\") for a in actions):\n>         flags.append(\"wildcard action\")\n>     if \"*\" in res:\n>         flags.append(\"all resources\")\n>     if any(a.startswith(\"iam:\") for a in actions):\n>         flags.append(\"can change permissions (privilege escalation risk)\")\n>     print(f\"  statement {i}: {', '.join(actions)} on {len(res)} resource(s) -> {'; '.join(flags) if flags else 'looks scoped'}\")\n> EOF",
+     "o": "Review of the policy:\n  statement 1: s3:GetObject, s3:ListBucket on 2 resource(s) -> looks scoped\n  statement 2: s3:* on 1 resource(s) -> wildcard action; all resources\n  statement 3: iam:* on 1 resource(s) -> wildcard action; all resources; can change permissions (privilege escalation risk)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9fb8f42195ed4938"
+ },
+ "cloud-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> # How much data could be lost for a given backup schedule, and how long to restore?\n> systems = [\n>     # name, backup interval (min), data size GB, restore throughput GB/h\n>     (\"SQL database (log shipping)\", 15, 800, 300),\n>     (\"EV archive store (daily snapshot)\", 24*60, 20000, 400),\n>     (\"File shares (nightly)\", 24*60, 3000, 300),\n> ]\n> print(f\"{'system':36} {'worst-case data loss':>22} {'restore time':>14}\")\n> for name, interval, size, rate in systems:\n>     loss = f\"{interval} min\" if interval < 120 else f\"{interval/60:.0f} hours\"\n>     restore_h = size / rate\n>     print(f\"{name:36} {loss:>22} {restore_h:>11.1f} h\")\n> EOF",
+     "o": "system                                 worst-case data loss   restore time\nSQL database (log shipping)                          15 min         2.7 h\nEV archive store (daily snapshot)                  24 hours        50.0 h\nFile shares (nightly)                              24 hours        10.0 h",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "30eab8e8ee7f6d13"
+ },
  "docker-1": {
   "blocks": [
    [
@@ -2803,6 +3247,2190 @@
   ],
   "key": "a0b3c5c54192aeb1"
  },
+ "jenkins-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ curl -sI $JENKINS/login | grep -i \"^x-jenkins:\"",
+     "o": "X-Jenkins: 2.541.3",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/api/json?tree=mode,numExecutors,nodeDescription,useSecurity\" | python3 -m json.tool",
+     "o": "{\n    \"_class\": \"hudson.model.Hudson\",\n    \"mode\": \"NORMAL\",\n    \"nodeDescription\": \"the Jenkins controller's built-in node\",\n    \"numExecutors\": 2,\n    \"useSecurity\": false\n}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > hello-job.xml <<'EOF'\n> <project>\n>   <description>First job: prints some information</description>\n>   <builders>\n>     <hudson.tasks.Shell>\n>       <command>echo \"Hello from Jenkins build #$BUILD_NUMBER\"\n> echo \"Job name:   $JOB_NAME\"\n> echo \"Workspace:  $WORKSPACE\"\n> echo \"Running as: $(whoami)\"\n> date +%Y > /dev/null\n> echo \"Build finished\"</command>\n>     </hudson.tasks.Shell>\n>   </builders>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @hello-job.xml \"$JENKINS/createItem?name=hello\"",
+     "o": "200",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/api/json?tree=jobs[name]\" | python3 -c 'import sys,json; print([j[\"name\"] for j in json.load(sys.stdin)[\"jobs\"]])'",
+     "o": "['hello']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ jpost \"$JENKINS/job/hello/build\"",
+     "o": "201",
+     "x": 0
+    },
+    {
+     "c": "$ jwait hello",
+     "o": "SUCCESS",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/hello/lastBuild/consoleText\"",
+     "o": "Started by user unknown or anonymous\nRunning as SYSTEM\nBuilding in workspace /var/jenkins_home/workspace/hello\n[hello] $ /bin/sh -xe /tmp/jenkins11022142729719500593.sh\n+ echo Hello from Jenkins build #1\nHello from Jenkins build #1\n+ echo Job name:   hello\nJob name:   hello\n+ echo Workspace:  /var/jenkins_home/workspace/hello\nWorkspace:  /var/jenkins_home/workspace/hello\n+ whoami\n+ echo Running as: jenkins\nRunning as: jenkins\n+ date +%Y\n+ echo Build finished\nBuild finished\nFinished: SUCCESS",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ jpost \"$JENKINS/job/hello/build\"",
+     "o": "201",
+     "x": 0
+    },
+    {
+     "c": "$ jwait hello",
+     "o": "SUCCESS",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/hello/api/json?tree=builds[number,result]\" | python3 -c 'import sys,json; [print(\"#%d %s\" % (b[\"number\"], b[\"result\"])) for b in json.load(sys.stdin)[\"builds\"]]'",
+     "o": "#1 SUCCESS",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > fail-job.xml <<'EOF'\n> <project>\n>   <builders>\n>     <hudson.tasks.Shell>\n>       <command>echo \"step 1 ok\"\n> ls /this/folder/does/not/exist\n> echo \"step 3 (never reached)\"</command>\n>     </hudson.tasks.Shell>\n>   </builders>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @fail-job.xml \"$JENKINS/createItem?name=failing\"",
+     "o": "200",
+     "x": 0
+    },
+    {
+     "c": "$ jpost \"$JENKINS/job/failing/build\"",
+     "o": "201",
+     "x": 0
+    },
+    {
+     "c": "$ jwait failing",
+     "o": "FAILURE",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/failing/lastBuild/consoleText\" | grep -v \"^$\" | tail -5",
+     "o": "step 1 ok\n+ ls /this/folder/does/not/exist\nls: cannot access '/this/folder/does/not/exist': No such file or directory\nBuild step 'Execute shell' marked build as failure\nFinished: FAILURE",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -sg \"$JENKINS/computer/api/json?tree=computer[displayName,numExecutors]\" | python3 -c 'import sys,json; [print(c[\"displayName\"], \"executors:\", c[\"numExecutors\"]) for c in json.load(sys.stdin)[\"computer\"]]'",
+     "o": "Built-In Node executors: 2",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a40aa3776e63cf04"
+ },
+ "jenkins-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > deploy-job.xml <<'EOF'\n> <project>\n>   <description>Pretend deployment, takes parameters</description>\n>   <properties>\n>     <hudson.model.ParametersDefinitionProperty>\n>       <parameterDefinitions>\n>         <hudson.model.ChoiceParameterDefinition>\n>           <name>TARGET_ENV</name>\n>           <choices class=\"java.util.Arrays$ArrayList\"><a class=\"string-array\"><string>test</string><string>prod</string></a></choices>\n>         </hudson.model.ChoiceParameterDefinition>\n>         <hudson.model.StringParameterDefinition>\n>           <name>VERSION</name><defaultValue>1.0.0</defaultValue>\n>         </hudson.model.StringParameterDefinition>\n>         <hudson.model.BooleanParameterDefinition>\n>           <name>DRY_RUN</name><defaultValue>true</defaultValue>\n>         </hudson.model.BooleanParameterDefinition>\n>       </parameterDefinitions>\n>     </hudson.model.ParametersDefinitionProperty>\n>   </properties>\n>   <builders>\n>     <hudson.tasks.Shell>\n>       <command>echo \"Deploying version $VERSION to $TARGET_ENV (dry run: $DRY_RUN)\"\n> if [ \"$TARGET_ENV\" = \"prod\" ] &amp;&amp; [ \"$DRY_RUN\" = \"false\" ]; then\n>   echo \"*** REAL production deployment ***\"\n> fi\n> echo \"report: deployed $VERSION to $TARGET_ENV\" > deploy-report.txt</command>\n>     </hudson.tasks.Shell>\n>   </builders>\n>   <publishers>\n>     <hudson.tasks.ArtifactArchiver>\n>       <artifacts>deploy-report.txt</artifacts>\n>     </hudson.tasks.ArtifactArchiver>\n>   </publishers>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @deploy-job.xml \"$JENKINS/createItem?name=deploy\"",
+     "o": "200",
+     "x": 0
+    },
+    {
+     "c": "$ jpost \"$JENKINS/job/deploy/buildWithParameters?TARGET_ENV=prod&VERSION=2.4.1&DRY_RUN=false\"",
+     "o": "201",
+     "x": 0
+    },
+    {
+     "c": "$ jwait deploy",
+     "o": "SUCCESS",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/deploy/lastBuild/consoleText\" | grep -E \"Deploying|REAL\"",
+     "o": "+ echo Deploying version 2.4.1 to prod (dry run: false)\nDeploying version 2.4.1 to prod (dry run: false)\n+ echo *** REAL production deployment ***\n*** REAL production deployment ***",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -sg \"$JENKINS/job/deploy/lastBuild/api/json?tree=artifacts[fileName,relativePath]\" | python3 -c 'import sys,json; print([a[\"fileName\"] for a in json.load(sys.stdin)[\"artifacts\"]])'",
+     "o": "['deploy-report.txt']",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/deploy/lastBuild/artifact/deploy-report.txt\"",
+     "o": "report: deployed 2.4.1 to prod",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > nightly-job.xml <<'EOF'\n> <project>\n>   <triggers>\n>     <hudson.triggers.TimerTrigger><spec>H 2 * * 1-5</spec></hudson.triggers.TimerTrigger>\n>   </triggers>\n>   <builders><hudson.tasks.Shell><command>echo \"nightly work\"</command></hudson.tasks.Shell></builders>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @nightly-job.xml \"$JENKINS/createItem?name=nightly\"",
+     "o": "200",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/nightly/config.xml\" | grep -o \"<spec>.*</spec>\"",
+     "o": "<spec>H 2 * * 1-5</spec>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > build-job.xml <<'EOF'\n> <project>\n>   <description>Stage 1: build</description>\n>   <builders><hudson.tasks.Shell><command>echo \"compiling...\"; echo \"artefact v1\" > app.pkg</command></hudson.tasks.Shell></builders>\n>   <publishers>\n>     <hudson.tasks.BuildTrigger>\n>       <childProjects>test-stage</childProjects>\n>       <threshold><name>SUCCESS</name><ordinal>0</ordinal><color>BLUE</color><completeBuild>true</completeBuild></threshold>\n>     </hudson.tasks.BuildTrigger>\n>   </publishers>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > test-job.xml <<'EOF'\n> <project>\n>   <description>Stage 2: test</description>\n>   <builders><hudson.tasks.Shell><command>echo \"running tests...\"; echo \"42 passed\"</command></hudson.tasks.Shell></builders>\n>   <publishers>\n>     <hudson.tasks.BuildTrigger>\n>       <childProjects>deploy-stage</childProjects>\n>       <threshold><name>SUCCESS</name><ordinal>0</ordinal><color>BLUE</color><completeBuild>true</completeBuild></threshold>\n>     </hudson.tasks.BuildTrigger>\n>   </publishers>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > deploy2-job.xml <<'EOF'\n> <project>\n>   <description>Stage 3: deploy</description>\n>   <builders><hudson.tasks.Shell><command>echo \"deploying to test environment\"</command></hudson.tasks.Shell></builders>\n> </project>\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for j in deploy-stage:deploy2 test-stage:test build-stage:build; do jpost -H \"Content-Type: application/xml\" --data-binary @${j#*:}-job.xml \"$JENKINS/createItem?name=${j%%:*}\"; done",
+     "o": "200\n200\n200",
+     "x": 0
+    },
+    {
+     "c": "$ jpost \"$JENKINS/job/build-stage/build\"",
+     "o": "201",
+     "x": 0
+    },
+    {
+     "c": "$ for j in build-stage test-stage deploy-stage; do echo -n \"$j: \"; jwait $j; done",
+     "o": "build-stage: SUCCESS\ntest-stage: SUCCESS\ndeploy-stage: SUCCESS",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/job/test-stage/lastBuild/consoleText\" | grep -E \"Started by|tests|passed\"",
+     "o": "Started by upstream project \"build-stage\" build number 1\n Started by user unknown or anonymous\n+ echo running tests...\nrunning tests...\n+ echo 42 passed\n42 passed",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "dca8bbfde38a0dc3"
+ },
+ "jenkins-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker rm -f registry > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name registry -p 127.0.0.1:5000:5000 registry:2 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:5000/v2/_catalog",
+     "o": "{\"repositories\":[]}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ rm -rf ~/lab/ev-app ~/lab/ev-app-ci",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git config --global user.name \"Dev\" ; git config --global user.email \"dev@example.com\" ; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p ~/lab/ev-app/site ~/lab/ev-app/ci && cd ~/lab/ev-app && git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > site/index.html <<'EOF'\n> <h1>EV status page</h1>\n> version: 1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:1.37\n> COPY site/ /www/\n> EXPOSE 8080\n> CMD [\"httpd\", \"-f\", \"-p\", \"8080\", \"-h\", \"/www\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ci/test.sh <<'EOF'\n> #!/bin/bash\n> # a tiny \"unit test\": the page must contain a version line\n> grep -q '^version: [0-9]' site/index.html && echo \"test: version line present\" || { echo \"test: version line MISSING\"; exit 1; }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x ci/test.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > k8s.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: ev-app}\n> spec:\n>   replicas: 2\n>   selector:\n>     matchLabels: {app: ev-app}\n>   template:\n>     metadata:\n>       labels: {app: ev-app}\n>     spec:\n>       containers:\n>       - name: web\n>         image: IMAGE_PLACEHOLDER\n>         ports: [{containerPort: 8080}]\n>         readinessProbe:\n>           httpGet: {path: /, port: 8080}\n>           periodSeconds: 2\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata: {name: ev-app}\n> spec:\n>   selector: {app: ev-app}\n>   ports: [{port: 80, targetPort: 8080}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add -A && git commit -q -m \"Initial EV status page\" && git log --format='%s'",
+     "o": "Initial EV status page",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ~/lab/ev-app/ci/pipeline.sh <<'EOF'\n> #!/bin/bash\n> set -euo pipefail\n> BUILD_NUMBER=${BUILD_NUMBER:?set BUILD_NUMBER}\n> REGISTRY=localhost:5000\n> IMAGE=$REGISTRY/ev/status-page\n> SHA=$(git rev-parse --short HEAD)\n> TAG=\"$BUILD_NUMBER-$SHA\"\n> \n> stage() { echo; echo \"=== STAGE: $1\"; }\n> \n> stage \"Lint\"\n> bash -n ci/test.sh && echo \"lint: shell syntax ok\"\n> \n> stage \"Test\"\n> ./ci/test.sh\n> \n> stage \"Build image\"\n> docker build -q -t \"$IMAGE:$TAG\" . > /dev/null && echo \"built $IMAGE:<build>-<sha>\"\n> \n> stage \"Push image\"\n> docker push -q \"$IMAGE:$TAG\" > /dev/null && echo \"pushed\"\n> \n> stage \"Deploy to Kubernetes\"\n> sed \"s#IMAGE_PLACEHOLDER#$IMAGE:$TAG#\" k8s.yaml | kubectl apply -f - > /dev/null\n> if ! kubectl rollout status deployment/ev-app --timeout=90s | tail -1; then\n>   echo \"DEPLOY FAILED: rolling back\"\n>   kubectl rollout undo deployment/ev-app > /dev/null 2>&1\n>   kubectl rollout status deployment/ev-app --timeout=90s | tail -1\n>   exit 1\n> fi\n> \n> stage \"Smoke test\"\n> kubectl run smoke-$BUILD_NUMBER --image=busybox:1.37 --restart=Never -- sh -c 'wget -qO- http://ev-app | tail -1' > /dev/null\n> kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/smoke-$BUILD_NUMBER --timeout=60s > /dev/null\n> echo \"smoke test says: $(kubectl logs smoke-$BUILD_NUMBER)\"\n> echo; echo \"PIPELINE SUCCESS: $TAG deployed\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x ~/lab/ev-app/ci/pipeline.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/ev-app && git add -A && git commit -q -m \"Add pipeline script\" && echo committed",
+     "o": "committed",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ BUILD_NUMBER=1 ./ci/pipeline.sh 2>&1 | sed -E 's/[0-9]+-[0-9a-f]{7} deployed/<build>-<sha> deployed/'",
+     "o": "\n=== STAGE: Lint\nlint: shell syntax ok\n\n=== STAGE: Test\ntest: version line present\n\n=== STAGE: Build image\nbuilt localhost:5000/ev/status-page:<build>-<sha>\n\n=== STAGE: Push image\npushed\n\n=== STAGE: Deploy to Kubernetes\ndeployment \"ev-app\" successfully rolled out\n\n=== STAGE: Smoke test\nsmoke test says: version: 1\n\nPIPELINE SUCCESS: <build>-<sha> deployed",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s http://127.0.0.1:5000/v2/_catalog",
+     "o": "{\"repositories\":[\"ev/status-page\"]}",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment ev-app -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas --no-headers",
+     "o": "ev-app   2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i '/^version/d' site/index.html",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -qam \"Oops: remove version line\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ BUILD_NUMBER=2 ./ci/pipeline.sh 2>&1 | sed -E 's/\\.sh: line [0-9]+//'; echo \"pipeline exit code: ${PIPESTATUS[0]}\"",
+     "o": "\n=== STAGE: Lint\nlint: shell syntax ok\n\n=== STAGE: Test\ntest: version line MISSING\npipeline exit code: 1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment ev-app -o jsonpath='{.spec.template.spec.containers[0].image}{\"\\n\"}' | sed -E 's/[0-9]+-[0-9a-f]{7}/<build>-<sha>/'",
+     "o": "localhost:5000/ev/status-page:<build>-<sha>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ev-app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git revert --no-edit HEAD > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"-p\", \"8080\"/\"-p\", \"9999\"/' Dockerfile",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -qam \"Change port (breaks readiness)\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ BUILD_NUMBER=3 ./ci/pipeline.sh 2>&1 | grep -vE \"^$\" | sed -E 's/Waiting for deployment.*/(rollout is waiting for the new Pods to become ready...)/' | uniq; echo \"pipeline exit code: ${PIPESTATUS[0]}\"",
+     "o": "=== STAGE: Lint\nlint: shell syntax ok\n=== STAGE: Test\ntest: version line present\n=== STAGE: Build image\nbuilt localhost:5000/ev/status-page:<build>-<sha>\n=== STAGE: Push image\npushed\n=== STAGE: Deploy to Kubernetes\nerror: timed out waiting for the condition\n(rollout is waiting for the new Pods to become ready...)\nDEPLOY FAILED: rolling back\ndeployment \"ev-app\" successfully rolled out\npipeline exit code: 1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=ev-app --no-headers -o custom-columns=READY:.status.containerStatuses[0].ready | sort | uniq -c",
+     "o": "      1 false\n      2 true",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete namespace ci --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete deployment,service ev-app -n ci --ignore-not-found > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f registry > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8feec5784dd8522e"
+ },
+ "jenkins-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ curl -sg \"$JENKINS/computer/api/json?tree=computer[displayName,numExecutors,offline]\" | python3 -c 'import sys,json; [print(c[\"displayName\"], \"executors:\", c[\"numExecutors\"], \"offline:\", c[\"offline\"]) for c in json.load(sys.stdin)[\"computer\"]]'",
+     "o": "Built-In Node executors: 2 offline: False",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/pluginManager/api/json?depth=1&tree=plugins[shortName]\" | python3 -c 'import sys,json; print(\"installed plugins:\", len(json.load(sys.stdin)[\"plugins\"]))'",
+     "o": "installed plugins: 0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > hello.groovy <<'EOF'\n> println \"Jenkins version: \" + jenkins.model.Jenkins.VERSION\n> println \"Jobs: \" + jenkins.model.Jenkins.instance.allItems.collect { it.name }.sort().join(\", \")\n> println \"Controller JVM: \" + System.getProperty(\"java.version\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jcurl -g --data-urlencode \"script@hello.groovy\" \"$JENKINS/scriptText\" | sed -E 's/Jenkins version: .*/Jenkins version: <version>/'",
+     "o": "Jenkins version: <version>\nJobs: build-stage, deploy, deploy-stage, failing, hello, nightly, test-stage\nController JVM: 17.0.18",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -sg \"$JENKINS/api/json?tree=useSecurity,useCrumbs,slaveAgentPort\" | python3 -m json.tool",
+     "o": "{\n    \"_class\": \"hudson.model.Hudson\",\n    \"slaveAgentPort\": 50000,\n    \"useCrumbs\": true,\n    \"useSecurity\": false\n}",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "20293f5c80ea3dcc"
+ },
+ "jenkins-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ docker exec jenkins sh -c 'cd /var/jenkins_home && ls && echo \"--- jobs:\" && ls jobs 2>/dev/null | head -5'",
+     "o": "config.xml\ncopy_reference_file.log\nhudson.model.UpdateCenter.xml\njenkins.install.InstallUtil.lastExecVersion\njenkins.install.UpgradeWizard.state\njenkins.telemetry.Correlator.xml\njobs\nnodeMonitors.xml\nplugins\nqueue.xml\nsecret.key\nsecret.key.not-so-secret\nsecrets\nuserContent\nwar\nworkspace\n--- jobs:\nbuild-stage\ndeploy\ndeploy-stage\nfailing\nhello",
+     "x": 0
+    },
+    {
+     "c": "$ docker exec jenkins sh -c 'cat /var/jenkins_home/jobs/hello/config.xml 2>/dev/null | head -3'",
+     "o": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><project>\n  <description>First job: prints some information</description>\n  <builders>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker exec jenkins tar -czf /tmp/jenkins-backup.tar.gz -C /var/jenkins_home --exclude=workspace --exclude=caches --exclude=war . ",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker cp jenkins:/tmp/jenkins-backup.tar.gz ./jenkins-backup.tar.gz",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -tzf jenkins-backup.tar.gz | grep -c \"config.xml\" | awk '{print \"config.xml files in the backup:\", ($1>0 ? \"yes\" : \"no\")}'",
+     "o": "config.xml files in the backup: yes",
+     "x": 0
+    },
+    {
+     "c": "$ tar -tzf jenkins-backup.tar.gz | grep -E \"^\\./secrets/master.key$\"",
+     "o": "./secrets/master.key",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l jenkins-backup.tar.gz | awk '{print \"backup is a single archive:\", ($5>0 ? \"yes\" : \"no\")}'",
+     "o": "backup is a single archive: yes",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f jenkins-backup.tar.gz",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -sg \"$JENKINS/queue/api/json?tree=items[id]\" | python3 -c 'import sys,json; print(\"items waiting in the build queue:\", len(json.load(sys.stdin)[\"items\"]))'",
+     "o": "items waiting in the build queue: 0",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sg \"$JENKINS/api/json?tree=assignedLabels[name],quietingDown\" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"quiet-down mode:\", d[\"quietingDown\"])'",
+     "o": "quiet-down mode: False",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f10f985039421791"
+ },
+ "kubernetes-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl version | grep -E \"Client|Server\"",
+     "o": "Client Version: v1.37.1\nServer Version: v1.37.1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get nodes -o custom-columns=NAME:.metadata.name,STATUS:.status.conditions[-1].type,VERSION:.status.nodeInfo.kubeletVersion",
+     "o": "NAME       STATUS   VERSION\nlab-node   Ready    v1.37.1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get --raw=/readyz",
+     "o": "ok",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl config view --minify -o jsonpath='cluster={.clusters[0].name} user={.users[0].name}{\"\\n\"}'",
+     "o": "cluster=lab user=admin",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl describe node lab-node | grep -E \"^Name:|Roles|Capacity|Allocatable|Container Runtime|Kubelet Version|Operating System\" | sed 's/  */ /g'",
+     "o": "Name: lab-node\nRoles: <none>\nCapacity:\nAllocatable:\n Operating System: linux\n Container Runtime Version: containerd://2.2.6\n Kubelet Version: v1.37.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl get pods -n kube-system -o custom-columns=APP:.metadata.labels.k8s-app,STATUS:.status.phase",
+     "o": "APP        STATUS\nkube-dns   Running",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get namespaces -o custom-columns=NAME:.metadata.name,STATUS:.status.phase",
+     "o": "NAME              STATUS\ndefault           Active\nkube-node-lease   Active\nkube-public       Active\nkube-system       Active\nlab2              Active",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl api-resources --no-headers | awk '{print $1}' | grep -E \"^(pods|services|deployments|replicasets|configmaps|secrets|namespaces|nodes|persistentvolumeclaims|ingresses|jobs|cronjobs|statefulsets|daemonsets)$\" | sort | tr '\\n' ' '; echo",
+     "o": "configmaps cronjobs daemonsets deployments ingresses jobs namespaces nodes persistentvolumeclaims pods replicasets secrets services statefulsets ",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl explain pod.spec.containers.image | head -6",
+     "o": "KIND:       Pod\nVERSION:    v1\n\nFIELD: image <string>",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "895081dd5130cbd8"
+ },
+ "kubernetes-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > job.yaml <<'EOF'\n> apiVersion: batch/v1\n> kind: Job\n> metadata: {name: reindex}\n> spec:\n>   completions: 3\n>   parallelism: 2\n>   backoffLimit: 3\n>   template:\n>     spec:\n>       restartPolicy: Never\n>       containers:\n>       - name: worker\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"echo indexing batch on $(hostname | cut -c1-8); sleep 2; echo done\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f job.yaml",
+     "o": "job.batch/reindex created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=complete job/reindex --timeout=120s",
+     "o": "job.batch/reindex condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get job reindex -o custom-columns=NAME:.metadata.name,SUCCEEDED:.status.succeeded,COMPLETIONS:.spec.completions",
+     "o": "NAME      SUCCEEDED   COMPLETIONS\nreindex   3           3",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l job-name=reindex --no-headers -o custom-columns=PHASE:.status.phase | sort | uniq -c",
+     "o": "      3 Succeeded",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > cron.yaml <<'EOF'\n> apiVersion: batch/v1\n> kind: CronJob\n> metadata: {name: nightly-backup}\n> spec:\n>   schedule: \"30 2 * * *\"            # 02:30 every night\n>   concurrencyPolicy: Forbid          # do not start a run while the last is still going\n>   successfulJobsHistoryLimit: 3\n>   jobTemplate:\n>     spec:\n>       template:\n>         spec:\n>           restartPolicy: OnFailure\n>           containers:\n>           - name: backup\n>             image: busybox:1.37\n>             command: [\"sh\", \"-c\", \"echo backup run; date +%Y > /dev/null\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f cron.yaml",
+     "o": "cronjob.batch/nightly-backup created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get cronjob nightly-backup -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule,SUSPEND:.spec.suspend",
+     "o": "NAME             SCHEDULE     SUSPEND\nnightly-backup   30 2 * * *   false",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create job manual-backup --from=cronjob/nightly-backup",
+     "o": "job.batch/manual-backup created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=complete job/manual-backup --timeout=90s",
+     "o": "job.batch/manual-backup condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs job/manual-backup",
+     "o": "backup run",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ds.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: DaemonSet\n> metadata: {name: node-agent}\n> spec:\n>   selector:\n>     matchLabels: {app: node-agent}\n>   template:\n>     metadata:\n>       labels: {app: node-agent}\n>     spec:\n>       containers:\n>       - name: agent\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"echo agent on $NODE; sleep 3600\"]\n>         env:\n>         - name: NODE\n>           valueFrom: {fieldRef: {fieldPath: spec.nodeName}}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f ds.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status daemonset/node-agent --timeout=90s | tail -1",
+     "o": "daemon set \"node-agent\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get daemonset node-agent -o custom-columns=NAME:.metadata.name,DESIRED:.status.desiredNumberScheduled,READY:.status.numberReady",
+     "o": "NAME         DESIRED   READY\nnode-agent   1         1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs -l app=node-agent",
+     "o": "agent on lab-node",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > sts.yaml <<'EOF'\n> apiVersion: v1\n> kind: Service\n> metadata: {name: db}\n> spec:\n>   clusterIP: None            # headless: gives each Pod its own DNS name\n>   selector: {app: db}\n>   ports: [{port: 5432}]\n> ---\n> apiVersion: apps/v1\n> kind: StatefulSet\n> metadata: {name: db}\n> spec:\n>   serviceName: db\n>   replicas: 2\n>   selector:\n>     matchLabels: {app: db}\n>   template:\n>     metadata:\n>       labels: {app: db}\n>     spec:\n>       containers:\n>       - name: db\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"echo I am $(hostname); sleep 3600\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f sts.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status statefulset/db --timeout=120s | tail -1",
+     "o": "partitioned roll out complete: 2 new pods have been updated...",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=db -o custom-columns=NAME:.metadata.name --no-headers",
+     "o": "db-0\ndb-1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod db-0 --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status statefulset/db --timeout=120s | tail -1",
+     "o": "partitioned roll out complete: 2 new pods have been updated...",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=db -o custom-columns=NAME:.metadata.name --no-headers",
+     "o": "db-0\ndb-1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p app/base app/overlays/prod",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app/base/deploy.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: web}\n> spec:\n>   replicas: 1\n>   selector:\n>     matchLabels: {app: web}\n>   template:\n>     metadata:\n>       labels: {app: web}\n>     spec:\n>       containers:\n>       - name: nginx\n>         image: nginx:1.27-alpine\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'resources:\\n- deploy.yaml\\n' > app/base/kustomization.yaml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app/overlays/prod/kustomization.yaml <<'EOF'\n> resources:\n> - ../../base\n> namePrefix: prod-\n> replicas:\n> - name: web\n>   count: 3\n> images:\n> - name: nginx\n>   newTag: 1.28-alpine\n> labels:\n> - pairs:\n>     env: prod\n>   includeSelectors: true\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl kustomize app/overlays/prod | grep -E \"name:|replicas:|image:|env:\"",
+     "o": "    env: prod\n  name: prod-web\n  replicas: 3\n      env: prod\n        env: prod\n      - image: nginx:1.28-alpine\n        name: nginx",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl apply -k app/overlays/prod",
+     "o": "deployment.apps/prod-web created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/prod-web --timeout=120s | tail -1",
+     "o": "deployment \"prod-web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment prod-web -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,IMAGE:.spec.template.spec.containers[0].image --no-headers",
+     "o": "prod-web   3     nginx:1.28-alpine",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl drain --help | head -2",
+     "o": "Drain node in preparation for maintenance.",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl cordon lab-node",
+     "o": "node/lab-node cordoned",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get node lab-node -o custom-columns=NAME:.metadata.name,SCHEDULABLE:.spec.unschedulable --no-headers",
+     "o": "lab-node   true",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl uncordon lab-node",
+     "o": "node/lab-node uncordoned",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete namespace lab10 --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9a83a0156227431e"
+ },
+ "kubernetes-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl run hello --image=busybox:1.37 -- sh -c 'echo \"hello from a pod\"; sleep 3600'",
+     "o": "pod/hello created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/hello --timeout=60s",
+     "o": "pod/hello condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod hello -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,READY:.status.containerStatuses[0].ready,NODE:.spec.nodeName",
+     "o": "NAME    STATUS    READY   NODE\nhello   Running   true    lab-node",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=hello --sort-by=.lastTimestamp -o custom-columns=REASON:.reason,FROM:.source.component --no-headers",
+     "o": "Scheduled   <none>\nPulled      kubelet\nCreated     kubelet\nStarted     kubelet",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs hello",
+     "o": "hello from a pod",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec hello -- sh -c 'echo \"inside: host=$(hostname) user=$(id -un)\"; ls / | head -3'",
+     "o": "inside: host=hello user=root\nbin\ndev\netc",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > pod.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: web\n>   labels:\n>     app: web\n>     tier: frontend\n> spec:\n>   containers:\n>   - name: nginx\n>     image: nginx:1.27-alpine\n>     ports:\n>     - containerPort: 80\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f pod.yaml",
+     "o": "pod/web created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/web --timeout=60s",
+     "o": "pod/web condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web --no-headers -o custom-columns=NAME:.metadata.name,STATUS:.status.phase",
+     "o": "web   Running",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl get pods -o custom-columns=NAME:.metadata.name,LABELS:.metadata.labels",
+     "o": "NAME    LABELS\nhello   map[run:hello]\nweb     map[app:web tier:frontend]",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l tier=frontend -o name",
+     "o": "pod/web",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f pod.yaml",
+     "o": "pod/web unchanged",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod web -o yaml | grep -E \"^(apiVersion|kind)|phase:|podIP:\" | sed 's/podIP: .*/podIP: <ip>/'",
+     "o": "apiVersion: v1\nkind: Pod\n  phase: Running\n  podIP: <ip>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ip=$(kubectl get pod web -o jsonpath='{.status.podIP}')",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run client --image=busybox:1.37 --restart=Never -- sh -c \"wget -qO- http://$ip | grep -o '<title>.*</title>'\"",
+     "o": "pod/client created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/client --timeout=60s",
+     "o": "pod/client condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs client",
+     "o": "<title>Welcome to nginx!</title>",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl port-forward pod/web 18080:80 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:18080/ | grep -o \"<title>.*</title>\"",
+     "o": "<title>Welcome to nginx!</title>",
+     "x": 0
+    },
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl describe pod web | grep -E \"^(Name|Namespace|Node|Status|Image|State|Ready|Restart Count|QoS Class|Labels)\" | sed 's/  */ /g' | sed 's#Node: .*#Node: <node>#'",
+     "o": "Name: web\nNamespace: lab2\nNode: <node>\nLabels: app=web\nStatus: Running\nQoS Class: BestEffort\nNode-Selectors: <none>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > multi.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: multi\n> spec:\n>   volumes:\n>   - name: shared\n>     emptyDir: {}\n>   initContainers:\n>   - name: prepare\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"echo 'prepared by init' > /data/note.txt\"]\n>     volumeMounts: [{name: shared, mountPath: /data}]\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"cat /data/note.txt; echo app-sees-init-output; sleep 3600\"]\n>     volumeMounts: [{name: shared, mountPath: /data}]\n>   - name: sidecar\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"while true; do echo sidecar-tick >> /data/side.log; sleep 1; done\"]\n>     volumeMounts: [{name: shared, mountPath: /data}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f multi.yaml",
+     "o": "pod/multi created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/multi --timeout=60s",
+     "o": "pod/multi condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod multi -o jsonpath='ready containers: {.status.containerStatuses[*].name}{\"\\n\"}'",
+     "o": "ready containers: app sidecar",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs multi -c app",
+     "o": "prepared by init\napp-sees-init-output",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec multi -c app -- sh -c 'grep -c sidecar-tick /data/side.log > /dev/null && echo \"app can read the sidecar log through the shared volume\"'",
+     "o": "app can read the sidecar log through the shared volume",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run crasher --image=busybox:1.37 -- sh -c 'echo \"starting\"; exit 1'",
+     "o": "pod/crasher created",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 30); do kubectl get pod crasher -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null | grep -qE '^[1-9]' && break; sleep 2; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod crasher -o custom-columns=NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount,LAST_EXIT:.status.containerStatuses[0].lastState.terminated.exitCode",
+     "o": "NAME      RESTARTS   LAST_EXIT\ncrasher   1          1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs crasher --previous",
+     "o": "starting",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete pod web --wait=true",
+     "o": "pod \"web\" deleted from lab2 namespace",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web --no-headers | wc -l",
+     "o": "No resources found in lab2 namespace.\n0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2a386274675b3a24"
+ },
+ "kubernetes-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > deploy.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata:\n>   name: web\n> spec:\n>   replicas: 3\n>   selector:\n>     matchLabels:\n>       app: web\n>   template:\n>     metadata:\n>       labels:\n>         app: web\n>     spec:\n>       containers:\n>       - name: nginx\n>         image: nginx:1.27-alpine\n>         ports:\n>         - containerPort: 80\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f deploy.yaml",
+     "o": "deployment.apps/web created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=90s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment web -o custom-columns=NAME:.metadata.name,DESIRED:.spec.replicas,READY:.status.readyReplicas,UP-TO-DATE:.status.updatedReplicas",
+     "o": "NAME   DESIRED   READY   UP-TO-DATE\nweb    3         3       3",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get rs -o custom-columns=KIND:.kind,DESIRED:.spec.replicas,READY:.status.readyReplicas",
+     "o": "KIND         DESIRED   READY\nReplicaSet   3         3",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web --no-headers | wc -l",
+     "o": "3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ victim=$(kubectl get pods -l app=web -o name | head -1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete $victim --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=60s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web --no-headers | wc -l",
+     "o": "3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl scale deployment web --replicas=5",
+     "o": "deployment.apps/web scaled",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=90s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment web -o jsonpath='ready={.status.readyReplicas}{\"\\n\"}'",
+     "o": "ready=5",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl scale deployment web --replicas=3",
+     "o": "deployment.apps/web scaled",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.replicas}'=3 deployment/web --timeout=60s",
+     "o": "deployment.apps/web condition met",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl set image deployment/web nginx=nginx:1.28-alpine",
+     "o": "deployment.apps/web image updated",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=120s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get rs -o custom-columns=IMAGE:.spec.template.spec.containers[0].image,DESIRED:.spec.replicas,READY:.status.readyReplicas --sort-by=.metadata.creationTimestamp",
+     "o": "IMAGE               DESIRED   READY\nnginx:1.27-alpine   0         <none>\nnginx:1.28-alpine   3         3",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web -o custom-columns=IMAGE:.spec.containers[0].image --no-headers | sort | uniq -c",
+     "o": "      3 nginx:1.28-alpine",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl get deployment web -o jsonpath='{.spec.strategy}{\"\\n\"}'",
+     "o": "{\"rollingUpdate\":{\"maxSurge\":\"25%\",\"maxUnavailable\":\"25%\"},\"type\":\"RollingUpdate\"}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl annotate deployment web kubernetes.io/change-cause=\"upgrade nginx to 1.28\" --overwrite > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout history deployment/web",
+     "o": "deployment.apps/web \nREVISION  CHANGE-CAUSE\n1         <none>\n2         upgrade nginx to 1.28",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout undo deployment/web 2>&1 | grep -v Warning",
+     "o": "deployment.apps/web rolled back",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=120s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment web -o jsonpath='image now: {.spec.template.spec.containers[0].image}{\"\\n\"}'",
+     "o": "image now: nginx:1.27-alpine",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl set image deployment/web nginx=nginx:does-not-exist",
+     "o": "deployment.apps/web image updated",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=10s 2>&1 | tail -1",
+     "o": "error: timed out waiting for the condition",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web -o custom-columns=IMAGE:.spec.containers[0].image,STATUS:.status.containerStatuses[0].state.waiting.reason --no-headers | sort | uniq -c",
+     "o": "      3 nginx:1.27-alpine      <none>\n      1 nginx:does-not-exist   ImagePullBackOff",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl rollout undo deployment/web 2>&1 | grep -v Warning",
+     "o": "deployment.apps/web rolled back",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=120s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=web --no-headers -o custom-columns=STATUS:.status.phase | sort | uniq -c",
+     "o": "      3 Running",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9fcd8996c21f04fb"
+ },
+ "kubernetes-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > app.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata:\n>   name: web\n> spec:\n>   replicas: 3\n>   selector:\n>     matchLabels: {app: web}\n>   template:\n>     metadata:\n>       labels: {app: web}\n>     spec:\n>       containers:\n>       - name: nginx\n>         image: nginx:1.27-alpine\n>         ports: [{containerPort: 80}]\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata:\n>   name: web\n> spec:\n>   selector:\n>     app: web\n>   ports:\n>   - port: 80          # the Service port\n>     targetPort: 80    # the container port\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f app.yaml",
+     "o": "deployment.apps/web created\nservice/web created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/web --timeout=90s | tail -1",
+     "o": "deployment \"web\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get service web -o custom-columns=NAME:.metadata.name,TYPE:.spec.type,PORT:.spec.ports[0].port",
+     "o": "NAME   TYPE        PORT\nweb    ClusterIP   80",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpointslices -l kubernetes.io/service-name=web -o jsonpath='endpoints: {.items[0].endpoints[*].addresses[0]}{\"\\n\"}' | sed 's/[0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*/<podip>/g'",
+     "o": "endpoints: <podip> <podip> <podip>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run client --image=busybox:1.37 --restart=Never -- sh -c '\n> echo \"--- short name:\";  wget -qO- http://web | grep -o \"<title>.*</title>\"\n> echo \"--- full name:\";   wget -qO- http://web.lab4.svc.cluster.local | grep -o \"<title>.*</title>\"\n> echo \"--- resolver:\";    nslookup web | grep -E \"^Name\"\n> echo \"--- search path:\"; grep ^search /etc/resolv.conf'",
+     "o": "pod/client created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/client --timeout=60s",
+     "o": "pod/client condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs client",
+     "o": "--- short name:\n<title>Welcome to nginx!</title>\n--- full name:\n<title>Welcome to nginx!</title>\n--- resolver:\nName:\tweb.lab4.svc.cluster.local\n--- search path:\nsearch lab4.svc.cluster.local svc.cluster.local cluster.local",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run hits --image=busybox:1.37 --restart=Never -- sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12; do wget -qO- http://web > /dev/null && echo ok; done | sort | uniq -c'",
+     "o": "pod/hits created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/hits --timeout=60s",
+     "o": "pod/hits condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs hits",
+     "o": "     12 ok",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo iptables -t nat -S | grep -c \"default_web\\|lab4/web\" | awk '{print \"iptables rules mentioning this service:\", ($1>0 ? \"yes\" : \"no\")}'",
+     "o": "iptables rules mentioning this service: yes",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch service web -p '{\"spec\":{\"selector\":{\"app\":\"wbe\"}}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpointslices -l kubernetes.io/service-name=web -o jsonpath='endpoints: [{.items[0].endpoints[*].addresses[0]}]{\"\\n\"}'",
+     "o": "endpoints: []",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run broken --image=busybox:1.37 --restart=Never -- sh -c 'wget -q -T 3 -O- http://web || echo \"request failed: no endpoints\"'",
+     "o": "pod/broken created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/broken --timeout=60s",
+     "o": "pod/broken condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs broken | tail -1",
+     "o": "request failed: no endpoints",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch service web -p '{\"spec\":{\"selector\":{\"app\":\"web\"}}}' > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl expose deployment web --name=web-np --type=NodePort --port=80",
+     "o": "service/web-np exposed",
+     "x": 0
+    },
+    {
+     "c": "$ port=$(kubectl get service web-np -o jsonpath='{.spec.ports[0].nodePort}')",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"nodePort is in range 30000-32767: $([ $port -ge 30000 ] && [ $port -le 32767 ] && echo yes)\"",
+     "o": "nodePort is in range 30000-32767: yes",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -m 5 http://127.0.0.1:$port/ | grep -o \"<title>.*</title>\"",
+     "o": "<title>Welcome to nginx!</title>",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2df8774bd98447e2"
+ },
+ "kubernetes-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl create configmap ev-config --from-literal=LOG_LEVEL=info --from-literal=SQL_SERVER=SQL01",
+     "o": "configmap/ev-config created",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'retries=3\\ntimeout=30\\n' > evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create configmap ev-file --from-file=evault.conf",
+     "o": "configmap/ev-file created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get configmap ev-config -o jsonpath='{.data}{\"\\n\"}'",
+     "o": "{\"LOG_LEVEL\":\"info\",\"SQL_SERVER\":\"SQL01\"}",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get configmap ev-file -o jsonpath='{.data.evault\\.conf}'",
+     "o": "retries=3\ntimeout=30",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > pod.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: app\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"echo LOG_LEVEL=$LOG_LEVEL; echo SQL=$SQL_SERVER; echo '--- file:'; cat /etc/ev/evault.conf; sleep 3600\"]\n>     env:\n>     - name: LOG_LEVEL\n>       valueFrom:\n>         configMapKeyRef: {name: ev-config, key: LOG_LEVEL}\n>     envFrom:\n>     - configMapRef: {name: ev-config}\n>     volumeMounts:\n>     - name: cfg\n>       mountPath: /etc/ev\n>   volumes:\n>   - name: cfg\n>     configMap:\n>       name: ev-file\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f pod.yaml",
+     "o": "pod/app created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/app --timeout=60s",
+     "o": "pod/app condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs app",
+     "o": "LOG_LEVEL=info\nSQL=SQL01\n--- file:\nretries=3\ntimeout=30",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create secret generic ev-db --from-literal=username=evsvc --from-literal=password='S3cr3t-lab-only'",
+     "o": "secret/ev-db created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get secret ev-db -o jsonpath='{.data}{\"\\n\"}'",
+     "o": "{\"password\":\"UzNjcjN0LWxhYi1vbmx5\",\"username\":\"ZXZzdmM=\"}",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get secret ev-db -o jsonpath='{.data.password}' | base64 -d; echo",
+     "o": "S3cr3t-lab-only",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > pod2.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: app2\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"echo user=$(cat /etc/db/username); stat -L -c '%a %n' /etc/db/username /etc/db/password; sleep 3600\"]\n>     volumeMounts:\n>     - name: db\n>       mountPath: /etc/db\n>       readOnly: true\n>   volumes:\n>   - name: db\n>     secret:\n>       secretName: ev-db\n>       defaultMode: 0400\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f pod2.yaml",
+     "o": "pod/app2 created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/app2 --timeout=60s",
+     "o": "pod/app2 condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs app2",
+     "o": "user=evsvc\n400 /etc/db/username\n400 /etc/db/password",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ openssl req -x509 -newkey rsa:2048 -nodes -keyout tls.key -out tls.crt -days 30 -subj \"/CN=ev.example.com\" 2>/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create secret tls ev-tls --cert=tls.crt --key=tls.key",
+     "o": "secret/ev-tls created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get secret ev-tls -o jsonpath='{.type}{\"\\n\"}'",
+     "o": "kubernetes.io/tls",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f tls.key tls.crt",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch configmap ev-config -p '{\"data\":{\"LOG_LEVEL\":\"debug\"}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Pod environment (still the old value):\"",
+     "o": "Pod environment (still the old value):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec app -- sh -c 'echo LOG_LEVEL=$LOG_LEVEL'",
+     "o": "LOG_LEVEL=info",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod app --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f pod.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/app --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"New Pod environment:\"",
+     "o": "New Pod environment:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec app -- sh -c 'echo LOG_LEVEL=$LOG_LEVEL'",
+     "o": "LOG_LEVEL=debug",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "09f5c637030ce3ab"
+ },
+ "kubernetes-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > scratch.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: scratch\n> spec:\n>   volumes:\n>   - name: tmp\n>     emptyDir: {}\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"echo data > /tmp/work/file.txt; sleep 3600\"]\n>     volumeMounts: [{name: tmp, mountPath: /tmp/work}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f scratch.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/scratch --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec scratch -- cat /tmp/work/file.txt",
+     "o": "data",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod scratch --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f scratch.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/scratch --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec scratch -- sh -c 'ls /tmp/work; echo \"(same command wrote the file again: it is a brand new Pod)\"'",
+     "o": "file.txt\n(same command wrote the file again: it is a brand new Pod)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo mkdir -p /tmp/lab-pv/ev-data && sudo chmod 777 /tmp/lab-pv/ev-data",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > storage.yaml <<'EOF'\n> apiVersion: v1\n> kind: PersistentVolume\n> metadata:\n>   name: lab6-pv\n> spec:\n>   capacity: {storage: 1Gi}\n>   accessModes: [ReadWriteOnce]\n>   persistentVolumeReclaimPolicy: Retain\n>   storageClassName: manual\n>   hostPath: {path: /tmp/lab-pv/ev-data}\n> ---\n> apiVersion: v1\n> kind: PersistentVolumeClaim\n> metadata:\n>   name: ev-data\n> spec:\n>   accessModes: [ReadWriteOnce]\n>   storageClassName: manual\n>   resources:\n>     requests: {storage: 500Mi}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f storage.yaml",
+     "o": "persistentvolume/lab6-pv created\npersistentvolumeclaim/ev-data created",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 20); do [ \"$(kubectl get pvc ev-data -o jsonpath='{.status.phase}')\" = \"Bound\" ] && break; sleep 1; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pvc ev-data -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,VOLUME:.spec.volumeName,CAPACITY:.status.capacity.storage",
+     "o": "NAME      STATUS   VOLUME    CAPACITY\nev-data   Bound    lab6-pv   1Gi",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pv lab6-pv -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,CLAIM:.spec.claimRef.name,RECLAIM:.spec.persistentVolumeReclaimPolicy",
+     "o": "NAME      STATUS   CLAIM     RECLAIM\nlab6-pv   Bound    ev-data   Retain",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > db.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: db\n> spec:\n>   containers:\n>   - name: db\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"echo \\\"index entry written at $(date +%s)\\\" >> /data/index.db; cat /data/index.db | wc -l; sleep 3600\"]\n>     volumeMounts: [{name: data, mountPath: /data}]\n>   volumes:\n>   - name: data\n>     persistentVolumeClaim: {claimName: ev-data}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f db.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/db --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"lines in index after first Pod:\"; kubectl logs db",
+     "o": "lines in index after first Pod:\n1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod db --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f db.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/db --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"lines in index after a NEW Pod used the same claim:\"; kubectl logs db",
+     "o": "lines in index after a NEW Pod used the same claim:\n2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"the data really lives on the node at:\"; ls /tmp/lab-pv/ev-data",
+     "o": "the data really lives on the node at:\nindex.db",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete pod db --wait=true > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pvc ev-data --wait=true",
+     "o": "persistentvolumeclaim \"ev-data\" deleted from lab6 namespace",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pv lab6-pv -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,RECLAIM:.spec.persistentVolumeReclaimPolicy",
+     "o": "NAME      STATUS     RECLAIM\nlab6-pv   Released   Retain",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete pv lab6-pv > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo rm -rf /tmp/lab-pv",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c2feefbc83116552"
+ },
+ "kubernetes-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > res.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: sized\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sleep\", \"3600\"]\n>     resources:\n>       requests: {cpu: 100m, memory: 64Mi}\n>       limits:   {cpu: 500m, memory: 128Mi}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f res.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/sized --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod sized -o jsonpath='QoS class: {.status.qosClass}{\"\\n\"}'",
+     "o": "QoS class: Burstable",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod sized -o jsonpath='requests={.spec.containers[0].resources.requests} limits={.spec.containers[0].resources.limits}{\"\\n\"}'",
+     "o": "requests={\"cpu\":\"100m\",\"memory\":\"64Mi\"} limits={\"cpu\":\"500m\",\"memory\":\"128Mi\"}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run hungry --image=busybox:1.37 --overrides='{\"spec\":{\"containers\":[{\"name\":\"hungry\",\"image\":\"busybox:1.37\",\"command\":[\"sleep\",\"3600\"],\"resources\":{\"requests\":{\"cpu\":\"1000\",\"memory\":\"900Gi\"}}}]}}'",
+     "o": "pod/hungry created",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod hungry -o jsonpath='phase={.status.phase}{\"\\n\"}'",
+     "o": "phase=Pending",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=hungry -o jsonpath='{.items[0].reason}: {.items[0].message}{\"\\n\"}' | cut -c1-120",
+     "o": "FailedScheduling: 0/1 nodes are available: 1 Insufficient cpu, 1 Insufficient memory. preemption: 0/1 nodes are availabl",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod hungry --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ready.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata:\n>   name: api\n> spec:\n>   replicas: 2\n>   selector:\n>     matchLabels: {app: api}\n>   template:\n>     metadata:\n>       labels: {app: api}\n>     spec:\n>       containers:\n>       - name: app\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"touch /tmp/ready; sleep 3600\"]\n>         readinessProbe:\n>           exec: {command: [\"test\", \"-f\", \"/tmp/ready\"]}\n>           periodSeconds: 2\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata: {name: api}\n> spec:\n>   selector: {app: api}\n>   ports: [{port: 80}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f ready.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/api --timeout=90s | tail -1",
+     "o": "deployment \"api\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ count() { kubectl get endpointslices -l kubernetes.io/service-name=api -o jsonpath='{.items[0].endpoints[?(@.conditions.ready==true)].addresses[0]}' | wc -w; }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"ready endpoints: $(count)\"",
+     "o": "ready endpoints: 2",
+     "x": 0
+    },
+    {
+     "c": "$ victim=$(kubectl get pods -l app=api -o name | head -1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec ${victim#pod/} -- rm /tmp/ready",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"after one Pod's readiness file is removed: $(count) ready endpoint\"",
+     "o": "after one Pod's readiness file is removed: 1 ready endpoint",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=api -o custom-columns=READY:.status.containerStatuses[0].ready --no-headers | sort | uniq -c",
+     "o": "      1 false\n      1 true",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > live.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata:\n>   name: stuck\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"touch /tmp/healthy; sleep 5; rm /tmp/healthy; sleep 3600\"]\n>     livenessProbe:\n>       exec: {command: [\"test\", \"-f\", \"/tmp/healthy\"]}\n>       initialDelaySeconds: 2\n>       periodSeconds: 2\n>       failureThreshold: 2\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f live.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 40); do kubectl get pod stuck -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null | grep -qE '^[1-9]' && break; sleep 2; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod stuck -o custom-columns=NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount --no-headers | awk '{print $1, \"restarted at least once:\", ($2>=1?\"yes\":\"no\")}'",
+     "o": "stuck restarted at least once: yes",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=stuck -o custom-columns=REASON:.reason --no-headers | sort -u | tr '\\n' ' '; echo",
+     "o": "Created Killing Pulled Scheduled Started Unhealthy ",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl label node lab-node disktype=ssd --overwrite > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run wants-ssd --image=busybox:1.37 --overrides='{\"spec\":{\"nodeSelector\":{\"disktype\":\"ssd\"},\"containers\":[{\"name\":\"c\",\"image\":\"busybox:1.37\",\"command\":[\"sleep\",\"3600\"]}]}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run wants-gpu --image=busybox:1.37 --overrides='{\"spec\":{\"nodeSelector\":{\"gpu\":\"yes\"},\"containers\":[{\"name\":\"c\",\"image\":\"busybox:1.37\",\"command\":[\"sleep\",\"3600\"]}]}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods wants-ssd wants-gpu -o custom-columns=NAME:.metadata.name,PHASE:.status.phase --no-headers",
+     "o": "wants-ssd   Running\nwants-gpu   Pending",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=wants-gpu -o jsonpath='{.items[0].message}{\"\\n\"}' | cut -c1-90",
+     "o": "0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: ",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl label node lab-node disktype- > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl taint node lab-node dedicated=ev:NoSchedule > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tol.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: tolerant}\n> spec:\n>   tolerations:\n>   - {key: dedicated, operator: Equal, value: ev, effect: NoSchedule}\n>   containers:\n>   - {name: c, image: \"busybox:1.37\", command: [\"sleep\", \"3600\"]}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f tol.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run intolerant --image=busybox:1.37 -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods tolerant intolerant -o custom-columns=NAME:.metadata.name,PHASE:.status.phase --no-headers",
+     "o": "tolerant     Running\nintolerant   Pending",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl taint node lab-node dedicated=ev:NoSchedule- > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "5231b660a76d1122"
+ },
+ "kubernetes-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl create namespace team-a",
+     "o": "namespace/team-a created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create namespace team-b",
+     "o": "namespace/team-b created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-a run web --image=nginx:1.27-alpine > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-b run web --image=nginx:1.27-alpine > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name --no-headers | grep -E \"team-[ab]\"",
+     "o": "team-a        web\nteam-b        web",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > quota.yaml <<'EOF'\n> apiVersion: v1\n> kind: ResourceQuota\n> metadata: {name: small, namespace: team-a}\n> spec:\n>   hard:\n>     pods: \"2\"\n>     requests.cpu: \"500m\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f quota.yaml",
+     "o": "resourcequota/small created",
+     "x": 0
+    },
+    {
+     "c": "$ small() { kubectl -n team-a run \"$1\" --image=busybox:1.37 --overrides='{\"spec\":{\"containers\":[{\"name\":\"'$1'\",\"image\":\"busybox:1.37\",\"command\":[\"sleep\",\"3600\"],\"resources\":{\"requests\":{\"cpu\":\"100m\"}}}]}}' 2>&1 | tail -1; }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ small second",
+     "o": "pod/second created",
+     "x": 0
+    },
+    {
+     "c": "$ small third | grep -o \"exceeded quota.*\" | cut -c1-110",
+     "o": "exceeded quota: small, requested: pods=1, used: pods=2, limited: pods=2",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-a get resourcequota small -o jsonpath='used pods={.status.used.pods} of {.status.hard.pods}{\"\\n\"}'",
+     "o": "used pods=2 of 2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl -n team-b create serviceaccount viewer",
+     "o": "serviceaccount/viewer created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-b create role pod-reader --verb=get,list,watch --resource=pods",
+     "o": "role.rbac.authorization.k8s.io/pod-reader created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-b create rolebinding viewer-reads-pods --role=pod-reader --serviceaccount=team-b:viewer",
+     "o": "rolebinding.rbac.authorization.k8s.io/viewer-reads-pods created",
+     "x": 0
+    },
+    {
+     "c": "$ sa=system:serviceaccount:team-b:viewer",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"can viewer list pods in team-b?      $(kubectl auth can-i list pods -n team-b --as=$sa)\"",
+     "o": "can viewer list pods in team-b?      yes",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"can viewer delete pods in team-b?    $(kubectl auth can-i delete pods -n team-b --as=$sa)\"",
+     "o": "can viewer delete pods in team-b?    no",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"can viewer list pods in team-a?      $(kubectl auth can-i list pods -n team-a --as=$sa)\"",
+     "o": "can viewer list pods in team-a?      no",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"can viewer read secrets in team-b?   $(kubectl auth can-i get secrets -n team-b --as=$sa)\"",
+     "o": "can viewer read secrets in team-b?   no",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ token=$(kubectl -n team-b create token viewer)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl --token=$token get pods -n team-b --no-headers -o custom-columns=NAME:.metadata.name",
+     "o": "web",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl --token=$token delete pod web -n team-b 2>&1 | cut -c1-110",
+     "o": "Error from server (Forbidden): pods \"web\" is forbidden: User \"system:serviceaccount:team-b:viewer\" cannot dele",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > secure.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: hardened, namespace: team-b}\n> spec:\n>   securityContext:\n>     runAsNonRoot: true\n>     runAsUser: 10001\n>     seccompProfile: {type: RuntimeDefault}\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sh\", \"-c\", \"id; touch /x 2>&1 | head -1; sleep 3600\"]\n>     securityContext:\n>       allowPrivilegeEscalation: false\n>       readOnlyRootFilesystem: true\n>       capabilities: {drop: [\"ALL\"]}\n>     resources:\n>       requests: {cpu: 50m}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f secure.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-b wait --for=condition=Ready pod/hardened --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n team-b logs hardened",
+     "o": "uid=10001 gid=0(root) groups=0(root)\ntouch: /x: Read-only file system",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl label namespace team-a pod-security.kubernetes.io/enforce=restricted > /dev/null",
+     "o": "Warning: existing pods in namespace \"team-a\" violate the new PodSecurity enforce level \"restricted:latest\"\nWarning: second (and 1 other pod): allowPrivilegeEscalation != false, unrestricted capabilities, runAsNonRoot != true, seccompProfile",
+     "x": 0
+    },
+    {
+     "c": "$ cat > priv.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: risky, namespace: team-a}\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sleep\", \"3600\"]\n>     securityContext: {privileged: true}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f priv.yaml 2>&1 | cut -c1-200",
+     "o": "Error from server (Forbidden): error when creating \"priv.yaml\": pods \"risky\" is forbidden: violates PodSecurity \"restricted:latest\": privileged (container \"app\" must not set securityContext.privileged",
+     "x": 0
+    },
+    {
+     "c": "$ sed 's/team-b/team-a/' secure.yaml | kubectl apply --dry-run=server -f - 2>&1 | tail -1 | cut -c1-120",
+     "o": "Error from server (Forbidden): error when creating \"STDIN\": pods \"hardened\" is forbidden: exceeded quota: small, request",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete namespace team-a team-b --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e025d8e911b3cb0d"
+ },
+ "kubernetes-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl run badimage --image=busybox:no-such-tag > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 20); do kubectl get pod badimage -o jsonpath='{.status.containerStatuses[0].state.waiting.reason}' 2>/dev/null | grep -q \"Err\\|BackOff\" && break; sleep 2; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod badimage -o custom-columns=NAME:.metadata.name,REASON:.status.containerStatuses[0].state.waiting.reason --no-headers",
+     "o": "badimage   ErrImagePull",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=badimage,reason=Failed -o jsonpath='{.items[0].message}{\"\\n\"}' | cut -c1-140",
+     "o": "Failed to pull image \"busybox:no-such-tag\": rpc error: code = NotFound desc = failed to pull and unpack image \"docker.io/library/busybox:no-",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run crashy --image=busybox:1.37 -- sh -c 'echo \"FATAL: cannot read /etc/ev/evault.conf\"; exit 2' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 30); do kubectl get pod crashy -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null | grep -qE '^[1-9]' && break; sleep 2; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod crashy -o custom-columns=NAME:.metadata.name,EXIT:.status.containerStatuses[0].lastState.terminated.exitCode --no-headers",
+     "o": "crashy   2",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl logs crashy --previous",
+     "o": "FATAL: cannot read /etc/ev/evault.conf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl run toobig --image=busybox:1.37 --overrides='{\"spec\":{\"containers\":[{\"name\":\"toobig\",\"image\":\"busybox:1.37\",\"command\":[\"sleep\",\"3600\"],\"resources\":{\"requests\":{\"cpu\":\"64\",\"memory\":\"512Gi\"}}}]}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod toobig -o jsonpath='phase={.status.phase}{\"\\n\"}'",
+     "o": "phase=Pending",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=toobig -o jsonpath='{.items[0].reason}: {.items[0].message}{\"\\n\"}' | cut -c1-120",
+     "o": "FailedScheduling: 0/1 nodes are available: 1 Insufficient cpu, 1 Insufficient memory. preemption: 0/1 nodes are availabl",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > cfg.yaml <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: needs-config}\n> spec:\n>   containers:\n>   - name: app\n>     image: busybox:1.37\n>     command: [\"sleep\", \"3600\"]\n>     envFrom:\n>     - configMapRef: {name: does-not-exist}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f cfg.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod needs-config -o custom-columns=NAME:.metadata.name,REASON:.status.containerStatuses[0].state.waiting.reason --no-headers",
+     "o": "needs-config   CreateContainerConfigError",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=needs-config -o jsonpath='{.items[-1].message}{\"\\n\"}' | cut -c1-120",
+     "o": "Error: configmap \"does-not-exist\" not found",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create configmap does-not-exist --from-literal=A=1 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 12",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod needs-config -o jsonpath='phase={.status.phase}{\"\\n\"}'",
+     "o": "phase=Running",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create deployment shop --image=nginx:1.27-alpine > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/shop --timeout=90s | tail -1",
+     "o": "deployment \"shop\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create service clusterip shop --tcp=80:80 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"selector the Service uses: $(kubectl get svc shop -o jsonpath='{.spec.selector}')\"",
+     "o": "selector the Service uses: {\"app\":\"shop\"}",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"labels the Pods have:       $(kubectl get pods -l app=shop -o jsonpath='{.items[0].metadata.labels.app}' | sed 's/^/app=/')\"",
+     "o": "labels the Pods have:       app=shop",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpointslices -l kubernetes.io/service-name=shop -o jsonpath='endpoints: [{.items[0].endpoints[*].addresses[0]}]{\"\\n\"}'",
+     "o": "endpoints: [10.244.0.113]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch svc shop -p '{\"spec\":{\"selector\":{\"app\":\"shop-v2\"}}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpointslices -l kubernetes.io/service-name=shop -o jsonpath='endpoints: [{.items[0].endpoints[*].addresses[0]}]{\"\\n\"}'",
+     "o": "endpoints: []",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create deployment ready-bad --image=nginx:1.27-alpine > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch deployment ready-bad --type=json -p='[{\"op\":\"add\",\"path\":\"/spec/template/spec/containers/0/readinessProbe\",\"value\":{\"httpGet\":{\"path\":\"/missing\",\"port\":80},\"periodSeconds\":2}}]' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 12",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=ready-bad -o custom-columns=STATUS:.status.phase,READY:.status.containerStatuses[0].ready --no-headers",
+     "o": "Running   true\nRunning   false",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector reason=Unhealthy -o jsonpath='{.items[0].message}{\"\\n\"}' | cut -c1-100",
+     "o": "Readiness probe failed: Get \"http://10.244.0.115:80/missing\": dial tcp 10.244.0.115:80: connect: con",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl exec deploy/shop -- sh -c 'cat /etc/os-release | head -1; wget -qO- http://localhost | head -c 15; echo'",
+     "o": "NAME=\"Alpine Linux\"\n<!DOCTYPE html>",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl debug --help | head -3",
+     "o": "Debug cluster resources using interactive debugging containers.\n\n 'debug' provides automation for common debugging tasks for cluster objects identified by resource and name. Pods will be used by default if no resource is specified.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete namespace lab9 --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4dd27baf5026db6e"
+ },
  "linux-1": {
   "blocks": [
    [
@@ -4679,6 +7307,480 @@
    ]
   ],
   "key": "f15158870889c598"
+ },
+ "monitoring-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > node_exporter.py <<'EOF'\n> import http.server\n> \n> def meminfo():\n>     out = {}\n>     for line in open(\"/proc/meminfo\"):\n>         k, v = line.split(\":\")\n>         out[k] = int(v.split()[0]) * 1024        # kB -> bytes\n>     return out\n> \n> def metrics():\n>     m = meminfo()\n>     load1, load5, load15 = open(\"/proc/loadavg\").read().split()[:3]\n>     lines = [\n>         \"# HELP lab_load1 1 minute load average\",\n>         \"# TYPE lab_load1 gauge\",\n>         f\"lab_load1 {load1}\",\n>         \"# HELP lab_memory_total_bytes Total memory\",\n>         \"# TYPE lab_memory_total_bytes gauge\",\n>         f\"lab_memory_total_bytes {m['MemTotal']}\",\n>         \"# HELP lab_memory_available_bytes Memory available for new processes\",\n>         \"# TYPE lab_memory_available_bytes gauge\",\n>         f\"lab_memory_available_bytes {m['MemAvailable']}\",\n>     ]\n>     return \"\\n\".join(lines) + \"\\n\"\n> \n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         if self.path == \"/metrics\":\n>             body = metrics().encode()\n>             self.send_response(200)\n>             self.send_header(\"Content-Type\", \"text/plain; version=0.0.4\")\n>             self.end_headers()\n>             self.wfile.write(body)\n>         else:\n>             self.send_response(404); self.end_headers()\n>     def log_message(self, *a): pass\n> \n> http.server.HTTPServer((\"127.0.0.1\", 9101), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 node_exporter.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:9101/metrics | sed -E 's/^(lab_[a-z_0-9]+) [0-9.]+$/\\1 <value>/'",
+     "o": "# HELP lab_load1 1 minute load average\n# TYPE lab_load1 gauge\nlab_load1 <value>\n# HELP lab_memory_total_bytes Total memory\n# TYPE lab_memory_total_bytes gauge\nlab_memory_total_bytes <value>\n# HELP lab_memory_available_bytes Memory available for new processes\n# TYPE lab_memory_available_bytes gauge\nlab_memory_available_bytes <value>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s http://127.0.0.1:9101/metrics | awk '/^lab_memory_total_bytes /{t=$2} /^lab_memory_available_bytes /{a=$2} END{p=(t-a)/t*100; print (p>=0 && p<=100) ? \"memory utilisation derived from two gauges is within 0-100%\" : \"unexpected value\"}'",
+     "o": "memory utilisation derived from two gauges is within 0-100%",
+     "x": 0
+    },
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f2d2a0da2c9f1853"
+ },
+ "monitoring-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > node_exporter.py <<'EOF'\n> import http.server\n> def meminfo():\n>     out = {}\n>     for line in open(\"/proc/meminfo\"):\n>         k, v = line.split(\":\"); out[k] = int(v.split()[0]) * 1024\n>     return out\n> def metrics():\n>     m = meminfo()\n>     load1 = open(\"/proc/loadavg\").read().split()[0]\n>     return (f\"# TYPE lab_load1 gauge\\nlab_load1 {load1}\\n\"\n>             f\"# TYPE lab_memory_total_bytes gauge\\nlab_memory_total_bytes {m['MemTotal']}\\n\"\n>             f\"# TYPE lab_memory_available_bytes gauge\\nlab_memory_available_bytes {m['MemAvailable']}\\n\")\n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         body = metrics().encode() if self.path == \"/metrics\" else b\"\"\n>         self.send_response(200 if body else 404)\n>         self.send_header(\"Content-Type\", \"text/plain; version=0.0.4; charset=utf-8\")   # Prometheus insists on a valid type\n>         self.end_headers(); self.wfile.write(body)\n>     def log_message(self, *a): pass\n> http.server.HTTPServer((\"127.0.0.1\", 9101), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 node_exporter.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > prometheus.yml <<'EOF'\n> global:\n>   scrape_interval: 2s\n> scrape_configs:\n>   - job_name: prometheus\n>     static_configs:\n>       - targets: [\"127.0.0.1:9090\"]\n>   - job_name: lab-node\n>     static_configs:\n>       - targets: [\"127.0.0.1:9101\"]\n>         labels: {site: london}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name prometheus --network host -v ~/lab/mon:/cfg prom/prometheus --config.file=/cfg/prometheus.yml --web.listen-address=127.0.0.1:9090 --storage.tsdb.path=/prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 12",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/-/ready",
+     "o": "Prometheus Server is Ready.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s $PROM/api/v1/targets | python3 -c '\n> import sys, json\n> for t in json.load(sys.stdin)[\"data\"][\"activeTargets\"]:\n>     print(t[\"labels\"][\"job\"], t[\"health\"], t[\"scrapeUrl\"])' | sort",
+     "o": "lab-node up http://127.0.0.1:9101/metrics\nprometheus up http://127.0.0.1:9090/metrics",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ promq 'up'",
+     "o": "site=london  1.0\n(no labels)  1.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- a selector with a label match\"",
+     "o": "--- a selector with a label match",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'up{job=\"lab-node\"}'",
+     "o": "site=london  1.0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a gauge (value varies per machine, so we test it)\"",
+     "o": "--- a gauge (value varies per machine, so we test it)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'lab_memory_available_bytes > 0'",
+     "o": "site=london  14959673344.0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- arithmetic between series: memory used percentage is between 0 and 100\"",
+     "o": "--- arithmetic between series: memory used percentage is between 0 and 100",
+     "x": 0
+    },
+    {
+     "c": "$ promq '(lab_memory_total_bytes - lab_memory_available_bytes) / lab_memory_total_bytes * 100 < 100'",
+     "o": "site=london  11.36",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- how many series does this Prometheus hold? (a count)\"",
+     "o": "--- how many series does this Prometheus hold? (a count)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'count({job=\"lab-node\"})'",
+     "o": "(no labels)  8.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null $PROM/api/v1/query?query=up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum(rate(prometheus_http_requests_total{handler=\"/api/v1/query\"}[10s])) > 0'",
+     "o": "(no labels)  1.62",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- sum by a label\"",
+     "o": "--- sum by a label",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum by (handler) (rate(prometheus_http_requests_total[10s])) > 0' | sed -E 's/  [0-9.]+$//' | sort | head -3",
+     "o": "handler=/-/ready\nhandler=/api/v1/query\nhandler=/api/v1/targets",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- min / max / avg over time of a gauge (value is positive)\"",
+     "o": "--- min / max / avg over time of a gauge (value is positive)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'avg_over_time(lab_memory_available_bytes[10s]) > 0'",
+     "o": "site=london  14963591577.6",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the number of targets that are up\"",
+     "o": "--- the number of targets that are up",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum(up)'",
+     "o": "(no labels)  2.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ end=$(date +%s); start=$((end-10))",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s --data-urlencode 'query=up{job=\"lab-node\"}' -d \"start=$start\" -d \"end=$end\" -d step=2 $PROM/api/v1/query_range | python3 -c '\n> import sys, json\n> d = json.load(sys.stdin)\n> vals = d[\"data\"][\"result\"][0][\"values\"]\n> print(\"range query returned\", len(vals), \"points, all equal to 1:\", all(v[1] == \"1\" for v in vals))'",
+     "o": "range query returned 6 points, all equal to 1: True",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fd41cc184a09c2f0"
+ },
+ "monitoring-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon3 && cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app.py <<'EOF'\n> import http.server, os, random, threading, time\n> \n> BUCKETS = [0.05, 0.1, 0.25, 0.5, 1.0]\n> lock = threading.Lock()\n> requests = {}                       # status -> count\n> buckets = [0] * len(BUCKETS)        # cumulative bucket counts\n> dur_count, dur_sum = 0, 0.0\n> \n> def observe(seconds):\n>     global dur_count, dur_sum\n>     dur_count += 1; dur_sum += seconds\n>     for i, b in enumerate(BUCKETS):\n>         if seconds <= b: buckets[i] += 1\n> \n> def render():\n>     out = [\"# TYPE app_requests_total counter\"]\n>     for st, n in sorted(requests.items()):\n>         out.append(f'app_requests_total{{status=\"{st}\"}} {n}')\n>     out.append(\"# TYPE app_request_duration_seconds histogram\")\n>     for b, c in zip(BUCKETS, buckets):\n>         out.append(f'app_request_duration_seconds_bucket{{le=\"{b}\"}} {c}')\n>     out.append(f'app_request_duration_seconds_bucket{{le=\"+Inf\"}} {dur_count}')\n>     out.append(f\"app_request_duration_seconds_sum {dur_sum:.4f}\")\n>     out.append(f\"app_request_duration_seconds_count {dur_count}\")\n>     return \"\\n\".join(out) + \"\\n\"\n> \n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         if self.path == \"/metrics\":\n>             body = render().encode(); self.send_response(200)\n>             self.send_header(\"Content-Type\", \"text/plain; version=0.0.4; charset=utf-8\")\n>             self.end_headers(); self.wfile.write(body); return\n>         start = time.time()\n>         broken = os.path.exists(\"broken.flag\")\n>         time.sleep(random.uniform(0.01, 0.4 if broken else 0.08))   # slower when broken\n>         status = 500 if (broken and random.random() < 0.6) else 200\n>         with lock:\n>             requests[status] = requests.get(status, 0) + 1\n>             observe(time.time() - start)\n>         self.send_response(status); self.end_headers(); self.wfile.write(b\"ok\\n\")\n>     def log_message(self, *a): pass\n> \n> http.server.ThreadingHTTPServer((\"127.0.0.1\", 9102), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 app.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null http://127.0.0.1:9102/; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:9102/metrics | grep -E '^app_requests_total|_count '",
+     "o": "app_requests_total{status=\"200\"} 10\napp_request_duration_seconds_count 10",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rules.yml <<'EOF'\n> groups:\n>   - name: app\n>     interval: 2s\n>     rules:\n>       # Recording rules: precompute expensive/common expressions under a clear name\n>       - record: app:request_rate:rate10s\n>         expr: sum(rate(app_requests_total[10s]))\n>       - record: app:error_ratio:rate10s\n>         expr: sum(rate(app_requests_total{status=~\"5..\"}[10s])) / sum(rate(app_requests_total[10s]))\n>       - record: app:latency_p95:10s\n>         expr: histogram_quantile(0.95, sum by (le) (rate(app_request_duration_seconds_bucket[10s])))\n>       # Alerting rules\n>       - alert: HighErrorRatio\n>         expr: app:error_ratio:rate10s > 0.2\n>         for: 6s                         # must stay true this long before firing\n>         labels: {severity: page}\n>         annotations:\n>           summary: \"More than 20% of requests are failing\"\n>           runbook: \"https://wiki.example.com/runbooks/app-errors\"\n>       - alert: SlowRequests\n>         expr: app:latency_p95:10s > 0.25\n>         for: 6s\n>         labels: {severity: ticket}\n>         annotations: {summary: \"95th percentile latency above 250 ms\"}\n>       - alert: AppDown\n>         expr: up{job=\"app\"} == 0\n>         for: 6s\n>         labels: {severity: page}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > prometheus.yml <<'EOF'\n> global:\n>   scrape_interval: 2s\n> rule_files: [\"/cfg/rules.yml\"]\n> scrape_configs:\n>   - job_name: app\n>     static_configs:\n>       - targets: [\"127.0.0.1:9102\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name prometheus --network host -v ~/lab/mon3:/cfg prom/prometheus --config.file=/cfg/prometheus.yml --web.listen-address=127.0.0.1:9090 --storage.tsdb.path=/prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/rules | python3 -c '\n> import sys, json\n> for g in json.load(sys.stdin)[\"data\"][\"groups\"]:\n>     for r in g[\"rules\"]:\n>         print(r[\"type\"], r[\"name\"], r[\"health\"])'",
+     "o": "recording app:request_rate:rate10s ok\nrecording app:error_ratio:rate10s ok\nrecording app:latency_p95:10s ok\nalerting HighErrorRatio ok\nalerting SlowRequests ok\nalerting AppDown ok",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > traffic.sh <<'EOF'\n> #!/bin/bash\n> # about 20 requests per second until killed\n> while true; do for i in 1 2 3 4 5; do curl -s -o /dev/null http://127.0.0.1:9102/ & done; sleep 0.25; done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x traffic.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./traffic.sh > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ traffic=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 14",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"request rate above 5/s:    $(promq 'app:request_rate:rate10s > 5' | grep -c .)\"",
+     "o": "request rate above 5/s:    1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"5xx responses recorded so far: $(curl -s http://127.0.0.1:9102/metrics | grep -c 'status=\"500\"')\"",
+     "o": "5xx responses recorded so far: 0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"p95 latency under 100 ms:  $(promq 'app:latency_p95:10s < 0.1' | grep -c .)\"",
+     "o": "p95 latency under 100 ms:  1",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c 'import sys,json; print(\"active alerts:\", len(json.load(sys.stdin)[\"data\"][\"alerts\"]))'",
+     "o": "active alerts: 0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c '\n> import sys, json\n> for a in sorted(json.load(sys.stdin)[\"data\"][\"alerts\"], key=lambda a: a[\"labels\"][\"alertname\"]):\n>     print(a[\"labels\"][\"alertname\"], \"->\", a[\"state\"])'",
+     "o": "HighErrorRatio -> pending\nSlowRequests -> pending",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after waiting longer than the 'for' duration:\"",
+     "o": "--- after waiting longer than the 'for' duration:",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c '\n> import sys, json\n> for a in sorted(json.load(sys.stdin)[\"data\"][\"alerts\"], key=lambda a: a[\"labels\"][\"alertname\"]):\n>     print(a[\"labels\"][\"alertname\"], \"->\", a[\"state\"], \"| severity\", a[\"labels\"][\"severity\"])'",
+     "o": "HighErrorRatio -> firing | severity page\nSlowRequests -> firing | severity ticket",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"error ratio is above 20%:  $(promq 'app:error_ratio:rate10s > 0.2' | grep -c .)\"",
+     "o": "error ratio is above 20%:  1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"p95 latency above 250 ms:  $(promq 'app:latency_p95:10s > 0.25' | grep -c .)\"",
+     "o": "p95 latency above 250 ms:  1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 22",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c 'import sys,json; print(\"active alerts after the fix:\", len(json.load(sys.stdin)[\"data\"][\"alerts\"]))'",
+     "o": "active alerts after the fix: 0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"error ratio back to zero: $(promq 'app:error_ratio:rate10s == 0' | grep -c .)\"",
+     "o": "error ratio back to zero: 1",
+     "x": 0
+    },
+    {
+     "c": "$ kill $traffic 2>/dev/null; kill %1 %2 2>/dev/null; true",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f893bc94c2f9ddae"
+ },
+ "monitoring-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > ~/lab/app.log <<'EOF'\n> {\"ts\":\"2026-09-30T09:12:18Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"SQL connection timeout\",\"server\":\"SQL01\",\"attempt\":1,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:12:19Z\",\"level\":\"warn\",\"service\":\"indexer\",\"msg\":\"retrying\",\"server\":\"SQL01\",\"attempt\":2,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:12:35Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"task aborted\",\"server\":\"SQL01\",\"attempt\":3,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:20:01Z\",\"level\":\"info\",\"service\":\"search\",\"msg\":\"query ok\",\"ms\":84,\"trace_id\":\"c3d4\"}\n> {\"ts\":\"2026-09-30T12:15:41Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"name resolution failed\",\"server\":\"SQL01\",\"attempt\":1,\"trace_id\":\"e5f6\"}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"errors by service:\"",
+     "o": "errors by service:",
+     "x": 0
+    },
+    {
+     "c": "$ python3 -c '\n> import json, collections\n> c = collections.Counter(json.loads(l)[\"service\"] for l in open(\"app.log\") if json.loads(l)[\"level\"] == \"error\")\n> print(dict(c))'",
+     "o": "{'indexer': 3}",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"all log lines belonging to one request (trace_id a1b2):\"",
+     "o": "all log lines belonging to one request (trace_id a1b2):",
+     "x": 0
+    },
+    {
+     "c": "$ grep a1b2 app.log | python3 -c '\n> import sys, json\n> for l in sys.stdin:\n>     d = json.loads(l); print(\" \", d[\"ts\"][11:19], d[\"level\"], d[\"msg\"])'",
+     "o": "  09:12:18 error SQL connection timeout\n  09:12:19 warn retrying\n  09:12:35 error task aborted",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> slo = 99.9\n> days = 30\n> total_minutes = days * 24 * 60\n> budget_pct = 100 - slo\n> budget_minutes = total_minutes * budget_pct / 100\n> print(f\"SLO {slo}% over {days} days -> error budget {budget_pct:.2f}% = {budget_minutes:.1f} minutes of full outage\")\n> print()\n> # Burn rate: how fast the budget is being consumed. 1.0 = exactly on target for the period.\n> print(\"Burn rate examples (requests failing now vs the allowed rate):\")\n> for error_rate in [0.05, 0.1, 0.5, 1.0, 5.0]:\n>     burn = error_rate / budget_pct\n>     hours_to_exhaust = (days * 24) / burn\n>     print(f\"  {error_rate:5.2f}% errors -> burn rate {burn:5.1f}x -> budget gone in {hours_to_exhaust:7.1f} hours\")\n> EOF",
+     "o": "SLO 99.9% over 30 days -> error budget 0.10% = 43.2 minutes of full outage\n\nBurn rate examples (requests failing now vs the allowed rate):\n   0.05% errors -> burn rate   0.5x -> budget gone in  1440.0 hours\n   0.10% errors -> burn rate   1.0x -> budget gone in   720.0 hours\n   0.50% errors -> burn rate   5.0x -> budget gone in   144.0 hours\n   1.00% errors -> burn rate  10.0x -> budget gone in    72.0 hours\n   5.00% errors -> burn rate  50.0x -> budget gone in    14.4 hours",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c032edb54bf1a54c"
  },
  "networking-1": {
   "blocks": [
@@ -6617,5 +9719,215 @@
    ]
   ],
   "key": "c0c303828efb78e4"
+ },
+ "windows-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > v.ps1 <<'EOF'\n> \"PowerShell version: \" + $PSVersionTable.PSVersion\n> \"Edition: \" + $PSVersionTable.PSEdition\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File v.ps1",
+     "o": "PowerShell version: 7.4.2\nEdition: Core",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > cmds.ps1 <<'EOF'\n> Get-Command -Verb Get -Noun *Item* | Select-Object -ExpandProperty Name | Sort-Object\n> \"---\"\n> Get-Alias ls, cat, ps | Select-Object Name, Definition | Format-Table -AutoSize | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File cmds.ps1",
+     "o": "Get-ChildItem\nGet-Item\nGet-ItemProperty\nGet-ItemPropertyValue\n---\nGet-Alias: /lab/cmds.ps1:3\nLine |\n   3 |  Get-Alias ls, cat, ps | Select-Object Name, Definition | Format-Table \u2026\n     |  ~~~~~~~~~~~~~~~~~~~~~\n     | This command cannot find a matching alias because an alias with the name\n     | 'ls' does not exist.\nGet-Alias: /lab/cmds.ps1:3\nLine |\n   3 |  Get-Alias ls, cat, ps | Select-Object Name, Definition | Format-Table \u2026\n     |  ~~~~~~~~~~~~~~~~~~~~~\n     | This command cannot find a matching alias because an alias with the name\n     | 'cat' does not exist.\nGet-Alias: /lab/cmds.ps1:3\nLine |\n   3 |  Get-Alias ls, cat, ps | Select-Object Name, Definition | Format-Table \u2026\n     |  ~~~~~~~~~~~~~~~~~~~~~\n     | This command cannot find a matching alias because an alias with the name\n     | 'ps' does not exist.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > obj.ps1 <<'EOF'\n> $f = Get-Item /etc/hostname\n> $f.GetType().FullName\n> \"Properties include:\"\n> $f | Get-Member -MemberType Property | Select-Object -First 6 -ExpandProperty Name\n> \"Name  = \" + $f.Name\n> \"Bytes = \" + $f.Length\n> \"Is it a folder? \" + $f.PSIsContainer\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File obj.ps1",
+     "o": "System.IO.FileInfo\nProperties include:\nAttributes\nCreationTime\nCreationTimeUtc\nDirectory\nDirectoryName\nExists\nName  = hostname\nBytes = 13\nIs it a folder? False",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > indexing.log <<'EOF'\n> 2026-09-30 09:10:02 INFO  Indexing service started\n> 2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n> 2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n> 2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n> 2026-09-30 09:12:35 ERROR Indexing task aborted\n> 2026-09-30 11:02:10 INFO  Indexing service started\n> 2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n> 2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pipe.ps1 <<'EOF'\n> $lines = Get-Content indexing.log | ForEach-Object {\n>     $p = $_ -split '\\s+', 4\n>     [pscustomobject]@{ Date = $p[0]; Time = $p[1]; Level = $p[2]; Message = $p[3] }\n> }\n> \"Parsed $($lines.Count) lines into objects\"\n> \"\"\n> \"Errors only:\"\n> $lines | Where-Object Level -eq 'ERROR' | Select-Object Time, Message | Format-Table -AutoSize | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> \"\"\n> \"Count by level:\"\n> $lines | Group-Object Level | Sort-Object Count -Descending | ForEach-Object { \"{0,-6} {1}\" -f $_.Name, $_.Count }\n> \"\"\n> \"Last error time: \" + ($lines | Where-Object Level -eq 'ERROR' | Select-Object -Last 1).Time\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File pipe.ps1",
+     "o": "Parsed 8 lines into objects\n\nErrors only:\nTime     Message\n----     -------\n09:12:18 SQL connection timeout (SQL01)\n09:12:34 SQL connection timeout (SQL01)\n09:12:35 Indexing task aborted\n12:15:41 Name resolution failed for SQL01\n\nCount by level:\nERROR  4\nINFO   2\nWARN   2\n\nLast error time: 12:15:41",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ops.ps1 <<'EOF'\n> 5 -gt 3\n> \"EV01\" -eq \"ev01\"\n> \"EV01\" -ceq \"ev01\"\n> \"sql01.corp.local\" -like \"sql*\"\n> \"sql01.corp.local\" -match \"^sql(\\d+)\\.\"\n> \"Number from the match: \" + $Matches[1]\n> 1, 2, 3 -contains 2\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File ops.ps1",
+     "o": "True\nTrue\nFalse\nTrue\nTrue\nNumber from the match: 01\nTrue",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > fmt.ps1 <<'EOF'\n> $svc = @(\n>   [pscustomobject]@{ Name = 'EVIndexing'; Status = 'Running'; Memory = 1520 },\n>   [pscustomobject]@{ Name = 'EVStorage';  Status = 'Stopped'; Memory = 0 },\n>   [pscustomobject]@{ Name = 'EVAdmin';    Status = 'Running'; Memory = 310 }\n> )\n> \"--- table\"\n> $svc | Format-Table -AutoSize | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> \"--- list\"\n> $svc | Select-Object -First 1 | Format-List | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> \"--- JSON\"\n> $svc | Where-Object Status -eq 'Running' | ConvertTo-Json -Compress\n> \"--- CSV\"\n> $svc | ConvertTo-Csv -NoTypeInformation\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File fmt.ps1",
+     "o": "--- table\nName       Status  Memory\n----       ------  ------\nEVIndexing Running   1520\nEVStorage  Stopped      0\nEVAdmin    Running    310\n--- list\nName   : EVIndexing\nStatus : Running\nMemory : 1520\n--- JSON\n[{\"Name\":\"EVIndexing\",\"Status\":\"Running\",\"Memory\":1520},{\"Name\":\"EVAdmin\",\"Status\":\"Running\",\"Memory\":310}]\n--- CSV\n\"Name\",\"Status\",\"Memory\"\n\"EVIndexing\",\"Running\",\"1520\"\n\"EVStorage\",\"Stopped\",\"0\"\n\"EVAdmin\",\"Running\",\"310\"",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "df5ac8fdb2094a32"
+ },
+ "windows-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > files.ps1 <<'EOF'\n> New-Item -ItemType Directory -Path ev/logs, ev/archive -Force | Out-Null\n> 1..3 | ForEach-Object { Set-Content -Path \"ev/logs/index-$_.log\" -Value (\"line \" * $_) }\n> Set-Content ev/logs/notes.txt \"notes\"\n> \"Log files:\"\n> Get-ChildItem ev/logs -Filter *.log | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> \"Recursive count: \" + (Get-ChildItem ev -Recurse -File).Count\n> \"Exists? \" + (Test-Path ev/logs/notes.txt)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File files.ps1",
+     "o": "Log files:\nName        Length\n----        ------\nindex-1.log      6\nindex-2.log     11\nindex-3.log     16\nRecursive count: 4\nExists? True",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > whatif.ps1 <<'EOF'\n> Get-ChildItem ev/logs -Filter *.log | Remove-Item -WhatIf\n> \"\"\n> \"Files still there: \" + (Get-ChildItem ev/logs -Filter *.log).Count\n> Get-ChildItem ev/logs -Filter index-1.log | Move-Item -Destination ev/archive\n> \"After moving one file to archive: logs=\" + (Get-ChildItem ev/logs -Filter *.log).Count + \" archive=\" + (Get-ChildItem ev/archive).Count\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File whatif.ps1",
+     "o": "What if: Performing the operation \"Remove File\" on target \"/lab/ev/logs/index-1.log\".\nWhat if: Performing the operation \"Remove File\" on target \"/lab/ev/logs/index-2.log\".\nWhat if: Performing the operation \"Remove File\" on target \"/lab/ev/logs/index-3.log\".\n\nFiles still there: 3\nAfter moving one file to archive: logs=2 archive=1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ev/logs/indexing.log <<'EOF'\n> 2026-09-30 09:10:02 INFO  Indexing service started\n> 2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n> 2026-09-30 09:12:35 ERROR Indexing task aborted\n> 2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n> 2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > grep.ps1 <<'EOF'\n> Select-String -Path ev/logs/indexing.log -Pattern 'ERROR' | ForEach-Object { \"{0}: {1}\" -f $_.LineNumber, $_.Line.Trim() }\n> \"\"\n> \"Count of SQL01 mentions: \" + (Select-String -Path ev/logs/*.log -Pattern 'SQL01').Count\n> \"Lines NOT containing INFO: \" + (Get-Content ev/logs/indexing.log | Where-Object { $_ -notmatch 'INFO' }).Count\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File grep.ps1",
+     "o": "2: 2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n3: 2026-09-30 09:12:35 ERROR Indexing task aborted\n5: 2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n\nCount of SQL01 mentions: 3\nLines NOT containing INFO: 4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > servers.csv <<'EOF'\n> Name,Role,Site,MemoryGB\n> EV01,Indexing,London,64\n> EV02,Storage,London,32\n> SQL01,Database,London,128\n> EV03,Indexing,Leeds,64\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > csv.ps1 <<'EOF'\n> $servers = Import-Csv servers.csv\n> \"Servers: \" + $servers.Count\n> \"Total memory GB: \" + ($servers | Measure-Object -Property MemoryGB -Sum).Sum\n> \"By site:\"\n> $servers | Group-Object Site | ForEach-Object { \"  {0}: {1}\" -f $_.Name, ($_.Group.Name -join \", \") }\n> \"\"\n> \"As JSON:\"\n> $servers | Where-Object Role -eq 'Indexing' | Select-Object Name, Site | ConvertTo-Json -Compress\n> \"\"\n> $cfg = '{\"server\":\"EV01\",\"retries\":3,\"paths\":[\"D:\\\\Index\",\"E:\\\\Store\"]}' | ConvertFrom-Json\n> \"retries is a \" + $cfg.retries.GetType().Name + \", first path: \" + $cfg.paths[0]\n> $cfg.retries = 5\n> $cfg | ConvertTo-Json -Compress\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File csv.ps1",
+     "o": "Servers: 4\nTotal memory GB: 288\nBy site:\n  Leeds: EV03\n  London: EV01, EV02, SQL01\n\nAs JSON:\n[{\"Name\":\"EV01\",\"Site\":\"London\"},{\"Name\":\"EV03\",\"Site\":\"Leeds\"}]\n\nretries is a Int64, first path: D:\\Index\n{\"server\":\"EV01\",\"retries\":5,\"paths\":[\"D:\\\\Index\",\"E:\\\\Store\"]}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > report.ps1 <<'EOF'\n> $rows = Get-Content ev/logs/indexing.log | ForEach-Object {\n>     if ($_ -match '^(?<date>\\S+) (?<time>\\S+) (?<level>\\w+)\\s+(?<msg>.*)$') {\n>         [pscustomobject]@{ Hour = $Matches.time.Substring(0,2); Level = $Matches.level; Message = $Matches.msg }\n>     }\n> }\n> $summary = $rows | Group-Object Level | Select-Object @{n='Level';e={$_.Name}}, Count\n> $summary | Sort-Object Count -Descending | Format-Table -AutoSize | Out-String -Stream | Where-Object { $_ -ne \"\" }\n> $errorsByHour = $rows | Where-Object Level -eq 'ERROR' | Group-Object Hour\n> \"Errors by hour: \" + (($errorsByHour | ForEach-Object { \"$($_.Name):00 -> $($_.Count)\" }) -join \", \")\n> $summary | Export-Csv report.csv -NoTypeInformation\n> \"Wrote report.csv with \" + (Import-Csv report.csv).Count + \" rows\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File report.ps1",
+     "o": "Level Count\n----- -----\nERROR     3\nINFO      1\nWARN      1\nErrors by hour: 09:00 -> 2, 12:00 -> 1\nWrote report.csv with 3 rows",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "976bb4a3545c5065"
+ },
+ "windows-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > basics.ps1 <<'EOF'\n> $name = \"EV01\"                         # string\n> $retries = 3                           # int\n> $servers = @(\"EV01\", \"EV02\", \"SQL01\")  # array\n> $limits = @{ Memory = 64; Disk = 500 } # hashtable (dictionary)\n> \n> \"Server $name will retry $retries times\"          # double quotes expand variables\n> 'Single quotes do not expand: $name'\n> \"Second server: $($servers[1]), count: $($servers.Count)\"   # $( ) runs an expression\n> \"Memory limit: $($limits.Memory) GB\"\n> $limits.Network = 10\n> \"Keys: \" + ($limits.Keys | Sort-Object) -join \", \"\n> \n> foreach ($s in $servers) {\n>     if ($s -like \"SQL*\") { \"$s is a database server\" }\n>     elseif ($s -eq \"EV01\") { \"$s is the primary indexer\" }\n>     else { \"$s is a secondary\" }\n> }\n> for ($i = 1; $i -le 3; $i++) { \"attempt $i\" }\n> $n = 3; while ($n -gt 0) { \"countdown $n\"; $n-- }\n> switch (\"EV02\") { \"EV01\" { \"one\" } \"EV02\" { \"two\" } default { \"other\" } }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File basics.ps1",
+     "o": "Server EV01 will retry 3 times\nSingle quotes do not expand: $name\nSecond server: EV02, count: 3\nMemory limit: 64 GB\nKeys: Disk Memory Network\nEV01 is the primary indexer\nEV02 is a secondary\nSQL01 is a database server\nattempt 1\nattempt 2\nattempt 3\ncountdown 3\ncountdown 2\ncountdown 1\ntwo",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > func.ps1 <<'EOF'\n> function Test-DiskSpace {\n>     [CmdletBinding()]\n>     param(\n>         [Parameter(Mandatory)]\n>         [string]$Server,\n> \n>         [ValidateRange(1, 100)]\n>         [int]$WarnPercent = 80,\n> \n>         [int]$UsedPercent = 50\n>     )\n>     if ($UsedPercent -ge $WarnPercent) {\n>         [pscustomobject]@{ Server = $Server; Status = 'WARN'; Used = $UsedPercent }\n>     } else {\n>         [pscustomobject]@{ Server = $Server; Status = 'OK'; Used = $UsedPercent }\n>     }\n> }\n> \n> Test-DiskSpace -Server EV01 -UsedPercent 91 | ConvertTo-Json -Compress\n> Test-DiskSpace -Server EV02 -UsedPercent 40 -WarnPercent 60 | ConvertTo-Json -Compress\n> \"--- validation rejects a bad value:\"\n> try { Test-DiskSpace -Server EV03 -WarnPercent 500 } catch { $_.Exception.Message -replace '\\r?\\n',' ' | ForEach-Object { $_.Substring(0, [Math]::Min(110, $_.Length)) } }\n> \"--- pipeline into a function:\"\n> \"EV01\",\"EV02\" | ForEach-Object { Test-DiskSpace -Server $_ -UsedPercent 85 } | ForEach-Object { \"$($_.Server) $($_.Status)\" }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File func.ps1",
+     "o": "{\"Server\":\"EV01\",\"Status\":\"WARN\",\"Used\":91}\n{\"Server\":\"EV02\",\"Status\":\"OK\",\"Used\":40}\n--- validation rejects a bad value:\nCannot validate argument on parameter 'WarnPercent'. The 500 argument is greater than the maximum allowed rang\n--- pipeline into a function:\nEV01 WARN\nEV02 WARN",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > err.ps1 <<'EOF'\n> \"--- without Stop: the error is printed but the script goes on\"\n> Get-Item /no/such/file -ErrorAction SilentlyContinue\n> \"script continues (last command success flag: $?)\"\n> \n> \"--- with Stop inside try/catch:\"\n> try {\n>     Get-Content /no/such/file -ErrorAction Stop\n>     \"never printed\"\n> }\n> catch [System.Management.Automation.ItemNotFoundException] {\n>     \"caught: file not found -> \" + $_.Exception.Message\n> }\n> catch {\n>     \"caught something else: \" + $_.Exception.Message\n> }\n> finally {\n>     \"finally always runs (cleanup goes here)\"\n> }\n> \n> \"--- set it for the whole script:\"\n> $ErrorActionPreference = 'Stop'\n> try { 1 / 0 } catch { \"caught: \" + $_.Exception.InnerException.Message }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File err.ps1",
+     "o": "--- without Stop: the error is printed but the script goes on\nscript continues (last command success flag: False)\n--- with Stop inside try/catch:\ncaught: file not found -> Cannot find path '/no/such/file' because it does not exist.\nfinally always runs (cleanup goes here)\n--- set it for the whole script:\ncaught: Attempted to divide by zero.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > exit.ps1 <<'EOF'\n> $ErrorActionPreference = 'Stop'\n> try {\n>     $count = (Select-String -Path ev/logs/missing.log -Pattern ERROR).Count\n> }\n> catch {\n>     Write-Error \"Check failed: $($_.Exception.Message)\" -ErrorAction Continue\n>     exit 2\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwsh -File exit.ps1 2>&1 | head -2 | cut -c1-80; echo \"exit code seen by the caller (Jenkins, Ansible, cron): ${PIPESTATUS[0]}\"",
+     "o": "Write-Error: Check failed: Cannot find path '/lab/ev/logs/missing.\nexit code seen by the caller (Jenkins, Ansible, cron): 2",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f057a572c7e32275"
  }
 }

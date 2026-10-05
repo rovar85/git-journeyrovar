@@ -195,6 +195,7 @@ window.H = (function(){
       b.addEventListener("click",function(){H.copy(b,w.querySelector("code").textContent)});w.appendChild(b);
     });
     $$(".term").forEach(function(t){
+      if(!t.querySelector(".term-bar")) return;
       var b=document.createElement("button");b.type="button";b.className="copy";b.textContent="Copy commands";
       b.addEventListener("click",function(){H.copy(b,t.dataset.copy||"")});t.querySelector(".term-bar").appendChild(b);
     });

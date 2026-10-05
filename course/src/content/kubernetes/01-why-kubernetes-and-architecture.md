@@ -65,7 +65,7 @@ true
 
 ```run
 kubectl version | grep -E "Client|Server"
-kubectl get nodes
+kubectl get nodes -o custom-columns=NAME:.metadata.name,STATUS:.status.conditions[-1].type,VERSION:.status.nodeInfo.kubeletVersion
 kubectl get --raw=/readyz
 ```
 
@@ -73,15 +73,14 @@ kubectl get --raw=/readyz
 
 ```run
 kubectl config view --minify -o jsonpath='cluster={.clusters[0].name} user={.users[0].name}{"\n"}'
-kubectl get nodes -o wide | awk '{print $1, $2, $5}'
 kubectl describe node lab-node | grep -E "^Name:|Roles|Capacity|Allocatable|Container Runtime|Kubelet Version|Operating System" | sed 's/  */ /g'
 ```
 
 The system components also run, some as Pods in the `kube-system` namespace:
 
 ```run
-kubectl get pods -n kube-system
-kubectl get namespaces
+kubectl get pods -n kube-system -o custom-columns=APP:.metadata.labels.k8s-app,STATUS:.status.phase
+kubectl get namespaces -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
 ```
 
 In this lab, the control plane processes run directly on the machine (like a `kubeadm`-less install) so they do not show as Pods. On a kubeadm cluster you would see `etcd`, `kube-apiserver`, `kube-scheduler` and `kube-controller-manager` as "static Pods" here as well.

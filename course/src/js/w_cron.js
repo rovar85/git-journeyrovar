@@ -22,8 +22,8 @@ W.cron=function(el){
     if(p[0]==='*'&&h==='*')s='every minute';
     else if(mi.startsWith('*/')&&h==='*')s='every '+mi.slice(2)+' minutes';
     else if(/^\d+$/.test(mi)&&/^\d+$/.test(h))s='at '+pad(h)+':'+pad(mi);
-    else s='minute '+mi+', hour '+h;
-    if(w!=='*'){const dd=w.split(',').map(x=>/^\d$/.test(x)?DAYS[x%7]:x);s+=' on '+dd.join(', ')}
+    else s='minute '+mi+' of hours '+h;
+    if(w!=='*'){const dd=w.split(',').map(x=>{const m=x.match(/^(\d)-(\d)$/);return m?DAYS[m[1]%7]+' to '+DAYS[m[2]%7]:(/^\d$/.test(x)?DAYS[x%7]:x)});s+=' on '+dd.join(', ')}
     if(d!=='*')s+=' on day '+d+' of the month';
     if(mo!=='*')s+=' in month '+mo;
     return s;
