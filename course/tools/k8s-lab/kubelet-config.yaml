@@ -1,0 +1,27 @@
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+address: 127.0.0.1
+port: 10250
+authentication:
+  anonymous: {enabled: true}
+  webhook: {enabled: false}
+authorization: {mode: AlwaysAllow}
+cgroupDriver: cgroupfs
+cgroupsPerQOS: false
+enforceNodeAllocatable: []
+failSwapOn: false
+containerRuntimeEndpoint: unix:///opt/k8s/containerd/containerd.sock
+resolvConf: /etc/resolv.conf
+staticPodPath: ""
+syncFrequency: 10s
+clusterDNS: ["10.96.0.10"]
+clusterDomain: cluster.local
+failCgroupV1: false
+evictionHard:
+  memory.available: "1Mi"
+  nodefs.available: "0.1%"
+  nodefs.inodesFree: "0.1%"
+  imagefs.available: "0.1%"
+  imagefs.inodesFree: "0.1%"
+imageGCHighThresholdPercent: 100
+imageGCLowThresholdPercent: 99

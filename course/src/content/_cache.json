@@ -5713,5 +5713,909 @@
    ]
   ],
   "key": "7d22bd7f9fe331e1"
+ },
+ "terraform-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf1 && cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"ev_server\" {\n>   input            = \"EV01\"\n>   triggers_replace = \"v1\"\n> \n>   provisioner \"local-exec\" {\n>     command = \"echo 'server ${self.input} created' > ev01.txt\"\n>   }\n> }\n> \n> output \"server_name\" {\n>   value = terraform_data.ev_server.output\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform version | head -1",
+     "o": "Terraform v1.16.5",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init 2>&1 | grep -E \"Terraform has been successfully initialized|Initializing\"",
+     "o": "Initializing the backend...\nInitializing provider plugins...\nTerraform has been successfully initialized!",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -A | sort",
+     "o": "main.tf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan",
+     "o": "\nTerraform used the selected providers to generate the following execution\nplan. Resource actions are indicated with the following symbols:\n  + create\n\nTerraform will perform the following actions:\n\n  # terraform_data.ev_server will be created\n  + resource \"terraform_data\" \"ev_server\" {\n      + id               = (known after apply)\n      + input            = \"EV01\"\n      + output           = (known after apply)\n      + triggers_replace = \"v1\"\n    }\n\nPlan: 1 to add, 0 to change, 0 to destroy.\n\nChanges to Outputs:\n  + server_name = (known after apply)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete|server_name\"",
+     "o": "Plan: 1 to add, 0 to change, 0 to destroy.\n  + server_name = (known after apply)\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.\nserver_name = \"EV01\"",
+     "x": 0
+    },
+    {
+     "c": "$ cat ev01.txt",
+     "o": "server EV01 created",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.ev_server",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"No changes|Plan:\"",
+     "o": "No changes. Your infrastructure matches the configuration.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/input            = \"EV01\"/input            = \"EV01-prod\"/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"^  # |Plan:\"",
+     "o": "  # terraform_data.ev_server will be updated in-place\nPlan: 0 to add, 1 to change, 0 to destroy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/triggers_replace = \"v1\"/triggers_replace = \"v2\"/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"^  # |Plan:\"",
+     "o": "  # terraform_data.ev_server must be replaced\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete\"",
+     "o": "Plan: 1 to add, 0 to change, 1 to destroy.\nApply complete! Resources: 1 added, 0 changed, 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ cat ev01.txt",
+     "o": "server EV01-prod created",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep -E \"Destroy complete|Plan:\"",
+     "o": "Plan: 0 to add, 0 to change, 1 to destroy.\nDestroy complete! Resources: 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list | wc -l",
+     "o": "0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8dfbdef4ac118739"
+ },
+ "terraform-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf2 && cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > variables.tf <<'EOF'\n> variable \"environment\" {\n>   type        = string\n>   description = \"Which environment this is\"\n>   default     = \"test\"\n> \n>   validation {\n>     condition     = contains([\"test\", \"prod\"], var.environment)\n>     error_message = \"environment must be test or prod.\"\n>   }\n> }\n> \n> variable \"server_names\" {\n>   type    = list(string)\n>   default = [\"ev01\", \"sql01\"]\n> }\n> \n> variable \"db_password\" {\n>   type      = string\n>   sensitive = true          # hidden in plan and output\n>   default   = \"demo-only-not-a-real-secret\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> locals {\n>   prefix = \"${var.environment}-evault\"\n>   tags   = {\n>     Env     = var.environment\n>     Owner   = \"ops-team\"\n>     Managed = \"terraform\"\n>   }\n>   instance_size = var.environment == \"prod\" ? \"large\" : \"small\"\n> }\n> \n> resource \"terraform_data\" \"config\" {\n>   input = {\n>     name  = local.prefix\n>     size  = local.instance_size\n>     tags  = local.tags\n>     count = length(var.server_names)\n>   }\n> }\n> \n> output \"summary\" {\n>   value = \"${local.prefix}: ${length(var.server_names)} servers, size ${local.instance_size}\"\n> }\n> \n> output \"db_password\" {\n>   value     = var.db_password\n>   sensitive = true\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete|summary|db_password\"",
+     "o": "  + db_password = (sensitive value)\n  + summary     = \"test-evault: 2 servers, size small\"\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.\ndb_password = <sensitive>\nsummary = \"test-evault: 2 servers, size small\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -var 'environment=prod' | grep -E \"summary\"",
+     "o": "  ~ summary     = \"test-evault: 2 servers, size small\" -> \"prod-evault: 2 servers, size large\"\nsummary = \"prod-evault: 2 servers, size large\"",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'environment = \"test\"\\nserver_names = [\"ev01\", \"ev02\", \"sql01\"]\\n' > terraform.tfvars",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"summary\"",
+     "o": "  ~ summary     = \"prod-evault: 2 servers, size large\" -> \"test-evault: 3 servers, size small\"\nsummary = \"test-evault: 3 servers, size small\"",
+     "x": 0
+    },
+    {
+     "c": "$ TF_VAR_environment=prod terraform apply -auto-approve | grep -E \"summary\"",
+     "o": "summary = \"test-evault: 3 servers, size small\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -var 'environment=staging' 2>&1 | grep -E \"Error|environment must be\"",
+     "o": "Error: Invalid value for variable\nenvironment must be test or prod.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform console <<'EOF'\n> upper(\"ev01\")\n> length(var.server_names)\n> [for s in var.server_names : upper(s)]\n> { for s in var.server_names : s => \"${s}.corp.local\" }\n> join(\",\", var.server_names)\n> cidrsubnet(\"10.0.0.0/16\", 8, 3)\n> format(\"%s-%03d\", \"ev\", 7)\n> lookup({ a = 1, b = 2 }, \"c\", 99)\n> merge({ a = 1 }, { b = 2 })\n> contains(var.server_names, \"sql01\")\n> EOF",
+     "o": "true",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > nginx.conf.tftpl <<'EOF'\n> # generated for ${env}\n> %{ for s in servers ~}\n> upstream ${s} { server ${s}.corp.local:8080; }\n> %{ endfor ~}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform console <<'EOF'\n> templatefile(\"nginx.conf.tftpl\", { env = \"test\", servers = [\"ev01\", \"ev02\"] })\n> EOF",
+     "o": "<<EOT\n# generated for test\nupstream ev01 { server ev01.corp.local:8080; }\nupstream ev02 { server ev02.corp.local:8080; }\n\nEOT",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'locals {\\n    messy   =  \"spacing\"\\n}\\n' > messy.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform fmt -check -diff messy.tf | grep -E '^[+-] '",
+     "o": "-    messy   =  \"spacing\"\n+  messy = \"spacing\"",
+     "x": 0
+    },
+    {
+     "c": "$ terraform fmt messy.tf",
+     "o": "messy.tf",
+     "x": 0
+    },
+    {
+     "c": "$ terraform validate",
+     "o": "Success! The configuration is valid.",
+     "x": 0
+    },
+    {
+     "c": "$ rm messy.tf",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep -E \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "136990141aa8889f"
+ },
+ "terraform-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf3 && cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"servers\" {\n>   type    = set(string)\n>   default = [\"ev01\", \"ev02\", \"sql01\"]\n> }\n> \n> resource \"terraform_data\" \"server\" {\n>   for_each = var.servers\n>   input    = \"${each.key}.corp.local\"\n> }\n> \n> output \"hosts\" {\n>   value = { for k, v in terraform_data.server : k => v.output }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete\"",
+     "o": "Plan: 3 to add, 0 to change, 0 to destroy.\nApply complete! Resources: 3 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output hosts",
+     "o": "{\n  \"ev01\" = \"ev01.corp.local\"\n  \"ev02\" = \"ev02.corp.local\"\n  \"sql01\" = \"sql01.corp.local\"\n}",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.server[\"ev01\"]\nterraform_data.server[\"ev02\"]\nterraform_data.server[\"sql01\"]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -var 'servers=[\"ev01\",\"sql01\"]' | grep -E \"^  # |Plan:\"",
+     "o": "  # terraform_data.server[\"ev02\"] will be destroyed\n  # (because key [\"ev02\"] is not in for_each map)\nPlan: 0 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > flag.tf <<'EOF'\n> variable \"enable_monitoring\" {\n>   type    = bool\n>   default = false\n> }\n> \n> resource \"terraform_data\" \"monitoring\" {\n>   count = var.enable_monitoring ? 1 : 0\n>   input = \"agent installed\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"Plan:|No changes\"",
+     "o": "No changes. Your infrastructure matches the configuration.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -var enable_monitoring=true | grep -E \"Plan:|# terraform_data.monitoring\"",
+     "o": "  # terraform_data.monitoring[0] will be created\nPlan: 1 to add, 0 to change, 0 to destroy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > deps.tf <<'EOF'\n> resource \"terraform_data\" \"network\" {\n>   input = \"10.0.0.0/16\"\n> }\n> \n> resource \"terraform_data\" \"subnet\" {\n>   input = \"subnet in ${terraform_data.network.output}\"      # implicit dependency\n> }\n> \n> resource \"terraform_data\" \"firewall\" {\n>   input      = \"rules\"\n>   depends_on = [terraform_data.subnet]                      # explicit dependency\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform graph | grep -E '\"terraform_data\\.(subnet|firewall|network)' | grep -- '->' | sed 's/\\[root\\] //g; s/ (expand)//g'",
+     "o": "  \"terraform_data.firewall\" -> \"terraform_data.subnet\";\n  \"terraform_data.subnet\" -> \"terraform_data.network\";",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > protect.tf <<'EOF'\n> resource \"terraform_data\" \"database\" {\n>   input = \"prod-db\"\n>   lifecycle {\n>     prevent_destroy = true\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 4 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve 2>&1 | grep -E \"Error: Instance cannot be destroyed|prevent_destroy\" | head -2",
+     "o": "Error: Instance cannot be destroyed\nResource terraform_data.database has lifecycle.prevent_destroy set, but the",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm protect.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep -E \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 6 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -replace='terraform_data.server[\"ev01\"]' | grep -E \"# terraform_data.server\\[\\\"ev01\\\"\\] will be replaced|Plan:|replace\"",
+     "o": "-/+ destroy and then create replacement\n  # terraform_data.server[\"ev01\"] will be replaced, as requested\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "eda16209474b0320"
+ },
+ "terraform-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf4 && cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"ev\" {\n>   input = \"EV01\"\n>   provisioner \"local-exec\" {\n>     command = \"echo hello > ev.txt\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ ls -A | grep -v '^\\.terraform'",
+     "o": "ev.txt\nmain.tf\nterraform.tfstate",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> import json\n> s = json.load(open(\"terraform.tfstate\"))\n> print(\"state format version:\", s[\"version\"])\n> print(\"resources recorded  :\", [(r[\"type\"], r[\"name\"]) for r in s[\"resources\"]])\n> print(\"keys at top level   :\", sorted(s.keys()))\n> PY",
+     "o": "state format version: 4\nresources recorded  : [('terraform_data', 'ev')]\nkeys at top level   : ['check_results', 'lineage', 'outputs', 'resources', 'serial', 'terraform_version', 'version']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.ev",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state show terraform_data.ev | grep -E \"input|output\" | sed 's/  */ /g'",
+     "o": " input = \"EV01\"\n output = \"EV01\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"ev\"/\"ev_server\"/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after renaming without telling Terraform:\"",
+     "o": "--- after renaming without telling Terraform:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"Plan:|will be (destroyed|created)\"",
+     "o": "  # terraform_data.ev will be destroyed\n  # terraform_data.ev_server will be created\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ cat >> main.tf <<'EOF'\n> \n> moved {\n>   from = terraform_data.ev\n>   to   = terraform_data.ev_server\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- with a moved block:\"",
+     "o": "--- with a moved block:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"Plan:|has moved|No changes\"",
+     "o": "  # terraform_data.ev has moved to terraform_data.ev_server\nPlan: 0 to add, 0 to change, 0 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 0 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > drift.tf <<'EOF'\n> variable \"msg\" {\n>   default = \"expected\"\n> }\n> resource \"terraform_data\" \"note\" {\n>   input = var.msg\n>   provisioner \"local-exec\" {\n>     command = \"echo ${var.msg} > note.txt\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"someone edited the real thing by hand\" > note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"No changes|Plan:\"",
+     "o": "No changes. Your infrastructure matches the configuration.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm drift.tf note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 1 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '.terraform/\\n*.tfstate\\n*.tfstate.*\\n*.tfvars\\ncrash.log\\n' > .gitignore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat .gitignore",
+     "o": ".terraform/\n*.tfstate\n*.tfstate.*\n*.tfvars\ncrash.log",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "74091e0194254452"
+ },
+ "terraform-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf5/modules/ev_server && cd ~/lab/tf5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/ev_server/variables.tf <<'EOF'\n> variable \"name\" {\n>   type = string\n> }\n> \n> variable \"environment\" {\n>   type = string\n> }\n> \n> variable \"size\" {\n>   type    = string\n>   default = \"small\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/ev_server/main.tf <<'EOF'\n> locals {\n>   fqdn = \"${var.name}.${var.environment}.corp.local\"\n> }\n> \n> resource \"terraform_data\" \"server\" {\n>   input = {\n>     fqdn = local.fqdn\n>     size = var.size\n>   }\n> }\n> \n> resource \"terraform_data\" \"dns\" {\n>   input = \"A record for ${local.fqdn}\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/ev_server/outputs.tf <<'EOF'\n> output \"fqdn\" {\n>   description = \"The server's full name\"\n>   value       = local.fqdn\n> }\n> \n> output \"size\" {\n>   value = var.size\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> module \"ev01\" {\n>   source      = \"./modules/ev_server\"\n>   name        = \"ev01\"\n>   environment = \"test\"\n> }\n> \n> module \"sql01\" {\n>   source      = \"./modules/ev_server\"\n>   name        = \"sql01\"\n>   environment = \"test\"\n>   size        = \"large\"\n> }\n> \n> output \"servers\" {\n>   value = {\n>     ev01  = module.ev01.fqdn\n>     sql01 = \"${module.sql01.fqdn} (${module.sql01.size})\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init 2>&1 | grep -E \"Initializing modules|successfully\"",
+     "o": "Initializing modules...\nTerraform has been successfully initialized!",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete\"",
+     "o": "Plan: 4 to add, 0 to change, 0 to destroy.\nApply complete! Resources: 4 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output servers",
+     "o": "{\n  \"ev01\" = \"ev01.test.corp.local\"\n  \"sql01\" = \"sql01.test.corp.local (large)\"\n}",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "module.ev01.terraform_data.dns\nmodule.ev01.terraform_data.server\nmodule.sql01.terraform_data.dns\nmodule.sql01.terraform_data.server",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > fleet.tf <<'EOF'\n> variable \"fleet\" {\n>   type = map(object({ size = string }))\n>   default = {\n>     ev02 = { size = \"small\" }\n>     ev03 = { size = \"medium\" }\n>   }\n> }\n> \n> module \"fleet\" {\n>   for_each    = var.fleet\n>   source      = \"./modules/ev_server\"\n>   name        = each.key\n>   environment = \"test\"\n>   size        = each.value.size\n> }\n> \n> output \"fleet_names\" {\n>   value = [for k, m in module.fleet : m.fqdn]\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Plan:|Apply complete\"",
+     "o": "Plan: 4 to add, 0 to change, 0 to destroy.\nApply complete! Resources: 4 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output fleet_names",
+     "o": "[\n  \"ev02.test.corp.local\",\n  \"ev03.test.corp.local\",\n]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep -E \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 8 destroyed.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "49b0053ce82cb66d"
+ },
+ "terraform-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf6 && cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"replicas\" {\n>   type    = number\n>   default = 2\n> }\n> \n> resource \"terraform_data\" \"worker\" {\n>   count = var.replicas\n>   input = \"worker-${count.index}\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -out=tfplan | grep -E \"Plan:\"",
+     "o": "Plan: 2 to add, 0 to change, 0 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l tfplan | awk '{print \"plan file saved:\", $9}'",
+     "o": "plan file saved: tfplan",
+     "x": 0
+    },
+    {
+     "c": "$ terraform show tfplan | grep -E \"^  # \"",
+     "o": "  # terraform_data.worker[0] will be created\n  # terraform_data.worker[1] will be created",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply tfplan | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 2 added, 0 changed, 0 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform workspace new test | grep -E \"Created\"",
+     "o": "Created and switched to workspace \"test\"!",
+     "x": 0
+    },
+    {
+     "c": "$ terraform workspace list",
+     "o": "  default\n* test",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -var replicas=1 | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform workspace select default | grep Switched",
+     "o": "Switched to workspace \"default\".",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.worker[0]\nterraform_data.worker[1]",
+     "x": 0
+    },
+    {
+     "c": "$ terraform workspace select test > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.worker[0]",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform workspace select default > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tests.tftest.hcl <<'EOF'\n> run \"default_has_two_workers\" {\n>   command = plan\n> \n>   assert {\n>     condition     = length(terraform_data.worker) == 2\n>     error_message = \"expected 2 workers by default\"\n>   }\n> }\n> \n> run \"scales_up\" {\n>   command = plan\n>   variables {\n>     replicas = 5\n>   }\n> \n>   assert {\n>     condition     = length(terraform_data.worker) == 5\n>     error_message = \"expected 5 workers\"\n>   }\n> }\n> \n> run \"rejects_nonsense_in_a_deliberately_failing_test\" {\n>   command = plan\n>   variables {\n>     replicas = 3\n>   }\n> \n>   assert {\n>     condition     = length(terraform_data.worker) == 2\n>     error_message = \"this assertion is meant to fail, to show the output\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform test | sed -E 's/\\.\\.\\. //; s/ \\([0-9.]+s\\)//' | grep -E \"pass|fail|Success|Error|expected|meant\"",
+     "o": "\nError: Test assertion failed\n\n  on tests.tftest.hcl line 29, in run \"rejects_nonsense_in_a_deliberately_failing_test\":\n  29:     condition     = length(terraform_data.worker) == 2\n    \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    \u2502 Diff:\n    \u2502 --- actual\n    \u2502 +++ expected\n    \u2502 - 3\n    \u2502 + 2\n\n\nthis assertion is meant to fail, to show the output\n  run \"default_has_two_workers\"pass\n  run \"scales_up\"pass\n  run \"rejects_nonsense_in_a_deliberately_failing_test\"fail\ntests.tftest.hclfail\nFailure! 2 passed, 1 failed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> import re\n> s = open(\"tests.tftest.hcl\").read()\n> s = s[:s.index('run \"rejects_nonsense')]\n> open(\"tests.tftest.hcl\", \"w\").write(s)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform test | grep -E \"Success\"",
+     "o": "Success! 2 passed, 0 failed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > versions.tf <<'EOF'\n> terraform {\n>   required_version = \">= 1.6.0, < 2.0.0\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform validate",
+     "o": "Success! The configuration is valid.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 2 destroyed.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2e2ddac3e535ad4d"
+ },
+ "terraform-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf7/network ~/lab/tf7/app && cd ~/lab/tf7/network",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"net\" {\n>   input = \"10.0.0.0/16\"\n> }\n> output \"cidr\" {\n>   value = terraform_data.net.output\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/tf7/app",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> data \"terraform_remote_state\" \"network\" {\n>   backend = \"local\"\n>   config = {\n>     path = \"../network/terraform.tfstate\"\n>   }\n> }\n> \n> output \"app_sees_network\" {\n>   value = \"app subnet will live inside ${data.terraform_remote_state.network.outputs.cidr}\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"app_sees_network\"",
+     "o": "  + app_sees_network = \"app subnet will live inside 10.0.0.0/16\"\napp_sees_network = \"app subnet will live inside 10.0.0.0/16\"",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/tf7/app && terraform destroy -auto-approve > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/tf7/network && terraform destroy -auto-approve > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c0c303828efb78e4"
  }
 }

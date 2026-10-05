@@ -48,6 +48,7 @@ def display_cmd(cmd):
     return "$ " + lines[0] + "".join("\n> " + l for l in lines[1:])
 
 NORMALIZE = [
+    (re.compile(r"\x1b\[[0-9;]*m"), ""),
     (re.compile(r"/home/[A-Za-z0-9_-]+/\.lesson-tmp/run\.sh: line (\d+):"), r"bash: line \1:"),
     (re.compile(r"\bstudent@[A-Za-z0-9-]+"), "student@lab"),
 ]
@@ -88,7 +89,7 @@ def run_lesson(lesson_id, setup, blocks):
     subprocess.run(["runuser", "-u", USER, "--", "bash", "-c", "rm -rf ~/lab ~/.lesson-tmp; true"], cwd="/")
     env = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": HOME, "USER": USER,
            "LOGNAME": USER, "LANG": "C.UTF-8", "TERM": "dumb", "SHELL": "/bin/bash", "ANSIBLE_NOCOLOR": "1",
-           "NO_COLOR": "1", "ANSIBLE_FORCE_COLOR": "0", "PYTHONUNBUFFERED": "1"}
+           "NO_COLOR": "1", "ANSIBLE_FORCE_COLOR": "0", "PYTHONUNBUFFERED": "1", "TF_IN_AUTOMATION": "1", "TF_CLI_ARGS_init": "-no-color", "TF_CLI_ARGS_plan": "-no-color", "TF_CLI_ARGS_apply": "-no-color", "TF_CLI_ARGS_destroy": "-no-color", "TF_CLI_ARGS_validate": "-no-color", "TF_CLI_ARGS_test": "-no-color", "TF_CLI_ARGS_console": "-no-color", "TF_CLI_ARGS_output": "-no-color", "TF_CLI_ARGS_show": "-no-color", "TF_CLI_ARGS_fmt": "-no-color", "TF_CLI_ARGS_state": "-no-color", "TF_CLI_ARGS_workspace": "-no-color", "TF_CLI_ARGS_graph": "-no-color"}
     tmpdir = os.path.join(HOME, ".lesson-tmp")
     os.makedirs(tmpdir, exist_ok=True)
     script_path = os.path.join(tmpdir, "run.sh")

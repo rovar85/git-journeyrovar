@@ -1,0 +1,15 @@
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: iptables
+clientConnection:
+  kubeconfig: /opt/k8s/pki/admin.kubeconfig
+clusterCIDR: 10.244.0.0/16
+nodePortAddresses: ["127.0.0.0/8"]
+bindAddress: 127.0.0.1
+metricsBindAddress: 127.0.0.1:10249
+healthzBindAddress: 127.0.0.1:10256
+conntrack:
+  maxPerCore: 0
+  min: 0
+  tcpEstablishedTimeout: 0s
+  tcpCloseWaitTimeout: 0s
