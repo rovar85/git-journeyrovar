@@ -1,5 +1,6 @@
 /* Shared helpers. Chapter scripts register quizzes on Q and call H.* helpers. */
 window.Q = {};
+window.W = {};
 window.H = (function(){
   "use strict";
   var H = {};
@@ -101,43 +102,107 @@ window.H = (function(){
 
   H.init = function(){
     var $=H.$,$$=H.$$,esc=H.esc;
-    /* nav chips + roadmap */
-    var chips=$("#chips"), road=$("#road");
-    $$(".chapter[data-title]").forEach(function(c,k){
-      var a=document.createElement("a");a.href="#"+c.id;a.textContent=c.dataset.title;a.dataset.t=c.id;chips.appendChild(a);
-      if(road && c.dataset.road){
-        var d=document.createElement("div");
-        d.innerHTML='<span>'+(c.dataset.num||(k+1))+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p>';
-        road.appendChild(d);
-      }
+    var tracks = window.TRACKS || [], byId = {};
+    tracks.forEach(function(t){byId[t.id]=t});
+    var chapters = $$(".chapter");
+    function inTrack(t){return chapters.filter(function(c){return c.dataset.track===t})}
+    function quizId(c){var q=$(".quiz",c);return q?q.dataset.quiz:null}
+    function isDone(c){var id=quizId(c);return id?H.store("agentschool-"+id)!==null&&H.store("agentschool-"+id)!==undefined:false}
+    var chips=$("#chips"), sel=$("#tracksel"), head=$("#trackhead"), hub=$("#hub"), current="hub";
+
+    /* ---- hub ---- */
+    var total=chapters.length;
+    var st=$("#stat-lessons"); if(st) st.textContent=total+" lessons in "+tracks.filter(function(t){return inTrack(t.id).length}).length+" tracks";
+    function drawHub(){
+      var box=$("#tracks"); if(!box) return; box.innerHTML="";
+      var groups=[]; tracks.forEach(function(t){if(groups.indexOf(t.group)<0)groups.push(t.group)});
+      groups.forEach(function(g){
+        var h=document.createElement("h3");h.textContent=g;h.style.marginTop="1.6rem";box.appendChild(h);
+        var grid=document.createElement("div");grid.className="tgrid";
+        tracks.filter(function(t){return t.group===g}).forEach(function(t){
+          var cs=inTrack(t.id),done=cs.filter(isDone).length;
+          var a=document.createElement(cs.length?"a":"div");a.className="tcard"+(cs.length?"":" soon");if(cs.length)a.href="#"+t.id;
+          a.innerHTML='<b>'+esc(t.name)+'</b><span class="lvl">'+esc(t.level)+'</span><p>'+esc(t.blurb)+'</p><p class="why"><i>Why: '+esc(t.why)+'</i></p><div class="prog">'+(cs.length?'<span class="pbar"><i style="width:'+Math.round(done/cs.length*100)+'%"></i></span> '+done+' of '+cs.length+' lessons':'Coming soon')+'</div>';
+          grid.appendChild(a);
+        });
+        box.appendChild(grid);
+      });
+    }
+
+    /* ---- selector ---- */
+    sel.innerHTML='<option value="hub">All tracks</option>'+tracks.filter(function(t){return inTrack(t.id).length}).map(function(t){return '<option value="'+t.id+'">'+esc(t.name)+'</option>'}).join("");
+    sel.addEventListener("change",function(){location.hash=sel.value});
+
+    /* ---- prev / next on every lesson ---- */
+    tracks.forEach(function(t){
+      var cs=inTrack(t.id);
+      cs.forEach(function(c,k){
+        var nav=document.createElement("nav");nav.className="pn";
+        var prev=cs[k-1],next=cs[k+1];
+        nav.innerHTML=(prev?'<a href="#'+prev.id+'">← '+esc(prev.dataset.road||"Previous")+'</a>':'<a href="#'+t.id+'">← '+esc(t.name)+' overview</a>')+(next?'<a href="#'+next.id+'" class="nx">'+esc(next.dataset.road||"Next")+' →</a>':'<a href="#hub" class="nx">All tracks →</a>');
+        c.appendChild(nav);
+      });
     });
-    function marks(){ $$("a",chips).forEach(function(a){ var s=H.store("agentschool-"+a.dataset.t.replace("ch","c")); a.classList.toggle("done", s!==null && s!==undefined); }); }
-    marks();
+
+    /* ---- show a track ---- */
+    function showView(view,focusId){
+      current=view;
+      sel.value=view;
+      document.body.dataset.view=view;
+      chapters.forEach(function(c){c.hidden=(c.dataset.track!==view)});
+      hub.hidden=(view!=="hub");
+      head.hidden=(view==="hub");
+      chips.innerHTML="";
+      if(view==="hub"){drawHub();return}
+      var t=byId[view],cs=inTrack(view),done=cs.filter(isDone).length;
+      head.innerHTML='<div style="padding-top:28px"><a href="#hub">← All tracks</a><span class="hand" style="display:block;margin-top:14px">'+esc(t.level)+'</span><h1>'+esc(t.name)+'</h1><p class="lede">'+esc(t.blurb)+'</p><p style="color:var(--muted)">'+done+' of '+cs.length+' lessons completed (a lesson counts when you finish its quiz).</p><h3>Lessons</h3><div class="road">'+cs.map(function(c,k){return '<div><span>'+(k+1)+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p></div>'}).join("")+'</div></div>';
+      cs.forEach(function(c){var a=document.createElement("a");a.href="#"+c.id;a.textContent=c.dataset.title;a.dataset.t=c.id;a.className=isDone(c)?"done":"";chips.appendChild(a)});
+    }
+    function route(){
+      var h=location.hash.replace("#","");
+      var view="hub",focus=null;
+      if(byId[h]&&inTrack(h).length){view=h}
+      else if(h&&h!=="hub"&&h!=="top"){var el=document.getElementById(h);if(el&&el.classList.contains("chapter")){view=el.dataset.track;focus=el}}
+      var changed=(view!==current)||(document.body.dataset.view===undefined);
+      if(changed)showView(view);
+      if(focus){setTimeout(function(){focus.scrollIntoView({block:"start"});scrollBy(0,-56)},0)}
+      else if(changed||!h){scrollTo(0,0)}
+      onScroll();
+    }
+    function refreshMarks(){
+      $$("a",chips).forEach(function(a){var c=document.getElementById(a.dataset.t);a.classList.toggle("done",!!c&&isDone(c))});
+    }
+    H.refreshMarks=refreshMarks;
     function onScroll(){
       var h=document.documentElement.scrollHeight-innerHeight;
       $("#barfill").style.width=(h>0?Math.min(100,scrollY/h*100):0)+"%";
       var cur=null;
-      $$(".chapter").forEach(function(c){if(c.getBoundingClientRect().top<140)cur=c.id});
+      chapters.forEach(function(c){if(!c.hidden&&c.getBoundingClientRect().top<140)cur=c.id});
       $$("a",chips).forEach(function(a){
         var on=a.dataset.t===cur;a.classList.toggle("on",on);
         if(on){var box=chips.getBoundingClientRect(),r=a.getBoundingClientRect();if(r.left<box.left||r.right>box.right){chips.scrollLeft+=r.left-box.left-20}}
       });
     }
-    addEventListener("scroll",onScroll,{passive:true});onScroll();
+    addEventListener("scroll",onScroll,{passive:true});
+    addEventListener("hashchange",route);
 
-    /* code players */
+    /* ---- code players, widgets, terminals, copy buttons ---- */
     $$('.tracer[data-trace]').forEach(function(el){var T=window.TRACES&&window.TRACES[el.dataset.trace]; if(T)H.tracer(el,T)});
-
-    /* copy buttons on code blocks */
+    $$("[data-widget]").forEach(function(el){var f=window.W&&window.W[el.dataset.widget]; if(f){try{f(el)}catch(e){el.innerHTML='<p style="color:var(--bad)">This demo failed to load.</p>'}} else {el.innerHTML='<p style="color:var(--muted)">(demo not available)</p>'}});
     $$(".codewrap").forEach(function(w){
       if(w.querySelector(".copy"))return;
       var b=document.createElement("button");b.type="button";b.className="copy";b.textContent="Copy";
       b.addEventListener("click",function(){H.copy(b,w.querySelector("code").textContent)});w.appendChild(b);
     });
+    $$(".term").forEach(function(t){
+      var b=document.createElement("button");b.type="button";b.className="copy";b.textContent="Copy commands";
+      b.addEventListener("click",function(){H.copy(b,t.dataset.copy||"")});t.querySelector(".term-bar").appendChild(b);
+    });
 
-    /* quizzes */
+    /* ---- quizzes (data from chapter scripts or inline JSON) ---- */
+    $$("script.quizdata").forEach(function(sc){try{Q[sc.dataset.for]=JSON.parse(sc.textContent)}catch(e){}});
     $$(".quiz").forEach(function(box){
-      var id=box.dataset.quiz, qs=Q[id]; if(!qs) return;
+      var id=box.dataset.quiz, qs=Q[id]; if(!qs) {box.hidden=true;return}
       var got=0,done=0,score=$(".score",box);
       qs.forEach(function(q,qi){
         var d=document.createElement("div");d.className="q";
@@ -150,13 +215,15 @@ window.H = (function(){
             $$("button",ch)[q.a].classList.add("right");
             if(oi===q.a){got++;fb.textContent="Correct. "+q.f}else{b.classList.add("wrong");fb.textContent="Not quite. "+q.f}
             fb.hidden=false;
-            if(done===qs.length){score.hidden=false;score.textContent="You got "+got+" of "+qs.length+(got===qs.length?". Excellent, on to the next chapter!":". Re-read the parts behind the ones you missed, then continue.");H.store("agentschool-"+id,String(got));marks()}
+            if(done===qs.length){score.hidden=false;score.textContent="You got "+got+" of "+qs.length+(got===qs.length?". Excellent, on to the next lesson!":". Re-read the parts behind the ones you missed, then continue.");H.store("agentschool-"+id,String(got));refreshMarks()}
           });
           ch.appendChild(b);
         });
         box.insertBefore(d,score);
       });
     });
+
+    route();
   };
   return H;
 })();

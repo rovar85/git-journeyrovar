@@ -1,0 +1,1132 @@
+{
+ "linux-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ whoami",
+     "o": "student",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Hello from Linux\"",
+     "o": "Hello from Linux",
+     "x": 0
+    },
+    {
+     "c": "$ uname -s",
+     "o": "Linux",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat /etc/os-release | head -3",
+     "o": "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls",
+     "o": "docs\nev",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l --time-style=long-iso",
+     "o": "total 8\ndrwxr-xr-x 2 student student 4096 2026-01-15 09:00 docs\ndrwxr-xr-x 6 student student 4096 2026-01-15 09:00 ev",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls --help | head -8",
+     "o": "Usage: ls [OPTION]... [FILE]...\nList information about the FILEs (the current directory by default).\nSort entries alphabetically if none of -cftuvSUX nor --sort is specified.\n\nMandatory arguments to long options are mandatory for short options too.\n  -a, --all                  do not ignore entries starting with .\n  -A, --almost-all           do not list implied . and ..\n      --author               with -l, print the author of each file",
+     "x": 0
+    },
+    {
+     "c": "$ help cd | head -3",
+     "o": "cd: cd [-L|[-P [-e]] [-@]] [dir]\n    Change the shell working directory.\n    ",
+     "x": 0
+    },
+    {
+     "c": "$ type cd",
+     "o": "cd is a shell builtin",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "bf38cb09fc8f7122"
+ },
+ "linux-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab",
+     "x": 0
+    },
+    {
+     "c": "$ ls",
+     "o": "docs\nev",
+     "x": 0
+    },
+    {
+     "c": "$ ls ev",
+     "o": "archive\nconfig\nlogs\nscripts",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ev/logs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab/ev/logs",
+     "x": 0
+    },
+    {
+     "c": "$ cd ..",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab/ev",
+     "x": 0
+    },
+    {
+     "c": "$ cd ../docs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab/docs",
+     "x": 0
+    },
+    {
+     "c": "$ cd -",
+     "o": "/home/student/lab/ev",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab/ev",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls -l --time-style=long-iso ev",
+     "o": "total 16\ndrwxr-xr-x 2 student student 4096 2026-01-15 09:00 archive\ndrwxr-xr-x 2 student student 4096 2026-01-15 09:00 config\ndrwxr-xr-x 2 student student 4096 2026-01-15 09:00 logs\ndrwxr-xr-x 2 student student 4096 2026-01-15 09:00 scripts",
+     "x": 0
+    },
+    {
+     "c": "$ ls -a",
+     "o": ".\n..\ndocs\nev",
+     "x": 0
+    },
+    {
+     "c": "$ ls -R docs ev/config",
+     "o": "docs:\nnotes.txt\nreadme.txt\n\nev/config:\nevault.conf",
+     "x": 0
+    },
+    {
+     "c": "$ ls -lh --time-style=long-iso ev/logs",
+     "o": "total 8.0K\n-rw-r--r-- 1 student student 716 2026-01-15 09:00 indexing.log\n-rw-r--r-- 1 student student 297 2026-01-15 09:00 storage.log",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ file ev/config/evault.conf ev/scripts/check.sh",
+     "o": "ev/config/evault.conf: ASCII text\nev/scripts/check.sh:   Bourne-Again shell script, ASCII text executable",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%n  size=%s bytes  owner=%U' ev/config/evault.conf",
+     "o": "ev/config/evault.conf  size=146 bytes  owner=student",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir reports",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p reports/2026/september",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch reports/2026/september/summary.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -R reports",
+     "o": "reports:\n2026\n\nreports/2026:\nseptember\n\nreports/2026/september:\nsummary.txt",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cp docs/notes.txt docs/notes-backup.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cp -r ev/config reports/config-copy",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mv docs/notes-backup.txt reports/",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mv reports/notes-backup.txt reports/backup-notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls docs reports",
+     "o": "docs:\nnotes.txt\nreadme.txt\n\nreports:\n2026\nbackup-notes.txt\nconfig-copy",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ rm reports/backup-notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -r reports/config-copy",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rmdir reports/2026/september 2>&1 | head -1",
+     "o": "rmdir: failed to remove 'reports/2026/september': Directory not empty",
+     "x": 0
+    },
+    {
+     "c": "$ ls -R reports",
+     "o": "reports:\n2026\n\nreports/2026:\nseptember\n\nreports/2026/september:\nsummary.txt",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls ev/logs/*.log",
+     "o": "ev/logs/indexing.log\nev/logs/storage.log",
+     "x": 0
+    },
+    {
+     "c": "$ ls docs/n*",
+     "o": "docs/notes.txt",
+     "x": 0
+    },
+    {
+     "c": "$ ls docs/?otes.txt",
+     "o": "docs/notes.txt",
+     "x": 0
+    },
+    {
+     "c": "$ ls ev/{logs,config}",
+     "o": "ev/config:\nevault.conf\n\nev/logs:\nindexing.log\nstorage.log",
+     "x": 0
+    },
+    {
+     "c": "$ echo ev/logs/*.log",
+     "o": "ev/logs/indexing.log ev/logs/storage.log",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ find . -name \"*.log\"",
+     "o": "./ev/logs/storage.log\n./ev/logs/indexing.log",
+     "x": 0
+    },
+    {
+     "c": "$ find . -type d",
+     "o": ".\n./ev\n./ev/config\n./ev/scripts\n./ev/logs\n./ev/archive\n./reports\n./reports/2026\n./reports/2026/september\n./docs",
+     "x": 0
+    },
+    {
+     "c": "$ find . -name \"*.conf\" -o -name \"*.sh\"",
+     "o": "./ev/config/evault.conf\n./ev/scripts/check.sh",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0241076c94271fc2"
+ },
+ "linux-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat docs/readme.txt",
+     "o": "Welcome to the EV01 lab",
+     "x": 0
+    },
+    {
+     "c": "$ cat ev/config/evault.conf",
+     "o": "# Enterprise Vault server settings (pretend)\nserver_name = EV01\nsql_server = SQL01\nindexing_enabled = true\nmax_index_threads = 4\nlog_level = info",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ head -n 3 ev/logs/indexing.log",
+     "o": "2026-09-30 09:10:02 INFO  Indexing service started\n2026-09-30 09:10:05 INFO  Connected to SQL01\n2026-09-30 09:11:40 INFO  Indexed 1200 items",
+     "x": 0
+    },
+    {
+     "c": "$ tail -n 3 ev/logs/indexing.log",
+     "o": "2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ wc -l ev/logs/indexing.log ev/logs/storage.log",
+     "o": "  14 ev/logs/indexing.log\n   5 ev/logs/storage.log\n  19 total",
+     "x": 0
+    },
+    {
+     "c": "$ nl -ba ev/config/evault.conf | head -4",
+     "o": "     1\t# Enterprise Vault server settings (pretend)\n     2\tserver_name = EV01\n     3\tsql_server = SQL01\n     4\tindexing_enabled = true",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ touch live.log",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ (sleep 1; echo \"09:30 INFO service ready\" >> live.log; sleep 1; echo \"09:31 ERROR disk full\" >> live.log) &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ timeout 3 tail -f live.log",
+     "o": "09:30 INFO service ready\n09:31 ERROR disk full",
+     "x": 124
+    },
+    {
+     "c": "$ wait",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"first line\" > notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"second line\" >> notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat notes.txt",
+     "o": "first line\nsecond line",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"this overwrites\" > notes.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat notes.txt",
+     "o": "this overwrites",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls docs nosuchfolder > out.txt",
+     "o": "ls: cannot access 'nosuchfolder': No such file or directory",
+     "x": 2
+    },
+    {
+     "c": "$ echo \"---- out.txt contains:\"",
+     "o": "---- out.txt contains:",
+     "x": 0
+    },
+    {
+     "c": "$ cat out.txt",
+     "o": "docs:\nnotes.txt\nreadme.txt",
+     "x": 0
+    },
+    {
+     "c": "$ ls docs nosuchfolder > out.txt 2> err.txt",
+     "o": "",
+     "x": 2
+    },
+    {
+     "c": "$ echo \"---- err.txt contains:\"",
+     "o": "---- err.txt contains:",
+     "x": 0
+    },
+    {
+     "c": "$ cat err.txt",
+     "o": "ls: cannot access 'nosuchfolder': No such file or directory",
+     "x": 0
+    },
+    {
+     "c": "$ ls nosuchfolder 2>/dev/null; echo \"exit code: $?\"",
+     "o": "exit code: 2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat ev/logs/indexing.log | grep ERROR",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ cat ev/logs/indexing.log | grep ERROR | wc -l",
+     "o": "5",
+     "x": 0
+    },
+    {
+     "c": "$ tail -n 4 ev/logs/indexing.log | head -n 2",
+     "o": "2026-09-30 11:05:00 INFO  Indexed 3400 items\n2026-09-30 11:40:22 WARN  Name resolution slow for SQL01",
+     "x": 0
+    },
+    {
+     "c": "$ ls ev/logs | wc -l",
+     "o": "2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep ERROR ev/logs/indexing.log | tee errors.txt | wc -l",
+     "o": "5",
+     "x": 0
+    },
+    {
+     "c": "$ cat errors.txt",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "1b1a2f1d7dbbacfd"
+ },
+ "linux-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ head -n 4 ev/logs/indexing.log",
+     "o": "2026-09-30 09:10:02 INFO  Indexing service started\n2026-09-30 09:10:05 INFO  Connected to SQL01\n2026-09-30 09:11:40 INFO  Indexed 1200 items\n2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep ERROR ev/logs/indexing.log",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ grep -c ERROR ev/logs/indexing.log",
+     "o": "5",
+     "x": 0
+    },
+    {
+     "c": "$ grep -n \"SQL01\" ev/logs/indexing.log",
+     "o": "2:2026-09-30 09:10:05 INFO  Connected to SQL01\n4:2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n6:2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n10:2026-09-30 11:02:14 INFO  Connected to SQL01\n12:2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n13:2026-09-30 12:15:41 ERROR Name resolution failed for SQL01",
+     "x": 0
+    },
+    {
+     "c": "$ grep -i \"warn\" ev/logs/indexing.log",
+     "o": "2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n2026-09-30 11:40:22 WARN  Name resolution slow for SQL01",
+     "x": 0
+    },
+    {
+     "c": "$ grep -v INFO ev/logs/indexing.log",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep -A1 \"connection timeout\" ev/logs/indexing.log",
+     "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted",
+     "x": 0
+    },
+    {
+     "c": "$ grep -E \"WARN|ERROR\" ev/logs/storage.log",
+     "o": "2026-09-30 10:15:44 WARN  Vault store 1 is 91 percent full\n2026-09-30 11:20:09 ERROR Vault store 1 write failed: disk full",
+     "x": 0
+    },
+    {
+     "c": "$ grep -r \"SQL01\" ev/",
+     "o": "ev/config/evault.conf:sql_server = SQL01\nev/logs/indexing.log:2026-09-30 09:10:05 INFO  Connected to SQL01\nev/logs/indexing.log:2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\nev/logs/indexing.log:2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\nev/logs/indexing.log:2026-09-30 11:02:14 INFO  Connected to SQL01\nev/logs/indexing.log:2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\nev/logs/indexing.log:2026-09-30 12:15:41 ERROR Name resolution failed for SQL01",
+     "x": 0
+    },
+    {
+     "c": "$ grep -l \"disk full\" ev/logs/*",
+     "o": "ev/logs/storage.log",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cut -d' ' -f3 ev/logs/indexing.log | sort | uniq -c | sort -rn",
+     "o": "      7 INFO\n      5 ERROR\n      2 WARN",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ awk '{print $3, $4}' ev/logs/storage.log",
+     "o": "INFO Storage\nINFO Archived\nWARN Vault\nINFO Archived\nERROR Vault",
+     "x": 0
+    },
+    {
+     "c": "$ awk '$3 == \"ERROR\" {print $2, $5}' ev/logs/indexing.log",
+     "o": "09:12:18 connection\n09:12:34 connection\n09:12:35 task\n12:15:41 resolution\n12:15:42 task",
+     "x": 0
+    },
+    {
+     "c": "$ awk '{count[$3]++} END {for (l in count) print l, count[l]}' ev/logs/indexing.log | sort",
+     "o": "ERROR 5\nINFO 7\nWARN 2",
+     "x": 0
+    },
+    {
+     "c": "$ awk '/Indexed/ {sum += $5} END {print \"items indexed:\", sum}' ev/logs/indexing.log",
+     "o": "items indexed: 4600",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sed 's/SQL01/SQL-PRIMARY/' ev/config/evault.conf",
+     "o": "# Enterprise Vault server settings (pretend)\nserver_name = EV01\nsql_server = SQL-PRIMARY\nindexing_enabled = true\nmax_index_threads = 4\nlog_level = info",
+     "x": 0
+    },
+    {
+     "c": "$ sed -n '2,4p' ev/config/evault.conf",
+     "o": "server_name = EV01\nsql_server = SQL01\nindexing_enabled = true",
+     "x": 0
+    },
+    {
+     "c": "$ sed '/^#/d' ev/config/evault.conf",
+     "o": "server_name = EV01\nsql_server = SQL01\nindexing_enabled = true\nmax_index_threads = 4\nlog_level = info",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"ev01 is up\" | tr 'a-z' 'A-Z'",
+     "o": "EV01 IS UP",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ find ev -name \"*.log\"",
+     "o": "ev/logs/storage.log\nev/logs/indexing.log",
+     "x": 0
+    },
+    {
+     "c": "$ find ev -type f -size -300c",
+     "o": "ev/config/evault.conf\nev/scripts/check.sh\nev/logs/storage.log",
+     "x": 0
+    },
+    {
+     "c": "$ find ev -name \"*.log\" -exec wc -l {} \\;",
+     "o": "5 ev/logs/storage.log\n14 ev/logs/indexing.log",
+     "x": 0
+    },
+    {
+     "c": "$ find ev -type f -newermt \"2026-01-01\" | sort",
+     "o": "ev/config/evault.conf\nev/logs/indexing.log\nev/logs/storage.log\nev/scripts/check.sh",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ find ev -name \"*.log\" | sort | xargs grep -c ERROR",
+     "o": "ev/logs/indexing.log:5\nev/logs/storage.log:1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep ERROR ev/logs/indexing.log | cut -d' ' -f4- | sort | uniq -c | sort -rn",
+     "o": "      2 SQL connection timeout (SQL01)\n      2 Indexing task aborted\n      1 Name resolution failed for SQL01",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep ERROR ev/logs/*.log | cut -d: -f2,3 | cut -c12-13 | sort | uniq -c",
+     "o": "      3 09\n      1 11\n      2 12",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep -h ERROR ev/logs/*.log | awk '{print $5, $6}' | sort | uniq -c | sort -rn",
+     "o": "      2 task aborted\n      2 connection timeout\n      1 store 1\n      1 resolution failed",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e1a7d6468a72f6e1"
+ },
+ "linux-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ id",
+     "o": "uid=30033(student) gid=30033(student) groups=30033(student),996(docker)",
+     "x": 0
+    },
+    {
+     "c": "$ whoami",
+     "o": "student",
+     "x": 0
+    },
+    {
+     "c": "$ groups",
+     "o": "student docker",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ grep '^student' /etc/passwd",
+     "o": "student:x:30033:30033::/home/student:/bin/bash",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%A %U:%G %n' /etc/shadow /etc/passwd",
+     "o": "-rw-r----- root:shadow /etc/shadow\n-rw-r--r-- root:root /etc/passwd",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls -l --time-style=long-iso ev/config/evault.conf ev/scripts/check.sh",
+     "o": "-rw-r--r-- 1 student student 146 2026-01-15 09:00 ev/config/evault.conf\n-rw-r--r-- 1 student student  33 2026-01-15 09:00 ev/scripts/check.sh",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls -l ev/scripts/check.sh",
+     "o": "-rw-r--r-- 1 student student 33 Jan 15  2026 ev/scripts/check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ ./ev/scripts/check.sh 2>&1 | head -1",
+     "o": "bash: line 69: ./ev/scripts/check.sh: Permission denied",
+     "x": 0
+    },
+    {
+     "c": "$ chmod u+x ev/scripts/check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l ev/scripts/check.sh",
+     "o": "-rwxr--r-- 1 student student 33 Jan 15  2026 ev/scripts/check.sh",
+     "x": 0
+    },
+    {
+     "c": "$ ./ev/scripts/check.sh",
+     "o": "checking EV01",
+     "x": 0
+    },
+    {
+     "c": "$ chmod go-r ev/config/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l ev/config/evault.conf",
+     "o": "-rw------- 1 student student 146 Jan 15  2026 ev/config/evault.conf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ chmod 644 ev/config/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %A %n' ev/config/evault.conf",
+     "o": "644 -rw-r--r-- ev/config/evault.conf",
+     "x": 0
+    },
+    {
+     "c": "$ chmod 600 ev/config/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %A %n' ev/config/evault.conf",
+     "o": "600 -rw------- ev/config/evault.conf",
+     "x": 0
+    },
+    {
+     "c": "$ chmod -R 750 ev/scripts",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %A %n' ev/scripts ev/scripts/check.sh",
+     "o": "750 drwxr-x--- ev/scripts\n750 -rwxr-x--- ev/scripts/check.sh",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sudo chown root:root ev/config/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l ev/config/evault.conf",
+     "o": "-rw------- 1 root root 146 Jan 15  2026 ev/config/evault.conf",
+     "x": 0
+    },
+    {
+     "c": "$ sudo chown student:student ev/config/evault.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l ev/config/evault.conf",
+     "o": "-rw------- 1 student student 146 Jan 15  2026 ev/config/evault.conf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ whoami",
+     "o": "student",
+     "x": 0
+    },
+    {
+     "c": "$ sudo whoami",
+     "o": "root",
+     "x": 0
+    },
+    {
+     "c": "$ sudo cat /etc/shadow | head -c 0; echo \"(read a root-only file: allowed with sudo)\"",
+     "o": "(read a root-only file: allowed with sudo)",
+     "x": 0
+    },
+    {
+     "c": "$ cat /etc/shadow",
+     "o": "cat: /etc/shadow: Permission denied",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ sudo userdel -r alice 2>/dev/null; sudo userdel -r bob 2>/dev/null; sudo groupdel evteam 2>/dev/null || true",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo groupadd evteam",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo useradd -m -G evteam alice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo useradd -m -G evteam bob",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo mkdir /srv/evshared",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo chgrp evteam /srv/evshared",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo chmod 2770 /srv/evshared",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%A %U:%G %n' /srv/evshared",
+     "o": "drwxrws--- root:evteam /srv/evshared",
+     "x": 0
+    },
+    {
+     "c": "$ sudo -u alice bash -c 'echo \"from alice\" > /srv/evshared/a.txt'",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo -u bob bash -c 'cat /srv/evshared/a.txt'",
+     "o": "from alice",
+     "x": 0
+    },
+    {
+     "c": "$ sudo -u bob stat -c '%A %U:%G %n' /srv/evshared/a.txt",
+     "o": "-rw-rw-r-- alice:evteam /srv/evshared/a.txt",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- and you (not in evteam):\"",
+     "o": "--- and you (not in evteam):",
+     "x": 0
+    },
+    {
+     "c": "$ cat /srv/evshared/a.txt",
+     "o": "cat: /srv/evshared/a.txt: Permission denied",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ stat -c '%A %n' /tmp",
+     "o": "drwxrwxrwt /tmp",
+     "x": 0
+    },
+    {
+     "c": "$ sudo rm -rf /srv/evshared",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo userdel -r alice 2>/dev/null; sudo userdel -r bob 2>/dev/null; sudo groupdel evteam",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ umask",
+     "o": "0022",
+     "x": 0
+    },
+    {
+     "c": "$ touch f1 && mkdir d1 && stat -c '%a %n' f1 d1",
+     "o": "644 f1\n755 d1",
+     "x": 0
+    },
+    {
+     "c": "$ umask 077",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch f2 && mkdir d2 && stat -c '%a %n' f2 d2",
+     "o": "600 f2\n700 d2",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "53ac9ab4dd48b4ee"
+ },
+ "linux-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ ps -o pid,ppid,user,comm -p $$,$PPID",
+     "o": "  PID  PPID USER     COMMAND\n 3515  3177 root     runuser\n 3516  3515 student  bash",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"(PIDs differ on every machine)\"",
+     "o": "(PIDs differ on every machine)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sleep 120 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 130 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jobs",
+     "o": "[1]-  Running                 sleep 120 &\n[2]+  Running                 sleep 130 &",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ps -o stat,comm -p $pid",
+     "o": "STAT COMMAND\nS    sleep",
+     "x": 0
+    },
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ jobs",
+     "o": "[2]+  Running                 sleep 130 &",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kill -l TERM; kill -l KILL; kill -l HUP",
+     "o": "15\n9\n1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > worker.sh <<'EOF'\n> #!/bin/bash\n> cleanup() { echo \"worker: received stop signal, cleaning up\"; exit 0; }\n> trap cleanup TERM\n> echo \"worker: started\"\n> while true; do sleep 0.2; done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x worker.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./worker.sh > worker.out &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ wpid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kill $wpid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ wait $wpid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"exit code: $?\"",
+     "o": "exit code: 0",
+     "x": 0
+    },
+    {
+     "c": "$ cat worker.out",
+     "o": "worker: started\nworker: received stop signal, cleaning up",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > stubborn.sh <<'EOF'\n> #!/bin/bash\n> trap '' TERM\n> while true; do sleep 0.2; done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x stubborn.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./stubborn.sh &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ spid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kill $spid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"after SIGTERM, still running?\"; kill -0 $spid 2>/dev/null && echo yes || echo no",
+     "o": "after SIGTERM, still running?\nyes",
+     "x": 0
+    },
+    {
+     "c": "$ kill -9 $spid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ wait $spid 2>/dev/null",
+     "o": "",
+     "x": 137
+    },
+    {
+     "c": "$ echo \"after SIGKILL, still running?\"; kill -0 $spid 2>/dev/null && echo yes || echo no",
+     "o": "after SIGKILL, still running?\nno",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ nohup sleep 300 > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pgrep -f \"sleep 300\" > /dev/null && echo \"nohup job is running\"",
+     "o": "nohup job is running",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ sleep 100 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls /proc/$pid | head -8",
+     "o": "arch_status\nattr\nautogroup\nauxv\ncgroup\nclear_refs\ncmdline\ncomm",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"---\"",
+     "o": "---",
+     "x": 0
+    },
+    {
+     "c": "$ head -3 /proc/$pid/status | sed 's/\\t/ /'",
+     "o": "Name: sleep\nUmask: 0022\nState: S (sleeping)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"---\"",
+     "o": "---",
+     "x": 0
+    },
+    {
+     "c": "$ readlink /proc/$pid/cwd | sed \"s#$HOME#~#\"",
+     "o": "~/lab",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ nice -n 10 sleep 60 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ps -o ni,comm -p $pid",
+     "o": " NI COMMAND\n 10 sleep",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "150cb66f05f2660e"
+ }
+}

@@ -1,39 +1,41 @@
 <div class="strip">
   <div class="strip-in">
-    <span class="brand">Agent School</span>
-    <nav class="chips" id="chips" aria-label="Chapters"></nav>
+    <a class="brand" href="#hub" style="text-decoration:none;color:inherit">Agent School</a>
+    <select id="tracksel" aria-label="Choose a track"></select>
+    <nav class="chips" id="chips" aria-label="Lessons"></nav>
   </div>
 </div>
 <div class="bar"><i id="barfill"></i></div>
 
 <div class="wrap">
 
-<section class="hero" id="top">
+<section class="hero" id="hub">
   <span class="hand">Welcome, class. Take a seat.</span>
-  <h1>From "what is ChatGPT?" to building AI agents</h1>
-  <p class="lede">A course for complete beginners that ends with you understanding how AI agents are designed, tested, secured and connected to real systems. Every chapter explains the idea first, lets you play with it, and ends with a quiz. No coding background is needed to read it. Then a coding track (lessons C0 to C11) teaches you to read and write the code from scratch, using Enterprise Vault examples throughout. Each code lesson has a step-through player so you can watch a program run line by line, even on a phone.</p>
+  <h1>From first command to running real systems</h1>
+  <p class="lede">A course for complete beginners who want to become genuine engineers. It starts with Linux and works up through networking, containers, automation, infrastructure as code, pipelines, Kubernetes and AI agents. Every lesson explains the idea, lets you play with it, and ends with a quiz. Wherever a command is shown with <b>Real output</b>, I actually ran it on a Linux machine and recorded what happened.</p>
   <div class="facts">
-    <span>14 concept chapters</span>
-    <span>12 coding lessons, from zero</span>
+    <span id="stat-lessons"></span>
     <span>Works on a phone</span>
-    <span>Interactive demos in every chapter</span>
-    <span>Quiz at the end of each chapter</span>
+    <span>Enterprise Vault examples throughout</span>
     <span>Hover or tap dotted words for a definition</span>
   </div>
 
   <div class="board note" style="margin-top:28px">
     <span class="tag">How to study this</span>
-    <p>The rule for the whole course: <b>understand first, code second, framework third.</b> Do not rush. A good daily ritual looks like this:</p>
+    <p>The rule for the whole course: <b>understand first, practise second, tools third.</b> A good routine for each lesson:</p>
     <ol style="margin:.4rem 0 0">
       <li>Read one section slowly.</li>
-      <li>Play with its demo until you can predict what it will do.</li>
-      <li>Close the page and explain the idea in your own words, out loud or on paper.</li>
-      <li>Answer the "Student asks" questions before reading the replies.</li>
-      <li>Connect the idea to one real example from your own work.</li>
-      <li>Only then move on.</li>
+      <li>Play with its demo, or run its commands yourself, until you can predict the result.</li>
+      <li>Close the page and explain the idea in your own words.</li>
+      <li>Answer the quiz and revisit what you missed.</li>
+      <li>Connect it to a real task in your own Enterprise Vault work.</li>
     </ol>
+    <p style="margin-top:10px">Real practice matters. Most tracks give you commands to type. Use a free Linux environment (for example Ubuntu under WSL on Windows, or a virtual machine). Each track says what you need.</p>
   </div>
 
-  <h3>The whole course at a glance</h3>
-  <div class="road" id="road"></div>
+  <h2 style="margin-top:36px">Choose a track</h2>
+  <p>Not sure where to begin? Follow the order below. The tracks build on each other, and the AI track can be done at any time.</p>
+  <div id="tracks"></div>
 </section>
+
+<section id="trackhead" hidden></section>
