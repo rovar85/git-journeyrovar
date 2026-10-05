@@ -1,0 +1,57 @@
+
+<!-- ============================ CODE LESSON C4 ============================ -->
+<section class="chapter" id="ch19" data-num="C4" data-title="C4 · Functions" data-road="C4 · Functions: the code behind a tool" data-sub="Package a job as a function with inputs and a result. Every agent tool is one.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C4</span>
+    <h2>Functions: the code behind a tool</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>write a function with inputs and a returned result</li>
+      <li>explain the difference between <code>return</code> and <code>print</code></li>
+      <li>see that an agent tool such as <code>get_service_status</code> is simply a function</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>A <b>function</b> is a named recipe. You define it once, give it <b>inputs</b> (called arguments), and it gives back a <b>result</b>. Then you can use it as often as you like. In Chapter 10 you designed tools with a name, a description, typed inputs and structured output. This lesson shows what that looks like in code: <b>a tool is a function</b>, and the "tool description" the model reads is just the function's name, inputs and short explanation.</p>
+  <ul>
+    <li><code>def name(inputs):</code> starts a definition. The indented lines below are the recipe.</li>
+    <li><code>return value</code> hands a result back to whoever called the function and ends it.</li>
+    <li>The text in triple quotes right under the first line is a <b>docstring</b>: a description of what the function does. Frameworks (including MCP libraries) turn it into the tool description that the model reads.</li>
+  </ul>
+  <div class="board warn"><span class="tag">Common mistake</span><p><code>print</code> shows something to a <i>human</i> and the value is gone. <code>return</code> gives a value to the <i>program</i> so it can be used again. Tools must <b>return</b> their result, because the agent loop needs to pass it back to the model.</p></div>
+
+  <h3>Watch it run</h3>
+  <p>Notice how the highlight jumps up into the function when it is called, and how the Variables box then shows the function's own inputs under "in get_service_status()".</p>
+  <div class="lab"><div class="tracer" data-trace="c04"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>def get_service_status(server, service):</code> defines the tool. It takes two inputs. Defining a function does not run it. Python just remembers the recipe.</li>
+    <li>The dictionary <code>known</code> is a pretend lookup table (in real life this line would query Windows). <code>known.get(service, "Unknown")</code> looks up the service, and gives "Unknown" if it is not found, rather than crashing.</li>
+    <li>The function <b>returns</b> a dictionary with a fixed shape: server, service, status, error. A predictable shape makes a tool easy for a model to use and easy for you to test.</li>
+    <li><code>summarise(result)</code> is a second function that turns a result into one readable line. Functions can use other functions' results.</li>
+    <li>The last three lines call the tool with different inputs. For "Search" the table has no entry, so the status is "Unknown". The tool handled it gracefully.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Design lessons you already know</span><p>Each tool has <b>one job</b>, <b>typed inputs</b>, <b>structured output</b> and an <b>explicit way to report problems</b> (here, "Unknown" and an <code>error</code> field). Those are the tool-design rules of Chapter 10, now visible as code. Notice also that this function only <i>reads</i>. Nothing about it changes any system.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a third entry to <code>known</code>, such as "Search": "Running". Call the tool for it. Predict, then run.</li>
+    <li>Write a new function <code>is_stopped(result)</code> that returns <code>True</code> if the status is "Stopped". Test it on two results.</li>
+    <li>Add a docstring to <code>summarise</code>. Why would a good docstring matter if a model were choosing between ten tools?</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C4 in plain words</h3>
+    <ul>
+      <li>A function is a named recipe: <code>def</code> it once, call it many times.</li>
+      <li><code>return</code> gives a value back. <code>print</code> only shows it.</li>
+      <li>A tool is a function with a clear job, predictable output and a docstring that describes it.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c19"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

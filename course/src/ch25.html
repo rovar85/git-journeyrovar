@@ -1,0 +1,101 @@
+
+<!-- ============================ CODE LESSON C10 ============================ -->
+<section class="chapter" id="ch25" data-num="C10" data-title="C10 · Real world" data-road="C10 · Real models, secrets, an MCP server, and coding with AI" data-sub="Where the offline pieces meet the real world: API keys, tool schemas, an MCP server, and using AI as a coding helper.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C10</span>
+    <h2>Real models, secrets, an MCP server, and coding with AI</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>keep an API key out of your code and use it safely</li>
+      <li>describe a tool to a model with a JSON schema</li>
+      <li>read a small MCP server and know what to check before using one</li>
+      <li>use an AI assistant to help you code without losing control</li>
+    </ul>
+  </div>
+
+  <div class="board warn"><span class="tag">What is tested and what is not</span><p>I ran the offline lessons (C1 to C9, C11) here. For this lesson: the environment-variable snippet and the JSON schema I ran. The MCP server snippet I installed and ran against the current library (to list its tool and its schema), but I did not connect a real client to it. The real model call (Chapter 11) needs a paid account that I do not have, so I checked only that the library accepts those parameters. Libraries change quickly, so treat every snippet here as a starting point and check the library's own documentation.</p></div>
+
+  <h3>1. Secrets: API keys do not belong in code</h3>
+  <p>To call a real language model you need an <b>API key</b>: a long secret string that identifies and bills your account. Anyone who has it can spend your money. So the first rule: <b>never type a key into a file that you might share, upload or paste into a chat.</b> Instead, store it in an <b>environment variable</b>, a named setting held by your computer, and have the program read it:</p>
+  <div class="codewrap"><pre class="code"><code>import os
+
+api_key = os.environ.get("ANTHROPIC_API_KEY")   # reads the setting; returns None if it is missing
+if not api_key:
+    print("Set the ANTHROPIC_API_KEY environment variable first.")
+else:
+    print("Key found (not printing it).")</code></pre></div>
+  <p>In Windows PowerShell you can set it for the current window only (it disappears when you close it):</p>
+  <div class="codewrap"><pre class="code"><code>$env:ANTHROPIC_API_KEY = "paste-your-key-here"
+python my_agent.py</code></pre></div>
+  <ul>
+    <li>Never paste the key into a chat, an issue, a screenshot or a Git repository.</li>
+    <li>If a key leaks, <b>revoke it</b> in your account and create a new one.</li>
+    <li>Use the narrowest permissions and spending limits your provider offers.</li>
+  </ul>
+
+  <h3>2. Describing a tool to a model</h3>
+  <p>In Chapter 11 you saw that a model learns what tools exist from a description. That description is data, in <b>JSON Schema</b> form. For the C4 function it looks like this. It is the same information as the function's name, docstring and inputs, written for the model:</p>
+  <div class="codewrap"><pre class="code"><code>get_service_status_tool = {
+    "name": "get_service_status",
+    "description": "Return the state of one Windows service on one server. Read-only.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "server":  {"type": "string", "description": "Server name, for example EV01"},
+            "service": {"type": "string", "description": "Service name, for example Indexing"},
+        },
+        "required": ["server", "service"],
+    },
+}</code></pre></div>
+  <p>Good descriptions matter: they are the <i>only</i> thing the model knows about your tool. Write them for a stranger, then ask a model whether anything is ambiguous (Chapter 8).</p>
+
+  <h3>3. Calling a real model</h3>
+  <p>Chapter 11 shows the full loop. The shape is always: <b>build the messages, send them with the tool descriptions, check whether the reply asks for a tool, run it yourself, send the result back, repeat.</b> Your rule-based <code>decide_next</code> from C7 is replaced by that call. Everything else (tools, history, step limit, gate, trace) is the code you already have. Start with <b>read-only tools and harmless data</b>, and put a step limit and a cost limit in the loop <i>before</i> your first real run, because a loop that misbehaves spends real money.</p>
+
+  <h3>4. Your tools as an MCP server</h3>
+  <p>Chapter 10 explained MCP: write a server once and any compatible AI application can use it. With the official Python library the C4 function becomes a server almost unchanged. You add one line above the function (a "decorator", which registers it as a tool) and the library reads the name, the docstring and the typed inputs to build the schema for you:</p>
+  <div class="codewrap"><pre class="code"><code># pip install mcp
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("ev-diagnostics")
+
+@mcp.tool()
+def get_service_status(server: str, service: str) -> dict:
+    """Return the state of one Windows service on one server. Read-only."""
+    fake = {"Indexing": "Stopped", "Storage": "Running"}
+    return {"server": server, "service": service,
+            "status": fake.get(service, "Unknown"), "error": None}
+
+if __name__ == "__main__":
+    mcp.run()          # speaks MCP over standard input/output by default</code></pre></div>
+  <p>I ran this against the current library (version 2.3.0 at the time of writing). The tool was listed with its description and a schema generated from the typed inputs. Two lessons from that test:</p>
+  <div class="board warn"><span class="tag">Lesson: the library changed under my feet</span><p>My first attempt used the import that older tutorials and my own memory had: <code>from mcp.server.fastmcp import FastMCP</code>. It failed. Version 2 of the library renamed it to <code>MCPServer</code> and changed other things. This is exactly the warning in your study notes about MCP still changing. <b>Always check the version you install and read its current documentation.</b> When code from a tutorial fails with an import error, the first suspect is the version.</p></div>
+  <p>Before you use any MCP server (yours or someone else's), ask the four questions from Chapter 10: <b>who</b> can call its tools, <b>what</b> can they do, <b>where</b> can it act, and <b>what gets logged</b>. For an Enterprise Vault server: only read-only tools at first, credentials with minimal rights, and a trace of every call.</p>
+
+  <h3>5. Coding with an AI assistant, and staying the engineer</h3>
+  <p>AI assistants can write code quickly. For a learner that is a gift and a trap. The gift: you can get a working first draft of almost anything. The trap: you may end up running code you do not understand, with permissions it should not have. The habits that avoid the trap are the same habits as in the rest of this course:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Habit</th><th>What it looks like</th></tr></thead><tbody>
+    <tr><td>Ask for small pieces</td><td>One function at a time, with its inputs and output described. Not "build me an agent".</td></tr>
+    <tr><td>Ask it to explain</td><td>"Explain this code line by line for a beginner." Then check the explanation against the step-through player idea: could you predict the output?</td></tr>
+    <tr><td>Tests first</td><td>Write the expected results (C8) before asking for the code. Then you can tell whether the code is right.</td></tr>
+    <tr><td>Read before you run</td><td>Look for anything that deletes, sends, installs or touches real systems. If you do not understand a line, ask.</td></tr>
+    <tr><td>Harmless data first</td><td>Run on fake data (like <code>LAB</code>). Never on production first.</td></tr>
+    <tr><td>Read-only first</td><td>No write actions until diagnosis is measured and trusted (Chapter 14).</td></tr>
+    <tr><td>Paste the whole error</td><td>Copy the entire traceback, not a paraphrase, when asking for help. Never paste a secret.</td></tr>
+    <tr><td>Check versions</td><td>Say which library version you use. Libraries move (see above).</td></tr>
+  </tbody></table></div>
+
+  <div class="recap"><h3>Lesson C10 in plain words</h3>
+    <ul>
+      <li>Keep keys in environment variables, never in files or chats. Revoke leaked keys.</li>
+      <li>A tool is described to the model as a JSON schema. Descriptions are all the model knows.</li>
+      <li>A real model replaces only <code>decide_next</code>. Add a step limit, a cost limit and a gate first.</li>
+      <li>An MCP server can be your functions plus a decorator. Check the library version and the four security questions.</li>
+      <li>With AI help: small pieces, tests first, read before running, harmless and read-only first.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c25"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

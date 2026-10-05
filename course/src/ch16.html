@@ -1,0 +1,61 @@
+
+<!-- ============================ CODE LESSON C1 ============================ -->
+<section class="chapter" id="ch16" data-num="C1" data-title="C1 · Variables" data-road="C1 · Variables and your first program" data-sub="Remember facts about a server, build a sentence, do arithmetic, answer yes or no.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C1</span>
+    <h2>Variables: remembering facts</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>store a fact in a variable and use it again</li>
+      <li>tell text, numbers and true/false apart</li>
+      <li>print results and build a sentence from several facts</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>When you investigate a failing server you keep facts in your head: which server, which service, what state, how long it has been down. A program does the same with <b>variables</b>. A variable is a <b>labelled box</b>. You write the label on the left and the value on the right, joined by <code>=</code>. In Python <code>=</code> means "put this value into the box", not "is equal to".</p>
+  <p>Values come in a few basic kinds:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Kind</th><th>Example</th><th>Used for</th></tr></thead><tbody>
+    <tr><td>Text (a "string")</td><td><code>"EV01"</code></td><td>names, messages. Always inside quotes</td></tr>
+    <tr><td>Whole number</td><td><code>42</code></td><td>counts, minutes</td></tr>
+    <tr><td>Decimal number</td><td><code>0.7</code></td><td>measurements, averages</td></tr>
+    <tr><td>True or False</td><td><code>True</code></td><td>yes/no answers (a "boolean")</td></tr>
+  </tbody></table></div>
+  <p><code>print(...)</code> shows something on the screen. An <b>f-string</b> (text that starts with <code>f"</code>) lets you drop variables into a sentence by putting their names in curly brackets. Lines that start with <code>#</code> are comments: notes for humans that Python ignores.</p>
+
+  <h3>Watch it run</h3>
+  <p>Press <b>Next line</b> and watch the Variables box fill up one box at a time.</p>
+  <div class="lab"><div class="tracer" data-trace="c01"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>server = "EV01"</code> creates a box labelled <code>server</code> holding the text EV01. The next three lines do the same for the service, its status and the minutes down.</li>
+    <li><code>print("Checking", server)</code> prints the word Checking and then the value of <code>server</code>, separated by a space. Notice that <code>"Checking"</code> is in quotes (literal text) but <code>server</code> is not (a variable to look up).</li>
+    <li><code>message = f"{service} on {server} is {status}"</code> builds one sentence from three variables and stores it in a new box.</li>
+    <li><code>hours_down = minutes_down / 60</code> does arithmetic: <code>/</code> divides. <code>+</code> adds, <code>-</code> subtracts, <code>*</code> multiplies.</li>
+    <li><code>round(hours_down, 2)</code> rounds to 2 decimal places. 42 ÷ 60 is 0.7.</li>
+    <li><code>is_urgent = minutes_down > 30</code> asks a question: is 42 greater than 30? The answer, <code>True</code>, is stored. A variable can hold the answer to a yes/no question.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Why this matters for agents</span><p>An agent's <b>state</b> (Chapter 7) is nothing more than variables: the goal, the evidence so far, the current hypothesis. Everything in the later lessons is built from boxes like these.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Run it on your laptop. Then change <code>minutes_down</code> to 20 and run again. What happens to <code>is_urgent</code>? Predict first.</li>
+    <li>Add a new variable <code>severity = "High"</code> and print a sentence that includes it.</li>
+    <li>Make a mistake on purpose: delete one quote mark in a <code>print</code> line and read the error from the last line up.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C1 in plain words</h3>
+    <ul>
+      <li>A variable is a labelled box: <code>label = value</code>.</li>
+      <li>Basic kinds: text in quotes, whole numbers, decimals, True/False.</li>
+      <li><code>print</code> shows output. f-strings put variables inside sentences. <code>#</code> starts a comment.</li>
+      <li>A comparison such as <code>&gt;</code> produces True or False.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c16"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

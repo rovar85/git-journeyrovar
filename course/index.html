@@ -226,6 +226,16 @@ label.fl{display:block;font-weight:700;margin:12px 0 4px}
 @media (max-width:620px){.two{grid-template-columns:1fr}}
 .pre-out{white-space:pre-wrap;word-break:break-word;font-family:var(--f-mono);font-size:.85rem;background:var(--code-bg);border-radius:8px;padding:12px}
 .hero .daily{margin-top:20px}
+
+/* code player */
+.tracer .line{display:block;white-space:pre;padding:0 14px 0 0}
+.tracer .line.cur{background:var(--mark)}
+.tracer .ln{display:inline-block;width:2.6em;text-align:right;padding-right:.9em;color:var(--muted);user-select:none}
+.tracer .codewrap{margin:8px 0}
+.tracer .out table td:first-child{width:34%}
+.lesson-tag{display:inline-block;font-family:var(--f-hand);font-size:1.25rem;color:var(--note)}
+/* long unbroken code phrases must wrap on narrow screens */
+p,li,td,.q p,.q .choices button,.fb,.out,.board{overflow-wrap:anywhere}
 </style>
 <div class="strip">
   <div class="strip-in">
@@ -240,9 +250,11 @@ label.fl{display:block;font-weight:700;margin:12px 0 4px}
 <section class="hero" id="top">
   <span class="hand">Welcome, class. Take a seat.</span>
   <h1>From "what is ChatGPT?" to building AI agents</h1>
-  <p class="lede">A course for complete beginners that ends with you understanding how AI agents are designed, tested, secured and connected to real systems. Every chapter explains the idea first, lets you play with it, and ends with a quiz. No coding background is needed to read it. Some chapters add optional code you can run.</p>
+  <p class="lede">A course for complete beginners that ends with you understanding how AI agents are designed, tested, secured and connected to real systems. Every chapter explains the idea first, lets you play with it, and ends with a quiz. No coding background is needed to read it. Then a coding track (lessons C0 to C11) teaches you to read and write the code from scratch, using Enterprise Vault examples throughout. Each code lesson has a step-through player so you can watch a program run line by line, even on a phone.</p>
   <div class="facts">
-    <span>14 chapters</span>
+    <span>14 concept chapters</span>
+    <span>12 coding lessons, from zero</span>
+    <span>Works on a phone</span>
     <span>Interactive demos in every chapter</span>
     <span>Quiz at the end of each chapter</span>
     <span>Hover or tap dotted words for a definition</span>
@@ -1596,7 +1608,7 @@ output:
 
   <p>Kam Lasater's talk has three goals: let you <b>experience the simplest version of an agent</b>, make you comfortable <b>running and reading the code</b> ("execution and decoding are a very important part of learning"), and give you <b>intuition for how agent frameworks work</b>, so that if you use one, you understand the parts underneath. This chapter follows his five steps, then gives you a program you can run.</p>
 
-  <div class="board note"><span class="tag">Rule for the whole course</span><p><b>Understand first, code second, framework third.</b> You do not need to write code to read this chapter. The code is there so the ideas become concrete. If you do run it, you will understand agents far better than someone who only read about them.</p></div>
+  <div class="board note"><span class="tag">Rule for the whole course</span><p><b>Understand first, code second, framework third.</b> If code is new to you, work through the <b>coding track (lessons C0 to C11)</b> after Chapter 14, then come back here. You do not need to write code to read this chapter. The code is there so the ideas become concrete. If you do run it, you will understand agents far better than someone who only read about them.</p></div>
 
   <h3>What is an agent, in the smallest terms?</h3>
   <p>Two definitions Lasater likes: an agent is <b>"LLM, memory, planning, tools, and a while loop."</b> Break it down: memory is just <i>reading and writing</i> some state. The while loop is a <i>condition</i> plus a <i>repeat</i>. Rearrange those parts and you get a plan for the code.</p>
@@ -2180,6 +2192,8 @@ if __name__ == "__main__":
     <div class="pre-out" id="wb-out" style="margin-top:12px">Press "Generate design brief".</div>
   </div>
 
+  <div class="board note"><span class="tag">Next: the coding track</span><p>The coding track (lessons C0 to C11) takes you from your first variable to a runnable Enterprise Vault diagnostic agent, with the same four failure scenarios, a policy gate, a trace and an evaluation. It is the practical half of this capstone. Lesson C11 is the code version of the design brief you just generated.</p></div>
+
   <h3>The five diagrams to be able to redraw from memory</h3>
   <p>Close the page and draw each one on paper. Then compare.</p>
   <div class="tblwrap"><table class="tbl"><thead><tr><th>Diagram</th><th>The chain</th><th>Chapter</th></tr></thead><tbody>
@@ -2267,6 +2281,946 @@ if __name__ == "__main__":
 </section>
 
 
+<!-- ============================ CODE LESSON C0 ============================ -->
+<section class="chapter" id="ch15" data-num="C0" data-title="C0 · Start here" data-road="Coding track: how to start" data-sub="What programming is, how to run your first file, how to read an error. No experience needed.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C0</span>
+    <h2>Coding track: start here</h2>
+  </header>
+
+  <div class="board note"><span class="tag">Read this first</span><p>Chapters 1 to 14 explain the ideas. This <b>coding track</b> teaches you to read and write the programs that make those ideas real, starting from zero and ending with a working Enterprise Vault diagnostic agent. Every lesson uses your own Enterprise Vault world as the example, so the code always has a meaning you recognise. You do not need to be good at maths. You do not need to memorise anything. And you already have a skill that matters more than syntax: <b>as a QA engineer you think in terms of "expected result versus actual result"</b>, and that is exactly how good programmers test their code.</p></div>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>explain what a program is, and run a Python file on your computer</li>
+      <li>use the step-through player, which works on a phone too</li>
+      <li>read an error message calmly and know where to look</li>
+    </ul>
+  </div>
+
+  <h3>What is a program?</h3>
+  <p>A program is a text file of instructions that a computer follows <b>from top to bottom</b>, one line at a time, like a recipe. We use the language <b>Python</b> because it reads almost like English, it is the main language of AI work, and every agent example in this course is written in it. Python itself is a program called the <b>interpreter</b>: you hand it your text file and it carries out the instructions.</p>
+  <p>Three words you will hear constantly:</p>
+  <ul>
+    <li><b>Code</b> is the text you write.</li>
+    <li><b>Run</b> means asking Python to follow the instructions.</li>
+    <li><b>Output</b> is what the program prints back to you.</li>
+  </ul>
+
+  <h3>How the lessons work</h3>
+  <p>Each lesson has the same rhythm, and you can stop after any step:</p>
+  <ol>
+    <li><b>The idea</b> in plain words, tied to Enterprise Vault.</li>
+    <li><b>The code player.</b> A short program you can step through <i>one line at a time</i>. The highlighted line is the one that is <b>about to run</b>. Watch the Variables box (what the program remembers) and the Output box (what it has printed). This is the best way to see what code really does, and it works on a phone.</li>
+    <li><b>Line by line.</b> A plain-English explanation.</li>
+    <li><b>Predict the output.</b> A quiz that makes you think like the computer.</li>
+    <li><b>Your turn.</b> Small changes to try. Optional but powerful.</li>
+  </ol>
+  <p>Everything shown by the player is a <b>real run</b>: I executed each program and recorded every step, so what you see is what Python really did.</p>
+
+  <h3>Running a file on your laptop (about 5 minutes)</h3>
+  <p>You do not need any of this to follow the lessons. When you are ready to try it for real, here is the path on Windows. You have already used the terminal (PowerShell) and <code>pip</code> earlier in this project, so Python is very likely installed.</p>
+  <div class="lab" id="setup"><div class="lab-title">Your first run</div><div id="su-step"></div></div>
+
+  <h3>On your phone</h3>
+  <p>The course pages, demos, quizzes and the step-through code player all work on a phone. To <i>run</i> your own Python on a phone you would need a Python app or an online Python playground, which I cannot vouch for individually, so treat that as optional. A laptop is simply more comfortable for typing code. A good plan: read and step through on your phone, then do the "Your turn" tasks at your laptop.</p>
+
+  <h3>Reading an error message</h3>
+  <p>Errors are normal. Programmers see them all day. Python's error report is called a <b>traceback</b>, and it is easier than it looks. <b>Read the last line first.</b> It names the kind of mistake and says what went wrong. The lines above it show where. Here is an example, with the important parts marked:</p>
+  <div class="codewrap"><pre class="code"><code>Traceback (most recent call last):
+  File "check.py", line 4, in &lt;module&gt;        &lt;- WHERE: file check.py, line 4
+    print(status)                              &lt;- the line that failed
+NameError: name 'status' is not defined       &lt;- WHAT: you used a name that does not exist yet</code></pre></div>
+  <p>Common ones you will meet, and what they usually mean:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Error</th><th>Usually means</th></tr></thead><tbody>
+    <tr><td>NameError</td><td>a typo, or you used a variable before creating it</td></tr>
+    <tr><td>SyntaxError</td><td>the code is not written in a form Python understands: a missing quote, bracket or colon</td></tr>
+    <tr><td>IndentationError</td><td>the spaces at the start of a line are inconsistent (Python uses spaces to group lines)</td></tr>
+    <tr><td>KeyError</td><td>you asked a dictionary for a label it does not have</td></tr>
+    <tr><td>TypeError</td><td>you mixed things that do not mix, like adding a number to text</td></tr>
+  </tbody></table></div>
+
+  <h3>Habits that make learning faster</h3>
+  <ul>
+    <li><b>Change one thing at a time</b>, then run again. If it breaks, you know which change did it.</li>
+    <li><b>Predict before you run.</b> Say what you expect the output to be, then compare. That is your QA instinct at work, and it is how understanding grows.</li>
+    <li><b>Run often.</b> Little and often beats writing a lot and then debugging a lot.</li>
+    <li><b>Never put secrets in code.</b> Passwords and API keys do not belong in a file you might share. Lesson C10 shows the safe way.</li>
+    <li><b>AI can help you code, and you stay the engineer.</b> You may ask an AI assistant to explain a line or fix an error (paste the whole error message). But always read what it gives you, run it on harmless data first, and keep tools read-only until you trust them. Lesson C10 covers this properly.</li>
+  </ul>
+
+  <h3>The road ahead</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Lesson</th><th>You learn</th><th>Enterprise Vault example</th><th>Course idea it unlocks</th></tr></thead><tbody>
+    <tr><td>C1</td><td>variables, text, numbers, true/false</td><td>facts about one server</td><td>state</td></tr>
+    <tr><td>C2</td><td>lists and dictionaries</td><td>a fleet of servers; a tool result</td><td>tool results, JSON</td></tr>
+    <tr><td>C3</td><td>decisions and loops</td><td>reading an event log; retrying</td><td>the agent loop</td></tr>
+    <tr><td>C4</td><td>functions</td><td>get_service_status</td><td>a tool</td></tr>
+    <tr><td>C5</td><td>errors and JSON</td><td>test_sql_connectivity</td><td>validation, structured output</td></tr>
+    <tr><td>C6</td><td>classes</td><td>an Investigation with evidence</td><td>agent state</td></tr>
+    <tr><td>C7</td><td>a pretend lab and a diagnosis loop</td><td>stopped service, SQL down</td><td>the full loop, no AI yet</td></tr>
+    <tr><td>C8</td><td>tests and measuring</td><td>failure scenarios</td><td>evaluation, regression suite</td></tr>
+    <tr><td>C9</td><td>traces and a policy gate</td><td>allow, ask, deny</td><td>observability, safety</td></tr>
+    <tr><td>C10</td><td>real models, API keys, an MCP server, coding with AI</td><td>your tools as an MCP server</td><td>MCP, production</td></tr>
+    <tr><td>C11</td><td>the complete starter agent</td><td>four scenarios, scored</td><td>the capstone</td></tr>
+  </tbody></table></div>
+
+  <div class="recap"><h3>Lesson C0 in plain words</h3>
+    <ul>
+      <li>A program is instructions run top to bottom. Python is the interpreter that follows them.</li>
+      <li>Use the step-through player to watch code run, even on a phone.</li>
+      <li>To run a file: open PowerShell, move to the folder, type <code>python filename.py</code>.</li>
+      <li>Read errors from the last line upward.</li>
+      <li>Predict, run, compare. Change one thing at a time.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c15"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C1 ============================ -->
+<section class="chapter" id="ch16" data-num="C1" data-title="C1 · Variables" data-road="C1 · Variables and your first program" data-sub="Remember facts about a server, build a sentence, do arithmetic, answer yes or no.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C1</span>
+    <h2>Variables: remembering facts</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>store a fact in a variable and use it again</li>
+      <li>tell text, numbers and true/false apart</li>
+      <li>print results and build a sentence from several facts</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>When you investigate a failing server you keep facts in your head: which server, which service, what state, how long it has been down. A program does the same with <b>variables</b>. A variable is a <b>labelled box</b>. You write the label on the left and the value on the right, joined by <code>=</code>. In Python <code>=</code> means "put this value into the box", not "is equal to".</p>
+  <p>Values come in a few basic kinds:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Kind</th><th>Example</th><th>Used for</th></tr></thead><tbody>
+    <tr><td>Text (a "string")</td><td><code>"EV01"</code></td><td>names, messages. Always inside quotes</td></tr>
+    <tr><td>Whole number</td><td><code>42</code></td><td>counts, minutes</td></tr>
+    <tr><td>Decimal number</td><td><code>0.7</code></td><td>measurements, averages</td></tr>
+    <tr><td>True or False</td><td><code>True</code></td><td>yes/no answers (a "boolean")</td></tr>
+  </tbody></table></div>
+  <p><code>print(...)</code> shows something on the screen. An <b>f-string</b> (text that starts with <code>f"</code>) lets you drop variables into a sentence by putting their names in curly brackets. Lines that start with <code>#</code> are comments: notes for humans that Python ignores.</p>
+
+  <h3>Watch it run</h3>
+  <p>Press <b>Next line</b> and watch the Variables box fill up one box at a time.</p>
+  <div class="lab"><div class="tracer" data-trace="c01"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>server = "EV01"</code> creates a box labelled <code>server</code> holding the text EV01. The next three lines do the same for the service, its status and the minutes down.</li>
+    <li><code>print("Checking", server)</code> prints the word Checking and then the value of <code>server</code>, separated by a space. Notice that <code>"Checking"</code> is in quotes (literal text) but <code>server</code> is not (a variable to look up).</li>
+    <li><code>message = f"{service} on {server} is {status}"</code> builds one sentence from three variables and stores it in a new box.</li>
+    <li><code>hours_down = minutes_down / 60</code> does arithmetic: <code>/</code> divides. <code>+</code> adds, <code>-</code> subtracts, <code>*</code> multiplies.</li>
+    <li><code>round(hours_down, 2)</code> rounds to 2 decimal places. 42 ÷ 60 is 0.7.</li>
+    <li><code>is_urgent = minutes_down > 30</code> asks a question: is 42 greater than 30? The answer, <code>True</code>, is stored. A variable can hold the answer to a yes/no question.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Why this matters for agents</span><p>An agent's <b>state</b> (Chapter 7) is nothing more than variables: the goal, the evidence so far, the current hypothesis. Everything in the later lessons is built from boxes like these.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Run it on your laptop. Then change <code>minutes_down</code> to 20 and run again. What happens to <code>is_urgent</code>? Predict first.</li>
+    <li>Add a new variable <code>severity = "High"</code> and print a sentence that includes it.</li>
+    <li>Make a mistake on purpose: delete one quote mark in a <code>print</code> line and read the error from the last line up.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C1 in plain words</h3>
+    <ul>
+      <li>A variable is a labelled box: <code>label = value</code>.</li>
+      <li>Basic kinds: text in quotes, whole numbers, decimals, True/False.</li>
+      <li><code>print</code> shows output. f-strings put variables inside sentences. <code>#</code> starts a comment.</li>
+      <li>A comparison such as <code>&gt;</code> produces True or False.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c16"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C2 ============================ -->
+<section class="chapter" id="ch17" data-num="C2" data-title="C2 · Lists &amp; dicts" data-road="C2 · Lists and dictionaries" data-sub="Many servers in a list. One tool result as a dictionary. The shape of JSON.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C2</span>
+    <h2>Lists and dictionaries: holding many facts</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>keep many items in a list and pick one out</li>
+      <li>describe one thing with several labelled facts in a dictionary</li>
+      <li>recognise that a tool result is a dictionary, and a fleet is a list of them</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>One variable holds one fact. Real investigations have many facts. Python gives you two containers that cover most needs:</p>
+  <ul>
+    <li>A <b>list</b> is a numbered shelf: <code>["EV01", "EV02", "SQL01"]</code>. Order matters, and counting starts at <b>0</b>, so the first item is <code>servers[0]</code>. Useful when you have a collection: servers, log lines, test cases.</li>
+    <li>A <b>dictionary</b> is a form with labelled fields: <code>{"server": "EV01", "status": "Stopped"}</code>. You look things up by label, not by position: <code>record["status"]</code>. Useful when you describe one thing in detail.</li>
+  </ul>
+  <p>Put them together and you can describe a whole environment: a <b>list of dictionaries</b>, one per server. This is exactly the shape of the data that tools return and that language models read. When people say "JSON", they mean this notation (lists and dictionaries, written with quotes and braces). It is how programs pass structured information to each other.</p>
+
+  <h3>Watch it run</h3>
+  <div class="lab"><div class="tracer" data-trace="c02"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>servers.append("EV03")</code> adds an item at the end of the list. <code>len(servers)</code> counts the items. That is why it prints 4.</li>
+    <li><code>record = {...}</code> creates a dictionary. <code>None</code> is Python's word for "nothing here", used for <code>error</code> when there is no error.</li>
+    <li><code>record["status"]</code> looks up the value labelled <code>status</code>. <code>record["checked_at"] = "09:14"</code> adds a new field.</li>
+    <li><code>fleet</code> is a list of three dictionaries. <code>fleet</code> spans several lines because brackets let Python continue on the next line.</li>
+    <li><code>stopped = []</code> creates an empty list. The <code>for item in fleet:</code> loop (more in C3) visits each server, and the <code>if</code> adds its name only when its status is Stopped.</li>
+    <li>The last print shows the finished dictionary. Notice it looks just like the structured tool results in Chapters 10 and 11.</li>
+  </ul>
+  <div class="board warn"><span class="tag">Common mistake</span><p>Asking a dictionary for a label it does not have causes a <b>KeyError</b>. Asking a list for a position that does not exist causes an <b>IndexError</b>. Both mean "that is not in there". In an agent, a model sometimes asks a tool for something that does not exist, so tools must expect this (lesson C5).</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a fourth server to <code>fleet</code> with status "Stopped". Predict the new <code>stopped</code> list.</li>
+    <li>Print <code>servers[1]</code> and then <code>servers[-1]</code> (the last one). What do you learn about negative positions?</li>
+    <li>Try <code>print(record["owner"])</code>. Read the error. Now try <code>print(record.get("owner"))</code>, which returns <code>None</code> instead of failing. Why might a tool prefer that?</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C2 in plain words</h3>
+    <ul>
+      <li>List = ordered collection, counted from 0. Dictionary = labelled fields.</li>
+      <li>A tool result is a dictionary. A fleet is a list of dictionaries. That is JSON.</li>
+      <li>Missing labels cause errors unless you handle them.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c17"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C3 ============================ -->
+<section class="chapter" id="ch18" data-num="C3" data-title="C3 · Loops" data-road="C3 · Decisions and loops" data-sub="Scan an event log, decide what it means, and repeat until done: the shape of an agent loop.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C3</span>
+    <h2>Decisions and loops: the shape of an agent</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>make a program choose between paths with <code>if</code>, <code>elif</code> and <code>else</code></li>
+      <li>repeat work with <code>for</code> and <code>while</code></li>
+      <li>see why an agent is "a while loop with a model inside"</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Two abilities turn a list of instructions into something that behaves intelligently:</p>
+  <ul>
+    <li><b>Decisions.</b> <code>if</code> some condition is true, do this. Otherwise (<code>else</code>), do that. You can add middle cases with <code>elif</code> ("else if").</li>
+    <li><b>Loops.</b> A <code>for</code> loop does something <i>for each item</i> in a list. A <code>while</code> loop keeps going <i>as long as</i> a condition is true.</li>
+  </ul>
+  <p>One Python rule matters here: the lines that belong <b>inside</b> an <code>if</code> or a loop are <b>indented</b> (pushed in by four spaces) and the line before ends in a colon. The indentation is how Python knows which lines are grouped together.</p>
+  <p>Think of an engineer reading an event log: look at every line, and if it says ERROR, note it and count it. That is a <code>for</code> loop containing an <code>if</code>. Then, if there are several errors, suspect a real fault. That is another decision. And "try connecting, and try again until it works or you give up" is a <code>while</code> loop.</p>
+
+  <h3>Watch it run</h3>
+  <p>Pay attention to how the highlight jumps back to the top of each loop, and how the Variables box changes.</p>
+  <div class="lab"><div class="tracer" data-trace="c03"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>for line in events:</code> means: take each item from <code>events</code> in turn, call it <code>line</code>, and run the indented block below.</li>
+    <li><code>if "ERROR" in line:</code> asks whether the word ERROR appears inside this line. Only two of the four lines say it.</li>
+    <li><code>errors = errors + 1</code> adds one to the counter each time. A counter like this is a common pattern: start at 0, then add as you find things.</li>
+    <li>After the loop, <code>if / elif / else</code> picks exactly <b>one</b> of three messages. With two errors the first test, <code>errors &gt;= 2</code>, is true.</li>
+    <li>The <code>while</code> loop repeats while <code>attempts &lt; 3 and not connected</code>. Each pass adds 1 to <code>attempts</code>. When <code>attempts</code> reaches 3 the code sets <code>connected = True</code> and the loop stops. Without that update the loop would never end.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">This is the agent loop</span><p>Look back at the loop from Chapter 11: <i>ask the model what to do, run the tool, add the result, repeat until the model says it is done</i>. It is a <code>while</code> loop with a decision inside it. And that is why every serious agent needs a <b>step limit</b>: a <code>while</code> loop whose condition never becomes false runs forever. Notice how the connection loop above has an exit (<code>attempts &lt; 3</code>) so it cannot spin endlessly.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Delete one of the ERROR lines from <code>events</code>. Which message prints now? Predict first.</li>
+    <li>Change the <code>while</code> loop to give up after 2 attempts. What does it print at the end? (It will still say "Connected". Why is that misleading? This kind of subtle wrongness is what your tests, in C8, must catch.)</li>
+    <li>Add a <code>WARN</code> counter alongside the error counter.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C3 in plain words</h3>
+    <ul>
+      <li><code>if / elif / else</code> chooses a path. Indented lines belong to the block above them.</li>
+      <li><code>for</code> repeats once per item. <code>while</code> repeats until a condition is false.</li>
+      <li>A counter starts at zero and grows as you find things.</li>
+      <li>An agent is a while loop with a model's decision inside. Always give it an exit.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c18"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C4 ============================ -->
+<section class="chapter" id="ch19" data-num="C4" data-title="C4 · Functions" data-road="C4 · Functions: the code behind a tool" data-sub="Package a job as a function with inputs and a result. Every agent tool is one.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C4</span>
+    <h2>Functions: the code behind a tool</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>write a function with inputs and a returned result</li>
+      <li>explain the difference between <code>return</code> and <code>print</code></li>
+      <li>see that an agent tool such as <code>get_service_status</code> is simply a function</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>A <b>function</b> is a named recipe. You define it once, give it <b>inputs</b> (called arguments), and it gives back a <b>result</b>. Then you can use it as often as you like. In Chapter 10 you designed tools with a name, a description, typed inputs and structured output. This lesson shows what that looks like in code: <b>a tool is a function</b>, and the "tool description" the model reads is just the function's name, inputs and short explanation.</p>
+  <ul>
+    <li><code>def name(inputs):</code> starts a definition. The indented lines below are the recipe.</li>
+    <li><code>return value</code> hands a result back to whoever called the function and ends it.</li>
+    <li>The text in triple quotes right under the first line is a <b>docstring</b>: a description of what the function does. Frameworks (including MCP libraries) turn it into the tool description that the model reads.</li>
+  </ul>
+  <div class="board warn"><span class="tag">Common mistake</span><p><code>print</code> shows something to a <i>human</i> and the value is gone. <code>return</code> gives a value to the <i>program</i> so it can be used again. Tools must <b>return</b> their result, because the agent loop needs to pass it back to the model.</p></div>
+
+  <h3>Watch it run</h3>
+  <p>Notice how the highlight jumps up into the function when it is called, and how the Variables box then shows the function's own inputs under "in get_service_status()".</p>
+  <div class="lab"><div class="tracer" data-trace="c04"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>def get_service_status(server, service):</code> defines the tool. It takes two inputs. Defining a function does not run it. Python just remembers the recipe.</li>
+    <li>The dictionary <code>known</code> is a pretend lookup table (in real life this line would query Windows). <code>known.get(service, "Unknown")</code> looks up the service, and gives "Unknown" if it is not found, rather than crashing.</li>
+    <li>The function <b>returns</b> a dictionary with a fixed shape: server, service, status, error. A predictable shape makes a tool easy for a model to use and easy for you to test.</li>
+    <li><code>summarise(result)</code> is a second function that turns a result into one readable line. Functions can use other functions' results.</li>
+    <li>The last three lines call the tool with different inputs. For "Search" the table has no entry, so the status is "Unknown". The tool handled it gracefully.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Design lessons you already know</span><p>Each tool has <b>one job</b>, <b>typed inputs</b>, <b>structured output</b> and an <b>explicit way to report problems</b> (here, "Unknown" and an <code>error</code> field). Those are the tool-design rules of Chapter 10, now visible as code. Notice also that this function only <i>reads</i>. Nothing about it changes any system.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a third entry to <code>known</code>, such as "Search": "Running". Call the tool for it. Predict, then run.</li>
+    <li>Write a new function <code>is_stopped(result)</code> that returns <code>True</code> if the status is "Stopped". Test it on two results.</li>
+    <li>Add a docstring to <code>summarise</code>. Why would a good docstring matter if a model were choosing between ten tools?</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C4 in plain words</h3>
+    <ul>
+      <li>A function is a named recipe: <code>def</code> it once, call it many times.</li>
+      <li><code>return</code> gives a value back. <code>print</code> only shows it.</li>
+      <li>A tool is a function with a clear job, predictable output and a docstring that describes it.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c19"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C5 ============================ -->
+<section class="chapter" id="ch20" data-num="C5" data-title="C5 · Errors &amp; JSON" data-road="C5 · Errors, validation and JSON" data-sub="Handle bad input without crashing. Turn results into text a model can read.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C5</span>
+    <h2>Errors, validation and JSON</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>reject bad input on purpose, and catch the problem instead of crashing</li>
+      <li>turn a dictionary into JSON text, and back again</li>
+      <li>explain why "errors are data" in an agent</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>In Chapter 11 you saw a tool call fail because a model passed a value the API did not accept. Models make odd requests: a server that does not exist, a missing field, a typo. A good tool does not crash. It <b>checks its input</b> and returns a clear error that the model can read and adjust to.</p>
+  <ul>
+    <li><code>raise ValueError("message")</code> deliberately signals a problem.</li>
+    <li><code>try: ... except ValueError as problem: ...</code> says "try this, and if that kind of problem happens, do this instead". The program carries on.</li>
+  </ul>
+  <p>The second idea is <b>JSON</b>. Models and programs exchange <i>text</i>. <code>json.dumps(result)</code> turns a dictionary into JSON text. <code>json.loads(text)</code> turns that text back into a dictionary. That conversion is the bridge between your tool and the model: the tool's result becomes text that goes into the model's context.</p>
+
+  <h3>Watch it run</h3>
+  <p>Step to the third server, <code>WEB9</code>. Watch the program jump out of the function, land in <code>except</code>, and carry on instead of crashing.</p>
+  <div class="lab"><div class="tracer" data-trace="c05"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>import json</code> brings in a tool kit that Python ships with for reading and writing JSON.</li>
+    <li>In <code>test_sql_connectivity</code>, the first check rejects any server whose name does not start with "EV". It raises an error rather than guessing.</li>
+    <li><code>reachable = server != "EV03"</code> pretends EV03's SQL link is down (<code>!=</code> means "is not equal to"). The result uses <code>None if reachable else "timeout after 15s"</code>, a compact way to say "no error if reachable, otherwise this message".</li>
+    <li>The loop tries three names. <code>try</code> calls the tool. For WEB9 the tool raises <code>ValueError</code>, and <code>except</code> builds a result dictionary describing the problem. <b>The error became data</b> with the same shape as a normal result.</li>
+    <li><code>json.dumps(result)</code> converts it to text. Notice Python's <code>True</code>, <code>False</code> and <code>None</code> become JSON's <code>true</code>, <code>false</code> and <code>null</code>.</li>
+    <li>Finally <code>json.loads(text)</code> proves the text can be read back into a dictionary.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Why this matters for agents</span><p>From Chapter 11: <b>errors go back to the model as data</b> so it can adjust, and arguments are <b>validated</b> before anything runs. It is also the structured-result rule from Chapter 10: <i>put parsing and validation in code</i>. And from Chapter 12: unknown or malformed requests should be refused, not guessed at.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a second validation: reject an empty string for the server name. Test with <code>""</code>.</li>
+    <li>Remove the <code>try/except</code> and run again. Read the error. This is what an unhandled problem looks like, and the program stops.</li>
+    <li>Print <code>json.dumps(result, indent=2)</code> to see the same JSON in a more readable layout.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C5 in plain words</h3>
+    <ul>
+      <li>Validate inputs and <code>raise</code> an error for bad ones. Catch errors with <code>try / except</code>.</li>
+      <li>Return errors as structured data so a model can react.</li>
+      <li><code>json.dumps</code> makes text from a dictionary. <code>json.loads</code> reverses it.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c20"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C6 ============================ -->
+<section class="chapter" id="ch21" data-num="C6" data-title="C6 · Classes" data-road="C6 · Classes: the state of an investigation" data-sub="Bundle data and actions together. This is how agent state is kept.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C6</span>
+    <h2>Classes: the state of an investigation</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a simple class: attributes, methods, <code>self</code></li>
+      <li>explain how a class can hold an agent's goal, evidence and hypothesis</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>So far, facts live in separate variables and actions live in separate functions. But an investigation is one thing: it has a goal, a growing list of evidence and a current hypothesis, and you do things to it (add evidence, print a report). A <b>class</b> bundles those together, like a case folder with a cover sheet and a set of standard procedures.</p>
+  <ul>
+    <li>A class is a <b>template</b>. Writing <code>Investigation("Why is indexing down?")</code> makes one real folder from the template (an <b>object</b>).</li>
+    <li><code>__init__</code> runs once when the object is created and sets it up.</li>
+    <li>Variables that belong to the object are <b>attributes</b>, written <code>self.goal</code>. Functions that belong to it are <b>methods</b>.</li>
+    <li><code>self</code> means "this particular object". It is always the first input of a method.</li>
+  </ul>
+  <p>This is where agent <b>state</b> (Chapter 7) lives in real code. Frameworks do the same thing with larger state objects (for example, the LangGraph state in Chapter 13 that holds messages and the philosopher's context).</p>
+
+  <h3>Watch it run</h3>
+  <p>Look at the Variables box after the object is created: the whole object is shown with its attributes, and it changes as evidence is added.</p>
+  <div class="lab"><div class="tracer" data-trace="c06"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>class Investigation:</code> starts the template. Everything indented below belongs to it.</li>
+    <li><code>__init__(self, goal)</code> stores the goal and starts an empty evidence list and a placeholder hypothesis.</li>
+    <li><code>add_evidence</code> appends a fact and, if a new hypothesis is supplied, replaces the old one. The <code>=None</code> makes the hypothesis optional.</li>
+    <li><code>report</code> builds lines of text. <code>enumerate(..., start=1)</code> counts the evidence from 1, and <code>"\n".join(lines)</code> glues the lines together with line breaks.</li>
+    <li><code>case = Investigation(...)</code> creates the object. <code>case.add_evidence(...)</code> calls a method on it. Each call changes the object's own state.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Connect it to Chapter 7</span><p>Compare this output with the agent simulator: "Evidence so far" and "Working hypothesis" were exactly this object. The model decides the next action, and <b>your code keeps the state</b>. That is why Chapter 8 said you should be able to inspect what the agent knows at every step.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a third piece of evidence: "SQL connectivity test fails". Update the hypothesis. Predict the report.</li>
+    <li>Add a method <code>count_evidence(self)</code> that returns how many facts there are.</li>
+    <li>Create a second investigation for a different goal. Notice the two objects never interfere with each other.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C6 in plain words</h3>
+    <ul>
+      <li>A class is a template for bundling data (attributes) and actions (methods).</li>
+      <li><code>self</code> means "this object". <code>__init__</code> sets it up.</li>
+      <li>Agent state is a class holding the goal, evidence and hypothesis.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c21"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C7 ============================ -->
+<section class="chapter" id="ch22" data-num="C7" data-title="C7 · The loop" data-road="C7 · A pretend lab and a diagnosis loop" data-sub="Put it together: tools, a loop, and a decision function. No AI yet, and one place for it later.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C7</span>
+    <h2>A pretend lab and a diagnosis loop</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a complete mini agent made of tools, history and a loop</li>
+      <li>find the single function where an AI model would go</li>
+      <li>explain why building the rule-based version first is good engineering</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Now combine everything: variables (C1), dictionaries (C2), loops and decisions (C3), functions as tools (C4). The result is a small Enterprise Vault diagnostic that behaves like the agent in Chapter 7, with one difference: <b>its "brain" is a handful of rules, not an AI model</b>. That is deliberate. You build the loop, the tools and the checks first, and make sure they work. Then replacing the rules with a model changes <i>one function</i>.</p>
+  <p>The pieces:</p>
+  <ul>
+    <li><b><code>LAB</code></b> is a dictionary that stands in for a real Enterprise Vault environment. It describes one failure: the service is stopped, the log shows a SQL timeout, SQL cannot be reached, DNS is fine.</li>
+    <li><b>Tools</b> are four small functions that read from <code>LAB</code>. All read-only.</li>
+    <li><b><code>TOOLS</code></b> is a dictionary mapping a tool's <i>name</i> to the function. This lets the loop call a tool by name, exactly as an agent does when a model says "call get_event_logs".</li>
+    <li><b><code>decide_next(history)</code></b> looks at what has happened so far and picks the next tool, or returns <code>None</code> when it has seen enough.</li>
+    <li><b><code>history</code></b> is a list recording each tool and its result.</li>
+  </ul>
+
+  <h3>Watch it run</h3>
+  <p>This one is longer. Use <b>Run to end</b> if you want the overview first, then <b>Restart</b> and step through. Watch <code>history</code> grow and see which function the highlight visits at each turn.</p>
+  <div class="lab"><div class="tracer" data-trace="c07"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>TOOLS = {"get_service_status": get_service_status, ...}</code> stores the <i>functions themselves</i> (not the results of calling them) under their names.</li>
+    <li><code>decide_next</code> reads the last tool and result. First time (<code>history</code> empty) it starts with the service status. If the status was Stopped it asks for the event logs. If the log mentions SQL it tests SQL. If SQL is unreachable it checks DNS. Otherwise it returns <code>None</code>.</li>
+    <li><code>while True:</code> repeats forever, until <code>break</code> runs. The loop asks <code>decide_next</code> for a tool. If it is <code>None</code>, <code>break</code> leaves the loop.</li>
+    <li><code>result = TOOLS[tool]()</code> looks up the function by name and calls it. The brackets at the end are what actually run it.</li>
+    <li><code>history.append((tool, result))</code> records the pair. A pair in round brackets is called a <b>tuple</b>: two things kept together.</li>
+  </ul>
+
+  <div class="board warn"><span class="tag">An honest flaw to notice</span><p>The last line, <code>print("Diagnosis: SQL server unreachable; DNS is fine.")</code>, is <b>fixed text</b>. It would print that even if the lab were different. The loop gathers evidence, but the conclusion is not computed from it. A tester would catch this at once: change <code>LAB</code> and the diagnosis is wrong. Lesson C8 teaches you to catch exactly this kind of bug, and the full starter agent in C11 fixes it by computing the answer.</p></div>
+
+  <div class="board note"><span class="tag">Where the AI goes</span><p>Replace <code>decide_next</code> with a function that sends <code>history</code> to a language model and reads back which tool it wants. Nothing else changes: same tools, same loop, same history. That is the sentence "<b>model proposes, software executes</b>" in code. It is also why the step limit, the policy gate and the trace (C9) live in the loop and not in the model.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Change <code>"sql_reachable": False</code> to <code>True</code>. Predict which tools run, then run it. What diagnosis line prints? Is it right?</li>
+    <li>Add a rule so that if DNS fails, <code>decide_next</code> returns nothing further, and fix the final line so it describes what happened. (Hint: look in <code>history</code>.)</li>
+    <li>Add a fifth tool, <code>check_disk_space</code>, to <code>LAB</code>, to the functions and to <code>TOOLS</code>.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C7 in plain words</h3>
+    <ul>
+      <li>A mini agent is tools + history + a loop + a "decide next" function.</li>
+      <li>Calling a tool by name from a dictionary is how agent frameworks dispatch tool calls.</li>
+      <li>Build with rules first. Swap in a model later by replacing only <code>decide_next</code>.</li>
+      <li>A fixed conclusion that ignores the evidence is a bug that tests should catch.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c22"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C8 ============================ -->
+<section class="chapter" id="ch23" data-num="C8" data-title="C8 · Tests" data-road="C8 · Tests and measuring" data-sub="A test set, pass and fail, a success rate, and a regression check. Your QA skills, in code.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C8</span>
+    <h2>Tests and measuring: your QA skills in code</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>write a small set of test scenarios with expected results</li>
+      <li>compute a pass rate and use <code>assert</code> as a regression alarm</li>
+      <li>explain how this becomes the evaluation harness for an agent</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>This is the lesson where you are already the expert. Chapter 9 said an agent needs a test set of reproducible failures with expected outcomes, a scorecard, and a regression suite. Testers do this every day. In code it is a <b>list of cases</b>, a <b>loop that runs each one</b>, and a <b>comparison of actual to expected</b>.</p>
+  <ul>
+    <li>Each scenario is a dictionary: the conditions (service state, SQL, DNS) and the <b>expected</b> diagnosis.</li>
+    <li>The loop calls the function under test and compares its answer to the expectation: <code>PASS</code> or <code>FAIL</code>.</li>
+    <li>The <b>task success rate</b> is passes divided by total.</li>
+    <li><code>assert condition, "message"</code> stops the program with an error if the condition is false. Put it at the end of a test run and any regression becomes impossible to miss.</li>
+  </ul>
+
+  <h3>Watch it run</h3>
+  <div class="lab"><div class="tracer" data-trace="c08"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>SCENARIOS</code> is a list of three dictionaries. Each is a test case: the setup, plus <code>"expect"</code>, the right answer.</li>
+    <li><code>diagnose(service, sql, dns)</code> is the logic being tested. DNS failure first; then "stopped and SQL down"; otherwise it escalates to a human. (Note the third rule: it knows when to say <i>I cannot tell</i>. Chapter 9's "escalation rate" metric measures that.)</li>
+    <li><code>passed = passed + (1 if ok else 0)</code> adds 1 for a pass. <code>1 if ok else 0</code> is a one-line decision.</li>
+    <li><code>{rate:.0%}</code> inside an f-string formats a fraction as a percentage.</li>
+    <li><code>assert rate == 1.0, ...</code> would crash the run with your message if any case failed. In a real project this runs every time you change anything.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">From three cases to fifty</span><p>Your notes say to measure a diagnostic agent against <b>50 or more known failure scenarios</b>, kept as a regression suite. This is the same program with more rows in <code>SCENARIOS</code>. The rows can come from your existing QA lab: every known failure mode you have reproduced becomes a case. Every time you improve the agent, you rerun the suite. If something that used to pass now fails, that is a <b>regression</b>.</p></div>
+  <div class="board note"><span class="tag">Capability versus reliability</span><p>A rule-based <code>diagnose</code> gives the same answer every time, so a single run is enough. A language-model brain does not: run each scenario several times and report how often it succeeds <b>every</b> time (reliability, <code>pass^k</code>) as well as at least once (capability, <code>pass@k</code>). See <code>reliability_demo.py</code> in Chapter 9.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Break the code on purpose: change the third scenario's <code>"expect"</code> to <code>"SQL unreachable"</code>. Run it. What is the success rate? What does the <code>assert</code> do?</li>
+    <li>Add two scenarios of your own that reflect failures you have seen. Add the right expectation for each.</li>
+    <li>Add a fourth tracked number, such as how many cases escalated to a human.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C8 in plain words</h3>
+    <ul>
+      <li>A test set is a list of cases with expected answers. Run, compare, count.</li>
+      <li>Success rate = passes ÷ total. <code>assert</code> turns a regression into an immediate failure.</li>
+      <li>Your QA experience maps directly onto evaluating agents.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c23"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C9 ============================ -->
+<section class="chapter" id="ch24" data-num="C9" data-title="C9 · Trace &amp; gate" data-road="C9 · Traces and a policy gate" data-sub="Record every step so you can reconstruct it later, and check every tool call against policy.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C9</span>
+    <h2>Traces and a policy gate</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>record a trace of what an agent did, one JSON line per step</li>
+      <li>write a gate that allows, denies or defers each tool call</li>
+      <li>explain "deny by default"</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Two production habits from Chapters 12 and 13, in a few lines:</p>
+  <ul>
+    <li><b>A policy gate.</b> The model <i>proposes</i> a tool call; your code <i>decides</i> whether it may run. Read-only tools are allowed. Risky ones need human approval. Anything unknown is denied. <b>Deny by default</b> means a tool nobody thought about is blocked, not allowed.</li>
+    <li><b>A trace.</b> A record of every proposal and decision, so when something goes wrong you can reconstruct what happened. We store each step as a small dictionary and print it as one line of JSON. Files of such lines are called <b>JSON lines</b> and are easy to search and replay.</li>
+  </ul>
+  <p>Sets, written with curly brackets and no labels (<code>{"a", "b"}</code>), are handy for "is this tool in the allowed group?" checks.</p>
+
+  <h3>Watch it run</h3>
+  <p>Watch the <code>trace</code> list grow with each call, and see how <code>verdict</code> changes.</p>
+  <div class="lab"><div class="tracer" data-trace="c09"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>READ_ONLY</code> and <code>NEEDS_APPROVAL</code> are sets of tool names. They <i>are</i> the policy, kept in one visible place.</li>
+    <li><code>run_tool(name, human_ok=False)</code> has a <b>default</b> for <code>human_ok</code>: if the caller does not say, it is False. A safe default.</li>
+    <li>The <code>if / elif / else</code> picks a verdict. The final <code>else</code> is the "deny by default" rule.</li>
+    <li><code>trace.append({...})</code> records the step number, the tool and the verdict. <code>len(trace) + 1</code> numbers each entry.</li>
+    <li>The last two calls show the key behaviours. <code>restart_service</code> is denied without approval and allowed with it. <code>delete_data</code> is denied even with <code>human_ok=True</code>, because it is on no list at all. Some actions should never be available to an automated agent, whoever clicks approve.</li>
+    <li>The list comprehension <code>[e["tool"] for e in trace if e["verdict"] == "deny"]</code> is a short way to build a list: "the tool name of every entry whose verdict was deny".</li>
+  </ul>
+
+  <div class="board warn"><span class="tag">Authorisation is policy</span><p>"The authorisation decision belongs to software policy, not model confidence." Notice that nothing in this code asks the model how sure it is. And because the gate sits in <b>your loop</b>, even a model that was tricked by prompt injection (Chapter 12) cannot call a tool the policy does not allow.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add <code>"check_dns"</code> to <code>READ_ONLY</code> and call it. Check the trace.</li>
+    <li>Make the trace record the time of each step (hint: <code>import time</code> and <code>time.strftime("%H:%M:%S")</code>).</li>
+    <li>Make the program write the trace to a file, one line per entry, using <code>open("trace.jsonl", "w")</code>. Open it in Notepad. This is how you would keep an audit log.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C9 in plain words</h3>
+    <ul>
+      <li>A gate checks every proposed tool call against policy. Unknown means deny.</li>
+      <li>A trace records each step as a line of JSON so you can reconstruct what happened.</li>
+      <li>The model proposes. Your code decides. Neither the gate nor the trace asks the model for permission.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c24"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C10 ============================ -->
+<section class="chapter" id="ch25" data-num="C10" data-title="C10 · Real world" data-road="C10 · Real models, secrets, an MCP server, and coding with AI" data-sub="Where the offline pieces meet the real world: API keys, tool schemas, an MCP server, and using AI as a coding helper.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C10</span>
+    <h2>Real models, secrets, an MCP server, and coding with AI</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>keep an API key out of your code and use it safely</li>
+      <li>describe a tool to a model with a JSON schema</li>
+      <li>read a small MCP server and know what to check before using one</li>
+      <li>use an AI assistant to help you code without losing control</li>
+    </ul>
+  </div>
+
+  <div class="board warn"><span class="tag">What is tested and what is not</span><p>I ran the offline lessons (C1 to C9, C11) here. For this lesson: the environment-variable snippet and the JSON schema I ran. The MCP server snippet I installed and ran against the current library (to list its tool and its schema), but I did not connect a real client to it. The real model call (Chapter 11) needs a paid account that I do not have, so I checked only that the library accepts those parameters. Libraries change quickly, so treat every snippet here as a starting point and check the library's own documentation.</p></div>
+
+  <h3>1. Secrets: API keys do not belong in code</h3>
+  <p>To call a real language model you need an <b>API key</b>: a long secret string that identifies and bills your account. Anyone who has it can spend your money. So the first rule: <b>never type a key into a file that you might share, upload or paste into a chat.</b> Instead, store it in an <b>environment variable</b>, a named setting held by your computer, and have the program read it:</p>
+  <div class="codewrap"><pre class="code"><code>import os
+
+api_key = os.environ.get("ANTHROPIC_API_KEY")   # reads the setting; returns None if it is missing
+if not api_key:
+    print("Set the ANTHROPIC_API_KEY environment variable first.")
+else:
+    print("Key found (not printing it).")</code></pre></div>
+  <p>In Windows PowerShell you can set it for the current window only (it disappears when you close it):</p>
+  <div class="codewrap"><pre class="code"><code>$env:ANTHROPIC_API_KEY = "paste-your-key-here"
+python my_agent.py</code></pre></div>
+  <ul>
+    <li>Never paste the key into a chat, an issue, a screenshot or a Git repository.</li>
+    <li>If a key leaks, <b>revoke it</b> in your account and create a new one.</li>
+    <li>Use the narrowest permissions and spending limits your provider offers.</li>
+  </ul>
+
+  <h3>2. Describing a tool to a model</h3>
+  <p>In Chapter 11 you saw that a model learns what tools exist from a description. That description is data, in <b>JSON Schema</b> form. For the C4 function it looks like this. It is the same information as the function's name, docstring and inputs, written for the model:</p>
+  <div class="codewrap"><pre class="code"><code>get_service_status_tool = {
+    "name": "get_service_status",
+    "description": "Return the state of one Windows service on one server. Read-only.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "server":  {"type": "string", "description": "Server name, for example EV01"},
+            "service": {"type": "string", "description": "Service name, for example Indexing"},
+        },
+        "required": ["server", "service"],
+    },
+}</code></pre></div>
+  <p>Good descriptions matter: they are the <i>only</i> thing the model knows about your tool. Write them for a stranger, then ask a model whether anything is ambiguous (Chapter 8).</p>
+
+  <h3>3. Calling a real model</h3>
+  <p>Chapter 11 shows the full loop. The shape is always: <b>build the messages, send them with the tool descriptions, check whether the reply asks for a tool, run it yourself, send the result back, repeat.</b> Your rule-based <code>decide_next</code> from C7 is replaced by that call. Everything else (tools, history, step limit, gate, trace) is the code you already have. Start with <b>read-only tools and harmless data</b>, and put a step limit and a cost limit in the loop <i>before</i> your first real run, because a loop that misbehaves spends real money.</p>
+
+  <h3>4. Your tools as an MCP server</h3>
+  <p>Chapter 10 explained MCP: write a server once and any compatible AI application can use it. With the official Python library the C4 function becomes a server almost unchanged. You add one line above the function (a "decorator", which registers it as a tool) and the library reads the name, the docstring and the typed inputs to build the schema for you:</p>
+  <div class="codewrap"><pre class="code"><code># pip install mcp
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("ev-diagnostics")
+
+@mcp.tool()
+def get_service_status(server: str, service: str) -> dict:
+    """Return the state of one Windows service on one server. Read-only."""
+    fake = {"Indexing": "Stopped", "Storage": "Running"}
+    return {"server": server, "service": service,
+            "status": fake.get(service, "Unknown"), "error": None}
+
+if __name__ == "__main__":
+    mcp.run()          # speaks MCP over standard input/output by default</code></pre></div>
+  <p>I ran this against the current library (version 2.3.0 at the time of writing). The tool was listed with its description and a schema generated from the typed inputs. Two lessons from that test:</p>
+  <div class="board warn"><span class="tag">Lesson: the library changed under my feet</span><p>My first attempt used the import that older tutorials and my own memory had: <code>from mcp.server.fastmcp import FastMCP</code>. It failed. Version 2 of the library renamed it to <code>MCPServer</code> and changed other things. This is exactly the warning in your study notes about MCP still changing. <b>Always check the version you install and read its current documentation.</b> When code from a tutorial fails with an import error, the first suspect is the version.</p></div>
+  <p>Before you use any MCP server (yours or someone else's), ask the four questions from Chapter 10: <b>who</b> can call its tools, <b>what</b> can they do, <b>where</b> can it act, and <b>what gets logged</b>. For an Enterprise Vault server: only read-only tools at first, credentials with minimal rights, and a trace of every call.</p>
+
+  <h3>5. Coding with an AI assistant, and staying the engineer</h3>
+  <p>AI assistants can write code quickly. For a learner that is a gift and a trap. The gift: you can get a working first draft of almost anything. The trap: you may end up running code you do not understand, with permissions it should not have. The habits that avoid the trap are the same habits as in the rest of this course:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Habit</th><th>What it looks like</th></tr></thead><tbody>
+    <tr><td>Ask for small pieces</td><td>One function at a time, with its inputs and output described. Not "build me an agent".</td></tr>
+    <tr><td>Ask it to explain</td><td>"Explain this code line by line for a beginner." Then check the explanation against the step-through player idea: could you predict the output?</td></tr>
+    <tr><td>Tests first</td><td>Write the expected results (C8) before asking for the code. Then you can tell whether the code is right.</td></tr>
+    <tr><td>Read before you run</td><td>Look for anything that deletes, sends, installs or touches real systems. If you do not understand a line, ask.</td></tr>
+    <tr><td>Harmless data first</td><td>Run on fake data (like <code>LAB</code>). Never on production first.</td></tr>
+    <tr><td>Read-only first</td><td>No write actions until diagnosis is measured and trusted (Chapter 14).</td></tr>
+    <tr><td>Paste the whole error</td><td>Copy the entire traceback, not a paraphrase, when asking for help. Never paste a secret.</td></tr>
+    <tr><td>Check versions</td><td>Say which library version you use. Libraries move (see above).</td></tr>
+  </tbody></table></div>
+
+  <div class="recap"><h3>Lesson C10 in plain words</h3>
+    <ul>
+      <li>Keep keys in environment variables, never in files or chats. Revoke leaked keys.</li>
+      <li>A tool is described to the model as a JSON schema. Descriptions are all the model knows.</li>
+      <li>A real model replaces only <code>decide_next</code>. Add a step limit, a cost limit and a gate first.</li>
+      <li>An MCP server can be your functions plus a decorator. Check the library version and the four security questions.</li>
+      <li>With AI help: small pieces, tests first, read before running, harmless and read-only first.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c25"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
+<!-- ============================ CODE LESSON C11 ============================ -->
+<section class="chapter" id="ch26" data-num="C11" data-title="C11 · Starter agent" data-road="C11 · The complete starter agent" data-sub="One runnable file: a lab with four failures, read-only tools, a gate, a brain, a trace and an evaluation.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C11</span>
+    <h2>The complete starter agent</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a complete agent program and name which course idea each part implements</li>
+      <li>run it, evaluate it, and watch the gate block a badly behaved brain</li>
+      <li>list the next upgrades, from easy to advanced</li>
+    </ul>
+  </div>
+
+  <p>This is the capstone in code. Every part comes from something you have learned. It is one file, about a hundred and twenty lines, and it runs on any computer with Python and nothing installed. (Saved as <code>course/examples/ev_agent.py</code>.) Read the code first, then the map below it.</p>
+
+  <div class="codewrap"><pre class="code"><code>"""Enterprise Vault diagnostic agent: a runnable starter (standard library only).
+
+Parts, matching the course:
+  Lab        a pretend environment with four failure scenarios (Chapter 9: a test set)
+  tools      read-only functions (Chapters 6 and 10)
+  gate       policy check before any tool runs (Chapter 12)
+  brain      decides the next step. Rules today; swap in an LLM later (Chapters 7, 11)
+  run_agent  the loop with a step limit and a trace (Chapters 7, 11, 13)
+  evaluate   runs every scenario and scores the agent (Chapter 9)
+"""
+import json
+
+SCENARIOS = {
+    "sql_down": {"service": "Stopped", "events": ["09:12 ERROR SQL connection timeout"],
+                 "sql": False, "dns": True, "root_cause": "SQL server unreachable"},
+    "dns_broken": {"service": "Running", "events": ["10:40 WARN Name resolution failed for sql01"],
+                   "sql": True, "dns": False, "root_cause": "DNS record for SQL host failing"},
+    "stopped_unknown": {"service": "Stopped", "events": [],
+                        "sql": True, "dns": True, "root_cause": "cause unclear: escalate to a human"},
+    "all_good": {"service": "Running", "events": [],
+                 "sql": True, "dns": True, "root_cause": "no fault found"},
+}
+
+class Lab:
+    """A pretend environment. Each method is a read-only tool."""
+    def __init__(self, scenario):
+        self.s = scenario
+
+    def get_service_status(self):
+        return {"status": self.s["service"]}
+
+    def get_event_logs(self):
+        return {"lines": list(self.s["events"])}
+
+    def test_sql_connectivity(self):
+        return {"reachable": self.s["sql"]}
+
+    def check_dns(self):
+        return {"resolved": self.s["dns"]}
+
+    def restart_service(self):                  # a WRITE tool: the gate must block it
+        return {"restarted": True}
+
+READ_ONLY = {"get_service_status", "get_event_logs", "test_sql_connectivity", "check_dns"}
+
+def gate(tool):
+    """Allow read-only tools. Everything else is denied (add human approval later)."""
+    return "allow" if tool in READ_ONLY else "deny"
+
+def brain(history):
+    """Decide the next step from what has been seen so far. Returns (kind, value)."""
+    seen = {tool: result for tool, result in history}
+    if "get_service_status" not in seen:
+        return "tool", "get_service_status"
+    if "get_event_logs" not in seen:
+        return "tool", "get_event_logs"
+    service = seen["get_service_status"]["status"]
+    lines = seen["get_event_logs"]["lines"]
+    if any("Name resolution" in line for line in lines) and "check_dns" not in seen:
+        return "tool", "check_dns"
+    if any("SQL" in line for line in lines) and "test_sql_connectivity" not in seen:
+        return "tool", "test_sql_connectivity"
+    if "check_dns" in seen and not seen["check_dns"]["resolved"]:
+        return "final", "DNS record for SQL host failing"
+    if "test_sql_connectivity" in seen and not seen["test_sql_connectivity"]["reachable"]:
+        return "final", "SQL server unreachable"
+    if service == "Stopped":
+        return "final", "cause unclear: escalate to a human"
+    return "final", "no fault found"
+
+def eager_brain(history):
+    """A badly behaved brain: after diagnosing it tries to restart the service on its own."""
+    kind, value = brain(history)
+    if kind == "final" and not any(tool == "restart_service" for tool, _ in history):
+        return "tool", "restart_service"
+    return kind, value
+
+def run_agent(lab, brain_fn=brain, max_steps=8):
+    history, trace, denied = [], [], 0
+    for step in range(1, max_steps + 1):
+        kind, value = brain_fn(history)
+        if kind == "final":
+            trace.append({"step": step, "final": value})
+            return value, trace, denied
+        verdict = gate(value)
+        trace.append({"step": step, "tool": value, "verdict": verdict})
+        if verdict == "allow":
+            history.append((value, getattr(lab, value)()))
+        else:
+            denied += 1
+            history.append((value, {"error": "blocked by policy"}))
+    return "step limit reached", trace, denied
+
+def evaluate(brain_fn=brain):
+    passed, total_steps, blocked = 0, 0, 0
+    for name, scenario in SCENARIOS.items():
+        answer, trace, denied = run_agent(Lab(scenario), brain_fn)
+        ok = answer == scenario["root_cause"]
+        passed += ok
+        total_steps += len(trace)
+        blocked += denied
+        print(f"{'PASS' if ok else 'FAIL'}  {name:&lt;16} steps={len(trace)}  answer={answer}")
+    n = len(SCENARIOS)
+    print(f"success {passed}/{n}  avg steps {total_steps / n:.1f}  blocked write attempts {blocked}")
+
+if __name__ == "__main__":
+    print("--- one run, with its trace ---")
+    answer, trace, _ = run_agent(Lab(SCENARIOS["sql_down"]))
+    for entry in trace:
+        print(json.dumps(entry))
+    print("Answer:", answer)
+    print("\n--- evaluation: careful brain ---")
+    evaluate(brain)
+    print("\n--- evaluation: eager brain (tries to restart on its own) ---")
+    evaluate(eager_brain)</code></pre></div>
+
+  <h3>What it prints</h3>
+  <p>This is the actual output when I ran it:</p>
+  <div class="codewrap"><pre class="code"><code>--- one run, with its trace ---
+{"step": 1, "tool": "get_service_status", "verdict": "allow"}
+{"step": 2, "tool": "get_event_logs", "verdict": "allow"}
+{"step": 3, "tool": "test_sql_connectivity", "verdict": "allow"}
+{"step": 4, "final": "SQL server unreachable"}
+Answer: SQL server unreachable
+
+--- evaluation: careful brain ---
+PASS  sql_down         steps=4  answer=SQL server unreachable
+PASS  dns_broken       steps=4  answer=DNS record for SQL host failing
+PASS  stopped_unknown  steps=3  answer=cause unclear: escalate to a human
+PASS  all_good         steps=3  answer=no fault found
+success 4/4  avg steps 3.5  blocked write attempts 0
+
+--- evaluation: eager brain (tries to restart on its own) ---
+PASS  sql_down         steps=5  answer=SQL server unreachable
+PASS  dns_broken       steps=5  answer=DNS record for SQL host failing
+PASS  stopped_unknown  steps=4  answer=cause unclear: escalate to a human
+PASS  all_good         steps=4  answer=no fault found
+success 4/4  avg steps 4.5  blocked write attempts 4</code></pre></div>
+
+  <h3>How the parts map to the course</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>In the code</th><th>What it is</th><th>Course idea</th></tr></thead><tbody>
+    <tr><td><code>SCENARIOS</code></td><td>four controlled failures with the correct root cause</td><td>a test set (Ch 9, C8)</td></tr>
+    <tr><td><code>class Lab</code></td><td>a pretend environment whose methods are tools</td><td>environment and tools (Ch 7, 8, C4)</td></tr>
+    <tr><td><code>READ_ONLY</code>, <code>gate()</code></td><td>deny by default; only read-only tools run</td><td>least privilege, policy (Ch 12, C9)</td></tr>
+    <tr><td><code>brain()</code></td><td>chooses the next step from history, or concludes</td><td>the decision step; where an LLM goes (Ch 7, 11, C7)</td></tr>
+    <tr><td><code>run_agent()</code></td><td>the loop, with a step limit and a trace</td><td>the agent loop (Ch 7, 11, C3)</td></tr>
+    <tr><td><code>evaluate()</code></td><td>runs every scenario, reports success and cost-like numbers</td><td>scorecard, regression (Ch 9, C8)</td></tr>
+    <tr><td><code>eager_brain()</code></td><td>a brain that tries to restart the service itself</td><td>why the gate must not trust the model (Ch 12)</td></tr>
+  </tbody></table></div>
+
+  <div class="board note"><span class="tag">The most important thing in the output</span><p>Look at the last line: the badly behaved brain made <b>four attempts to restart a production service</b>, and the gate blocked every one, while the diagnoses stayed correct. Nothing in the gate needed to know the brain was misbehaving. That is the point of putting authority in software policy, and you can verify it in thirty seconds by running the file.</p></div>
+
+  <h3>Fixes since C7</h3>
+  <ul>
+    <li>The conclusion is now <b>computed from the evidence</b> (the <code>return "final", ...</code> lines), not printed as fixed text.</li>
+    <li>There are scenarios where the right answer is "cause unclear: escalate to a human" and "no fault found". A good agent knows when to stop and when to ask.</li>
+    <li>Results are scored against known answers, so a regression shows up as <code>FAIL</code>.</li>
+  </ul>
+
+  <h3>Upgrades, from easy to advanced</h3>
+  <p>Each one maps to a skill level and a chapter. Do them in order, and run the evaluation after every change.</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>#</th><th>Upgrade</th><th>What you learn</th></tr></thead><tbody>
+    <tr><td>1</td><td>Add a fifth scenario from a real failure you have seen</td><td>building a test set from your QA lab</td></tr>
+    <tr><td>2</td><td>Add a tool, <code>check_disk_space</code>, to <code>Lab</code> and <code>READ_ONLY</code></td><td>tool design and permissions</td></tr>
+    <tr><td>3</td><td>Write the trace to <code>trace.jsonl</code> with timestamps</td><td>observability (C9)</td></tr>
+    <tr><td>4</td><td>Move <code>SCENARIOS</code> into a JSON file and load it</td><td>files and JSON (C5)</td></tr>
+    <tr><td>5</td><td>Add human approval: for <code>restart_service</code>, ask <code>input("Approve? y/n ")</code> instead of always denying</td><td>an approval boundary (Ch 12)</td></tr>
+    <tr><td>6</td><td>Count tool calls per run as "cost", and add a hard limit</td><td>budgets (Ch 8, 9)</td></tr>
+    <tr><td>7</td><td>Replace <code>brain()</code> with a real model call (Chapter 11), keeping everything else</td><td>real model, same loop</td></tr>
+    <tr><td>8</td><td>Run each scenario ten times and report pass@k and pass^k</td><td>capability versus reliability (Ch 9)</td></tr>
+    <tr><td>9</td><td>Expose the tools through an MCP server (C10)</td><td>MCP (Ch 10)</td></tr>
+    <tr><td>10</td><td>Connect to a real lab, read-only, with minimal credentials</td><td>production thinking (Ch 12, 13)</td></tr>
+  </tbody></table></div>
+  <div class="board note"><span class="tag">Honest checkpoint</span><p>If you can read this file and say what every part does, and you have done upgrades 1 to 3 yourself, you are at <b>skill level 4 (Implement)</b>. With 5 to 8 you are into levels 5 and 6 (<b>Debug and Evaluate</b>). Upgrades 9 and 10 take you toward 7 and 8. That is the realistic path the capstone chapter describes, and now it is a list of steps you can actually take.</p></div>
+
+  <h3>Where to go from here</h3>
+  <ul>
+    <li>Do the "Your turn" tasks you skipped in C1 to C9. They are the real learning.</li>
+    <li>Revisit Chapter 14's design workbook and compare its brief with this program. Which of your choices are not yet in the code?</li>
+    <li>Look at the PhiloAgents repository (Chapter 13) and find the same parts: tools, graph, state, tracing, evaluation, in a bigger form.</li>
+  </ul>
+
+  <div class="recap"><h3>Lesson C11 in plain words</h3>
+    <ul>
+      <li>A complete agent is a few simple parts: scenarios, tools, a gate, a brain, a loop, an evaluation.</li>
+      <li>The gate protected the system from a misbehaving brain without needing to know it was misbehaving.</li>
+      <li>You improve it in small steps, measuring after each. Replace the brain last.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c26"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
+
+
 <footer>
   <p>This course is built from public talks and from your own study notes. Chapters 1 to 4 draw on Andrej Karpathy's "Intro to Large Language Models" and the Stanford CS229 lecture "Building Large Language Models". Chapter 5 and 6 add Insop Song's Stanford webinar "Agentic AI: A Progression of Language Model Usage". Chapters 7 to 9 use Barry Zhang's "How We Build Effective Agents" (Anthropic) and Sayash Kapoor's "Building and evaluating AI Agents". Chapter 10 uses Mahesh Murag's MCP workshop (Anthropic). Chapter 11 uses Kam Lasater's "Let's Build An Agent from Scratch". Chapter 13 uses the PhiloAgents course videos by Miguel Otero Pedrido and Paul Iusztin. Explanations, analogies and demos are rewritten for beginners. Numbers in demos marked "illustrative" are invented for teaching.</p>
   <p><a href="https://www.youtube.com/watch?v=zjkBMFhNj_g">Intro to LLMs</a> · <a href="https://www.youtube.com/watch?v=9vM4p9NN0Ts">Stanford CS229</a> · <a href="https://www.youtube.com/watch?v=kJLiOGle3Lw">Stanford Webinar</a> · <a href="https://www.youtube.com/watch?v=d5EltXhbcfA">Evaluating agents</a> · <a href="https://www.youtube.com/watch?v=D7_ipDqhtwk">Effective agents</a> · <a href="https://www.youtube.com/watch?v=kQmXtrmQ5Zg">MCP workshop</a> · <a href="https://www.youtube.com/watch?v=xzXdLRUyjUg">Agent from scratch</a> · <a href="https://www.youtube.com/playlist?list=PLacQJwuclt_sV-tfZmpT1Ov6jldHl30NR">PhiloAgents</a></p>
@@ -2274,6 +3228,7 @@ if __name__ == "__main__":
 
 </div>
 
+<script>window.TRACES={"c01": {"code": ["# Lesson C1: your first program. Facts about one Enterprise Vault server.", "server = \"EV01\"", "service = \"Indexing\"", "status = \"Stopped\"", "minutes_down = 42", "", "print(\"Checking\", server)", "", "message = f\"{service} on {server} is {status}\"", "print(message)", "", "hours_down = minutes_down / 60", "print(\"That is\", round(hours_down, 2), \"hours\")", "", "is_urgent = minutes_down > 30", "print(\"Urgent?\", is_urgent)"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 3, "f": "main", "v": [["server", "'EV01'"]], "o": ""}, {"l": 4, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"]], "o": ""}, {"l": 5, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"]], "o": ""}, {"l": 7, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"]], "o": ""}, {"l": 9, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"]], "o": "Checking EV01\n"}, {"l": 10, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"]], "o": "Checking EV01\n"}, {"l": 12, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"]], "o": "Checking EV01\nIndexing on EV01 is Stopped\n"}, {"l": 13, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"], ["hours_down", "0.7"]], "o": "Checking EV01\nIndexing on EV01 is Stopped\n"}, {"l": 15, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"], ["hours_down", "0.7"]], "o": "Checking EV01\nIndexing on EV01 is Stopped\nThat is 0.7 hours\n"}, {"l": 16, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"], ["hours_down", "0.7"], ["is_urgent", "True"]], "o": "Checking EV01\nIndexing on EV01 is Stopped\nThat is 0.7 hours\n"}, {"l": null, "f": "main", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["status", "'Stopped'"], ["minutes_down", "42"], ["message", "'Indexing on EV01 is Stopped'"], ["hours_down", "0.7"], ["is_urgent", "True"]], "o": "Checking EV01\nIndexing on EV01 is Stopped\nThat is 0.7 hours\nUrgent? True\n"}]}, "c02": {"code": ["# Lesson C2: lists and dictionaries. A tool result is just a dictionary.", "servers = [\"EV01\", \"EV02\", \"SQL01\"]", "servers.append(\"EV03\")", "print(len(servers), \"servers; first is\", servers[0])", "", "record = {\"server\": \"EV01\", \"service\": \"Indexing\", \"status\": \"Stopped\", \"error\": None}", "print(\"Status:\", record[\"status\"])", "record[\"checked_at\"] = \"09:14\"", "", "fleet = [", "    {\"server\": \"EV01\", \"status\": \"Stopped\"},", "    {\"server\": \"EV02\", \"status\": \"Running\"},", "    {\"server\": \"EV03\", \"status\": \"Stopped\"},", "]", "stopped = []", "for item in fleet:", "    if item[\"status\"] == \"Stopped\":", "        stopped.append(item[\"server\"])", "print(\"Stopped servers:\", stopped)", "print(record)"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 3, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01']"]], "o": ""}, {"l": 4, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"]], "o": ""}, {"l": 6, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"]], "o": "4 servers; first is EV01\n"}, {"l": 7, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "4 servers; first is EV01\n"}, {"l": 8, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 11, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 12, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 13, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 10, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 15, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 16, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "[]"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 17, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "[]"], ["item", "{'server': 'EV01', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 18, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "[]"], ["item", "{'server': 'EV01', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 16, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01']"], ["item", "{'server': 'EV01', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 17, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01']"], ["item", "{'server': 'EV02', 'status': 'Running'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 16, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01']"], ["item", "{'server': 'EV02', 'status': 'Running'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 17, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 18, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 16, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01', 'EV03']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 19, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01', 'EV03']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\n"}, {"l": 20, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01', 'EV03']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\nStopped servers: ['EV01', 'EV03']\n"}, {"l": null, "f": "main", "v": [["servers", "['EV01', 'EV02', 'SQL01', 'EV03']"], ["record", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_..."], ["fleet", "[{'server': 'EV01', 'status': 'Stopped'}, {'server': 'EV02', 'status': 'Running'}, {'se..."], ["stopped", "['EV01', 'EV03']"], ["item", "{'server': 'EV03', 'status': 'Stopped'}"]], "o": "4 servers; first is EV01\nStatus: Stopped\nStopped servers: ['EV01', 'EV03']\n{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None, 'checked_at': '09:14'}\n"}]}, "c03": {"code": ["# Lesson C3: decisions and loops. Reading an event log, then a retry loop.", "events = [", "    \"09:10 INFO service started\",", "    \"09:12 ERROR SQL connection timeout\",", "    \"09:12 ERROR indexing task aborted\",", "    \"09:13 INFO service stopped\",", "]", "", "errors = 0", "for line in events:", "    if \"ERROR\" in line:", "        errors = errors + 1", "        print(\"Found:\", line)", "", "if errors >= 2:", "    print(\"Several errors: likely a real problem\")", "elif errors == 1:", "    print(\"One error: keep watching\")", "else:", "    print(\"No errors\")", "", "# A while loop repeats until a condition is false: the shape of every agent loop.", "attempts = 0", "connected = False", "while attempts < 3 and not connected:", "    attempts = attempts + 1", "    print(\"Connection attempt\", attempts)", "    if attempts == 3:", "        connected = True", "print(\"Connected after\", attempts, \"attempts\")"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 9, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."]], "o": ""}, {"l": 10, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "0"]], "o": ""}, {"l": 11, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "0"], ["line", "'09:10 INFO service started'"]], "o": ""}, {"l": 10, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "0"], ["line", "'09:10 INFO service started'"]], "o": ""}, {"l": 11, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "0"], ["line", "'09:12 ERROR SQL connection timeout'"]], "o": ""}, {"l": 12, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "0"], ["line", "'09:12 ERROR SQL connection timeout'"]], "o": ""}, {"l": 13, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "1"], ["line", "'09:12 ERROR SQL connection timeout'"]], "o": ""}, {"l": 10, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "1"], ["line", "'09:12 ERROR SQL connection timeout'"]], "o": "Found: 09:12 ERROR SQL connection timeout\n"}, {"l": 11, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "1"], ["line", "'09:12 ERROR indexing task aborted'"]], "o": "Found: 09:12 ERROR SQL connection timeout\n"}, {"l": 12, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "1"], ["line", "'09:12 ERROR indexing task aborted'"]], "o": "Found: 09:12 ERROR SQL connection timeout\n"}, {"l": 13, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:12 ERROR indexing task aborted'"]], "o": "Found: 09:12 ERROR SQL connection timeout\n"}, {"l": 10, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:12 ERROR indexing task aborted'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\n"}, {"l": 11, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\n"}, {"l": 10, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\n"}, {"l": 15, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\n"}, {"l": 16, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\n"}, {"l": 23, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\n"}, {"l": 24, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "0"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\n"}, {"l": 25, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "0"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\n"}, {"l": 26, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "0"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\n"}, {"l": 27, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "1"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\n"}, {"l": 28, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "1"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\n"}, {"l": 25, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "1"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\n"}, {"l": 26, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "1"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\n"}, {"l": 27, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "2"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\n"}, {"l": 28, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "2"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\n"}, {"l": 25, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "2"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\n"}, {"l": 26, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "2"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\n"}, {"l": 27, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\n"}, {"l": 28, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\nConnection attempt 3\n"}, {"l": 29, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "False"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\nConnection attempt 3\n"}, {"l": 25, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "True"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\nConnection attempt 3\n"}, {"l": 30, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "True"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\nConnection attempt 3\n"}, {"l": null, "f": "main", "v": [["events", "['09:10 INFO service started', '09:12 ERROR SQL connection timeout', '09:12 ERROR index..."], ["errors", "2"], ["line", "'09:13 INFO service stopped'"], ["attempts", "3"], ["connected", "True"]], "o": "Found: 09:12 ERROR SQL connection timeout\nFound: 09:12 ERROR indexing task aborted\nSeveral errors: likely a real problem\nConnection attempt 1\nConnection attempt 2\nConnection attempt 3\nConnected after 3 attempts\n"}]}, "c04": {"code": ["# Lesson C4: functions. A tool for an agent is just a function with a clear job.", "def get_service_status(server, service):", "    \"\"\"Return the state of one service on one server (a pretend lookup).\"\"\"", "    known = {\"Indexing\": \"Stopped\", \"Storage\": \"Running\"}", "    status = known.get(service, \"Unknown\")", "    return {\"server\": server, \"service\": service, \"status\": status, \"error\": None}", "", "def summarise(result):", "    return f\"{result['service']} on {result['server']}: {result['status']}\"", "", "first = get_service_status(\"EV01\", \"Indexing\")", "print(first)", "print(summarise(first))", "print(summarise(get_service_status(\"EV01\", \"Storage\")))", "print(summarise(get_service_status(\"EV01\", \"Search\")))"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 8, "f": "main", "v": [], "o": ""}, {"l": 11, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Indexing'"]], "o": ""}, {"l": 5, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"]], "o": ""}, {"l": 6, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Indexing'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"], ["status", "'Stopped'"]], "o": ""}, {"l": 12, "f": "main", "v": [["first", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": ""}, {"l": 13, "f": "main", "v": [["first", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\n"}, {"l": 9, "f": "summarise()", "v": [["result", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\n"}, {"l": 14, "f": "main", "v": [["first", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\n"}, {"l": 4, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Storage'"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\n"}, {"l": 5, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Storage'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\n"}, {"l": 6, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Storage'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"], ["status", "'Running'"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\n"}, {"l": 9, "f": "summarise()", "v": [["result", "{'server': 'EV01', 'service': 'Storage', 'status': 'Running', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\n"}, {"l": 15, "f": "main", "v": [["first", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\n"}, {"l": 4, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Search'"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\n"}, {"l": 5, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Search'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\n"}, {"l": 6, "f": "get_service_status()", "v": [["server", "'EV01'"], ["service", "'Search'"], ["known", "{'Indexing': 'Stopped', 'Storage': 'Running'}"], ["status", "'Unknown'"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\n"}, {"l": 9, "f": "summarise()", "v": [["result", "{'server': 'EV01', 'service': 'Search', 'status': 'Unknown', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\n"}, {"l": null, "f": "main", "v": [["first", "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}"]], "o": "{'server': 'EV01', 'service': 'Indexing', 'status': 'Stopped', 'error': None}\nIndexing on EV01: Stopped\nStorage on EV01: Running\nSearch on EV01: Unknown\n"}]}, "c05": {"code": ["# Lesson C5: errors, validation and JSON. Reject bad input; return errors as data.", "import json", "", "def test_sql_connectivity(server):", "    if not server.startswith(\"EV\"):", "        raise ValueError(f\"unknown server: {server}\")", "    reachable = server != \"EV03\"", "    return {\"server\": server, \"reachable\": reachable, \"error\": None if reachable else \"timeout after 15s\"}", "", "for name in [\"EV01\", \"EV03\", \"WEB9\"]:", "    try:", "        result = test_sql_connectivity(name)", "    except ValueError as problem:", "        result = {\"server\": name, \"reachable\": None, \"error\": str(problem)}", "    text = json.dumps(result)", "    print(text)", "", "back = json.loads(text)", "print(\"Reachable?\", back[\"reachable\"], \"| error:\", back[\"error\"])"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "main", "v": [], "o": ""}, {"l": 10, "f": "main", "v": [], "o": ""}, {"l": 11, "f": "main", "v": [["name", "'EV01'"]], "o": ""}, {"l": 12, "f": "main", "v": [["name", "'EV01'"]], "o": ""}, {"l": 5, "f": "test_sql_connectivity()", "v": [["server", "'EV01'"]], "o": ""}, {"l": 7, "f": "test_sql_connectivity()", "v": [["server", "'EV01'"]], "o": ""}, {"l": 8, "f": "test_sql_connectivity()", "v": [["server", "'EV01'"], ["reachable", "True"]], "o": ""}, {"l": 15, "f": "main", "v": [["name", "'EV01'"], ["result", "{'server': 'EV01', 'reachable': True, 'error': None}"]], "o": ""}, {"l": 16, "f": "main", "v": [["name", "'EV01'"], ["result", "{'server': 'EV01', 'reachable': True, 'error': None}"], ["text", "'{\"server\": \"EV01\", \"reachable\": true, \"error\": null}'"]], "o": ""}, {"l": 10, "f": "main", "v": [["name", "'EV01'"], ["result", "{'server': 'EV01', 'reachable': True, 'error': None}"], ["text", "'{\"server\": \"EV01\", \"reachable\": true, \"error\": null}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 11, "f": "main", "v": [["name", "'EV03'"], ["result", "{'server': 'EV01', 'reachable': True, 'error': None}"], ["text", "'{\"server\": \"EV01\", \"reachable\": true, \"error\": null}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 12, "f": "main", "v": [["name", "'EV03'"], ["result", "{'server': 'EV01', 'reachable': True, 'error': None}"], ["text", "'{\"server\": \"EV01\", \"reachable\": true, \"error\": null}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 5, "f": "test_sql_connectivity()", "v": [["server", "'EV03'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 7, "f": "test_sql_connectivity()", "v": [["server", "'EV03'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 8, "f": "test_sql_connectivity()", "v": [["server", "'EV03'"], ["reachable", "False"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 15, "f": "main", "v": [["name", "'EV03'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV01\", \"reachable\": true, \"error\": null}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 16, "f": "main", "v": [["name", "'EV03'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n"}, {"l": 10, "f": "main", "v": [["name", "'EV03'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 11, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 12, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 5, "f": "test_sql_connectivity()", "v": [["server", "'WEB9'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 6, "f": "test_sql_connectivity()", "v": [["server", "'WEB9'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 13, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 14, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'EV03', 'reachable': False, 'error': 'timeout after 15s'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"], ["problem", "ValueError()"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 15, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 16, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n"}, {"l": 10, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}\n"}, {"l": 18, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}'"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}\n"}, {"l": 19, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}'"], ["back", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}\n"}, {"l": null, "f": "main", "v": [["name", "'WEB9'"], ["result", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"], ["text", "'{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}'"], ["back", "{'server': 'WEB9', 'reachable': None, 'error': 'unknown server: WEB9'}"]], "o": "{\"server\": \"EV01\", \"reachable\": true, \"error\": null}\n{\"server\": \"EV03\", \"reachable\": false, \"error\": \"timeout after 15s\"}\n{\"server\": \"WEB9\", \"reachable\": null, \"error\": \"unknown server: WEB9\"}\nReachable? None | error: unknown server: WEB9\n"}]}, "c06": {"code": ["# Lesson C6: a class bundles data and the things you can do with it. Agent state.", "class Investigation:", "    def __init__(self, goal):", "        self.goal = goal", "        self.evidence = []", "        self.hypothesis = \"none yet\"", "", "    def add_evidence(self, fact, new_hypothesis=None):", "        self.evidence.append(fact)", "        if new_hypothesis:", "            self.hypothesis = new_hypothesis", "", "    def report(self):", "        lines = [f\"Goal: {self.goal}\"]", "        for number, fact in enumerate(self.evidence, start=1):", "            lines.append(f\"  {number}. {fact}\")", "        lines.append(f\"Hypothesis: {self.hypothesis}\")", "        return \"\\n\".join(lines)", "", "case = Investigation(\"Why is indexing down?\")", "case.add_evidence(\"Indexing service is Stopped\", \"the service stopped\")", "case.add_evidence(\"Event log: SQL timeout at 09:12\", \"SQL connection problem\")", "print(case.report())"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 2, "f": "Investigation()", "v": [], "o": ""}, {"l": 3, "f": "Investigation()", "v": [], "o": ""}, {"l": 8, "f": "Investigation()", "v": [], "o": ""}, {"l": 13, "f": "Investigation()", "v": [], "o": ""}, {"l": 20, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "__init__()", "v": [["self", "Investigation()"], ["goal", "'Why is indexing down?'"]], "o": ""}, {"l": 5, "f": "__init__()", "v": [["self", "Investigation(goal='Why is indexing down?')"], ["goal", "'Why is indexing down?'"]], "o": ""}, {"l": 6, "f": "__init__()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=[])"], ["goal", "'Why is indexing down?'"]], "o": ""}, {"l": 21, "f": "main", "v": [["case", "Investigation(goal='Why is indexing down?', evidence=[], hypothesis='none yet')"]], "o": ""}, {"l": 9, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=[], hypothesis='none yet')"], ["fact", "'Indexing service is Stopped'"], ["new_hypothesis", "'the service stopped'"]], "o": ""}, {"l": 10, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped'], hypothesis='none yet')"], ["fact", "'Indexing service is Stopped'"], ["new_hypothesis", "'the service stopped'"]], "o": ""}, {"l": 11, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped'], hypothesis='none yet')"], ["fact", "'Indexing service is Stopped'"], ["new_hypothesis", "'the service stopped'"]], "o": ""}, {"l": 22, "f": "main", "v": [["case", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped'], hypothesis='the service stopped')"]], "o": ""}, {"l": 9, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped'], hypothesis='the service stopped')"], ["fact", "'Event log: SQL timeout at 09:12'"], ["new_hypothesis", "'SQL connection problem'"]], "o": ""}, {"l": 10, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='the service stopped')"], ["fact", "'Event log: SQL timeout at 09:12'"], ["new_hypothesis", "'SQL connection problem'"]], "o": ""}, {"l": 11, "f": "add_evidence()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='the service stopped')"], ["fact", "'Event log: SQL timeout at 09:12'"], ["new_hypothesis", "'SQL connection problem'"]], "o": ""}, {"l": 23, "f": "main", "v": [["case", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"]], "o": ""}, {"l": 14, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"]], "o": ""}, {"l": 15, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?']"]], "o": ""}, {"l": 16, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?']"], ["number", "1"], ["fact", "'Indexing service is Stopped'"]], "o": ""}, {"l": 15, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?', '  1. Indexing service is Stopped']"], ["number", "1"], ["fact", "'Indexing service is Stopped'"]], "o": ""}, {"l": 16, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?', '  1. Indexing service is Stopped']"], ["number", "2"], ["fact", "'Event log: SQL timeout at 09:12'"]], "o": ""}, {"l": 15, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?', '  1. Indexing service is Stopped', '  2. Event log: SQ..."], ["number", "2"], ["fact", "'Event log: SQL timeout at 09:12'"]], "o": ""}, {"l": 17, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?', '  1. Indexing service is Stopped', '  2. Event log: SQ..."], ["number", "2"], ["fact", "'Event log: SQL timeout at 09:12'"]], "o": ""}, {"l": 18, "f": "report()", "v": [["self", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"], ["lines", "['Goal: Why is indexing down?', '  1. Indexing service is Stopped', '  2. Event log: SQ..."], ["number", "2"], ["fact", "'Event log: SQL timeout at 09:12'"]], "o": ""}, {"l": null, "f": "main", "v": [["case", "Investigation(goal='Why is indexing down?', evidence=['Indexing service is Stopped', 'Event log: SQL timeout at 09:12'], hypothesis='SQL connection problem')"]], "o": "Goal: Why is indexing down?\n  1. Indexing service is Stopped\n  2. Event log: SQL timeout at 09:12\nHypothesis: SQL connection problem\n"}]}, "c07": {"code": ["# Lesson C7: a pretend Enterprise Vault lab and a rule-based diagnosis loop (no AI yet).", "LAB = {", "    \"service_status\": \"Stopped\",", "    \"event_log\": [\"09:12 ERROR SQL connection timeout\"],", "    \"sql_reachable\": False,", "    \"dns_ok\": True,", "}", "", "def get_service_status():", "    return {\"status\": LAB[\"service_status\"]}", "", "def get_event_logs():", "    return {\"lines\": LAB[\"event_log\"]}", "", "def test_sql_connectivity():", "    return {\"reachable\": LAB[\"sql_reachable\"]}", "", "def check_dns():", "    return {\"resolved\": LAB[\"dns_ok\"]}", "", "TOOLS = {\"get_service_status\": get_service_status, \"get_event_logs\": get_event_logs,", "         \"test_sql_connectivity\": test_sql_connectivity, \"check_dns\": check_dns}", "", "def decide_next(history):", "    \"\"\"The 'brain'. Today it is rules. Later an LLM replaces this one function.\"\"\"", "    if not history:", "        return \"get_service_status\"", "    last_tool, last_result = history[-1]", "    if last_tool == \"get_service_status\" and last_result[\"status\"] == \"Stopped\":", "        return \"get_event_logs\"", "    if last_tool == \"get_event_logs\" and any(\"SQL\" in line for line in last_result[\"lines\"]):", "        return \"test_sql_connectivity\"", "    if last_tool == \"test_sql_connectivity\" and not last_result[\"reachable\"]:", "        return \"check_dns\"", "    return None", "", "history = []", "while True:", "    tool = decide_next(history)", "    if tool is None:", "        break", "    result = TOOLS[tool]()", "    history.append((tool, result))", "    print(\"ran\", tool, \"->\", result)", "", "print(\"Diagnosis: SQL server unreachable; DNS is fine.\")"], "steps": [{"l": 3, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "main", "v": [], "o": ""}, {"l": 5, "f": "main", "v": [], "o": ""}, {"l": 6, "f": "main", "v": [], "o": ""}, {"l": 2, "f": "main", "v": [], "o": ""}, {"l": 9, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 12, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 15, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 18, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 21, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 22, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 21, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."]], "o": ""}, {"l": 24, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"]], "o": ""}, {"l": 37, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"]], "o": ""}, {"l": 38, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[]"]], "o": ""}, {"l": 39, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[]"]], "o": ""}, {"l": 26, "f": "decide_next()", "v": [["history", "[]"]], "o": ""}, {"l": 27, "f": "decide_next()", "v": [["history", "[]"]], "o": ""}, {"l": 40, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[]"], ["tool", "'get_service_status'"]], "o": ""}, {"l": 42, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[]"], ["tool", "'get_service_status'"]], "o": ""}, {"l": 10, "f": "get_service_status()", "v": [], "o": ""}, {"l": 43, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[]"], ["tool", "'get_service_status'"], ["result", "{'status': 'Stopped'}"]], "o": ""}, {"l": 44, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_service_status'"], ["result", "{'status': 'Stopped'}"]], "o": ""}, {"l": 38, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_service_status'"], ["result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 39, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_service_status'"], ["result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 26, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'})]"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 28, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'})]"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 29, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'})]"], ["last_tool", "'get_service_status'"], ["last_result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 30, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'})]"], ["last_tool", "'get_service_status'"], ["last_result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 40, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_event_logs'"], ["result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 42, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_event_logs'"], ["result", "{'status': 'Stopped'}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 13, "f": "get_event_logs()", "v": [], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 43, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'})]"], ["tool", "'get_event_logs'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 44, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'get_event_logs'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\n"}, {"l": 38, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'get_event_logs'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 39, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'get_event_logs'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 26, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 28, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 29, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'get_event_logs'"], ["last_result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 31, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'get_event_logs'"], ["last_result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 31, "f": "<genexpr>()", "v": [[".0", "<list_iterator object at 0x7f5eea201480>"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 32, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'get_event_logs'"], ["last_result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 40, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 42, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'lines': ['09:12 ERROR SQL connection timeout']}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 16, "f": "test_sql_connectivity()", "v": [], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 43, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 44, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\n"}, {"l": 38, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 39, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'test_sql_connectivity'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 26, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 28, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 29, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'test_sql_connectivity'"], ["last_result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 31, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'test_sql_connectivity'"], ["last_result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 33, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'test_sql_connectivity'"], ["last_result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 34, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'test_sql_connectivity'"], ["last_result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 40, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 42, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'reachable': False}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 19, "f": "check_dns()", "v": [], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 43, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 44, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\n"}, {"l": 38, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 39, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "'check_dns'"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 26, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 28, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 29, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'check_dns'"], ["last_result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 31, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'check_dns'"], ["last_result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 33, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'check_dns'"], ["last_result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 35, "f": "decide_next()", "v": [["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["last_tool", "'check_dns'"], ["last_result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 40, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "None"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 41, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "None"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": 46, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "None"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\n"}, {"l": null, "f": "main", "v": [["LAB", "{'service_status': 'Stopped', 'event_log': ['09:12 ERROR SQL connection timeout'], 'sql..."], ["TOOLS", "{'get_service_status', 'get_event_logs', 'test_sql_connectivity', 'check_dns'}  (tool functions)"], ["history", "[('get_service_status', {'status': 'Stopped'}), ('get_event_logs', {'lines': ['09:12 ER..."], ["tool", "None"], ["result", "{'resolved': True}"]], "o": "ran get_service_status -> {'status': 'Stopped'}\nran get_event_logs -> {'lines': ['09:12 ERROR SQL connection timeout']}\nran test_sql_connectivity -> {'reachable': False}\nran check_dns -> {'resolved': True}\nDiagnosis: SQL server unreachable; DNS is fine.\n"}]}, "c08": {"code": ["# Lesson C8: tests and evaluation. Check the agent against known failure scenarios.", "SCENARIOS = [", "    {\"name\": \"stopped, SQL down\", \"service\": \"Stopped\", \"sql\": False, \"dns\": True,  \"expect\": \"SQL unreachable\"},", "    {\"name\": \"running, DNS broken\", \"service\": \"Running\", \"sql\": True,  \"dns\": False, \"expect\": \"DNS failure\"},", "    {\"name\": \"stopped, all healthy\", \"service\": \"Stopped\", \"sql\": True,  \"dns\": True,  \"expect\": \"needs human\"},", "]", "", "def diagnose(service, sql, dns):", "    if not dns:", "        return \"DNS failure\"", "    if service == \"Stopped\" and not sql:", "        return \"SQL unreachable\"", "    return \"needs human\"", "", "passed = 0", "for case in SCENARIOS:", "    answer = diagnose(case[\"service\"], case[\"sql\"], case[\"dns\"])", "    ok = answer == case[\"expect\"]", "    passed = passed + (1 if ok else 0)", "    print(\"PASS\" if ok else \"FAIL\", \"-\", case[\"name\"], \"->\", answer)", "", "rate = passed / len(SCENARIOS)", "print(f\"Task success rate: {rate:.0%} ({passed}/{len(SCENARIOS)})\")", "assert rate == 1.0, \"a regression: something that used to pass now fails\""], "steps": [{"l": 3, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "main", "v": [], "o": ""}, {"l": 5, "f": "main", "v": [], "o": ""}, {"l": 2, "f": "main", "v": [], "o": ""}, {"l": 8, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."]], "o": ""}, {"l": 15, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."]], "o": ""}, {"l": 16, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "0"]], "o": ""}, {"l": 17, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "0"], ["case", "{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect'..."]], "o": ""}, {"l": 9, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "False"], ["dns", "True"]], "o": ""}, {"l": 11, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "False"], ["dns", "True"]], "o": ""}, {"l": 12, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "False"], ["dns", "True"]], "o": ""}, {"l": 18, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "0"], ["case", "{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect'..."], ["answer", "'SQL unreachable'"]], "o": ""}, {"l": 19, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "0"], ["case", "{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect'..."], ["answer", "'SQL unreachable'"], ["ok", "True"]], "o": ""}, {"l": 20, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "1"], ["case", "{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect'..."], ["answer", "'SQL unreachable'"], ["ok", "True"]], "o": ""}, {"l": 16, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "1"], ["case", "{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect'..."], ["answer", "'SQL unreachable'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 17, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "1"], ["case", "{'name': 'running, DNS broken', 'service': 'Running', 'sql': True, 'dns': False, 'expec..."], ["answer", "'SQL unreachable'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 9, "f": "diagnose()", "v": [["service", "'Running'"], ["sql", "True"], ["dns", "False"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 10, "f": "diagnose()", "v": [["service", "'Running'"], ["sql", "True"], ["dns", "False"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 18, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "1"], ["case", "{'name': 'running, DNS broken', 'service': 'Running', 'sql': True, 'dns': False, 'expec..."], ["answer", "'DNS failure'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 19, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "1"], ["case", "{'name': 'running, DNS broken', 'service': 'Running', 'sql': True, 'dns': False, 'expec..."], ["answer", "'DNS failure'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 20, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "2"], ["case", "{'name': 'running, DNS broken', 'service': 'Running', 'sql': True, 'dns': False, 'expec..."], ["answer", "'DNS failure'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\n"}, {"l": 16, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "2"], ["case", "{'name': 'running, DNS broken', 'service': 'Running', 'sql': True, 'dns': False, 'expec..."], ["answer", "'DNS failure'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 17, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "2"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'DNS failure'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 9, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "True"], ["dns", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 11, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "True"], ["dns", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 13, "f": "diagnose()", "v": [["service", "'Stopped'"], ["sql", "True"], ["dns", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 18, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "2"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 19, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "2"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 20, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\n"}, {"l": 16, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\nPASS - stopped, all healthy -> needs human\n"}, {"l": 22, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\nPASS - stopped, all healthy -> needs human\n"}, {"l": 23, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"], ["rate", "1.0"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\nPASS - stopped, all healthy -> needs human\n"}, {"l": 24, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"], ["rate", "1.0"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\nPASS - stopped, all healthy -> needs human\nTask success rate: 100% (3/3)\n"}, {"l": null, "f": "main", "v": [["SCENARIOS", "[{'name': 'stopped, SQL down', 'service': 'Stopped', 'sql': False, 'dns': True, 'expect..."], ["passed", "3"], ["case", "{'name': 'stopped, all healthy', 'service': 'Stopped', 'sql': True, 'dns': True, 'expec..."], ["answer", "'needs human'"], ["ok", "True"], ["rate", "1.0"]], "o": "PASS - stopped, SQL down -> SQL unreachable\nPASS - running, DNS broken -> DNS failure\nPASS - stopped, all healthy -> needs human\nTask success rate: 100% (3/3)\n"}]}, "c09": {"code": ["# Lesson C9: a trace you can read later, and a policy gate in front of every tool.", "import json", "", "READ_ONLY = {\"get_service_status\", \"get_event_logs\"}", "NEEDS_APPROVAL = {\"restart_service\"}", "trace = []", "", "def run_tool(name, human_ok=False):", "    if name in READ_ONLY:", "        verdict = \"allow\"", "    elif name in NEEDS_APPROVAL:", "        verdict = \"allow\" if human_ok else \"deny\"", "    else:", "        verdict = \"deny\"", "    trace.append({\"step\": len(trace) + 1, \"tool\": name, \"verdict\": verdict})", "    return verdict", "", "run_tool(\"get_service_status\")", "run_tool(\"restart_service\")", "run_tool(\"restart_service\", human_ok=True)", "run_tool(\"delete_data\", human_ok=True)", "", "for entry in trace:", "    print(json.dumps(entry))", "", "denied = [e[\"tool\"] for e in trace if e[\"verdict\"] == \"deny\"]", "print(\"Denied calls:\", denied)"], "steps": [{"l": 2, "f": "main", "v": [], "o": ""}, {"l": 4, "f": "main", "v": [], "o": ""}, {"l": 5, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"]], "o": ""}, {"l": 6, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"]], "o": ""}, {"l": 8, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[]"]], "o": ""}, {"l": 18, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[]"]], "o": ""}, {"l": 9, "f": "run_tool()", "v": [["name", "'get_service_status'"], ["human_ok", "False"]], "o": ""}, {"l": 10, "f": "run_tool()", "v": [["name", "'get_service_status'"], ["human_ok", "False"]], "o": ""}, {"l": 15, "f": "run_tool()", "v": [["name", "'get_service_status'"], ["human_ok", "False"], ["verdict", "'allow'"]], "o": ""}, {"l": 16, "f": "run_tool()", "v": [["name", "'get_service_status'"], ["human_ok", "False"], ["verdict", "'allow'"]], "o": ""}, {"l": 19, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}]"]], "o": ""}, {"l": 9, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "False"]], "o": ""}, {"l": 11, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "False"]], "o": ""}, {"l": 12, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "False"]], "o": ""}, {"l": 15, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "False"], ["verdict", "'deny'"]], "o": ""}, {"l": 16, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "False"], ["verdict", "'deny'"]], "o": ""}, {"l": 20, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."]], "o": ""}, {"l": 9, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "True"]], "o": ""}, {"l": 11, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "True"]], "o": ""}, {"l": 12, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "True"]], "o": ""}, {"l": 15, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "True"], ["verdict", "'allow'"]], "o": ""}, {"l": 16, "f": "run_tool()", "v": [["name", "'restart_service'"], ["human_ok", "True"], ["verdict", "'allow'"]], "o": ""}, {"l": 21, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."]], "o": ""}, {"l": 9, "f": "run_tool()", "v": [["name", "'delete_data'"], ["human_ok", "True"]], "o": ""}, {"l": 11, "f": "run_tool()", "v": [["name", "'delete_data'"], ["human_ok", "True"]], "o": ""}, {"l": 14, "f": "run_tool()", "v": [["name", "'delete_data'"], ["human_ok", "True"]], "o": ""}, {"l": 15, "f": "run_tool()", "v": [["name", "'delete_data'"], ["human_ok", "True"], ["verdict", "'deny'"]], "o": ""}, {"l": 16, "f": "run_tool()", "v": [["name", "'delete_data'"], ["human_ok", "True"], ["verdict", "'deny'"]], "o": ""}, {"l": 23, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."]], "o": ""}, {"l": 24, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}"]], "o": ""}, {"l": 23, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n"}, {"l": 24, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 2, 'tool': 'restart_service', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n"}, {"l": 23, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 2, 'tool': 'restart_service', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n"}, {"l": 24, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 3, 'tool': 'restart_service', 'verdict': 'allow'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n"}, {"l": 23, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 3, 'tool': 'restart_service', 'verdict': 'allow'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n"}, {"l": 24, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n"}, {"l": 23, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "<listcomp>()", "v": [[".0", "<list_iterator object at 0x7f5eea201c60>"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "<listcomp>()", "v": [[".0", "<list_iterator object at 0x7f5eea201c60>"], ["e", "{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "<listcomp>()", "v": [[".0", "<list_iterator object at 0x7f5eea201c60>"], ["e", "{'step': 2, 'tool': 'restart_service', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "<listcomp>()", "v": [[".0", "<list_iterator object at 0x7f5eea201c60>"], ["e", "{'step': 3, 'tool': 'restart_service', 'verdict': 'allow'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 26, "f": "<listcomp>()", "v": [[".0", "<list_iterator object at 0x7f5eea201c60>"], ["e", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": 27, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"], ["denied", "['restart_service', 'delete_data']"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\n"}, {"l": null, "f": "main", "v": [["READ_ONLY", "{'get_service_status', 'get_event_logs'}"], ["NEEDS_APPROVAL", "{'restart_service'}"], ["trace", "[{'step': 1, 'tool': 'get_service_status', 'verdict': 'allow'}, {'step': 2, 'tool': 're..."], ["entry", "{'step': 4, 'tool': 'delete_data', 'verdict': 'deny'}"], ["denied", "['restart_service', 'delete_data']"]], "o": "{\"step\": 1, \"tool\": \"get_service_status\", \"verdict\": \"allow\"}\n{\"step\": 2, \"tool\": \"restart_service\", \"verdict\": \"deny\"}\n{\"step\": 3, \"tool\": \"restart_service\", \"verdict\": \"allow\"}\n{\"step\": 4, \"tool\": \"delete_data\", \"verdict\": \"deny\"}\nDenied calls: ['restart_service', 'delete_data']\n"}]}};</script>
 <script>
 /* Shared helpers. Chapter scripts register quizzes on Q and call H.* helpers. */
 window.Q = {};
@@ -2335,6 +3290,36 @@ window.H = (function(){
     return inp;
   };
 
+
+  /* Step-through code player. T = {code:[lines], steps:[{l, f, v:[[name,value]], o}]} */
+  H.tracer = function(root, T){
+    var i = 0;
+    root.innerHTML = '<div class="tr-code"></div><div class="step-controls"><button class="btn ghost" type="button" data-b>Back</button><button class="btn" type="button" data-n>Next line</button><button class="btn ghost" type="button" data-e>Run to end</button><button class="btn ghost" type="button" data-r>Restart</button><span class="cnt"></span></div><div class="two"><div><p style="margin:0 0 4px"><b>Variables</b> <small style="color:var(--muted)" data-f></small></p><div class="out" data-v style="margin:0"></div></div><div><p style="margin:0 0 4px"><b>Output so far</b></p><div class="pre-out" data-o style="min-height:4em"></div></div></div>';
+    var codeEl = root.querySelector(".tr-code"), cnt = root.querySelector(".cnt");
+    var html = '<div class="codewrap"><pre class="code" style="padding:10px 0">' + T.code.map(function(t,k){return '<span class="line" data-l="'+(k+1)+'"><span class="ln">'+(k+1)+'</span>'+H.esc(t)+'</span>'}).join("") + '</pre></div>';
+    codeEl.innerHTML = html;
+    var copyBtn = document.createElement("button"); copyBtn.type="button"; copyBtn.className="copy"; copyBtn.textContent="Copy";
+    copyBtn.addEventListener("click", function(){H.copy(copyBtn, T.code.join("\n"))});
+    codeEl.querySelector(".codewrap").appendChild(copyBtn);
+    function draw(){
+      var s = T.steps[i], last = i === T.steps.length - 1;
+      Array.prototype.forEach.call(codeEl.querySelectorAll(".line"), function(e){e.classList.toggle("cur", !last && Number(e.dataset.l) === s.l)});
+      var cur = codeEl.querySelector(".line.cur"); if(cur && cur.scrollIntoView && false) cur.scrollIntoView({block:"nearest"});
+      cnt.textContent = last ? "Finished" : "About to run line " + s.l + " (step " + (i+1) + " of " + (T.steps.length-1) + ")";
+      root.querySelector("[data-f]").textContent = "in " + s.f;
+      root.querySelector("[data-v]").innerHTML = s.v.length ? '<table class="tbl" style="min-width:0;width:100%"><tbody>' + s.v.map(function(r){return '<tr><td>'+H.esc(r[0])+'</td><td style="font-family:var(--f-mono);font-size:.82rem;word-break:break-word">'+H.esc(r[1])+'</td></tr>'}).join("") + '</tbody></table>' : '<span style="color:var(--muted)">(nothing yet)</span>';
+      root.querySelector("[data-o]").textContent = s.o || "(no output yet)";
+      root.querySelector("[data-b]").disabled = i === 0;
+      root.querySelector("[data-n]").disabled = last;
+      root.querySelector("[data-e]").disabled = last;
+    }
+    root.querySelector("[data-b]").addEventListener("click", function(){if(i>0){i--;draw()}});
+    root.querySelector("[data-n]").addEventListener("click", function(){if(i<T.steps.length-1){i++;draw()}});
+    root.querySelector("[data-e]").addEventListener("click", function(){i=T.steps.length-1;draw()});
+    root.querySelector("[data-r]").addEventListener("click", function(){i=0;draw()});
+    draw();
+  };
+
   H.copy = function(btn, text){
     function fallback(){
       var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
@@ -2354,7 +3339,7 @@ window.H = (function(){
       var a=document.createElement("a");a.href="#"+c.id;a.textContent=c.dataset.title;a.dataset.t=c.id;chips.appendChild(a);
       if(road && c.dataset.road){
         var d=document.createElement("div");
-        d.innerHTML='<span>'+(k+1)+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p>';
+        d.innerHTML='<span>'+(c.dataset.num||(k+1))+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p>';
         road.appendChild(d);
       }
     });
@@ -2372,8 +3357,12 @@ window.H = (function(){
     }
     addEventListener("scroll",onScroll,{passive:true});onScroll();
 
+    /* code players */
+    $$('.tracer[data-trace]').forEach(function(el){var T=window.TRACES&&window.TRACES[el.dataset.trace]; if(T)H.tracer(el,T)});
+
     /* copy buttons on code blocks */
     $$(".codewrap").forEach(function(w){
+      if(w.querySelector(".copy"))return;
       var b=document.createElement("button");b.type="button";b.className="copy";b.textContent="Copy";
       b.addEventListener("click",function(){H.copy(b,w.querySelector("code").textContent)});w.appendChild(b);
     });
@@ -3620,6 +4609,100 @@ Q.c14=[
   {q:"Which skill-ladder levels does reading alone mainly reach?",o:["Levels 1 to 3 (recognise, explain, draw)","Levels 6 to 8 (evaluate, design, operate)","None"],a:0,f:"Implementing, debugging, evaluating, designing and operating come from building and running real systems."},
   {q:"A tool in your design is write-capable, and the safety policy does not require human approval. What should you do?",o:["Ship it","Add approval, or make the tool read-only for this version","Rename the tool"],a:1,f:"Authorisation is software policy. Risky writes need approval, and the first release should be read-only."},
   {q:"What is the best next step after passing the master test?",o:["Watch more videos","Build the smallest agent, connect two tools, expose them through MCP, then measure it","Wait for a new framework"],a:1,f:"Understand first, code second, framework third. Now it is time for code."}
+];
+
+})();
+</script>
+<script>
+(function(){
+"use strict";
+var $=H.$,$$=H.$$,esc=H.esc;
+/* Coding track: setup stepper and quizzes for lessons C0 to C11 */
+(function(){
+  var S=[
+    ["Open PowerShell","Click the Start menu, type PowerShell, and open it. A window with a prompt appears. This is where you type commands. (You used it earlier in this project.)","(nothing to type yet)"],
+    ["Check that Python is installed","Type the command below and press Enter. You should see something like \"Python 3.12.4\". If Windows says it cannot find python, try py --version. If neither works, install Python from python.org and tick \"Add Python to PATH\" in the installer.","python --version"],
+    ["Make a folder for your work","mkdir creates a folder and cd moves into it.","mkdir ev-agent\ncd ev-agent"],
+    ["Create your first file","This opens Notepad. If it asks whether to create a new file, say yes. Type the one line below, then save and close. If Notepad saves it as hello.py.txt, choose \"All files\" under Save as type and name it hello.py.","notepad hello.py\n\n(type this line in Notepad:)\nprint(\"Hello, Enterprise Vault\")"],
+    ["Run it","You should see your sentence printed back. That is a complete program.","python hello.py\n\nHello, Enterprise Vault"],
+    ["Break it on purpose, then read the error","Change print to prnt in Notepad, save, run again. Read the LAST line of the error first.","python hello.py\n\nTraceback (most recent call last):\n  File \"hello.py\", line 1, in <module>\n    prnt(\"Hello, Enterprise Vault\")\nNameError: name 'prnt' is not defined"]
+  ];
+  H.stepper($("#su-step"),S,function(s,i,body){
+    body.innerHTML="<p style='margin:.3rem 0'><b>"+(i+1)+". "+esc(s[0])+"</b></p><p style='margin:.3rem 0'>"+esc(s[1])+"</p><div class='pre-out'>"+esc(s[2])+"</div>";
+  });
+})();
+
+Q.c15=[
+  {q:"In PowerShell, which command runs a file called hello.py?",o:["python hello.py","run hello.py","open hello.py"],a:0,f:"You hand the file to the Python interpreter: python hello.py."},
+  {q:"A Python error message appears. Where should you start reading?",o:["The first line","The last line, which names the kind of mistake and what went wrong","Nowhere. Errors cannot be understood"],a:1,f:"The last line says what went wrong. The lines above say where."},
+  {q:"In the step-through player, the highlighted line is...",o:["The line that has just finished","The line that is about to run","A line with an error"],a:1,f:"The Variables and Output boxes show the state before the highlighted line runs."},
+  {q:"Where should an API key be kept?",o:["Inside the Python file, so it is handy","In an environment variable, never in code or chats","In a comment"],a:1,f:"Anyone who sees the key can spend your money. Keep it out of files you might share."}
+];
+Q.c16=[
+  {q:"What does print(\"That is\", round(hours_down, 2), \"hours\") show when minutes_down is 42?",o:["That is 0.7 hours","That is 42 hours","That is 2520 hours"],a:0,f:"42 divided by 60 is 0.7."},
+  {q:"minutes_down is changed to 20. What is is_urgent?",o:["True","False","20"],a:1,f:"20 > 30 is false."},
+  {q:"In Python, what does the single = mean?",o:["Is equal to","Put this value into the labelled box","Add"],a:1,f:"= stores a value in a variable. A comparison of equality uses ==."},
+  {q:"Which of these is text (a string)?",o:["\"EV01\"","42","True"],a:0,f:"Text is written inside quotes."}
+];
+Q.c17=[
+  {q:"After servers.append(\"EV03\"), what does len(servers) give?",o:["3","4","5"],a:1,f:"The list started with 3 items and one was added."},
+  {q:"What is servers[0]?",o:["\"EV01\", the first item","\"EV02\", the first item","An error"],a:0,f:"Counting starts at 0."},
+  {q:"After the loop, what is stopped?",o:["[\"EV02\"]","[\"EV01\", \"EV03\"]","[]"],a:1,f:"EV01 and EV03 have status Stopped."},
+  {q:"What happens if you ask a dictionary for a label it does not have?",o:["It returns 0","A KeyError","Nothing"],a:1,f:"KeyError: that label is not there. record.get(label) returns None instead."}
+];
+Q.c18=[
+  {q:"The event log has two ERROR lines. Which message prints?",o:["No errors","One error: keep watching","Several errors: likely a real problem"],a:2,f:"errors is 2, so errors >= 2 is true."},
+  {q:"You delete one ERROR line. Which message prints now?",o:["Several errors: likely a real problem","One error: keep watching","No errors"],a:1,f:"errors is 1, so the elif branch runs."},
+  {q:"Why does every agent loop need an exit condition or a step limit?",o:["A loop whose condition never becomes false runs forever","Python forbids loops","It makes the agent smarter"],a:0,f:"An unbounded loop can spin, wasting time and money."},
+  {q:"What does the indentation tell Python?",o:["Nothing, it is decoration","Which lines belong inside the if or loop above","How fast to run"],a:1,f:"Indented lines are grouped under the line that ends with a colon."}
+];
+Q.c19=[
+  {q:"What does summarise(get_service_status(\"EV01\", \"Search\")) print?",o:["Search on EV01: Running","Search on EV01: Unknown","An error"],a:1,f:"known.get(service, \"Unknown\") returns Unknown for a missing key."},
+  {q:"What is the difference between return and print?",o:["None","return hands a value back to the program. print only shows it to a human","print is faster"],a:1,f:"A tool must return its result so the loop can send it back to the model."},
+  {q:"Why does a good docstring matter for an agent tool?",o:["It makes the function run faster","It becomes part of the description a model reads when choosing tools","It is required by Python"],a:1,f:"Models see only the description, so it must be clear."},
+  {q:"What does the def line do?",o:["Runs the function","Defines the function so it can be called later","Deletes it"],a:1,f:"Defining does not run. Python just remembers the recipe."}
+];
+Q.c20=[
+  {q:"For server WEB9, what ends up in the result?",o:["reachable true","reachable None and error \"unknown server: WEB9\"","The program crashes"],a:1,f:"The tool raises ValueError, except catches it, and the error becomes data."},
+  {q:"What does json.dumps do?",o:["Turns a dictionary into JSON text","Deletes a file","Sends an email"],a:0,f:"json.loads does the reverse."},
+  {q:"Why return an error as data instead of crashing?",o:["So the model can read it and adjust its next request","Because errors are invisible","To hide problems"],a:0,f:"From Chapter 11: errors go back to the model as data."},
+  {q:"If you remove try and except and WEB9 is passed in, what happens?",o:["Nothing","The ValueError is not handled and the program stops","It prints reachable true"],a:1,f:"An unhandled problem stops the program."}
+];
+Q.c21=[
+  {q:"In a method, what does self mean?",o:["This particular object","The programmer","The class name"],a:0,f:"self.goal is the goal of this object."},
+  {q:"After two add_evidence calls, how many items does case.evidence hold?",o:["1","2","0"],a:1,f:"Each call appends one fact."},
+  {q:"What hypothesis does case.report() print at the end?",o:["none yet","the service stopped","SQL connection problem"],a:2,f:"The second call replaced the hypothesis."},
+  {q:"Which course idea does the Investigation class illustrate?",o:["Tokenization","Agent state: goal, evidence and hypothesis","Embeddings"],a:1,f:"Frameworks keep larger state objects for the same purpose."}
+];
+Q.c22=[
+  {q:"In C7, you set \"sql_reachable\": True. How many tools run before decide_next returns None?",o:["3","4","1"],a:0,f:"status, event logs, SQL test. The SQL test is reachable, so the DNS check is not requested."},
+  {q:"Which single function would a language model replace?",o:["get_service_status","decide_next","print"],a:1,f:"Same tools, same loop, same history. Only the decision changes."},
+  {q:"What does TOOLS store?",o:["The results of calling each tool","The functions themselves, by name","Only text"],a:1,f:"TOOLS[tool]() looks up a function by name and then calls it."},
+  {q:"What flaw did the lesson point out in the last line?",o:["It prints a fixed conclusion that ignores the evidence","It has a typo","It is too long"],a:0,f:"A tester would change LAB and see the diagnosis no longer matches."}
+];
+Q.c23=[
+  {q:"You change the third scenario's expectation to \"SQL unreachable\" and run it. What happens?",o:["Still 3/3 PASS","The third case shows FAIL, the rate is 67%, and the assert stops the run","Nothing prints"],a:1,f:"The program answers \"needs human\", so it no longer matches. 2 of 3 passed and assert rate == 1.0 fails."},
+  {q:"How is the task success rate calculated?",o:["passes ÷ total cases","total ÷ passes","failures + 1"],a:0,f:"2 passes out of 3 is about 67%."},
+  {q:"What is a regression?",o:["Something that used to pass but now fails after a change","A new feature","A faster program"],a:0,f:"A regression suite catches this every time you change the agent."},
+  {q:"Why do you run a language-model brain several times per scenario?",o:["It can give different answers each time, so you measure reliability as well as capability","It is cheaper","Models only work on the third try"],a:0,f:"Chapter 9: pass^k versus pass@k."}
+];
+Q.c24=[
+  {q:"Why is delete_data denied even with human_ok=True?",o:["It is on no list, and unknown tools are denied by default","The human typed wrongly","Python blocks the word delete"],a:0,f:"Deny by default is the final else branch."},
+  {q:"What is printed for the denied calls?",o:["[\"restart_service\", \"delete_data\"]","[\"delete_data\"]","[]"],a:0,f:"The first restart_service call (without approval) and delete_data were denied."},
+  {q:"Who decides whether a proposed tool call runs?",o:["The model, if it is confident","The policy gate in your code","Nobody"],a:1,f:"Authorisation is a software policy decision."},
+  {q:"What is a trace for?",o:["Reconstructing exactly what the agent did and why, after the fact","Making the program faster","Hiding errors"],a:0,f:"Observability: one line per step, searchable and replayable."}
+];
+Q.c25=[
+  {q:"Where should an API key live?",o:["In an environment variable, never in shared code or chats","In the file name","In a screenshot"],a:0,f:"If a key leaks, revoke it and create a new one."},
+  {q:"My first MCP attempt used FastMCP and failed. What does this teach?",o:["MCP is broken","The library had changed in version 2 (renamed MCPServer), so always check versions and current docs","Python is broken"],a:1,f:"This matches the warning that MCP is still changing."},
+  {q:"Which is a good habit when coding with an AI assistant?",o:["Run whatever it writes immediately on production","Write the expected results first, read the code before running, start with harmless read-only data","Paste your API key so it can help"],a:1,f:"You stay the engineer: tests first, read before running, harmless first."},
+  {q:"What four questions apply to every tool call and MCP server?",o:["Who can call it, what can they call, where can it act, what gets logged","Colour, size, speed, price","Name, date, time, place"],a:0,f:"From Chapter 10."}
+];
+Q.c26=[
+  {q:"In the final evaluation, what did the gate do with the eager brain?",o:["Allowed its restarts","Blocked all four restart attempts while the diagnoses stayed correct","Crashed the program"],a:1,f:"The gate enforces policy without needing to know the brain was misbehaving."},
+  {q:"Which function would you replace to use a real language model?",o:["brain()","gate()","evaluate()"],a:0,f:"Same loop, tools, gate and trace. Only the decision changes."},
+  {q:"Why include scenarios where the right answer is to escalate or report no fault?",o:["A good agent knows when to stop and when to ask a human","They are easier","Tests need exactly four cases"],a:0,f:"Escalation and no-fault cases measure judgement, not just diagnosis."},
+  {q:"In which order should you do the upgrades?",o:["Replace the brain first","Add scenarios, tools, a trace and approval first, measure each step, and replace the brain last","Skip the tests"],a:1,f:"Understand first, code second, framework third. Measure after every change."}
 ];
 
 })();

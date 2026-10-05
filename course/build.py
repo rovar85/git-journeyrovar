@@ -20,6 +20,9 @@ def expand(text):
 for c in chapters:
     out.append(expand(open(c, encoding="utf-8").read()))
 out.append(rd("tail.html"))
+import subprocess, sys
+subprocess.run([sys.executable, os.path.join(here, "gen_traces.py")], check=True, stdout=subprocess.DEVNULL)
+out.append("<script>window.TRACES=" + rd("traces.json") + ";</script>")
 out.append("<script>\n" + rd("common.js") + "\n</script>")
 for j in sorted(glob.glob(os.path.join(src, "js", "ch[0-9][0-9].js"))):
     out.append("<script>\n(function(){\n\"use strict\";\nvar $=H.$,$$=H.$$,esc=H.esc;\n" + open(j, encoding="utf-8").read() + "\n})();\n</script>")

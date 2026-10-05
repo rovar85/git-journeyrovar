@@ -1,0 +1,62 @@
+
+<!-- ============================ CODE LESSON C7 ============================ -->
+<section class="chapter" id="ch22" data-num="C7" data-title="C7 · The loop" data-road="C7 · A pretend lab and a diagnosis loop" data-sub="Put it together: tools, a loop, and a decision function. No AI yet, and one place for it later.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C7</span>
+    <h2>A pretend lab and a diagnosis loop</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a complete mini agent made of tools, history and a loop</li>
+      <li>find the single function where an AI model would go</li>
+      <li>explain why building the rule-based version first is good engineering</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Now combine everything: variables (C1), dictionaries (C2), loops and decisions (C3), functions as tools (C4). The result is a small Enterprise Vault diagnostic that behaves like the agent in Chapter 7, with one difference: <b>its "brain" is a handful of rules, not an AI model</b>. That is deliberate. You build the loop, the tools and the checks first, and make sure they work. Then replacing the rules with a model changes <i>one function</i>.</p>
+  <p>The pieces:</p>
+  <ul>
+    <li><b><code>LAB</code></b> is a dictionary that stands in for a real Enterprise Vault environment. It describes one failure: the service is stopped, the log shows a SQL timeout, SQL cannot be reached, DNS is fine.</li>
+    <li><b>Tools</b> are four small functions that read from <code>LAB</code>. All read-only.</li>
+    <li><b><code>TOOLS</code></b> is a dictionary mapping a tool's <i>name</i> to the function. This lets the loop call a tool by name, exactly as an agent does when a model says "call get_event_logs".</li>
+    <li><b><code>decide_next(history)</code></b> looks at what has happened so far and picks the next tool, or returns <code>None</code> when it has seen enough.</li>
+    <li><b><code>history</code></b> is a list recording each tool and its result.</li>
+  </ul>
+
+  <h3>Watch it run</h3>
+  <p>This one is longer. Use <b>Run to end</b> if you want the overview first, then <b>Restart</b> and step through. Watch <code>history</code> grow and see which function the highlight visits at each turn.</p>
+  <div class="lab"><div class="tracer" data-trace="c07"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>TOOLS = {"get_service_status": get_service_status, ...}</code> stores the <i>functions themselves</i> (not the results of calling them) under their names.</li>
+    <li><code>decide_next</code> reads the last tool and result. First time (<code>history</code> empty) it starts with the service status. If the status was Stopped it asks for the event logs. If the log mentions SQL it tests SQL. If SQL is unreachable it checks DNS. Otherwise it returns <code>None</code>.</li>
+    <li><code>while True:</code> repeats forever, until <code>break</code> runs. The loop asks <code>decide_next</code> for a tool. If it is <code>None</code>, <code>break</code> leaves the loop.</li>
+    <li><code>result = TOOLS[tool]()</code> looks up the function by name and calls it. The brackets at the end are what actually run it.</li>
+    <li><code>history.append((tool, result))</code> records the pair. A pair in round brackets is called a <b>tuple</b>: two things kept together.</li>
+  </ul>
+
+  <div class="board warn"><span class="tag">An honest flaw to notice</span><p>The last line, <code>print("Diagnosis: SQL server unreachable; DNS is fine.")</code>, is <b>fixed text</b>. It would print that even if the lab were different. The loop gathers evidence, but the conclusion is not computed from it. A tester would catch this at once: change <code>LAB</code> and the diagnosis is wrong. Lesson C8 teaches you to catch exactly this kind of bug, and the full starter agent in C11 fixes it by computing the answer.</p></div>
+
+  <div class="board note"><span class="tag">Where the AI goes</span><p>Replace <code>decide_next</code> with a function that sends <code>history</code> to a language model and reads back which tool it wants. Nothing else changes: same tools, same loop, same history. That is the sentence "<b>model proposes, software executes</b>" in code. It is also why the step limit, the policy gate and the trace (C9) live in the loop and not in the model.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Change <code>"sql_reachable": False</code> to <code>True</code>. Predict which tools run, then run it. What diagnosis line prints? Is it right?</li>
+    <li>Add a rule so that if DNS fails, <code>decide_next</code> returns nothing further, and fix the final line so it describes what happened. (Hint: look in <code>history</code>.)</li>
+    <li>Add a fifth tool, <code>check_disk_space</code>, to <code>LAB</code>, to the functions and to <code>TOOLS</code>.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C7 in plain words</h3>
+    <ul>
+      <li>A mini agent is tools + history + a loop + a "decide next" function.</li>
+      <li>Calling a tool by name from a dictionary is how agent frameworks dispatch tool calls.</li>
+      <li>Build with rules first. Swap in a model later by replacing only <code>decide_next</code>.</li>
+      <li>A fixed conclusion that ignores the evidence is a bug that tests should catch.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c22"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

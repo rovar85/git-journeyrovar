@@ -1,0 +1,55 @@
+
+<!-- ============================ CODE LESSON C2 ============================ -->
+<section class="chapter" id="ch17" data-num="C2" data-title="C2 · Lists &amp; dicts" data-road="C2 · Lists and dictionaries" data-sub="Many servers in a list. One tool result as a dictionary. The shape of JSON.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C2</span>
+    <h2>Lists and dictionaries: holding many facts</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>keep many items in a list and pick one out</li>
+      <li>describe one thing with several labelled facts in a dictionary</li>
+      <li>recognise that a tool result is a dictionary, and a fleet is a list of them</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>One variable holds one fact. Real investigations have many facts. Python gives you two containers that cover most needs:</p>
+  <ul>
+    <li>A <b>list</b> is a numbered shelf: <code>["EV01", "EV02", "SQL01"]</code>. Order matters, and counting starts at <b>0</b>, so the first item is <code>servers[0]</code>. Useful when you have a collection: servers, log lines, test cases.</li>
+    <li>A <b>dictionary</b> is a form with labelled fields: <code>{"server": "EV01", "status": "Stopped"}</code>. You look things up by label, not by position: <code>record["status"]</code>. Useful when you describe one thing in detail.</li>
+  </ul>
+  <p>Put them together and you can describe a whole environment: a <b>list of dictionaries</b>, one per server. This is exactly the shape of the data that tools return and that language models read. When people say "JSON", they mean this notation (lists and dictionaries, written with quotes and braces). It is how programs pass structured information to each other.</p>
+
+  <h3>Watch it run</h3>
+  <div class="lab"><div class="tracer" data-trace="c02"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>servers.append("EV03")</code> adds an item at the end of the list. <code>len(servers)</code> counts the items. That is why it prints 4.</li>
+    <li><code>record = {...}</code> creates a dictionary. <code>None</code> is Python's word for "nothing here", used for <code>error</code> when there is no error.</li>
+    <li><code>record["status"]</code> looks up the value labelled <code>status</code>. <code>record["checked_at"] = "09:14"</code> adds a new field.</li>
+    <li><code>fleet</code> is a list of three dictionaries. <code>fleet</code> spans several lines because brackets let Python continue on the next line.</li>
+    <li><code>stopped = []</code> creates an empty list. The <code>for item in fleet:</code> loop (more in C3) visits each server, and the <code>if</code> adds its name only when its status is Stopped.</li>
+    <li>The last print shows the finished dictionary. Notice it looks just like the structured tool results in Chapters 10 and 11.</li>
+  </ul>
+  <div class="board warn"><span class="tag">Common mistake</span><p>Asking a dictionary for a label it does not have causes a <b>KeyError</b>. Asking a list for a position that does not exist causes an <b>IndexError</b>. Both mean "that is not in there". In an agent, a model sometimes asks a tool for something that does not exist, so tools must expect this (lesson C5).</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a fourth server to <code>fleet</code> with status "Stopped". Predict the new <code>stopped</code> list.</li>
+    <li>Print <code>servers[1]</code> and then <code>servers[-1]</code> (the last one). What do you learn about negative positions?</li>
+    <li>Try <code>print(record["owner"])</code>. Read the error. Now try <code>print(record.get("owner"))</code>, which returns <code>None</code> instead of failing. Why might a tool prefer that?</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C2 in plain words</h3>
+    <ul>
+      <li>List = ordered collection, counted from 0. Dictionary = labelled fields.</li>
+      <li>A tool result is a dictionary. A fleet is a list of dictionaries. That is JSON.</li>
+      <li>Missing labels cause errors unless you handle them.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c17"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

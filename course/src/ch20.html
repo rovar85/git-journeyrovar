@@ -1,0 +1,57 @@
+
+<!-- ============================ CODE LESSON C5 ============================ -->
+<section class="chapter" id="ch20" data-num="C5" data-title="C5 · Errors &amp; JSON" data-road="C5 · Errors, validation and JSON" data-sub="Handle bad input without crashing. Turn results into text a model can read.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C5</span>
+    <h2>Errors, validation and JSON</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>reject bad input on purpose, and catch the problem instead of crashing</li>
+      <li>turn a dictionary into JSON text, and back again</li>
+      <li>explain why "errors are data" in an agent</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>In Chapter 11 you saw a tool call fail because a model passed a value the API did not accept. Models make odd requests: a server that does not exist, a missing field, a typo. A good tool does not crash. It <b>checks its input</b> and returns a clear error that the model can read and adjust to.</p>
+  <ul>
+    <li><code>raise ValueError("message")</code> deliberately signals a problem.</li>
+    <li><code>try: ... except ValueError as problem: ...</code> says "try this, and if that kind of problem happens, do this instead". The program carries on.</li>
+  </ul>
+  <p>The second idea is <b>JSON</b>. Models and programs exchange <i>text</i>. <code>json.dumps(result)</code> turns a dictionary into JSON text. <code>json.loads(text)</code> turns that text back into a dictionary. That conversion is the bridge between your tool and the model: the tool's result becomes text that goes into the model's context.</p>
+
+  <h3>Watch it run</h3>
+  <p>Step to the third server, <code>WEB9</code>. Watch the program jump out of the function, land in <code>except</code>, and carry on instead of crashing.</p>
+  <div class="lab"><div class="tracer" data-trace="c05"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>import json</code> brings in a tool kit that Python ships with for reading and writing JSON.</li>
+    <li>In <code>test_sql_connectivity</code>, the first check rejects any server whose name does not start with "EV". It raises an error rather than guessing.</li>
+    <li><code>reachable = server != "EV03"</code> pretends EV03's SQL link is down (<code>!=</code> means "is not equal to"). The result uses <code>None if reachable else "timeout after 15s"</code>, a compact way to say "no error if reachable, otherwise this message".</li>
+    <li>The loop tries three names. <code>try</code> calls the tool. For WEB9 the tool raises <code>ValueError</code>, and <code>except</code> builds a result dictionary describing the problem. <b>The error became data</b> with the same shape as a normal result.</li>
+    <li><code>json.dumps(result)</code> converts it to text. Notice Python's <code>True</code>, <code>False</code> and <code>None</code> become JSON's <code>true</code>, <code>false</code> and <code>null</code>.</li>
+    <li>Finally <code>json.loads(text)</code> proves the text can be read back into a dictionary.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Why this matters for agents</span><p>From Chapter 11: <b>errors go back to the model as data</b> so it can adjust, and arguments are <b>validated</b> before anything runs. It is also the structured-result rule from Chapter 10: <i>put parsing and validation in code</i>. And from Chapter 12: unknown or malformed requests should be refused, not guessed at.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a second validation: reject an empty string for the server name. Test with <code>""</code>.</li>
+    <li>Remove the <code>try/except</code> and run again. Read the error. This is what an unhandled problem looks like, and the program stops.</li>
+    <li>Print <code>json.dumps(result, indent=2)</code> to see the same JSON in a more readable layout.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C5 in plain words</h3>
+    <ul>
+      <li>Validate inputs and <code>raise</code> an error for bad ones. Catch errors with <code>try / except</code>.</li>
+      <li>Return errors as structured data so a model can react.</li>
+      <li><code>json.dumps</code> makes text from a dictionary. <code>json.loads</code> reverses it.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c20"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

@@ -1,0 +1,57 @@
+
+<!-- ============================ CODE LESSON C9 ============================ -->
+<section class="chapter" id="ch24" data-num="C9" data-title="C9 · Trace &amp; gate" data-road="C9 · Traces and a policy gate" data-sub="Record every step so you can reconstruct it later, and check every tool call against policy.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C9</span>
+    <h2>Traces and a policy gate</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>record a trace of what an agent did, one JSON line per step</li>
+      <li>write a gate that allows, denies or defers each tool call</li>
+      <li>explain "deny by default"</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Two production habits from Chapters 12 and 13, in a few lines:</p>
+  <ul>
+    <li><b>A policy gate.</b> The model <i>proposes</i> a tool call; your code <i>decides</i> whether it may run. Read-only tools are allowed. Risky ones need human approval. Anything unknown is denied. <b>Deny by default</b> means a tool nobody thought about is blocked, not allowed.</li>
+    <li><b>A trace.</b> A record of every proposal and decision, so when something goes wrong you can reconstruct what happened. We store each step as a small dictionary and print it as one line of JSON. Files of such lines are called <b>JSON lines</b> and are easy to search and replay.</li>
+  </ul>
+  <p>Sets, written with curly brackets and no labels (<code>{"a", "b"}</code>), are handy for "is this tool in the allowed group?" checks.</p>
+
+  <h3>Watch it run</h3>
+  <p>Watch the <code>trace</code> list grow with each call, and see how <code>verdict</code> changes.</p>
+  <div class="lab"><div class="tracer" data-trace="c09"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>READ_ONLY</code> and <code>NEEDS_APPROVAL</code> are sets of tool names. They <i>are</i> the policy, kept in one visible place.</li>
+    <li><code>run_tool(name, human_ok=False)</code> has a <b>default</b> for <code>human_ok</code>: if the caller does not say, it is False. A safe default.</li>
+    <li>The <code>if / elif / else</code> picks a verdict. The final <code>else</code> is the "deny by default" rule.</li>
+    <li><code>trace.append({...})</code> records the step number, the tool and the verdict. <code>len(trace) + 1</code> numbers each entry.</li>
+    <li>The last two calls show the key behaviours. <code>restart_service</code> is denied without approval and allowed with it. <code>delete_data</code> is denied even with <code>human_ok=True</code>, because it is on no list at all. Some actions should never be available to an automated agent, whoever clicks approve.</li>
+    <li>The list comprehension <code>[e["tool"] for e in trace if e["verdict"] == "deny"]</code> is a short way to build a list: "the tool name of every entry whose verdict was deny".</li>
+  </ul>
+
+  <div class="board warn"><span class="tag">Authorisation is policy</span><p>"The authorisation decision belongs to software policy, not model confidence." Notice that nothing in this code asks the model how sure it is. And because the gate sits in <b>your loop</b>, even a model that was tricked by prompt injection (Chapter 12) cannot call a tool the policy does not allow.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add <code>"check_dns"</code> to <code>READ_ONLY</code> and call it. Check the trace.</li>
+    <li>Make the trace record the time of each step (hint: <code>import time</code> and <code>time.strftime("%H:%M:%S")</code>).</li>
+    <li>Make the program write the trace to a file, one line per entry, using <code>open("trace.jsonl", "w")</code>. Open it in Notepad. This is how you would keep an audit log.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C9 in plain words</h3>
+    <ul>
+      <li>A gate checks every proposed tool call against policy. Unknown means deny.</li>
+      <li>A trace records each step as a line of JSON so you can reconstruct what happened.</li>
+      <li>The model proposes. Your code decides. Neither the gate nor the trace asks the model for permission.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c24"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

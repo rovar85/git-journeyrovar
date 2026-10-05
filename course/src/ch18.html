@@ -1,0 +1,58 @@
+
+<!-- ============================ CODE LESSON C3 ============================ -->
+<section class="chapter" id="ch18" data-num="C3" data-title="C3 · Loops" data-road="C3 · Decisions and loops" data-sub="Scan an event log, decide what it means, and repeat until done: the shape of an agent loop.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C3</span>
+    <h2>Decisions and loops: the shape of an agent</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>make a program choose between paths with <code>if</code>, <code>elif</code> and <code>else</code></li>
+      <li>repeat work with <code>for</code> and <code>while</code></li>
+      <li>see why an agent is "a while loop with a model inside"</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>Two abilities turn a list of instructions into something that behaves intelligently:</p>
+  <ul>
+    <li><b>Decisions.</b> <code>if</code> some condition is true, do this. Otherwise (<code>else</code>), do that. You can add middle cases with <code>elif</code> ("else if").</li>
+    <li><b>Loops.</b> A <code>for</code> loop does something <i>for each item</i> in a list. A <code>while</code> loop keeps going <i>as long as</i> a condition is true.</li>
+  </ul>
+  <p>One Python rule matters here: the lines that belong <b>inside</b> an <code>if</code> or a loop are <b>indented</b> (pushed in by four spaces) and the line before ends in a colon. The indentation is how Python knows which lines are grouped together.</p>
+  <p>Think of an engineer reading an event log: look at every line, and if it says ERROR, note it and count it. That is a <code>for</code> loop containing an <code>if</code>. Then, if there are several errors, suspect a real fault. That is another decision. And "try connecting, and try again until it works or you give up" is a <code>while</code> loop.</p>
+
+  <h3>Watch it run</h3>
+  <p>Pay attention to how the highlight jumps back to the top of each loop, and how the Variables box changes.</p>
+  <div class="lab"><div class="tracer" data-trace="c03"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>for line in events:</code> means: take each item from <code>events</code> in turn, call it <code>line</code>, and run the indented block below.</li>
+    <li><code>if "ERROR" in line:</code> asks whether the word ERROR appears inside this line. Only two of the four lines say it.</li>
+    <li><code>errors = errors + 1</code> adds one to the counter each time. A counter like this is a common pattern: start at 0, then add as you find things.</li>
+    <li>After the loop, <code>if / elif / else</code> picks exactly <b>one</b> of three messages. With two errors the first test, <code>errors &gt;= 2</code>, is true.</li>
+    <li>The <code>while</code> loop repeats while <code>attempts &lt; 3 and not connected</code>. Each pass adds 1 to <code>attempts</code>. When <code>attempts</code> reaches 3 the code sets <code>connected = True</code> and the loop stops. Without that update the loop would never end.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">This is the agent loop</span><p>Look back at the loop from Chapter 11: <i>ask the model what to do, run the tool, add the result, repeat until the model says it is done</i>. It is a <code>while</code> loop with a decision inside it. And that is why every serious agent needs a <b>step limit</b>: a <code>while</code> loop whose condition never becomes false runs forever. Notice how the connection loop above has an exit (<code>attempts &lt; 3</code>) so it cannot spin endlessly.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Delete one of the ERROR lines from <code>events</code>. Which message prints now? Predict first.</li>
+    <li>Change the <code>while</code> loop to give up after 2 attempts. What does it print at the end? (It will still say "Connected". Why is that misleading? This kind of subtle wrongness is what your tests, in C8, must catch.)</li>
+    <li>Add a <code>WARN</code> counter alongside the error counter.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C3 in plain words</h3>
+    <ul>
+      <li><code>if / elif / else</code> chooses a path. Indented lines belong to the block above them.</li>
+      <li><code>for</code> repeats once per item. <code>while</code> repeats until a condition is false.</li>
+      <li>A counter starts at zero and grows as you find things.</li>
+      <li>An agent is a while loop with a model's decision inside. Always give it an exit.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c18"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

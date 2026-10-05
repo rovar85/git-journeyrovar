@@ -1,0 +1,96 @@
+
+<!-- ============================ CODE LESSON C0 ============================ -->
+<section class="chapter" id="ch15" data-num="C0" data-title="C0 · Start here" data-road="Coding track: how to start" data-sub="What programming is, how to run your first file, how to read an error. No experience needed.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C0</span>
+    <h2>Coding track: start here</h2>
+  </header>
+
+  <div class="board note"><span class="tag">Read this first</span><p>Chapters 1 to 14 explain the ideas. This <b>coding track</b> teaches you to read and write the programs that make those ideas real, starting from zero and ending with a working Enterprise Vault diagnostic agent. Every lesson uses your own Enterprise Vault world as the example, so the code always has a meaning you recognise. You do not need to be good at maths. You do not need to memorise anything. And you already have a skill that matters more than syntax: <b>as a QA engineer you think in terms of "expected result versus actual result"</b>, and that is exactly how good programmers test their code.</p></div>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>explain what a program is, and run a Python file on your computer</li>
+      <li>use the step-through player, which works on a phone too</li>
+      <li>read an error message calmly and know where to look</li>
+    </ul>
+  </div>
+
+  <h3>What is a program?</h3>
+  <p>A program is a text file of instructions that a computer follows <b>from top to bottom</b>, one line at a time, like a recipe. We use the language <b>Python</b> because it reads almost like English, it is the main language of AI work, and every agent example in this course is written in it. Python itself is a program called the <b>interpreter</b>: you hand it your text file and it carries out the instructions.</p>
+  <p>Three words you will hear constantly:</p>
+  <ul>
+    <li><b>Code</b> is the text you write.</li>
+    <li><b>Run</b> means asking Python to follow the instructions.</li>
+    <li><b>Output</b> is what the program prints back to you.</li>
+  </ul>
+
+  <h3>How the lessons work</h3>
+  <p>Each lesson has the same rhythm, and you can stop after any step:</p>
+  <ol>
+    <li><b>The idea</b> in plain words, tied to Enterprise Vault.</li>
+    <li><b>The code player.</b> A short program you can step through <i>one line at a time</i>. The highlighted line is the one that is <b>about to run</b>. Watch the Variables box (what the program remembers) and the Output box (what it has printed). This is the best way to see what code really does, and it works on a phone.</li>
+    <li><b>Line by line.</b> A plain-English explanation.</li>
+    <li><b>Predict the output.</b> A quiz that makes you think like the computer.</li>
+    <li><b>Your turn.</b> Small changes to try. Optional but powerful.</li>
+  </ol>
+  <p>Everything shown by the player is a <b>real run</b>: I executed each program and recorded every step, so what you see is what Python really did.</p>
+
+  <h3>Running a file on your laptop (about 5 minutes)</h3>
+  <p>You do not need any of this to follow the lessons. When you are ready to try it for real, here is the path on Windows. You have already used the terminal (PowerShell) and <code>pip</code> earlier in this project, so Python is very likely installed.</p>
+  <div class="lab" id="setup"><div class="lab-title">Your first run</div><div id="su-step"></div></div>
+
+  <h3>On your phone</h3>
+  <p>The course pages, demos, quizzes and the step-through code player all work on a phone. To <i>run</i> your own Python on a phone you would need a Python app or an online Python playground, which I cannot vouch for individually, so treat that as optional. A laptop is simply more comfortable for typing code. A good plan: read and step through on your phone, then do the "Your turn" tasks at your laptop.</p>
+
+  <h3>Reading an error message</h3>
+  <p>Errors are normal. Programmers see them all day. Python's error report is called a <b>traceback</b>, and it is easier than it looks. <b>Read the last line first.</b> It names the kind of mistake and says what went wrong. The lines above it show where. Here is an example, with the important parts marked:</p>
+  <div class="codewrap"><pre class="code"><code>Traceback (most recent call last):
+  File "check.py", line 4, in &lt;module&gt;        &lt;- WHERE: file check.py, line 4
+    print(status)                              &lt;- the line that failed
+NameError: name 'status' is not defined       &lt;- WHAT: you used a name that does not exist yet</code></pre></div>
+  <p>Common ones you will meet, and what they usually mean:</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Error</th><th>Usually means</th></tr></thead><tbody>
+    <tr><td>NameError</td><td>a typo, or you used a variable before creating it</td></tr>
+    <tr><td>SyntaxError</td><td>the code is not written in a form Python understands: a missing quote, bracket or colon</td></tr>
+    <tr><td>IndentationError</td><td>the spaces at the start of a line are inconsistent (Python uses spaces to group lines)</td></tr>
+    <tr><td>KeyError</td><td>you asked a dictionary for a label it does not have</td></tr>
+    <tr><td>TypeError</td><td>you mixed things that do not mix, like adding a number to text</td></tr>
+  </tbody></table></div>
+
+  <h3>Habits that make learning faster</h3>
+  <ul>
+    <li><b>Change one thing at a time</b>, then run again. If it breaks, you know which change did it.</li>
+    <li><b>Predict before you run.</b> Say what you expect the output to be, then compare. That is your QA instinct at work, and it is how understanding grows.</li>
+    <li><b>Run often.</b> Little and often beats writing a lot and then debugging a lot.</li>
+    <li><b>Never put secrets in code.</b> Passwords and API keys do not belong in a file you might share. Lesson C10 shows the safe way.</li>
+    <li><b>AI can help you code, and you stay the engineer.</b> You may ask an AI assistant to explain a line or fix an error (paste the whole error message). But always read what it gives you, run it on harmless data first, and keep tools read-only until you trust them. Lesson C10 covers this properly.</li>
+  </ul>
+
+  <h3>The road ahead</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Lesson</th><th>You learn</th><th>Enterprise Vault example</th><th>Course idea it unlocks</th></tr></thead><tbody>
+    <tr><td>C1</td><td>variables, text, numbers, true/false</td><td>facts about one server</td><td>state</td></tr>
+    <tr><td>C2</td><td>lists and dictionaries</td><td>a fleet of servers; a tool result</td><td>tool results, JSON</td></tr>
+    <tr><td>C3</td><td>decisions and loops</td><td>reading an event log; retrying</td><td>the agent loop</td></tr>
+    <tr><td>C4</td><td>functions</td><td>get_service_status</td><td>a tool</td></tr>
+    <tr><td>C5</td><td>errors and JSON</td><td>test_sql_connectivity</td><td>validation, structured output</td></tr>
+    <tr><td>C6</td><td>classes</td><td>an Investigation with evidence</td><td>agent state</td></tr>
+    <tr><td>C7</td><td>a pretend lab and a diagnosis loop</td><td>stopped service, SQL down</td><td>the full loop, no AI yet</td></tr>
+    <tr><td>C8</td><td>tests and measuring</td><td>failure scenarios</td><td>evaluation, regression suite</td></tr>
+    <tr><td>C9</td><td>traces and a policy gate</td><td>allow, ask, deny</td><td>observability, safety</td></tr>
+    <tr><td>C10</td><td>real models, API keys, an MCP server, coding with AI</td><td>your tools as an MCP server</td><td>MCP, production</td></tr>
+    <tr><td>C11</td><td>the complete starter agent</td><td>four scenarios, scored</td><td>the capstone</td></tr>
+  </tbody></table></div>
+
+  <div class="recap"><h3>Lesson C0 in plain words</h3>
+    <ul>
+      <li>A program is instructions run top to bottom. Python is the interpreter that follows them.</li>
+      <li>Use the step-through player to watch code run, even on a phone.</li>
+      <li>To run a file: open PowerShell, move to the folder, type <code>python filename.py</code>.</li>
+      <li>Read errors from the last line upward.</li>
+      <li>Predict, run, compare. Change one thing at a time.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c15"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

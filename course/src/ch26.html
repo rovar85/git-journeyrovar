@@ -1,0 +1,77 @@
+
+<!-- ============================ CODE LESSON C11 ============================ -->
+<section class="chapter" id="ch26" data-num="C11" data-title="C11 · Starter agent" data-road="C11 · The complete starter agent" data-sub="One runnable file: a lab with four failures, read-only tools, a gate, a brain, a trace and an evaluation.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C11</span>
+    <h2>The complete starter agent</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a complete agent program and name which course idea each part implements</li>
+      <li>run it, evaluate it, and watch the gate block a badly behaved brain</li>
+      <li>list the next upgrades, from easy to advanced</li>
+    </ul>
+  </div>
+
+  <p>This is the capstone in code. Every part comes from something you have learned. It is one file, about a hundred and twenty lines, and it runs on any computer with Python and nothing installed. (Saved as <code>course/examples/ev_agent.py</code>.) Read the code first, then the map below it.</p>
+
+  <div class="codewrap"><pre class="code"><code><!--include:examples/ev_agent.py--></code></pre></div>
+
+  <h3>What it prints</h3>
+  <p>This is the actual output when I ran it:</p>
+  <div class="codewrap"><pre class="code"><code><!--include:examples/ev_agent_output.txt--></code></pre></div>
+
+  <h3>How the parts map to the course</h3>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>In the code</th><th>What it is</th><th>Course idea</th></tr></thead><tbody>
+    <tr><td><code>SCENARIOS</code></td><td>four controlled failures with the correct root cause</td><td>a test set (Ch 9, C8)</td></tr>
+    <tr><td><code>class Lab</code></td><td>a pretend environment whose methods are tools</td><td>environment and tools (Ch 7, 8, C4)</td></tr>
+    <tr><td><code>READ_ONLY</code>, <code>gate()</code></td><td>deny by default; only read-only tools run</td><td>least privilege, policy (Ch 12, C9)</td></tr>
+    <tr><td><code>brain()</code></td><td>chooses the next step from history, or concludes</td><td>the decision step; where an LLM goes (Ch 7, 11, C7)</td></tr>
+    <tr><td><code>run_agent()</code></td><td>the loop, with a step limit and a trace</td><td>the agent loop (Ch 7, 11, C3)</td></tr>
+    <tr><td><code>evaluate()</code></td><td>runs every scenario, reports success and cost-like numbers</td><td>scorecard, regression (Ch 9, C8)</td></tr>
+    <tr><td><code>eager_brain()</code></td><td>a brain that tries to restart the service itself</td><td>why the gate must not trust the model (Ch 12)</td></tr>
+  </tbody></table></div>
+
+  <div class="board note"><span class="tag">The most important thing in the output</span><p>Look at the last line: the badly behaved brain made <b>four attempts to restart a production service</b>, and the gate blocked every one, while the diagnoses stayed correct. Nothing in the gate needed to know the brain was misbehaving. That is the point of putting authority in software policy, and you can verify it in thirty seconds by running the file.</p></div>
+
+  <h3>Fixes since C7</h3>
+  <ul>
+    <li>The conclusion is now <b>computed from the evidence</b> (the <code>return "final", ...</code> lines), not printed as fixed text.</li>
+    <li>There are scenarios where the right answer is "cause unclear: escalate to a human" and "no fault found". A good agent knows when to stop and when to ask.</li>
+    <li>Results are scored against known answers, so a regression shows up as <code>FAIL</code>.</li>
+  </ul>
+
+  <h3>Upgrades, from easy to advanced</h3>
+  <p>Each one maps to a skill level and a chapter. Do them in order, and run the evaluation after every change.</p>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>#</th><th>Upgrade</th><th>What you learn</th></tr></thead><tbody>
+    <tr><td>1</td><td>Add a fifth scenario from a real failure you have seen</td><td>building a test set from your QA lab</td></tr>
+    <tr><td>2</td><td>Add a tool, <code>check_disk_space</code>, to <code>Lab</code> and <code>READ_ONLY</code></td><td>tool design and permissions</td></tr>
+    <tr><td>3</td><td>Write the trace to <code>trace.jsonl</code> with timestamps</td><td>observability (C9)</td></tr>
+    <tr><td>4</td><td>Move <code>SCENARIOS</code> into a JSON file and load it</td><td>files and JSON (C5)</td></tr>
+    <tr><td>5</td><td>Add human approval: for <code>restart_service</code>, ask <code>input("Approve? y/n ")</code> instead of always denying</td><td>an approval boundary (Ch 12)</td></tr>
+    <tr><td>6</td><td>Count tool calls per run as "cost", and add a hard limit</td><td>budgets (Ch 8, 9)</td></tr>
+    <tr><td>7</td><td>Replace <code>brain()</code> with a real model call (Chapter 11), keeping everything else</td><td>real model, same loop</td></tr>
+    <tr><td>8</td><td>Run each scenario ten times and report pass@k and pass^k</td><td>capability versus reliability (Ch 9)</td></tr>
+    <tr><td>9</td><td>Expose the tools through an MCP server (C10)</td><td>MCP (Ch 10)</td></tr>
+    <tr><td>10</td><td>Connect to a real lab, read-only, with minimal credentials</td><td>production thinking (Ch 12, 13)</td></tr>
+  </tbody></table></div>
+  <div class="board note"><span class="tag">Honest checkpoint</span><p>If you can read this file and say what every part does, and you have done upgrades 1 to 3 yourself, you are at <b>skill level 4 (Implement)</b>. With 5 to 8 you are into levels 5 and 6 (<b>Debug and Evaluate</b>). Upgrades 9 and 10 take you toward 7 and 8. That is the realistic path the capstone chapter describes, and now it is a list of steps you can actually take.</p></div>
+
+  <h3>Where to go from here</h3>
+  <ul>
+    <li>Do the "Your turn" tasks you skipped in C1 to C9. They are the real learning.</li>
+    <li>Revisit Chapter 14's design workbook and compare its brief with this program. Which of your choices are not yet in the code?</li>
+    <li>Look at the PhiloAgents repository (Chapter 13) and find the same parts: tools, graph, state, tracing, evaluation, in a bigger form.</li>
+  </ul>
+
+  <div class="recap"><h3>Lesson C11 in plain words</h3>
+    <ul>
+      <li>A complete agent is a few simple parts: scenarios, tools, a gate, a brain, a loop, an evaluation.</li>
+      <li>The gate protected the system from a misbehaving brain without needing to know it was misbehaving.</li>
+      <li>You improve it in small steps, measuring after each. Replace the brain last.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c26"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

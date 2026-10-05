@@ -220,3 +220,13 @@ label.fl{display:block;font-weight:700;margin:12px 0 4px}
 @media (max-width:620px){.two{grid-template-columns:1fr}}
 .pre-out{white-space:pre-wrap;word-break:break-word;font-family:var(--f-mono);font-size:.85rem;background:var(--code-bg);border-radius:8px;padding:12px}
 .hero .daily{margin-top:20px}
+
+/* code player */
+.tracer .line{display:block;white-space:pre;padding:0 14px 0 0}
+.tracer .line.cur{background:var(--mark)}
+.tracer .ln{display:inline-block;width:2.6em;text-align:right;padding-right:.9em;color:var(--muted);user-select:none}
+.tracer .codewrap{margin:8px 0}
+.tracer .out table td:first-child{width:34%}
+.lesson-tag{display:inline-block;font-family:var(--f-hand);font-size:1.25rem;color:var(--note)}
+/* long unbroken code phrases must wrap on narrow screens */
+p,li,td,.q p,.q .choices button,.fb,.out,.board{overflow-wrap:anywhere}

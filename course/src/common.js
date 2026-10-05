@@ -58,6 +58,36 @@ window.H = (function(){
     return inp;
   };
 
+
+  /* Step-through code player. T = {code:[lines], steps:[{l, f, v:[[name,value]], o}]} */
+  H.tracer = function(root, T){
+    var i = 0;
+    root.innerHTML = '<div class="tr-code"></div><div class="step-controls"><button class="btn ghost" type="button" data-b>Back</button><button class="btn" type="button" data-n>Next line</button><button class="btn ghost" type="button" data-e>Run to end</button><button class="btn ghost" type="button" data-r>Restart</button><span class="cnt"></span></div><div class="two"><div><p style="margin:0 0 4px"><b>Variables</b> <small style="color:var(--muted)" data-f></small></p><div class="out" data-v style="margin:0"></div></div><div><p style="margin:0 0 4px"><b>Output so far</b></p><div class="pre-out" data-o style="min-height:4em"></div></div></div>';
+    var codeEl = root.querySelector(".tr-code"), cnt = root.querySelector(".cnt");
+    var html = '<div class="codewrap"><pre class="code" style="padding:10px 0">' + T.code.map(function(t,k){return '<span class="line" data-l="'+(k+1)+'"><span class="ln">'+(k+1)+'</span>'+H.esc(t)+'</span>'}).join("") + '</pre></div>';
+    codeEl.innerHTML = html;
+    var copyBtn = document.createElement("button"); copyBtn.type="button"; copyBtn.className="copy"; copyBtn.textContent="Copy";
+    copyBtn.addEventListener("click", function(){H.copy(copyBtn, T.code.join("\n"))});
+    codeEl.querySelector(".codewrap").appendChild(copyBtn);
+    function draw(){
+      var s = T.steps[i], last = i === T.steps.length - 1;
+      Array.prototype.forEach.call(codeEl.querySelectorAll(".line"), function(e){e.classList.toggle("cur", !last && Number(e.dataset.l) === s.l)});
+      var cur = codeEl.querySelector(".line.cur"); if(cur && cur.scrollIntoView && false) cur.scrollIntoView({block:"nearest"});
+      cnt.textContent = last ? "Finished" : "About to run line " + s.l + " (step " + (i+1) + " of " + (T.steps.length-1) + ")";
+      root.querySelector("[data-f]").textContent = "in " + s.f;
+      root.querySelector("[data-v]").innerHTML = s.v.length ? '<table class="tbl" style="min-width:0;width:100%"><tbody>' + s.v.map(function(r){return '<tr><td>'+H.esc(r[0])+'</td><td style="font-family:var(--f-mono);font-size:.82rem;word-break:break-word">'+H.esc(r[1])+'</td></tr>'}).join("") + '</tbody></table>' : '<span style="color:var(--muted)">(nothing yet)</span>';
+      root.querySelector("[data-o]").textContent = s.o || "(no output yet)";
+      root.querySelector("[data-b]").disabled = i === 0;
+      root.querySelector("[data-n]").disabled = last;
+      root.querySelector("[data-e]").disabled = last;
+    }
+    root.querySelector("[data-b]").addEventListener("click", function(){if(i>0){i--;draw()}});
+    root.querySelector("[data-n]").addEventListener("click", function(){if(i<T.steps.length-1){i++;draw()}});
+    root.querySelector("[data-e]").addEventListener("click", function(){i=T.steps.length-1;draw()});
+    root.querySelector("[data-r]").addEventListener("click", function(){i=0;draw()});
+    draw();
+  };
+
   H.copy = function(btn, text){
     function fallback(){
       var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
@@ -77,7 +107,7 @@ window.H = (function(){
       var a=document.createElement("a");a.href="#"+c.id;a.textContent=c.dataset.title;a.dataset.t=c.id;chips.appendChild(a);
       if(road && c.dataset.road){
         var d=document.createElement("div");
-        d.innerHTML='<span>'+(k+1)+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p>';
+        d.innerHTML='<span>'+(c.dataset.num||(k+1))+'</span><p style="margin:0"><a href="#'+c.id+'" style="text-decoration:none;color:inherit"><b>'+esc(c.dataset.road)+'</b></a><small>'+esc(c.dataset.sub||"")+'</small></p>';
         road.appendChild(d);
       }
     });
@@ -95,8 +125,12 @@ window.H = (function(){
     }
     addEventListener("scroll",onScroll,{passive:true});onScroll();
 
+    /* code players */
+    $$('.tracer[data-trace]').forEach(function(el){var T=window.TRACES&&window.TRACES[el.dataset.trace]; if(T)H.tracer(el,T)});
+
     /* copy buttons on code blocks */
     $$(".codewrap").forEach(function(w){
+      if(w.querySelector(".copy"))return;
       var b=document.createElement("button");b.type="button";b.className="copy";b.textContent="Copy";
       b.addEventListener("click",function(){H.copy(b,w.querySelector("code").textContent)});w.appendChild(b);
     });

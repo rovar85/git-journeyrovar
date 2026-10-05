@@ -1,0 +1,57 @@
+
+<!-- ============================ CODE LESSON C6 ============================ -->
+<section class="chapter" id="ch21" data-num="C6" data-title="C6 · Classes" data-road="C6 · Classes: the state of an investigation" data-sub="Bundle data and actions together. This is how agent state is kept.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C6</span>
+    <h2>Classes: the state of an investigation</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>read a simple class: attributes, methods, <code>self</code></li>
+      <li>explain how a class can hold an agent's goal, evidence and hypothesis</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>So far, facts live in separate variables and actions live in separate functions. But an investigation is one thing: it has a goal, a growing list of evidence and a current hypothesis, and you do things to it (add evidence, print a report). A <b>class</b> bundles those together, like a case folder with a cover sheet and a set of standard procedures.</p>
+  <ul>
+    <li>A class is a <b>template</b>. Writing <code>Investigation("Why is indexing down?")</code> makes one real folder from the template (an <b>object</b>).</li>
+    <li><code>__init__</code> runs once when the object is created and sets it up.</li>
+    <li>Variables that belong to the object are <b>attributes</b>, written <code>self.goal</code>. Functions that belong to it are <b>methods</b>.</li>
+    <li><code>self</code> means "this particular object". It is always the first input of a method.</li>
+  </ul>
+  <p>This is where agent <b>state</b> (Chapter 7) lives in real code. Frameworks do the same thing with larger state objects (for example, the LangGraph state in Chapter 13 that holds messages and the philosopher's context).</p>
+
+  <h3>Watch it run</h3>
+  <p>Look at the Variables box after the object is created: the whole object is shown with its attributes, and it changes as evidence is added.</p>
+  <div class="lab"><div class="tracer" data-trace="c06"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>class Investigation:</code> starts the template. Everything indented below belongs to it.</li>
+    <li><code>__init__(self, goal)</code> stores the goal and starts an empty evidence list and a placeholder hypothesis.</li>
+    <li><code>add_evidence</code> appends a fact and, if a new hypothesis is supplied, replaces the old one. The <code>=None</code> makes the hypothesis optional.</li>
+    <li><code>report</code> builds lines of text. <code>enumerate(..., start=1)</code> counts the evidence from 1, and <code>"\n".join(lines)</code> glues the lines together with line breaks.</li>
+    <li><code>case = Investigation(...)</code> creates the object. <code>case.add_evidence(...)</code> calls a method on it. Each call changes the object's own state.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">Connect it to Chapter 7</span><p>Compare this output with the agent simulator: "Evidence so far" and "Working hypothesis" were exactly this object. The model decides the next action, and <b>your code keeps the state</b>. That is why Chapter 8 said you should be able to inspect what the agent knows at every step.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Add a third piece of evidence: "SQL connectivity test fails". Update the hypothesis. Predict the report.</li>
+    <li>Add a method <code>count_evidence(self)</code> that returns how many facts there are.</li>
+    <li>Create a second investigation for a different goal. Notice the two objects never interfere with each other.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C6 in plain words</h3>
+    <ul>
+      <li>A class is a template for bundling data (attributes) and actions (methods).</li>
+      <li><code>self</code> means "this object". <code>__init__</code> sets it up.</li>
+      <li>Agent state is a class holding the goal, evidence and hypothesis.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c21"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>

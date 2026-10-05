@@ -1,0 +1,57 @@
+
+<!-- ============================ CODE LESSON C8 ============================ -->
+<section class="chapter" id="ch23" data-num="C8" data-title="C8 · Tests" data-road="C8 · Tests and measuring" data-sub="A test set, pass and fail, a success rate, and a regression check. Your QA skills, in code.">
+  <header class="chapter-head">
+    <span class="hand">Coding track · Lesson C8</span>
+    <h2>Tests and measuring: your QA skills in code</h2>
+  </header>
+
+  <div class="goals"><b>By the end of this lesson you can:</b>
+    <ul>
+      <li>write a small set of test scenarios with expected results</li>
+      <li>compute a pass rate and use <code>assert</code> as a regression alarm</li>
+      <li>explain how this becomes the evaluation harness for an agent</li>
+    </ul>
+  </div>
+
+  <h3>The idea</h3>
+  <p>This is the lesson where you are already the expert. Chapter 9 said an agent needs a test set of reproducible failures with expected outcomes, a scorecard, and a regression suite. Testers do this every day. In code it is a <b>list of cases</b>, a <b>loop that runs each one</b>, and a <b>comparison of actual to expected</b>.</p>
+  <ul>
+    <li>Each scenario is a dictionary: the conditions (service state, SQL, DNS) and the <b>expected</b> diagnosis.</li>
+    <li>The loop calls the function under test and compares its answer to the expectation: <code>PASS</code> or <code>FAIL</code>.</li>
+    <li>The <b>task success rate</b> is passes divided by total.</li>
+    <li><code>assert condition, "message"</code> stops the program with an error if the condition is false. Put it at the end of a test run and any regression becomes impossible to miss.</li>
+  </ul>
+
+  <h3>Watch it run</h3>
+  <div class="lab"><div class="tracer" data-trace="c08"></div></div>
+
+  <h3>Line by line</h3>
+  <ul>
+    <li><code>SCENARIOS</code> is a list of three dictionaries. Each is a test case: the setup, plus <code>"expect"</code>, the right answer.</li>
+    <li><code>diagnose(service, sql, dns)</code> is the logic being tested. DNS failure first; then "stopped and SQL down"; otherwise it escalates to a human. (Note the third rule: it knows when to say <i>I cannot tell</i>. Chapter 9's "escalation rate" metric measures that.)</li>
+    <li><code>passed = passed + (1 if ok else 0)</code> adds 1 for a pass. <code>1 if ok else 0</code> is a one-line decision.</li>
+    <li><code>{rate:.0%}</code> inside an f-string formats a fraction as a percentage.</li>
+    <li><code>assert rate == 1.0, ...</code> would crash the run with your message if any case failed. In a real project this runs every time you change anything.</li>
+  </ul>
+
+  <div class="board note"><span class="tag">From three cases to fifty</span><p>Your notes say to measure a diagnostic agent against <b>50 or more known failure scenarios</b>, kept as a regression suite. This is the same program with more rows in <code>SCENARIOS</code>. The rows can come from your existing QA lab: every known failure mode you have reproduced becomes a case. Every time you improve the agent, you rerun the suite. If something that used to pass now fails, that is a <b>regression</b>.</p></div>
+  <div class="board note"><span class="tag">Capability versus reliability</span><p>A rule-based <code>diagnose</code> gives the same answer every time, so a single run is enough. A language-model brain does not: run each scenario several times and report how often it succeeds <b>every</b> time (reliability, <code>pass^k</code>) as well as at least once (capability, <code>pass@k</code>). See <code>reliability_demo.py</code> in Chapter 9.</p></div>
+
+  <h3>Your turn</h3>
+  <ol>
+    <li>Break the code on purpose: change the third scenario's <code>"expect"</code> to <code>"SQL unreachable"</code>. Run it. What is the success rate? What does the <code>assert</code> do?</li>
+    <li>Add two scenarios of your own that reflect failures you have seen. Add the right expectation for each.</li>
+    <li>Add a fourth tracked number, such as how many cases escalated to a human.</li>
+  </ol>
+
+  <div class="recap"><h3>Lesson C8 in plain words</h3>
+    <ul>
+      <li>A test set is a list of cases with expected answers. Run, compare, count.</li>
+      <li>Success rate = passes ÷ total. <code>assert</code> turns a regression into an immediate failure.</li>
+      <li>Your QA experience maps directly onto evaluating agents.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-quiz="c23"><h3>Check yourself</h3><div class="score" hidden></div></div>
+</section>
