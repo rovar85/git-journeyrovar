@@ -6451,8 +6451,8 @@
      "x": 0
     },
     {
-     "c": "$ ./hello.sh 2>&1 | sed -E 's/line [0-9]+: //' | head -1",
-     "o": "/home/student/.lesson-tmp/run.sh: ./hello.sh: Permission denied",
+     "c": "$ ./hello.sh 2>&1 | sed -E 's#^.*run.sh: #bash: #' | head -1",
+     "o": "bash: line 210: ./hello.sh: Permission denied",
      "x": 0
     },
     {
@@ -6487,7 +6487,7 @@
     }
    ]
   ],
-  "key": "3932ca628371627b"
+  "key": "af9d7e8425993d4a"
  },
  "linux-6": {
   "blocks": [
@@ -7266,6 +7266,494 @@
    ]
   ],
   "key": "721ee5a8d9eead86"
+ },
+ "monitoring-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > node_exporter.py <<'EOF'\n> import http.server\n> \n> def meminfo():\n>     out = {}\n>     for line in open(\"/proc/meminfo\"):\n>         k, v = line.split(\":\")\n>         out[k] = int(v.split()[0]) * 1024        # kB -> bytes\n>     return out\n> \n> def metrics():\n>     m = meminfo()\n>     load1, load5, load15 = open(\"/proc/loadavg\").read().split()[:3]\n>     lines = [\n>         \"# HELP lab_load1 1 minute load average\",\n>         \"# TYPE lab_load1 gauge\",\n>         f\"lab_load1 {load1}\",\n>         \"# HELP lab_memory_total_bytes Total memory\",\n>         \"# TYPE lab_memory_total_bytes gauge\",\n>         f\"lab_memory_total_bytes {m['MemTotal']}\",\n>         \"# HELP lab_memory_available_bytes Memory available for new processes\",\n>         \"# TYPE lab_memory_available_bytes gauge\",\n>         f\"lab_memory_available_bytes {m['MemAvailable']}\",\n>     ]\n>     return \"\\n\".join(lines) + \"\\n\"\n> \n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         if self.path == \"/metrics\":\n>             body = metrics().encode()\n>             self.send_response(200)\n>             self.send_header(\"Content-Type\", \"text/plain; version=0.0.4\")\n>             self.end_headers()\n>             self.wfile.write(body)\n>         else:\n>             self.send_response(404); self.end_headers()\n>     def log_message(self, *a): pass\n> \n> http.server.HTTPServer((\"127.0.0.1\", 9101), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 node_exporter.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:9101/metrics | sed -E 's/^(lab_[a-z_0-9]+) [0-9.]+$/\\1 <value>/'",
+     "o": "# HELP lab_load1 1 minute load average\n# TYPE lab_load1 gauge\nlab_load1 <value>\n# HELP lab_memory_total_bytes Total memory\n# TYPE lab_memory_total_bytes gauge\nlab_memory_total_bytes <value>\n# HELP lab_memory_available_bytes Memory available for new processes\n# TYPE lab_memory_available_bytes gauge\nlab_memory_available_bytes <value>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s http://127.0.0.1:9101/metrics | awk '/^lab_memory_total_bytes /{t=$2} /^lab_memory_available_bytes /{a=$2} END{p=(t-a)/t*100; print (p>=0 && p<=100) ? \"memory utilisation derived from two gauges is within 0-100%\" : \"unexpected value\"}'",
+     "o": "memory utilisation derived from two gauges is within 0-100%",
+     "x": 0
+    },
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'PY'\n> uptime = float(open(\"/proc/uptime\").read().split()[0])\n> print(\"# HELP lab_uptime_seconds Seconds since the machine booted.\")\n> print(\"# TYPE lab_uptime_seconds gauge\")\n> print(f\"lab_uptime_seconds {uptime}\")\n> PY",
+     "o": "# HELP lab_uptime_seconds Seconds since the machine booted.\n# TYPE lab_uptime_seconds gauge\nlab_uptime_seconds 10972.7",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4c84168e9ddbe487"
+ },
+ "monitoring-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > node_exporter.py <<'EOF'\n> import http.server\n> def meminfo():\n>     out = {}\n>     for line in open(\"/proc/meminfo\"):\n>         k, v = line.split(\":\"); out[k] = int(v.split()[0]) * 1024\n>     return out\n> def metrics():\n>     m = meminfo()\n>     load1 = open(\"/proc/loadavg\").read().split()[0]\n>     return (f\"# TYPE lab_load1 gauge\\nlab_load1 {load1}\\n\"\n>             f\"# TYPE lab_memory_total_bytes gauge\\nlab_memory_total_bytes {m['MemTotal']}\\n\"\n>             f\"# TYPE lab_memory_available_bytes gauge\\nlab_memory_available_bytes {m['MemAvailable']}\\n\")\n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         body = metrics().encode() if self.path == \"/metrics\" else b\"\"\n>         self.send_response(200 if body else 404)\n>         self.send_header(\"Content-Type\", \"text/plain; version=0.0.4; charset=utf-8\")   # Prometheus insists on a valid type\n>         self.end_headers(); self.wfile.write(body)\n>     def log_message(self, *a): pass\n> http.server.HTTPServer((\"127.0.0.1\", 9101), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 node_exporter.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > prometheus.yml <<'EOF'\n> global:\n>   scrape_interval: 2s\n> scrape_configs:\n>   - job_name: prometheus\n>     static_configs:\n>       - targets: [\"127.0.0.1:9090\"]\n>   - job_name: lab-node\n>     static_configs:\n>       - targets: [\"127.0.0.1:9101\"]\n>         labels: {site: london}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name prometheus --network host -v ~/lab/mon:/cfg prom/prometheus --config.file=/cfg/prometheus.yml --web.listen-address=127.0.0.1:9090 --storage.tsdb.path=/prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 12",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/-/ready",
+     "o": "Prometheus Server is Ready.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ curl -s $PROM/api/v1/targets | python3 -c '\n> import sys, json\n> for t in json.load(sys.stdin)[\"data\"][\"activeTargets\"]:\n>     print(t[\"labels\"][\"job\"], t[\"health\"], t[\"scrapeUrl\"])' | sort",
+     "o": "lab-node up http://127.0.0.1:9101/metrics\nprometheus up http://127.0.0.1:9090/metrics",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ promq 'up'",
+     "o": "site=london  1.0\n(no labels)  1.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- a selector with a label match\"",
+     "o": "--- a selector with a label match",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'up{job=\"lab-node\"}'",
+     "o": "site=london  1.0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a gauge (value varies per machine, so we test it)\"",
+     "o": "--- a gauge (value varies per machine, so we test it)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'lab_memory_available_bytes > 0'",
+     "o": "site=london  14998290432.0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- arithmetic between series: memory used percentage is between 0 and 100\"",
+     "o": "--- arithmetic between series: memory used percentage is between 0 and 100",
+     "x": 0
+    },
+    {
+     "c": "$ promq '(lab_memory_total_bytes - lab_memory_available_bytes) / lab_memory_total_bytes * 100 < 100'",
+     "o": "site=london  11.13",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- how many series does this Prometheus hold? (a count)\"",
+     "o": "--- how many series does this Prometheus hold? (a count)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'count({job=\"lab-node\"})'",
+     "o": "(no labels)  8.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null $PROM/api/v1/query?query=up; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum(rate(prometheus_http_requests_total{handler=\"/api/v1/query\"}[10s])) > 0'",
+     "o": "(no labels)  1.86",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- sum by a label\"",
+     "o": "--- sum by a label",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum by (handler) (rate(prometheus_http_requests_total[10s])) > 0' | sed -E 's/  [0-9.]+$//' | sort | head -3",
+     "o": "handler=/-/ready\nhandler=/api/v1/query\nhandler=/api/v1/targets",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- min / max / avg over time of a gauge (value is positive)\"",
+     "o": "--- min / max / avg over time of a gauge (value is positive)",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'avg_over_time(lab_memory_available_bytes[10s]) > 0'",
+     "o": "site=london  14998690816.0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the number of targets that are up\"",
+     "o": "--- the number of targets that are up",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'sum(up)'",
+     "o": "(no labels)  2.0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ end=$(date +%s); start=$((end-10))",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s --data-urlencode 'query=up{job=\"lab-node\"}' -d \"start=$start\" -d \"end=$end\" -d step=2 $PROM/api/v1/query_range | python3 -c '\n> import sys, json\n> d = json.load(sys.stdin)\n> vals = d[\"data\"][\"result\"][0][\"values\"]\n> print(\"range query returned\", len(vals), \"points, all equal to 1:\", all(v[1] == \"1\" for v in vals))'",
+     "o": "range query returned 4 points, all equal to 1: True",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kill %1",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fd41cc184a09c2f0"
+ },
+ "monitoring-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon3 && cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app.py <<'EOF'\n> import http.server, os, random, threading, time\n> \n> BUCKETS = [0.05, 0.1, 0.25, 0.5, 1.0]\n> lock = threading.Lock()\n> requests = {}                       # status -> count\n> buckets = [0] * len(BUCKETS)        # cumulative bucket counts\n> dur_count, dur_sum = 0, 0.0\n> \n> def observe(seconds):\n>     global dur_count, dur_sum\n>     dur_count += 1; dur_sum += seconds\n>     for i, b in enumerate(BUCKETS):\n>         if seconds <= b: buckets[i] += 1\n> \n> def render():\n>     out = [\"# TYPE app_requests_total counter\"]\n>     for st, n in sorted(requests.items()):\n>         out.append(f'app_requests_total{{status=\"{st}\"}} {n}')\n>     out.append(\"# TYPE app_request_duration_seconds histogram\")\n>     for b, c in zip(BUCKETS, buckets):\n>         out.append(f'app_request_duration_seconds_bucket{{le=\"{b}\"}} {c}')\n>     out.append(f'app_request_duration_seconds_bucket{{le=\"+Inf\"}} {dur_count}')\n>     out.append(f\"app_request_duration_seconds_sum {dur_sum:.4f}\")\n>     out.append(f\"app_request_duration_seconds_count {dur_count}\")\n>     return \"\\n\".join(out) + \"\\n\"\n> \n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_GET(self):\n>         if self.path == \"/metrics\":\n>             body = render().encode(); self.send_response(200)\n>             self.send_header(\"Content-Type\", \"text/plain; version=0.0.4; charset=utf-8\")\n>             self.end_headers(); self.wfile.write(body); return\n>         start = time.time()\n>         broken = os.path.exists(\"broken.flag\")\n>         time.sleep(random.uniform(0.01, 0.4 if broken else 0.08))   # slower when broken\n>         status = 500 if (broken and random.random() < 0.6) else 200\n>         with lock:\n>             requests[status] = requests.get(status, 0) + 1\n>             observe(time.time() - start)\n>         self.send_response(status); self.end_headers(); self.wfile.write(b\"ok\\n\")\n>     def log_message(self, *a): pass\n> \n> http.server.ThreadingHTTPServer((\"127.0.0.1\", 9102), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 app.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null http://127.0.0.1:9102/; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:9102/metrics | grep -E '^app_requests_total|_count '",
+     "o": "app_requests_total{status=\"200\"} 10\napp_request_duration_seconds_count 10",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rules.yml <<'EOF'\n> groups:\n>   - name: app\n>     interval: 2s\n>     rules:\n>       # Recording rules: precompute expensive/common expressions under a clear name\n>       - record: app:request_rate:rate10s\n>         expr: sum(rate(app_requests_total[10s]))\n>       - record: app:error_ratio:rate10s\n>         expr: sum(rate(app_requests_total{status=~\"5..\"}[10s])) / sum(rate(app_requests_total[10s]))\n>       - record: app:latency_p95:10s\n>         expr: histogram_quantile(0.95, sum by (le) (rate(app_request_duration_seconds_bucket[10s])))\n>       # Alerting rules\n>       - alert: HighErrorRatio\n>         expr: app:error_ratio:rate10s > 0.2\n>         for: 6s                         # must stay true this long before firing\n>         labels: {severity: page}\n>         annotations:\n>           summary: \"More than 20% of requests are failing\"\n>           runbook: \"https://wiki.example.com/runbooks/app-errors\"\n>       - alert: SlowRequests\n>         expr: app:latency_p95:10s > 0.25\n>         for: 6s\n>         labels: {severity: ticket}\n>         annotations: {summary: \"95th percentile latency above 250 ms\"}\n>       - alert: AppDown\n>         expr: up{job=\"app\"} == 0\n>         for: 6s\n>         labels: {severity: page}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > prometheus.yml <<'EOF'\n> global:\n>   scrape_interval: 2s\n> rule_files: [\"/cfg/rules.yml\"]\n> scrape_configs:\n>   - job_name: app\n>     static_configs:\n>       - targets: [\"127.0.0.1:9102\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name prometheus --network host -v ~/lab/mon3:/cfg prom/prometheus --config.file=/cfg/prometheus.yml --web.listen-address=127.0.0.1:9090 --storage.tsdb.path=/prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/rules | python3 -c '\n> import sys, json\n> for g in json.load(sys.stdin)[\"data\"][\"groups\"]:\n>     for r in g[\"rules\"]:\n>         print(r[\"type\"], r[\"name\"], r[\"health\"])'",
+     "o": "recording app:request_rate:rate10s ok\nrecording app:error_ratio:rate10s ok\nrecording app:latency_p95:10s ok\nalerting HighErrorRatio ok\nalerting SlowRequests ok\nalerting AppDown ok",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > traffic.sh <<'EOF'\n> #!/bin/bash\n> # about 20 requests per second until killed\n> while true; do for i in 1 2 3 4 5; do curl -s -o /dev/null http://127.0.0.1:9102/ & done; sleep 0.25; done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x traffic.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./traffic.sh > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ traffic=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 14",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"request rate above 5/s:    $(promq 'app:request_rate:rate10s > 5' | grep -c .)\"",
+     "o": "request rate above 5/s:    1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"5xx responses recorded so far: $(curl -s http://127.0.0.1:9102/metrics | grep -c 'status=\"500\"')\"",
+     "o": "5xx responses recorded so far: 0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"p95 latency under 100 ms:  $(promq 'app:latency_p95:10s < 0.1' | grep -c .)\"",
+     "o": "p95 latency under 100 ms:  1",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c 'import sys,json; print(\"active alerts:\", len(json.load(sys.stdin)[\"data\"][\"alerts\"]))'",
+     "o": "active alerts: 0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c '\n> import sys, json\n> for a in sorted(json.load(sys.stdin)[\"data\"][\"alerts\"], key=lambda a: a[\"labels\"][\"alertname\"]):\n>     print(a[\"labels\"][\"alertname\"], \"->\", a[\"state\"])'",
+     "o": "HighErrorRatio -> pending\nSlowRequests -> pending",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after waiting longer than the 'for' duration:\"",
+     "o": "--- after waiting longer than the 'for' duration:",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c '\n> import sys, json\n> for a in sorted(json.load(sys.stdin)[\"data\"][\"alerts\"], key=lambda a: a[\"labels\"][\"alertname\"]):\n>     print(a[\"labels\"][\"alertname\"], \"->\", a[\"state\"], \"| severity\", a[\"labels\"][\"severity\"])'",
+     "o": "HighErrorRatio -> firing | severity page\nSlowRequests -> firing | severity ticket",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"error ratio is above 20%:  $(promq 'app:error_ratio:rate10s > 0.2' | grep -c .)\"",
+     "o": "error ratio is above 20%:  1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"p95 latency above 250 ms:  $(promq 'app:latency_p95:10s > 0.25' | grep -c .)\"",
+     "o": "p95 latency above 250 ms:  1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mon3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm broken.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 22",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s $PROM/api/v1/alerts | python3 -c 'import sys,json; print(\"active alerts after the fix:\", len(json.load(sys.stdin)[\"data\"][\"alerts\"]))'",
+     "o": "active alerts after the fix: 0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"error ratio back to zero: $(promq 'app:error_ratio:rate10s == 0' | grep -c .)\"",
+     "o": "error ratio back to zero: 1",
+     "x": 0
+    },
+    {
+     "c": "$ kill $traffic 2>/dev/null; kill %1 %2 2>/dev/null; true",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f893bc94c2f9ddae"
+ },
+ "monitoring-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > ~/lab/app.log <<'EOF'\n> {\"ts\":\"2026-09-30T09:12:18Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"SQL connection timeout\",\"server\":\"SQL01\",\"attempt\":1,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:12:19Z\",\"level\":\"warn\",\"service\":\"indexer\",\"msg\":\"retrying\",\"server\":\"SQL01\",\"attempt\":2,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:12:35Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"task aborted\",\"server\":\"SQL01\",\"attempt\":3,\"trace_id\":\"a1b2\"}\n> {\"ts\":\"2026-09-30T09:20:01Z\",\"level\":\"info\",\"service\":\"search\",\"msg\":\"query ok\",\"ms\":84,\"trace_id\":\"c3d4\"}\n> {\"ts\":\"2026-09-30T12:15:41Z\",\"level\":\"error\",\"service\":\"indexer\",\"msg\":\"name resolution failed\",\"server\":\"SQL01\",\"attempt\":1,\"trace_id\":\"e5f6\"}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"errors by service:\"",
+     "o": "errors by service:",
+     "x": 0
+    },
+    {
+     "c": "$ python3 -c '\n> import json, collections\n> c = collections.Counter(json.loads(l)[\"service\"] for l in open(\"app.log\") if json.loads(l)[\"level\"] == \"error\")\n> print(dict(c))'",
+     "o": "{'indexer': 3}",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"all log lines belonging to one request (trace_id a1b2):\"",
+     "o": "all log lines belonging to one request (trace_id a1b2):",
+     "x": 0
+    },
+    {
+     "c": "$ grep a1b2 app.log | python3 -c '\n> import sys, json\n> for l in sys.stdin:\n>     d = json.loads(l); print(\" \", d[\"ts\"][11:19], d[\"level\"], d[\"msg\"])'",
+     "o": "  09:12:18 error SQL connection timeout\n  09:12:19 warn retrying\n  09:12:35 error task aborted",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> slo = 99.9\n> days = 30\n> total_minutes = days * 24 * 60\n> budget_pct = 100 - slo\n> budget_minutes = total_minutes * budget_pct / 100\n> print(f\"SLO {slo}% over {days} days -> error budget {budget_pct:.2f}% = {budget_minutes:.1f} minutes of full outage\")\n> print()\n> # Burn rate: how fast the budget is being consumed. 1.0 = exactly on target for the period.\n> print(\"Burn rate examples (requests failing now vs the allowed rate):\")\n> for error_rate in [0.05, 0.1, 0.5, 1.0, 5.0]:\n>     burn = error_rate / budget_pct\n>     hours_to_exhaust = (days * 24) / burn\n>     print(f\"  {error_rate:5.2f}% errors -> burn rate {burn:5.1f}x -> budget gone in {hours_to_exhaust:7.1f} hours\")\n> EOF",
+     "o": "SLO 99.9% over 30 days -> error budget 0.10% = 43.2 minutes of full outage\n\nBurn rate examples (requests failing now vs the allowed rate):\n   0.05% errors -> burn rate   0.5x -> budget gone in  1440.0 hours\n   0.10% errors -> burn rate   1.0x -> budget gone in   720.0 hours\n   0.50% errors -> burn rate   5.0x -> budget gone in   144.0 hours\n   1.00% errors -> burn rate  10.0x -> budget gone in    72.0 hours\n   5.00% errors -> burn rate  50.0x -> budget gone in    14.4 hours",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'PY'\n> slo = 0.999                      # 99.9% of searches succeed within 2 seconds\n> days = 30\n> minutes = days * 24 * 60\n> budget = (1 - slo) * minutes\n> print(f\"error budget over {days} days: {budget:.1f} minutes of bad service\")\n> for burn in (14.4, 6, 1):\n>     hours_to_empty = days * 24 / burn\n>     print(f\"burning at {burn:>4}x: budget gone in {hours_to_empty:6.1f} hours\")\n> PY",
+     "o": "error budget over 30 days: 43.2 minutes of bad service\nburning at 14.4x: budget gone in   50.0 hours\nburning at    6x: budget gone in  120.0 hours\nburning at    1x: budget gone in  720.0 hours",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c02c2dc424c301e6"
  },
  "networking-1": {
   "blocks": [
@@ -9131,6 +9619,190 @@
    ]
   ],
   "key": "53e375569a71941b"
+ },
+ "terraform-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf4 && cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"ev\" {\n>   input = \"EV01\"\n>   provisioner \"local-exec\" {\n>     command = \"echo hello > ev.txt\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ ls -A | grep -v '^\\.terraform'",
+     "o": "ev.txt\nmain.tf\nterraform.tfstate",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> import json\n> s = json.load(open(\"terraform.tfstate\"))\n> print(\"state format version:\", s[\"version\"])\n> print(\"resources recorded  :\", [(r[\"type\"], r[\"name\"]) for r in s[\"resources\"]])\n> print(\"keys at top level   :\", sorted(s.keys()))\n> PY",
+     "o": "state format version: 4\nresources recorded  : [('terraform_data', 'ev')]\nkeys at top level   : ['check_results', 'lineage', 'outputs', 'resources', 'serial', 'terraform_version', 'version']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state list",
+     "o": "terraform_data.ev",
+     "x": 0
+    },
+    {
+     "c": "$ terraform state show terraform_data.ev | grep -E \"input|output\" | sed 's/  */ /g'",
+     "o": " input = \"EV01\"\n output = \"EV01\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"ev\"/\"ev_server\"/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- after renaming without telling Terraform:\"",
+     "o": "--- after renaming without telling Terraform:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"Plan:|will be (destroyed|created)\"",
+     "o": "  # terraform_data.ev will be destroyed\n  # terraform_data.ev_server will be created\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ cat >> main.tf <<'EOF'\n> \n> moved {\n>   from = terraform_data.ev\n>   to   = terraform_data.ev_server\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- with a moved block:\"",
+     "o": "--- with a moved block:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"Plan:|has moved|No changes\"",
+     "o": "  # terraform_data.ev has moved to terraform_data.ev_server\nPlan: 0 to add, 0 to change, 0 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 0 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > drift.tf <<'EOF'\n> variable \"msg\" {\n>   default = \"expected\"\n> }\n> resource \"terraform_data\" \"note\" {\n>   input = var.msg\n>   provisioner \"local-exec\" {\n>     command = \"echo ${var.msg} > note.txt\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"someone edited the real thing by hand\" > note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"No changes|Plan:\"",
+     "o": "No changes. Your infrastructure matches the configuration.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm drift.tf note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 1 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '.terraform/\\n*.tfstate\\n*.tfstate.*\\n*.tfvars\\ncrash.log\\n' > .gitignore",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat .gitignore",
+     "o": ".terraform/\n*.tfstate\n*.tfstate.*\n*.tfvars\ncrash.log",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a suitable .gitignore for a Terraform repository:\"",
+     "o": "--- a suitable .gitignore for a Terraform repository:",
+     "x": 0
+    },
+    {
+     "c": "$ cat > .gitignore <<'EOF'\n> # Terraform\n> .terraform/\n> *.tfstate\n> *.tfstate.*\n> crash.log\n> *.tfplan\n> # variable files that may contain secrets\n> *.tfvars\n> *.tfvars.json\n> # keep the dependency lock file (do NOT ignore .terraform.lock.hcl)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat .gitignore | grep -v '^#' | grep .",
+     "o": ".terraform/\n*.tfstate\n*.tfstate.*\ncrash.log\n*.tfplan\n*.tfvars\n*.tfvars.json",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fb8897fb746eb08b"
  },
  "terraform-5": {
   "blocks": [

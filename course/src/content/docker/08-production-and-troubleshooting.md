@@ -34,7 +34,7 @@ true
 Apply several at once and see the effects:
 
 ```run
-docker run --rm --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m --pids-limit 20 busybox sh -c 'id; echo "write test:"; touch /x 2>&1 | head -1; echo "chown test:"; chown 0:0 /tmp 2>&1 | head -1'
+docker run --rm --user 10001:10001 --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 32m --pids-limit 20 busybox sh -c 'id; echo "write test:"; touch /x 2>&1 | head -1; echo "chown test:"; chown 0:0 /tmp 2>&1 | head -1'
 ```
 
 The process runs as an unprivileged user, cannot write to the root filesystem, and cannot change ownership. If an attacker exploits the application inside, they land in a locked room.
@@ -116,7 +116,7 @@ docker system df --format '{{.Type}}: {{.Reclaimable}}' | sed 's/ ([0-9]*%)//'
 ```run
 cd ~/lab
 docker rm -f hardened > /dev/null 2>&1
-docker run -d --name hardened --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m -p 127.0.0.1:8099:8080 busybox sh -c 'echo hardened > /tmp/index.html 2>/dev/null; mkdir -p /tmp/www; echo hardened > /tmp/www/index.html; httpd -f -p 8080 -h /tmp/www' > /dev/null
+docker run -d --name hardened --user 10001:10001 --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 32m -p 127.0.0.1:8099:8080 busybox sh -c 'echo hardened > /tmp/index.html 2>/dev/null; mkdir -p /tmp/www; echo hardened > /tmp/www/index.html; httpd -f -p 8080 -h /tmp/www' > /dev/null
 sleep 2
 echo "port 8080 as non-root:"; curl -s http://127.0.0.1:8099/ || docker logs hardened | head -2
 docker rm -f hardened > /dev/null

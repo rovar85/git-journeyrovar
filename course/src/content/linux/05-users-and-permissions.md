@@ -187,7 +187,7 @@ chmod 600 secret.txt
 stat -c '%a %A %n' secret.txt
 echo "--- 2: make a script executable and run it"
 printf '#!/bin/bash\necho "hello from my script"\n' > hello.sh
-./hello.sh 2>&1 | sed -E 's/line [0-9]+: //' | head -1
+./hello.sh 2>&1 | sed -E 's#^.*run.sh: #bash: #' | head -1
 chmod +x hello.sh
 ./hello.sh
 echo "--- 3: octal values (r=4, w=2, x=1)"
