@@ -4875,13 +4875,13 @@
    [
     {
      "c": "$ curl -sI $JENKINS/login | grep -i \"^x-jenkins:\"",
-     "o": "X-Jenkins: 2.541.3",
-     "x": 0
+     "o": "",
+     "x": 1
     },
     {
      "c": "$ curl -sg \"$JENKINS/api/json?tree=mode,numExecutors,nodeDescription,useSecurity\" | python3 -m json.tool",
-     "o": "{\n    \"_class\": \"hudson.model.Hudson\",\n    \"mode\": \"NORMAL\",\n    \"nodeDescription\": \"the Jenkins controller's built-in node\",\n    \"numExecutors\": 2,\n    \"useSecurity\": false\n}",
-     "x": 0
+     "o": "Expecting value: line 1 column 1 (char 0)",
+     "x": 1
     }
    ],
    [
@@ -4892,47 +4892,47 @@
     },
     {
      "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @hello-job.xml \"$JENKINS/createItem?name=hello\"",
-     "o": "200",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
     },
     {
      "c": "$ curl -sg \"$JENKINS/api/json?tree=jobs[name]\" | python3 -c 'import sys,json; print([j[\"name\"] for j in json.load(sys.stdin)[\"jobs\"]])'",
-     "o": "['hello']",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ jpost \"$JENKINS/job/hello/build\"",
-     "o": "201",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
     },
     {
      "c": "$ jwait hello",
-     "o": "SUCCESS",
+     "o": "timeout",
      "x": 0
     },
     {
      "c": "$ curl -sg \"$JENKINS/job/hello/lastBuild/consoleText\"",
-     "o": "Started by user unknown or anonymous\nRunning as SYSTEM\nBuilding in workspace /var/jenkins_home/workspace/hello\n[hello] $ /bin/sh -xe /tmp/jenkins11022142729719500593.sh\n+ echo Hello from Jenkins build #1\nHello from Jenkins build #1\n+ echo Job name:   hello\nJob name:   hello\n+ echo Workspace:  /var/jenkins_home/workspace/hello\nWorkspace:  /var/jenkins_home/workspace/hello\n+ whoami\n+ echo Running as: jenkins\nRunning as: jenkins\n+ date +%Y\n+ echo Build finished\nBuild finished\nFinished: SUCCESS",
-     "x": 0
+     "o": "",
+     "x": 7
     }
    ],
    [
     {
      "c": "$ jpost \"$JENKINS/job/hello/build\"",
-     "o": "201",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
     },
     {
      "c": "$ jwait hello",
-     "o": "SUCCESS",
+     "o": "timeout",
      "x": 0
     },
     {
      "c": "$ curl -sg \"$JENKINS/job/hello/api/json?tree=builds[number,result]\" | python3 -c 'import sys,json; [print(\"#%d %s\" % (b[\"number\"], b[\"result\"])) for b in json.load(sys.stdin)[\"builds\"]]'",
-     "o": "#1 SUCCESS",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+     "x": 1
     }
    ],
    [
@@ -4943,34 +4943,61 @@
     },
     {
      "c": "$ jpost -H \"Content-Type: application/xml\" --data-binary @fail-job.xml \"$JENKINS/createItem?name=failing\"",
-     "o": "200",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
     },
     {
      "c": "$ jpost \"$JENKINS/job/failing/build\"",
-     "o": "201",
-     "x": 0
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
     },
     {
      "c": "$ jwait failing",
-     "o": "FAILURE",
+     "o": "timeout",
      "x": 0
     },
     {
      "c": "$ curl -sg \"$JENKINS/job/failing/lastBuild/consoleText\" | grep -v \"^$\" | tail -5",
-     "o": "step 1 ok\n+ ls /this/folder/does/not/exist\nls: cannot access '/this/folder/does/not/exist': No such file or directory\nBuild step 'Execute shell' marked build as failure\nFinished: FAILURE",
+     "o": "",
      "x": 0
     }
    ],
    [
     {
      "c": "$ curl -sg \"$JENKINS/computer/api/json?tree=computer[displayName,numExecutors]\" | python3 -c 'import sys,json; [print(c[\"displayName\"], \"executors:\", c[\"numExecutors\"]) for c in json.load(sys.stdin)[\"computer\"]]'",
-     "o": "Built-In Node executors: 2",
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cat > exit3.xml <<'EOF2'\n> <project>\n>   <builders>\n>     <hudson.tasks.Shell><command>date\n> exit 3</command></hudson.tasks.Shell>\n>   </builders>\n> </project>\n> EOF2",
+     "o": "",
      "x": 0
+    },
+    {
+     "c": "$ jcurl -o /dev/null -w \"create: %{http_code}\\n\" -H \"Content-Type: application/xml\" --data-binary @exit3.xml \"$JENKINS/createItem?name=exit3\"",
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\ncreate: 000",
+     "x": 7
+    },
+    {
+     "c": "$ jpost \"$JENKINS/job/exit3/build\"",
+     "o": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/usr/lib/python3.11/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/json/decoder.py\", line 355, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n000",
+     "x": 7
+    },
+    {
+     "c": "$ jwait exit3",
+     "o": "timeout",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s \"$JENKINS/job/exit3/lastBuild/consoleText\" | grep -E \"exit 3|Finished|Build step\"",
+     "o": "",
+     "x": 1
     }
    ]
   ],
-  "key": "a40aa3776e63cf04"
+  "key": "91405e07b08ac0a0"
  },
  "jenkins-2": {
   "blocks": [
@@ -5076,12 +5103,12 @@
     {
      "c": "$ docker rm -f registry > /dev/null 2>&1",
      "o": "",
-     "x": 0
+     "x": 1
     },
     {
      "c": "$ docker run -d --name registry -p 127.0.0.1:5000:5000 registry:2 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 2",
@@ -5090,8 +5117,8 @@
     },
     {
      "c": "$ curl -s http://127.0.0.1:5000/v2/_catalog",
-     "o": "{\"repositories\":[]}",
-     "x": 0
+     "o": "",
+     "x": 7
     }
    ],
    [
@@ -5166,20 +5193,20 @@
     },
     {
      "c": "$ BUILD_NUMBER=1 ./ci/pipeline.sh 2>&1 | sed -E 's/[0-9]+-[0-9a-f]{7} deployed/<build>-<sha> deployed/'",
-     "o": "\n=== STAGE: Lint\nlint: shell syntax ok\n\n=== STAGE: Test\ntest: version line present\n\n=== STAGE: Build image\nbuilt localhost:5000/ev/status-page:<build>-<sha>\n\n=== STAGE: Push image\npushed\n\n=== STAGE: Deploy to Kubernetes\ndeployment \"ev-app\" successfully rolled out\n\n=== STAGE: Smoke test\nsmoke test says: version: 1\n\nPIPELINE SUCCESS: <build>-<sha> deployed",
+     "o": "\n=== STAGE: Lint\nlint: shell syntax ok\n\n=== STAGE: Test\ntest: version line present\n\n=== STAGE: Build image\nERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n\n=== STAGE: Push image\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n\n=== STAGE: Deploy to Kubernetes\nerror: error validating \"STDIN\": error validating data: failed to download openapi: Get \"https://10.255.255.1:6443/openapi/v2?timeout=32s\": dial tcp 10.255.255.1:6443: i/o timeout; if you choose to ignore these errors, turn validation off with --validate=false",
      "x": 0
     }
    ],
    [
     {
      "c": "$ curl -s http://127.0.0.1:5000/v2/_catalog",
-     "o": "{\"repositories\":[\"ev/status-page\"]}",
-     "x": 0
+     "o": "",
+     "x": 7
     },
     {
      "c": "$ kubectl get deployment ev-app -o custom-columns=NAME:.metadata.name,READY:.status.readyReplicas --no-headers",
-     "o": "ev-app   2",
-     "x": 0
+     "o": "E1006 05:16:29.245253   15136 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:16:59.247597   15136 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:17:29.249642   15136 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:17:59.251267   15136 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:18:29.252378   15136 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     }
    ],
    [
@@ -5205,7 +5232,7 @@
     },
     {
      "c": "$ kubectl get deployment ev-app -o jsonpath='{.spec.template.spec.containers[0].image}{\"\\n\"}' | sed -E 's/[0-9]+-[0-9a-f]{7}/<build>-<sha>/'",
-     "o": "localhost:5000/ev/status-page:<build>-<sha>",
+     "o": "E1006 05:18:59.374179   15298 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:19:29.375450   15298 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:19:59.376920   15298 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:20:29.378445   15298 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:20:59.379365   15298 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
      "x": 0
     }
    ],
@@ -5232,34 +5259,46 @@
     },
     {
      "c": "$ BUILD_NUMBER=3 ./ci/pipeline.sh 2>&1 | grep -vE \"^$\" | sed -E 's/Waiting for deployment.*/(rollout is waiting for the new Pods to become ready...)/' | uniq; echo \"pipeline exit code: ${PIPESTATUS[0]}\"",
-     "o": "=== STAGE: Lint\nlint: shell syntax ok\n=== STAGE: Test\ntest: version line present\n=== STAGE: Build image\nbuilt localhost:5000/ev/status-page:<build>-<sha>\n=== STAGE: Push image\npushed\n=== STAGE: Deploy to Kubernetes\nerror: timed out waiting for the condition\n(rollout is waiting for the new Pods to become ready...)\nDEPLOY FAILED: rolling back\ndeployment \"ev-app\" successfully rolled out\npipeline exit code: 1",
+     "o": "=== STAGE: Lint\nlint: shell syntax ok\n=== STAGE: Test\ntest: version line present\n=== STAGE: Build image\nERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n=== STAGE: Push image\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n=== STAGE: Deploy to Kubernetes\nerror: error validating \"STDIN\": error validating data: failed to download openapi: Get \"https://10.255.255.1:6443/openapi/v2?timeout=32s\": dial tcp 10.255.255.1:6443: i/o timeout; if you choose to ignore these errors, turn validation off with --validate=false\npipeline exit code: 1",
      "x": 0
     },
     {
      "c": "$ kubectl get pods -l app=ev-app --no-headers -o custom-columns=READY:.status.containerStatuses[0].ready | sort | uniq -c",
-     "o": "      1 false\n      2 true",
+     "o": "E1006 05:22:30.379770   15567 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:23:00.380845   15567 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:23:30.382034   15567 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:24:00.383101   15567 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:24:30.384774   15567 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
      "x": 0
     }
    ],
    [
     {
      "c": "$ kubectl delete namespace ci --wait=false > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "E1006 05:25:00.512411   15717 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:25:30.514774   15717 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:26:00.515584   15717 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:26:30.517252   15717 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:27:00.518627   15717 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     },
     {
      "c": "$ kubectl delete deployment,service ev-app -n ci --ignore-not-found > /dev/null 2>&1",
      "o": "",
-     "x": 0
+     "x": 1
     },
     {
      "c": "$ docker rm -f registry > /dev/null",
-     "o": "",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ (\n> size=24000000          # pretend `docker image inspect -f '{{.Size}}'` printed this\n> limit=20000000\n> if [ \"$size\" -gt \"$limit\" ]; then echo \"image too large: $size > $limit\"; exit 1; fi\n> echo \"this line is not reached\"\n> )",
+     "o": "image too large: 24000000 > 20000000",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"exit code: $?\"",
+     "o": "exit code: 0",
      "x": 0
     }
    ]
   ],
-  "key": "8feec5784dd8522e"
+  "key": "0e837c48ceacad7f"
  },
  "jenkins-5": {
   "blocks": [
