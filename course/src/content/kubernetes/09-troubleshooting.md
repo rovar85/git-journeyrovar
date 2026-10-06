@@ -161,11 +161,15 @@ kubectl delete namespace lab9 --wait=false > /dev/null
 ## A worked solution and common mistakes
 
 ```run
+# the lesson cleaned up its namespace above, so make a fresh one for this exercise
+for i in $(seq 1 30); do kubectl get ns lab9 > /dev/null 2>&1 || break; sleep 2; done
+kubectl create namespace lab9 > /dev/null; kubectl config set-context --current --namespace=lab9 > /dev/null
 kubectl run nocmd --image=busybox:1.37 --restart=Never -- /no/such/program > /dev/null
 sleep 8
 kubectl get pod nocmd -o custom-columns=NAME:.metadata.name,STATUS:.status.containerStatuses[0].state.waiting.reason,EXIT:.status.containerStatuses[0].state.terminated.exitCode --no-headers
 kubectl describe pod nocmd | grep -iE "reason|message|exit code" | head -4 | cut -c1-140
 kubectl logs nocmd 2>&1 | head -2
+kubectl delete namespace lab9 --wait=false > /dev/null
 ```
 
 The process never started: the runtime reports that the executable was not found, usually with a `RunContainerError`/`StartError` reason and exit code **127** or **128** ("command not found" or "cannot start"). `logs` is empty or an error because the application never ran. The cause is in `describe` (the event/message), not in the application log.
