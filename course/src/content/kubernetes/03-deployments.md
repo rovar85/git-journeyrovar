@@ -164,6 +164,36 @@ This is why rolling updates are safe: a bad version never takes over fully. Set 
 | **Blue/green** | run both versions as separate Deployments, switch the Service selector |
 | **Canary** | send a small share of traffic to the new version first (labels, ingress weights, or Argo Rollouts / Flagger) |
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+kubectl patch deployment web --type merge -p '{"spec":{"strategy":{"rollingUpdate":{"maxSurge":0,"maxUnavailable":1}}}}' > /dev/null
+kubectl get deployment web -o jsonpath='strategy: {.spec.strategy.rollingUpdate}{"\n"}'
+kubectl set image deployment/web nginx=nginx:1.28-alpine > /dev/null
+min=99; max=0
+for i in $(seq 1 24); do
+  total=$(kubectl get pods -l app=web --no-headers 2>/dev/null | grep -vc Terminating)
+  ready=$(kubectl get deployment web -o jsonpath='{.status.readyReplicas}' 2>/dev/null); ready=${ready:-0}
+  [ "$total" -gt "$max" ] && max=$total
+  [ "$ready" -lt "$min" ] && min=$ready
+  sleep 0.5
+done
+kubectl rollout status deployment/web --timeout=120s | tail -1
+echo "during the update: never more than $max Pods existed (replicas = 3, maxSurge = 0), and at least $min were ready (maxUnavailable = 1 allows 2)"
+```
+
+With `maxSurge: 0` no **extra** Pod is created, so capacity dips by up to one Pod while each old Pod is replaced (the opposite of the default, which starts a surplus Pod first). Use `maxUnavailable: 0, maxSurge: 1` when you cannot afford lower capacity; use `maxSurge: 0` when you have no spare capacity or each Pod needs a scarce resource.
+
+:::warn Common mistakes
+- **Setting both `maxSurge` and `maxUnavailable` to 0:** the rollout can never progress.
+- **Changing the Pod labels** so the selector no longer matches (the Deployment becomes invalid).
+- **Using `latest` as the image tag:** a rollout is triggered only when the Pod spec changes; the same tag with new content does nothing.
+- **No readiness probe,** so "ready" means "started", and traffic reaches half-started Pods.
+- **Forgetting `kubectl rollout status` in pipelines,** so a failed rollout looks like success.
+:::
+<!-- /deeper -->
+
 :::recap
 - Deployment -> ReplicaSet -> Pods. The selector must match the Pod template labels.
 - Controllers heal: delete a Pod and it returns. `kubectl scale` changes replicas; HPA automates it.

@@ -100,6 +100,34 @@ EOF
 - **DHCP**: a server hands out an address, mask, gateway and DNS server automatically (lease). Used for most clients.
 - **IPv6**: 128-bit addresses like `2001:db8::1`, written in hex. The ideas (prefix, host part, routing) are the same; it removes the shortage of IPv4 addresses.
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+python3 - <<'EOF'
+import ipaddress
+n = ipaddress.ip_network("10.0.0.0/27")
+print("/27 has", n.num_addresses, "addresses, usable hosts:", n.num_addresses - 2)
+print("10.0.0.130 in 10.0.0.0/25 ?", ipaddress.ip_address("10.0.0.130") in ipaddress.ip_network("10.0.0.0/25"))
+print("(10.0.0.0/25 covers", ipaddress.ip_network("10.0.0.0/25")[0], "to", ipaddress.ip_network("10.0.0.0/25")[-1], ")")
+print()
+print("How to do it by hand: /27 leaves 32-27 = 5 host bits, 2^5 = 32 addresses, minus network and broadcast = 30 usable.")
+print("A /25 has 7 host bits = 128 addresses, so it covers .0 to .127; .130 is outside.")
+EOF
+```
+
+**Shortcut for any prefix:** host bits = 32 minus prefix; addresses = 2^host bits; usable = that minus 2 (network and broadcast). The block size in the interesting octet tells you where subnets start (a /26 has blocks of 64: .0, .64, .128, .192).
+
+:::warn Common mistakes
+- **Forgetting the minus 2** (network and broadcast addresses are not usable hosts).
+- **Mixing up `/24` and the mask** (`255.255.255.0`); learn both notations.
+- **Overlapping subnets.** `10.0.0.0/24` and `10.0.0.128/25` overlap; routing becomes ambiguous.
+- **Assuming a different third octet is a different network.** It depends on the prefix: with `/16`, `10.20.1.5` and `10.20.2.9` are on the **same** network.
+- **Treating private ranges as private forever.** If you connect two sites that both use `192.168.1.0/24`, you have a conflict; plan addressing early.
+:::
+<!-- /deeper -->
+
 :::recap
 - IPv4 = 32 bits shown as four octets. The prefix (`/24`) says how many bits are the network.
 - Network address and broadcast address are not usable. Usable = 2^host bits - 2.

@@ -149,6 +149,34 @@ The diagnostic agent you designed gathers evidence with read-only tools such as 
 4. Find the five longest lines in a file: `awk '{print length, $0}' file | sort -rn | head -5`.
 :::
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+echo "--- 1: lines without INFO"
+grep -vc INFO ev/logs/indexing.log
+echo "--- 2: the times of the 'started' events"
+grep "service started" ev/logs/indexing.log | awk '{print $2}'
+echo "--- 3: edit a COPY of the config with sed"
+cp ev/config/evault.conf /tmp/evault-copy.conf
+sed 's/max_index_threads = 4/max_index_threads = 8/' /tmp/evault-copy.conf | grep max_index
+diff ev/config/evault.conf /tmp/evault-copy.conf && echo "(the copy is unchanged because we did not use -i)"
+echo "--- 4: the five longest lines"
+awk '{print length, $0}' ev/logs/indexing.log | sort -rn | head -5 | cut -c1-70
+```
+
+Notice that `sed` without `-i` only **prints** the edited text; the file is untouched. That is the safe way to rehearse an edit. When you are happy, add `-i` (and keep a backup with `-i.bak`).
+
+:::warn Common mistakes
+- **`grep` pattern treated as a regular expression.** `grep 1.5 file` also matches `105`. Use `grep -F` for literal text or escape the dot.
+- **`uniq` without `sort`.** `uniq` only collapses *adjacent* duplicates. Always `sort | uniq -c`.
+- **Quoting.** Single quotes `'...'` stop the shell touching `$` and `*`; awk programs and regexes usually need them.
+- **`sed -i` on the only copy of a file.** Test without `-i`, or keep a backup.
+- **Counting fields wrongly in `awk`.** `$1` is the first field; `$0` is the whole line; the default separator is any run of spaces, so `-F` matters for CSV.
+:::
+<!-- /deeper -->
+
 :::recap
 - `grep` finds lines (`-i -n -c -v -r -E -A -B -l`). `find` finds files.
 - `sort | uniq -c | sort -rn` counts and ranks. `cut` and `awk` select columns. `sed` and `tr` change text.

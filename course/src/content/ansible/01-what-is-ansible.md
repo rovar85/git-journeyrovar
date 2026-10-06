@@ -116,6 +116,32 @@ ansible ev01 -m file -a "path=/tmp/ev-demo-dir state=absent" | grep -E '"changed
 
 The first call says `changed: true` (the directory was created); the second says `changed: false` (it already matches). That is idempotency: **state**, not action. Most modules take `state=` (`present`, `absent`, `started`, `latest`...).
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans
+cat >> inventory.ini <<'EOF'
+
+[extra]
+ev02 ansible_host=127.0.0.1 ansible_port=2222
+EOF
+ansible-inventory --graph | grep -E "ev0|extra"
+ansible ev02 -m ping | grep -E "ev02|pong"
+ansible 'ev02' --list-hosts | tail -1
+```
+
+(We added `ev02` in a new group for the demonstration; to put it in `evservers` you would add the line under that group's heading. The same machine can have several names; Ansible treats `ev01` and `ev02` as separate hosts.)
+
+:::warn Common mistakes
+- **Skipping the `ping` test** and debugging a playbook when the real problem is SSH, keys or Python.
+- **SSH host-key prompts hanging the run** (set `host_key_checking` deliberately; do not just disable it everywhere in production).
+- **Wrong user or key.** Check `ansible_user` and `ansible_ssh_private_key_file`.
+- **Using `command`/`shell` for everything** instead of modules (`file`, `copy`, `service`), losing idempotency.
+- **Running ad-hoc commands against `all` in production** without `--limit` or `--check` first.
+:::
+<!-- /deeper -->
+
 :::recap
 - Ansible is agentless: SSH + Python on managed nodes. YAML describes the desired state.
 - Inventory = hosts and groups. `ansible-inventory --graph` shows it.

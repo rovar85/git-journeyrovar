@@ -128,6 +128,35 @@ When an Enterprise Vault server misbehaves, people often ask you to "send me the
 3. Run `man ls` and find the option that sorts by size. Press `q` to leave.
 :::
 
+<!-- deeper -->
+## Worked answers
+
+Check yourself against real output. Task 1 and 2 (we make a hidden file ourselves so the result is predictable):
+
+```run
+cd ~/lab
+echo "my home directory is: $HOME"
+touch .hidden-example
+echo "--- ls (hidden files not shown):"; ls
+echo "--- ls -a (the dot files appear):"; ls -a | grep '^\.' | grep -v '^\.\.\?$'
+```
+
+Task 3: `man` is not installed in this lab, but the same information is in `--help`. Find the "sort by size" option:
+
+```run
+ls --help | grep -i "sort by" | head -3
+```
+
+`-S` sorts by file size, largest first. Try `ls -lS` and add `-r` to reverse it.
+
+:::warn Common mistakes
+- **Typing the `$` from the examples.** It is part of the prompt, not the command.
+- **Forgetting that Linux is case-sensitive.** `Notes.txt` and `notes.txt` are different files, and `LS` is not a command.
+- **Copy-pasting commands you do not understand** into a server. Read each one first; use the command guide boxes and `--help`.
+- **Looking for an "Undo".** The shell has no recycle bin. Practise in a throwaway folder.
+:::
+<!-- /deeper -->
+
 :::recap
 - Linux is a kernel. A distribution packages it. The shell reads your commands in a terminal.
 - On Windows, WSL gives you a real Linux prompt.

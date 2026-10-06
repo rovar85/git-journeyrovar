@@ -144,6 +144,50 @@ terraform plan -replace='terraform_data.server["ev01"]' | grep -E "# terraform_d
 terraform destroy -auto-approve > /dev/null
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+mkdir -p ~/lab/tf3b && cd ~/lab/tf3b
+cat > main.tf <<'EOF'
+variable "servers" {
+  type = map(object({ size = string }))
+  default = {
+    ev01  = { size = "large" }
+    ev02  = { size = "small" }
+    sql01 = { size = "xlarge" }
+  }
+}
+
+resource "terraform_data" "server" {
+  for_each = var.servers
+  input    = { name = each.key, size = each.value.size }
+}
+
+output "sizes" {
+  value = { for name, s in terraform_data.server : name => s.output.size }
+}
+EOF
+terraform init > /dev/null 2>&1
+terraform apply -auto-approve | grep -E "Apply complete"
+terraform output sizes
+echo "--- change one size: only that server is touched"
+sed -i 's/ev02  = { size = "small" }/ev02  = { size = "medium" }/' main.tf
+terraform plan | grep -E "^  # |Plan:"
+terraform destroy -auto-approve | grep "Destroy complete"
+```
+
+With `for_each` over a map, only the changed key shows in the plan.
+
+:::warn Common mistakes
+- **`count` over a list of named things,** then removing one in the middle and recreating the rest.
+- **`for_each` with values that are only known after apply** (`Invalid for_each argument`). Use keys known at plan time.
+- **Using `depends_on` as a habit.** It hides the real dependency and slows plans; reference attributes instead.
+- **Forgetting `prevent_destroy` on stateful resources.**
+- **Using `-target` as routine,** leaving the rest of the configuration unapplied.
+:::
+<!-- /deeper -->
+
 :::recap
 - `count` for identical copies or a switch; `for_each` for named things (stable identity).
 - References create implicit dependencies; `depends_on` for hidden ones.

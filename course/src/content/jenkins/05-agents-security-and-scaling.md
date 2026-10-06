@@ -104,6 +104,30 @@ External secret managers (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault)
 | Disk filling up | discard old builds (`buildDiscarder`), clean workspaces, rotate logs |
 | Flaky tests | quarantine and fix; do not just auto-retry builds |
 
+<!-- deeper -->
+## Answer and common mistakes
+
+A sample checklist (items marked **[auto]** can be verified with the REST API or a script):
+
+1. Security realm enabled; anonymous cannot read or build **[auto: API returns 403 without login]**.
+2. Authorisation matrix with least privilege; few administrators.
+3. CSRF protection on **[auto: `crumbIssuer` responds]**.
+4. Controller runs **no builds** (0 executors); builds run on agents.
+5. Credentials stored in the credential store, never in jobs or Jenkinsfiles.
+6. Jenkins and plugins updated; a list of installed plugins reviewed **[auto: plugin manager API]**.
+7. Agents ephemeral (containers) where possible.
+8. HTTPS in front of Jenkins, behind SSO.
+9. Script approval / sandbox kept on for pipeline Groovy.
+10. Backups of `JENKINS_HOME`, with a tested restore.
+
+:::warn Common mistakes
+- **Running builds on the controller,** where a job can read every secret.
+- **Never updating plugins** (most Jenkins incidents are old plugins).
+- **Shared admin accounts,** so nobody knows who changed what.
+- **Treating pull-request builds from strangers as trusted code.**
+:::
+<!-- /deeper -->
+
 :::recap
 - Agents run builds; controllers orchestrate. Label agents; prefer ephemeral Docker/Kubernetes agents.
 - The Script Console equals total control: lock Jenkins down with real authentication and authorisation.

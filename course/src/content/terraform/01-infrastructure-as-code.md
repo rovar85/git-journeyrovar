@@ -150,6 +150,40 @@ Providers are downloaded from the **Terraform Registry** (`registry.terraform.io
 4. **`terraform apply`**: make the changes. Updates state.
 5. **`terraform destroy`**: remove everything (use with great care).
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+mkdir -p ~/lab/tf1b && cd ~/lab/tf1b
+cat > main.tf <<'EOF'
+resource "terraform_data" "first" {
+  input = "alpha"
+}
+resource "terraform_data" "second" {
+  input = "derived from ${terraform_data.first.output}"
+}
+EOF
+terraform init > /dev/null 2>&1
+terraform apply -auto-approve | grep -E "Apply complete"
+sed -i 's/"alpha"/"beta"/' main.tf
+echo "--- plan after changing the first input:"
+terraform plan | grep -E "^  # |Plan:"
+terraform apply -auto-approve | grep -E "Apply complete"
+terraform destroy -auto-approve | grep -E "Destroy complete"
+```
+
+The plan shows **both** resources changing: the first directly, the second because its input depends on the first's output (`known after apply`). That ripple effect is the dependency graph at work. Read plans for the unexpected second-order changes.
+
+:::warn Common mistakes
+- **Applying without reading the plan,** especially lines with `-/+` (replace) or `-` (destroy).
+- **Editing resources in the cloud console,** causing drift Terraform later "fixes" by reverting.
+- **Committing `terraform.tfstate` or `.terraform/`** to Git.
+- **Running `terraform apply` from several laptops** with local state.
+- **Hard-coding values** (AMI IDs, passwords) that should be variables or data sources.
+- **Forgetting `terraform init`** after adding a provider or module.
+:::
+<!-- /deeper -->
+
 :::recap
 - IaC replaces click-ops with reviewable, repeatable files in Git.
 - Terraform is declarative: it compares code, state and reality, and plans the difference.

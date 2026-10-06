@@ -155,6 +155,33 @@ ps -o ni,comm -p $pid
 kill $pid
 ```
 
+<!-- deeper -->
+## Practice with worked answers
+
+```run
+cd ~/lab
+echo "--- start a long job, find it, stop it politely, confirm"
+sleep 300 &
+pid=$!
+ps -o pid,stat,comm -p $pid | tail -1 | awk '{print "running:", $3, "state", $2}'
+kill $pid
+sleep 0.3
+kill -0 $pid 2>/dev/null && echo "still alive" || echo "stopped by SIGTERM"
+echo "--- pgrep finds by name"
+sleep 301 &
+pgrep -f "sleep 301" > /dev/null && echo "found it by name"
+pkill -f "sleep 301"
+```
+
+:::warn Common mistakes
+- **Jumping straight to `kill -9`.** It gives the program no chance to clean up (lock files, buffers, child processes). Try plain `kill` and wait first.
+- **`pkill name` too broadly.** It kills every match. Check with `pgrep -a name` first.
+- **Forgetting that closing the terminal can stop background jobs.** Use `nohup`, `tmux`/`screen`, or a systemd service for anything long-running.
+- **Treating "zombie" processes as running.** A `Z` state process has already finished; the fix is its parent, not `kill`.
+- **Reading `top` memory wrongly.** Linux uses spare memory as cache; look at "available", not "free".
+:::
+<!-- /deeper -->
+
 :::recap
 - A process is a running program with a PID and a parent. `ps` snapshots, `top` is live.
 - `&` starts a job in the background; `jobs`, `fg`, `bg` manage it.

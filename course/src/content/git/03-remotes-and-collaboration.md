@@ -127,6 +127,37 @@ This gives review, history and a safety net. **Branch protection** rules can req
 Real remotes need credentials. Use **SSH keys** (see the Linux track) or tokens. Never put a token in a URL you share or commit it. A credential helper stores it securely.
 :::
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+Create the shared "server" and three clones, then play the rejected-push cycle:
+
+```run
+git config --global user.name "Rohan Student"; git config --global user.email "student@example.com"; git config --global init.defaultBranch main
+cd ~/lab && rm -rf trio && mkdir trio && cd trio && git init -q --bare team.git
+for p in alice bob carol; do git clone -q team.git $p 2>/dev/null; (cd $p; git config user.name $p; git config user.email $p@example.com); done
+cd alice && echo "line from alice" > notes.txt && git add . && git commit -q -m "alice: start notes" && git push -q -u origin main
+cd ../bob && git pull -q && echo "line from bob" >> notes.txt && git commit -qam "bob: add a line" && git push -q
+cd ../carol && git pull -q && echo "line from carol" >> notes.txt && git commit -qam "carol: add a line"
+echo "--- carol pushes after bob changed the same file; was she up to date?"
+cd ../alice && echo "line from alice 2" >> notes.txt && git commit -qam "alice: second line" && git push -q 2>&1 | head -2
+cd ../carol && git push 2>&1 | grep -E "rejected" | head -1
+echo "--- fix: pull (merge), resolve, push"
+git pull --no-rebase --no-edit 2>&1 | grep -E "CONFLICT|Merge made" | head -1
+git status --short
+```
+
+If the pull reports a conflict, edit `notes.txt` to keep all three lines, `git add` it, `git commit`, and `git push`. The cycle is always **fetch/pull, resolve, push**.
+
+:::warn Common mistakes
+- **`git push --force` to "fix" a rejected push.** It overwrites other people's commits. Pull first. If you must force, use `--force-with-lease`.
+- **Working on `main` directly** when the team uses pull requests.
+- **Not pulling before starting work,** which guarantees conflicts later.
+- **Pushing credentials or tokens** into the repository, or putting a token in the remote URL.
+- **Confusing `origin/main` (your cached view of the remote) with `main`.** `git fetch` refreshes `origin/main`.
+:::
+<!-- /deeper -->
+
 :::recap
 - Every clone is a full copy. `origin` is the usual shared remote.
 - `fetch` downloads, `pull` = fetch + merge, `push` uploads.

@@ -135,6 +135,38 @@ The same analysis you did with `grep | sort | uniq -c` in the Linux track, but w
 - Drives are **providers**: `HKLM:\SOFTWARE` is the registry, `Cert:\` the certificate store, `Env:` environment variables, as if they were folders.
 - Be explicit about text encoding (`-Encoding utf8`) when exchanging files with other systems.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cat > servers1.csv <<'EOF2'
+Name,MemoryGB,Role
+EV02,64,Indexer
+SQL01,128,Database
+EV01,64,Indexer
+WEB01,16,Web
+EOF2
+cat > ans2.ps1 <<'EOF2'
+$big = Import-Csv servers1.csv |
+    Where-Object { [int]$_.MemoryGB -ge 64 } |
+    Sort-Object Name
+$big | ForEach-Object { "$($_.Name) $($_.MemoryGB) GB" }
+$big | ConvertTo-Json | Set-Content big1.json
+"json bytes: " + (Get-Item big1.json).Length
+EOF2
+pwsh -File ans2.ps1
+```
+
+Note the cast `[int]`: `Import-Csv` returns every column as text, so without the cast `"128"` would sort and compare as a string (and `"16" -ge 64` could misbehave).
+
+:::warn Common mistakes
+- **Comparing text as numbers** after `Import-Csv`.
+- **Forgetting `-Encoding`** for files that other tools read, or using `>` which may change encoding between versions.
+- **Hard-coding paths** with `C:\Users\you\...` instead of `$PSScriptRoot` or parameters.
+- **`Remove-Item -Recurse` without `-WhatIf` first.**
+:::
+<!-- /deeper -->
+
 :::recap
 - `Get-ChildItem`, `Get-Content`, `Set-Content`, `Copy-Item`, `Move-Item`, `Remove-Item`, `Test-Path`.
 - Use `-WhatIf` before destructive commands.

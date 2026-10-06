@@ -114,6 +114,37 @@ sudo ip link del br0
 sudo ip netns list | wc -l
 ```
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+for n in h1 h2; do sudo ip netns del $n 2>/dev/null; done
+sudo ip netns add h1; sudo ip netns add h2
+sudo ip link add x1 type veth peer name x2
+sudo ip link set x1 netns h1; sudo ip link set x2 netns h2
+sudo ip -n h1 addr add 10.20.1.5/16 dev x1
+sudo ip -n h2 addr add 10.20.2.9/16 dev x2
+sudo ip -n h1 link set x1 up; sudo ip -n h2 link set x2 up
+echo "both /16, different third octet (same network):"
+sudo ip netns exec h1 ping -c 1 -W 1 10.20.2.9 | grep -c "1 received" | awk '{print "reply received:", ($1==1?"yes":"no")}'
+echo "now make h2 a /24 (it thinks 10.20.1.5 is on another network):"
+sudo ip -n h2 addr flush dev x2; sudo ip -n h2 addr add 10.20.2.9/24 dev x2
+sudo ip netns exec h1 ping -c 1 -W 1 10.20.2.9 | grep -c "1 received" | awk '{print "h1 -> h2 reply:", ($1==1?"yes":"no")}'
+sudo ip netns exec h2 ping -c 1 -W 1 10.20.1.5 2>&1 | tail -1
+for n in h1 h2; do sudo ip netns del $n; done
+```
+
+With mismatched masks the failure is **asymmetric**: `h1` believes `h2` is local and sends the packet. `h2` receives it but its reply goes to `10.20.1.5`, which it believes is on a *different* network, so it looks for a gateway it does not have ("Network is unreachable"). Symptom: one direction works, the other does not. Always compare masks on both ends.
+
+:::warn Common mistakes
+- **Forgetting `ip link set ... up`** (an address on a down interface does nothing).
+- **Deleting a namespace but not its leftovers.** Delete the bridge and veth ends too; list with `ip -br link`.
+- **Reading "request timed out" as "host down".** It might be the reply path (routing or firewall in the other direction).
+- **Duplicate IP addresses.** Two machines with one address cause intermittent failures; look for conflicting ARP entries (`ip neigh`).
+:::
+<!-- /deeper -->
+
 :::recap
 - A namespace is a virtual computer; a veth pair is a cable; a bridge is a switch.
 - Connectivity checklist: interface exists, has address and mask, is up.

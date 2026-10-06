@@ -168,6 +168,48 @@ Databases and clustered applications use a **StatefulSet** instead of a Deployme
 Kubernetes does not back up your data. Volume snapshots help, but you still need application-aware backups (SQL backups, EV backup tools) and tested restores. Tools such as **Velero** back up cluster objects and volumes.
 :::
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+sudo mkdir -p /tmp/lab-pv/small && sudo chmod 777 /tmp/lab-pv/small
+cat > bigclaim.yaml <<'EOF'
+apiVersion: v1
+kind: PersistentVolume
+metadata: {name: small-pv}
+spec:
+  capacity: {storage: 1Gi}
+  accessModes: [ReadWriteOnce]
+  storageClassName: manual
+  hostPath: {path: /tmp/lab-pv/small}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: too-big}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: manual
+  resources:
+    requests: {storage: 2Gi}
+EOF
+kubectl apply -f bigclaim.yaml > /dev/null
+sleep 5
+kubectl get pvc too-big -o jsonpath='claim status: {.status.phase}{"\n"}'
+kubectl get events --field-selector involvedObject.name=too-big -o jsonpath='{.items[0].reason}: {.items[0].message}{"\n"}' | cut -c1-110
+kubectl delete -f bigclaim.yaml > /dev/null; sudo rm -rf /tmp/lab-pv
+```
+
+The claim stays **Pending** forever: no PV of class `manual` has at least 2 Gi, and (with no provisioner) nothing creates one. Fix by reducing the request, adding a bigger PV, or using a StorageClass with dynamic provisioning. A Pod using a Pending claim also stays Pending.
+
+:::warn Common mistakes
+- **Mismatched `storageClassName`** (including leaving it blank vs `manual`).
+- **Using `hostPath` in a multi-node cluster:** the data lives on one node and the Pod may run elsewhere.
+- **Assuming `ReadWriteOnce` allows many Pods.** It limits to one **node**.
+- **Deleting a PVC and expecting the data to stay.** The reclaim policy decides (Delete removes the disk).
+- **No backups.** Volumes are not backups.
+:::
+<!-- /deeper -->
+
 :::recap
 - Container and Pod storage is ephemeral. `emptyDir` lives with the Pod.
 - PV = storage, PVC = request, StorageClass = how to create it. The Pod references the PVC.

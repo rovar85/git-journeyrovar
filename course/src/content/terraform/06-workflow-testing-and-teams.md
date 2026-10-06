@@ -142,6 +142,58 @@ terraform validate
 terraform destroy -auto-approve | grep "Destroy complete"
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/tf6
+terraform destroy -auto-approve > /dev/null 2>&1
+cat > main.tf <<'EOF'
+variable "replicas" {
+  type    = number
+  default = 2
+
+  validation {
+    condition     = var.replicas <= 10
+    error_message = "replicas must be 10 or fewer."
+  }
+}
+
+resource "terraform_data" "worker" {
+  count = var.replicas
+  input = "worker-${count.index}"
+}
+EOF
+cat > tests.tftest.hcl <<'EOF'
+run "accepts_ten" {
+  command = plan
+  variables { replicas = 10 }
+  assert {
+    condition     = length(terraform_data.worker) == 10
+    error_message = "ten replicas should be allowed"
+  }
+}
+
+run "rejects_eleven" {
+  command = plan
+  variables { replicas = 11 }
+  expect_failures = [var.replicas]
+}
+EOF
+terraform test | grep -E "pass|fail|Success"
+```
+
+`expect_failures` turns the validation error into the **expected** outcome, so the test passes only when the guard really rejects bad input. Test the guard rails, not only the happy path.
+
+:::warn Common mistakes
+- **Tests that need real cloud accounts** and run slowly or cost money; test logic with `command = plan` and mocks where possible.
+- **No CI step for `fmt -check`, `validate` and `test`.**
+- **Applying a plan other than the reviewed one.** Save the plan with `-out` and apply that file.
+- **Using workspaces to separate production from test,** then applying to the wrong one. Prefer separate directories/state and credentials.
+- **Skipping policy and security scanning** (tflint, checkov, trivy) in the pipeline.
+:::
+<!-- /deeper -->
+
 :::recap
 - Save a plan (`-out`) and apply that exact file after review.
 - Workspaces give separate state per name; use separate directories for test and prod.

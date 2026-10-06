@@ -172,6 +172,43 @@ ansible-playbook fail.yml 2>&1 | grep -E "TASK|fatal|PLAY RECAP|ev01 " | sed 's/
 
 By default a failure **stops the play for that host**. You can change that with `ignore_errors: true` (continue) or handle it with `block:` / `rescue:`. Exit code is non-zero, so CI systems notice.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans
+cat > motd.yml <<'EOF'
+- hosts: ev01
+  gather_facts: false
+  tasks:
+    - name: Ensure the folder exists
+      ansible.builtin.file:
+        path: /tmp/ev01-conf
+        state: directory
+    - name: Ensure the notice file has the right text
+      ansible.builtin.copy:
+        dest: /tmp/ev01-conf/motd.txt
+        content: "Authorised use only\n"
+EOF
+echo "--- first run:";  ansible-playbook motd.yml | grep -E "ok="
+echo "--- second run (idempotent):"; ansible-playbook motd.yml | grep -E "ok="
+sed -i 's/Authorised use only/Authorised use only. Activity is logged./' motd.yml
+echo "--- preview of the edit:"; ansible-playbook motd.yml --check --diff | grep -E '^[+-][^+-]|ok='
+echo "--- apply it:"; ansible-playbook motd.yml | grep -E "ok="
+```
+
+The second run shows `changed=0`: idempotency. `--check --diff` showed the change **before** anything happened.
+
+:::warn Common mistakes
+- **Tasks that always report `changed`** (`command`/`shell` without `creates`, `changed_when`): you cannot tell real changes from noise.
+- **Tabs or wrong indentation in YAML.** Run `ansible-playbook --syntax-check`.
+- **No task names.** The output becomes unreadable.
+- **Using `become: true` everywhere,** then files end up owned by root.
+- **Ignoring errors** with `ignore_errors: true` as a habit; handle expected failures deliberately.
+- **Running production before `--check`.**
+:::
+<!-- /deeper -->
+
 :::recap
 - A playbook = plays (hosts + tasks). Each task = name + module + arguments.
 - Run twice: the second run should say `changed=0`. Anything else is a hint of a flawed task.

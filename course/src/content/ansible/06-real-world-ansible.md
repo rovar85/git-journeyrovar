@@ -210,6 +210,44 @@ ansible-playbook broken.yml --syntax-check 2>&1 | grep -iE "ERROR|syntax" | head
 
 A common flow: **Terraform** creates the servers, **Ansible** configures them, **Jenkins** runs both when you merge to Git. The Capstone track joins them.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans5
+cat > marker.yml <<'EOF'
+- hosts: evservers
+  gather_facts: false
+  serial: 1
+  tasks:
+    - name: Create a marker file named after the host
+      ansible.builtin.file:
+        path: "/tmp/marker-{{ inventory_hostname }}"
+        state: touch
+        modification_time: preserve
+        access_time: preserve
+    - ansible.builtin.debug:
+        msg: "finished {{ inventory_hostname }}"
+EOF
+echo "--- check mode first (nothing is created):"
+ansible-playbook marker.yml --check | grep -E "^PLAY \[|finished|ok=" | sed 's/ \*\*\*.*//'
+ssh ev01 'ls /tmp/marker-* 2>&1 | head -2'
+echo "--- real run:"
+ansible-playbook marker.yml | grep -E "^PLAY \[|finished|ok=" | sed 's/ \*\*\*.*//'
+ssh ev01 'ls /tmp/marker-*; rm -f /tmp/marker-*'
+```
+
+With `serial: 1` the play ran for `ev01` completely before `ev02` started.
+
+:::warn Common mistakes
+- **Updating every server at once.** Use `serial`, and a health check that fails the batch on error.
+- **`--check` blindness:** modules that cannot predict (such as `command`) are skipped or guess; read what `--check` actually covered.
+- **Installing packages without `state: present` and a pinned version** where reproducibility matters.
+- **No rollback plan.** Know how to return to the previous version.
+- **Forgetting Windows differences** (`win_*` modules, WinRM, paths with backslashes).
+:::
+<!-- /deeper -->
+
 :::recap
 - Use modules (`package`, `service`, `user`, `file`, `cron`, `template`) rather than raw commands.
 - `serial` for rolling changes, `block/rescue` for rollback, `validate` before replacing configs.

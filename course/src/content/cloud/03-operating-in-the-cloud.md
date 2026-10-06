@@ -111,6 +111,27 @@ Migration approaches (the "Rs"): **rehost** (lift and shift VMs), **replatform**
 
 When something breaks in production: **stabilise first** (restore service, roll back), **communicate** (status page, stakeholders), **investigate** after, then write a **blameless post-mortem** with timeline, causes (contributing factors, not "someone's mistake") and **actions with owners**. This culture matters as much as the tools.
 
+<!-- deeper -->
+## A worked answer and common mistakes
+
+One reasonable answer for EV's SQL database:
+
+| Item | Choice | Why |
+|---|---|---|
+| **RPO** | 15 minutes | archive metadata loss beyond that is unacceptable |
+| **RTO** | 4 hours | the business can live without search for half a day |
+| **DR pattern** | warm standby in a second region | cheaper than active/active, faster than rebuilding |
+| **Backup method** | full nightly plus transaction-log backups every 15 minutes, copied to another region | log backups give the 15 minute RPO |
+| **Restore test** | automated quarterly: restore to a scratch server, run checks, record the time | proves the RTO |
+
+:::warn Common mistakes
+- **Backups that were never restored.** An untested backup is a hope, not a backup.
+- **Backups in the same account and region as the data,** lost together in one incident.
+- **No cost visibility:** missing tags and budget alerts.
+- **Lift and shift without checking licences, latency to users and the egress cost** of moving data out.
+:::
+<!-- /deeper -->
+
 :::recap
 - Design for failure: redundancy, auto-healing, statelessness, everything as code, tested recovery.
 - RPO is tolerable data loss; RTO is tolerable downtime. Backup interval and restore speed decide whether you meet them.

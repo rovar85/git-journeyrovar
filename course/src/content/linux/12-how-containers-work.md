@@ -86,6 +86,29 @@ The image layer (`lower`) is never modified. Deleting `base.txt` created a "whit
 - Isolation is good but not a security boundary as strong as a VM. Run containers as non-root users where possible.
 :::
 
+<!-- deeper -->
+## Practice with worked answers
+
+1. *Which kernel feature gives a process its own process list?* A **PID namespace**. Prove it:
+
+```run
+cd ~/lab
+sudo unshare --pid --fork --mount-proc bash -c 'echo "inside the namespace my PID is $$ (a fresh numbering starts at 1)"'
+echo "outside, the same kind of command has a normal large PID: $$ is typically > 1"
+```
+
+2. *How would you limit a container's memory?* With a **cgroup** memory limit (`docker run --memory 256m`), which the kernel enforces by killing the process (OOM kill) if it exceeds it. You saw the exit code 137 in the Docker track.
+
+3. *Why does deleting a file inside a container not change the image?* The image layers are read-only; the change lives in the container's writable layer (the "upper" directory in the overlay demo), which is discarded with the container.
+
+:::warn Common mistakes
+- **Thinking a container is a small VM.** It shares the host kernel; a kernel bug or privileged container can affect the host.
+- **Running containers as root and with `--privileged`,** which removes most of the isolation.
+- **Expecting data to survive.** The writable layer is deleted with the container; use volumes.
+- **Forgetting cgroup limits,** so one container can use all the host's memory.
+:::
+<!-- /deeper -->
+
 :::recap
 - Container = process + namespaces (isolation) + cgroups (limits) + a layered root filesystem.
 - `unshare` creates namespaces; `/sys/fs/cgroup` holds the limits; `overlayfs` stacks image layers.

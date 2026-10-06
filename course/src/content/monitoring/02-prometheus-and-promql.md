@@ -151,6 +151,25 @@ Prometheus stores data locally (default 15 days, `--storage.tsdb.retention.time`
 kill %1
 ```
 
+<!-- deeper -->
+## Answer and common mistakes
+
+Percentage of memory used on a node with the standard `node_exporter` metrics:
+
+```promql
+100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+```
+
+Adding `> 0 < 100` (or `and ... > 0`) as comparison filters returns the value only when it is in range; an empty result means the filter excluded it. Use `MemAvailable`, not `MemFree`: Linux uses free memory for cache, so `MemFree` is always small and misleading.
+
+:::warn Common mistakes
+- **Taking `rate()` of a gauge,** or forgetting `rate()` on a counter (a raw counter only goes up).
+- **Too short a range window** (`[10s]` with a 15 s scrape interval returns nothing). Use at least four times the interval.
+- **Averaging percentages.** Average the underlying sums and counts instead.
+- **Aggregating away the label you need.** `sum by (job)` keeps only `job`.
+:::
+<!-- /deeper -->
+
 :::recap
 - Prometheus scrapes `/metrics` endpoints defined in `prometheus.yml`; `up` shows target health.
 - PromQL: selectors with label matchers, `rate()` for counters, aggregations (`sum by`), arithmetic, and comparison filters.

@@ -173,6 +173,57 @@ cd ~/lab/tf5
 terraform destroy -auto-approve | grep -E "Destroy complete"
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/tf5
+cat > modules/ev_server/tags.tf <<'EOF'
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+locals {
+  all_tags = merge({ Managed = "terraform", Name = var.name }, var.tags)
+}
+output "tags" {
+  value = local.all_tags
+}
+EOF
+cat > envs.tf <<'EOF'
+module "test_env" {
+  source      = "./modules/ev_server"
+  name        = "ev-test"
+  environment = "test"
+  tags        = { Env = "test", Owner = "qa" }
+}
+module "prod_env" {
+  source      = "./modules/ev_server"
+  name        = "ev-prod"
+  environment = "prod"
+  tags        = { Env = "prod", Owner = "ops", Name = "overridden" }
+}
+output "merged_tags" {
+  value = { test = module.test_env.tags, prod = module.prod_env.tags }
+}
+EOF
+terraform init > /dev/null 2>&1
+terraform apply -auto-approve | grep -E "Apply complete"
+terraform output -json merged_tags | python3 -m json.tool | head -14
+terraform destroy -auto-approve | grep "Destroy complete"
+```
+
+`merge()` lets later maps override earlier ones: in `prod_env` the caller's `Name = "overridden"` replaced the module default.
+
+:::warn Common mistakes
+- **Modules that do too much** (a "platform" module with 80 variables). Prefer small composable ones.
+- **Hidden provider settings inside modules,** so callers cannot control region or credentials.
+- **Unpinned module versions** (`ref=main`).
+- **Output explosion:** exposing every attribute instead of a deliberate interface.
+- **Copy-pasting instead of using a module** (or the reverse: a module for something used once).
+:::
+<!-- /deeper -->
+
 :::recap
 - A module is a folder of `.tf` files used like a function: variables in, outputs out.
 - `module "x" { source = "./path" ... }`; only outputs are visible from outside. `for_each` works on modules.

@@ -158,6 +158,44 @@ Run `Invoke-Pester` locally and in CI (the Jenkins track), and lint with `Invoke
 | Structured data (JSON, CSV, APIs) | PowerShell is excellent; or Python |
 | Cross-platform automation at scale | Ansible, calling either |
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cat > log3.txt <<'EOF2'
+2025-03-01 09:00:01 INFO ok
+2025-03-01 09:05:12 WARN slow
+2025-03-01 09:07:40 ERROR boom
+2025-03-01 09:09:00 ERROR again
+EOF2
+cat > ans3.ps1 <<'EOF2'
+function Get-LogSummary {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][ValidateScript({ Test-Path $_ })][string]$Path)
+    $lines = Get-Content $Path
+    $first = $lines | Where-Object { $_ -match ' ERROR ' } | Select-Object -First 1
+    [pscustomobject]@{
+        Errors     = @($lines | Where-Object { $_ -match ' ERROR ' }).Count
+        Warnings   = @($lines | Where-Object { $_ -match ' WARN ' }).Count
+        FirstError = if ($first) { ($first -split ' ')[1] } else { $null }
+    }
+}
+Get-LogSummary -Path log3.txt | Format-List
+try { Get-LogSummary -Path nothere.txt } catch { "caught: file validation failed" }
+EOF2
+pwsh -File ans3.ps1 2>&1 | head -12
+```
+
+`ValidateScript` rejects a bad path **before** the function body runs, and returning a `[pscustomobject]` gives callers properties they can sort, filter or export.
+
+:::warn Common mistakes
+- **Returning formatted text** instead of objects, so nothing downstream can use the result.
+- **Relying on errors being caught without `-ErrorAction Stop`.** Many cmdlet errors are non-terminating and `try/catch` ignores them.
+- **Scripts that exit 0 even on failure,** so Jenkins or Task Scheduler thinks they succeeded. Set an explicit `exit 1`.
+- **Writing everything in one huge script** instead of small functions and a module with Pester tests.
+:::
+<!-- /deeper -->
+
 :::recap
 - Variables `$x`, arrays `@()`, hashtables `@{}`, `if/foreach/for/while/switch`; double quotes expand variables.
 - Advanced functions: `[CmdletBinding()]`, `[Parameter(Mandatory)]`, `[Validate*]`; return objects.

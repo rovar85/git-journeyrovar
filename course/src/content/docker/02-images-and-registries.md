@@ -110,6 +110,29 @@ docker system df --format 'table {{.Type}}\t{{.Active}}\t{{.Reclaimable}}' | sed
 
 Smaller images pull faster and have fewer things to patch (a smaller **attack surface**).
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+echo "--- layers of busybox, largest first:"
+docker history busybox --format '{{.Size}}\t{{.CreatedBy}}' | sort -hr | head -3 | cut -c1-70
+echo "--- tag with a registry-style name; both names point to ONE image:"
+docker tag busybox registry.example.com/team/busybox:1.37-lab
+docker image ls --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -E "^(busybox|registry.example.com)" | sort
+docker rmi registry.example.com/team/busybox:1.37-lab > /dev/null
+```
+
+The biggest layer is usually the base operating system layer. In your own images, big layers are typically a package install, a dependency download or a copied build folder: that is where optimisation pays off.
+
+:::warn Common mistakes
+- **Pulling `latest` in production** and getting a different image tomorrow. Pin versions (and ideally digests).
+- **Thinking tags are copies.** A tag is a label; retagging does not duplicate data.
+- **Deleting an image that other tags still use** ("image is referenced in multiple repositories"); remove the tags first.
+- **Forgetting the registry prefix** when pushing; `docker push myimage` goes to Docker Hub, not your registry.
+- **Large base images "because it is familiar".** Prefer slim or alpine bases with only what you need.
+:::
+<!-- /deeper -->
+
 :::recap
 - An image = stacked read-only layers shared between images; a container adds a writable layer.
 - Name = `registry/namespace/name:tag`. Pin versions; avoid `latest` in production.

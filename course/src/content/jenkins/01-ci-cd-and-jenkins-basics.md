@@ -137,6 +137,36 @@ Jenkins runs shell steps with `-xe`: it echoes each command and **stops at the f
 curl -sg "$JENKINS/computer/api/json?tree=computer[displayName,numExecutors]" | python3 -c 'import sys,json; [print(c["displayName"], "executors:", c["numExecutors"]) for c in json.load(sys.stdin)["computer"]]'
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+Create the job from XML (the same thing the web form saves), run it, and read the result:
+
+```run
+cat > exit3.xml <<'EOF2'
+<project>
+  <builders>
+    <hudson.tasks.Shell><command>date
+exit 3</command></hudson.tasks.Shell>
+  </builders>
+</project>
+EOF2
+jcurl -o /dev/null -w "create: %{http_code}\n" -H "Content-Type: application/xml" --data-binary @exit3.xml "$JENKINS/createItem?name=exit3"
+jpost "$JENKINS/job/exit3/build"
+jwait exit3
+curl -s "$JENKINS/job/exit3/lastBuild/consoleText" | grep -E "exit 3|Finished|Build step"
+```
+
+The result is **FAILURE** because Jenkins treats any non-zero exit status of a shell step as failure, and the console shows `Build step 'Execute shell' marked build as failure`. Exit status `0` is success; that single convention is how Jenkins, shell scripts and every CI tool decide pass or fail.
+
+:::warn Common mistakes
+- **Ignoring the console output.** The console log is the first place to look; the build page only tells you pass or fail.
+- **Putting secrets in the job's shell text.** Use credentials (lesson 5) so they are masked in logs.
+- **A last command that hides failure** (`./test.sh || true`, or a pipe whose last command succeeds). The step then reports success.
+- **Doing everything by clicking in the UI.** Jobs only in the UI cannot be reviewed or restored from Git; move to a Jenkinsfile (lesson 3).
+:::
+<!-- /deeper -->
+
 :::recap
 - CI = merge often with automatic build and test; delivery = always releasable; deployment = automatic release.
 - Jenkins: controller schedules, agents run builds on executors; jobs have builds with logs and results; `JENKINS_HOME` holds everything.

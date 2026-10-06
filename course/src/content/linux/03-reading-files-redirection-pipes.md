@@ -144,6 +144,31 @@ $ vi ev/config/evault.conf
 3. Run a command that produces an error and write only the error to a file called `problems.txt`.
 :::
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+echo "--- 1: lines 5 to 8 (first 8 lines, then the last 4 of those)"
+head -n 8 ev/logs/indexing.log | tail -n 4
+echo "--- 2: WARN lines in storage.log"
+grep -c WARN ev/logs/storage.log
+echo "--- 3: send only the error output to a file"
+ls /nonexistent 2> problems.txt
+cat problems.txt
+```
+
+Redirection summary: `>` writes standard output to a file (overwriting), `>>` appends, `2>` writes **error** output (stream 2), and `2>&1` merges errors into the normal output. In `command1 | command2` only the standard output flows through the pipe; errors still go to the screen unless you add `2>&1`.
+
+:::warn Common mistakes
+- **`>` instead of `>>`.** `echo x > log.txt` **erases** the file first. Use `>>` to add.
+- **Reading and writing the same file in one command.** `sort file > file` empties it before sort reads it. Write to a new file, then move it.
+- **Expecting errors to go through a pipe.** Add `2>&1` if you want them captured.
+- **`cat file | grep x`** works, but `grep x file` is simpler and faster (no useless `cat`).
+- **Using `tail -f` on a log inside a script** and wondering why it never finishes: it follows forever by design.
+:::
+<!-- /deeper -->
+
 :::recap
 - `cat` (all), `head` (start), `tail` (end), `less` (page), `wc` (count). `tail -f` follows a live log.
 - Redirection: `>` overwrite, `>>` append, `2>` errors, `/dev/null` bin. Exit code 0 means success.

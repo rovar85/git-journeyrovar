@@ -157,6 +157,28 @@ $ kubectl rollout undo deployment/NAME              # bad release
 kubectl delete namespace lab9 --wait=false > /dev/null
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+kubectl run nocmd --image=busybox:1.37 --restart=Never -- /no/such/program > /dev/null
+sleep 8
+kubectl get pod nocmd -o custom-columns=NAME:.metadata.name,STATUS:.status.containerStatuses[0].state.waiting.reason,EXIT:.status.containerStatuses[0].state.terminated.exitCode --no-headers
+kubectl describe pod nocmd | grep -iE "reason|message|exit code" | head -4 | cut -c1-140
+kubectl logs nocmd 2>&1 | head -2
+```
+
+The process never started: the runtime reports that the executable was not found, usually with a `RunContainerError`/`StartError` reason and exit code **127** or **128** ("command not found" or "cannot start"). `logs` is empty or an error because the application never ran. The cause is in `describe` (the event/message), not in the application log.
+
+:::warn Common mistakes
+- **Looking only at `logs`,** which cannot show failures that happen before the app starts.
+- **Confusing `command` and `args`:** `command` replaces the image ENTRYPOINT, `args` replaces CMD.
+- **Wrong image architecture or shell** (`sh` missing in distroless images).
+- **Fixing by guesswork instead of reading `Events`.**
+- **Deleting and recreating the Pod instead of fixing the Deployment,** so the fault returns.
+:::
+<!-- /deeper -->
+
 :::recap
 - Method: `get`, `describe` (Events), `logs --previous`, events, `exec`, then the surrounding objects.
 - Image errors, crash loops, Pending, config errors, empty endpoints and failing probes cover most incidents.

@@ -149,6 +149,8 @@ def blocks(text, ctx):
             para = []
     while i < len(lines):
         line = lines[i]
+        if line.strip().startswith("<!--") and line.strip().endswith("-->"):
+            i += 1; continue
         if line.startswith("```"):
             flush()
             info = line[3:].strip(); i += 1; buf = []

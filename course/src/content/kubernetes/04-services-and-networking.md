@@ -172,6 +172,31 @@ spec:
     ports: [{port: 5432}]
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+kubectl create namespace other4 > /dev/null
+kubectl -n other4 run probe --image=busybox:1.37 --restart=Never -- sh -c '
+echo "short name:"; wget -q -T 3 -O- http://web 2>&1 | head -1
+echo "cross-namespace name:"; wget -qO- http://web.lab4.svc.cluster.local | grep -o "<title>.*</title>"
+echo "search path:"; grep ^search /etc/resolv.conf'
+kubectl -n other4 wait --for=jsonpath='{.status.phase}'=Succeeded pod/probe --timeout=60s > /dev/null
+kubectl -n other4 logs probe
+kubectl delete namespace other4 --wait=false > /dev/null
+```
+
+The short name `web` fails in `other4` because the resolver's search path starts with **the Pod's own namespace** (`other4.svc.cluster.local`), which has no `web`. Use `web.lab4` or the full `web.lab4.svc.cluster.local`.
+
+:::warn Common mistakes
+- **Using the short service name across namespaces.**
+- **Hard-coding ClusterIPs or Pod IPs.**
+- **Exposing everything as NodePort or LoadBalancer.** Most services need only ClusterIP; use Ingress for HTTP.
+- **Mixing up `port` and `targetPort`.**
+- **Assuming namespaces isolate the network.** By default any Pod can reach any Service; add NetworkPolicies.
+:::
+<!-- /deeper -->
+
 :::recap
 - A Service is a stable virtual IP + DNS name in front of Pods chosen by a label selector.
 - DNS: `service.namespace.svc.cluster.local`; short name inside the same namespace.

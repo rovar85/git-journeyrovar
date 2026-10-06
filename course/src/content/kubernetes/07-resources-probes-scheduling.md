@@ -199,6 +199,57 @@ The tainted node accepts only the Pod that tolerates the taint. Taints reserve n
 - **PriorityClass** lets important Pods preempt less important ones when the cluster is full.
 - **PodDisruptionBudget** says "keep at least N replicas up during voluntary disruptions" such as node drains for upgrades.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cat > probe.yaml <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: shop}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: shop}
+  template:
+    metadata:
+      labels: {app: shop}
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27-alpine
+        readinessProbe:
+          httpGet: {path: /, port: 80}
+          periodSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata: {name: shop}
+spec:
+  selector: {app: shop}
+  ports: [{port: 80}]
+EOF
+kubectl apply -f probe.yaml > /dev/null
+kubectl rollout status deployment/shop --timeout=90s | tail -1
+ready() { kubectl get endpointslices -l kubernetes.io/service-name=shop -o jsonpath='{.items[0].endpoints[?(@.conditions.ready==true)].addresses[0]}' | wc -w; }
+echo "good probe: $(ready) ready endpoints"
+kubectl patch deployment shop --type=json -p='[{"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/httpGet/path","value":"/missing"}]' > /dev/null
+sleep 12
+kubectl get pods -l app=shop -o custom-columns=PHASE:.status.phase,READY:.status.containerStatuses[0].ready --no-headers | sort | uniq -c
+echo "after pointing the probe at /missing: $(ready) ready endpoints (the old Pods keep serving while the new ones never become ready)"
+```
+
+The new Pods run but fail the probe (404), so the rolling update **stalls** with the old healthy Pods still serving. Had all Pods been replaced, the Service would have had **no endpoints**.
+
+:::warn Common mistakes
+- **No readiness probe,** so traffic hits Pods that are still starting.
+- **A liveness probe that checks a dependency** (database), so a database blip restarts every app Pod in a loop.
+- **Too-aggressive timings** (`timeoutSeconds: 1` on a slow endpoint).
+- **Probes on the wrong port or path,** which is a common cause of "Running but 0/1 Ready".
+- **Forgetting startup probes** for slow-starting apps, so liveness kills them before they finish starting.
+:::
+<!-- /deeper -->
+
 :::recap
 - Requests drive scheduling; limits are enforced (CPU throttled, memory OOM-killed).
 - `Pending` plus `FailedScheduling` means nothing fits (resources, selectors, taints).

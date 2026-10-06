@@ -155,6 +155,42 @@ kubectl exec app -- sh -c 'echo LOG_LEVEL=$LOG_LEVEL'
 
 The running Pod kept `info`; the recreated Pod got `debug`. For Deployments, `kubectl rollout restart deployment/NAME` does the replacement gracefully.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+printf 'db-user\n' > user.txt
+kubectl create secret generic from-file --from-file=username=user.txt
+cat > secpod.yaml <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata: {name: secpod}
+spec:
+  containers:
+  - name: app
+    image: busybox:1.37
+    command: ["sh", "-c", "stat -L -c '%a %n' /etc/creds/username; cat /etc/creds/username; touch /etc/creds/x 2>&1 | head -1; sleep 3600"]
+    volumeMounts: [{name: c, mountPath: /etc/creds, readOnly: true}]
+  volumes:
+  - name: c
+    secret: {secretName: from-file, defaultMode: 0400}
+EOF
+kubectl apply -f secpod.yaml > /dev/null
+kubectl wait --for=condition=Ready pod/secpod --timeout=60s > /dev/null
+kubectl logs secpod
+echo "--- decode it from the command line:"
+kubectl get secret from-file -o jsonpath='{.data.username}' | base64 -d
+```
+
+:::warn Common mistakes
+- **Believing base64 is encryption.** Anyone who can `get secret` can read it.
+- **Committing Secret YAML to Git.**
+- **Using environment variables for secrets** (they leak into logs and crash dumps); prefer mounted files.
+- **Giving broad RBAC rights to `get secrets`.**
+- **`subPath` mounts** do not update when the Secret changes.
+:::
+<!-- /deeper -->
+
 :::recap
 - ConfigMap for config, Secret for sensitive data. Inject as env vars or mounted files.
 - Env vars are fixed at start; mounted files refresh, but apps must re-read them. Restart Deployments to apply env changes.

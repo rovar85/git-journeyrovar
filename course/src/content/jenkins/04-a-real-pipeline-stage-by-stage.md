@@ -207,6 +207,31 @@ kubectl delete deployment,service ev-app -n ci --ignore-not-found > /dev/null 2>
 docker rm -f registry > /dev/null
 ```
 
+<!-- deeper -->
+## Answer and common mistakes
+
+A size gate is just a shell test, so you can check the logic outside Jenkins first:
+
+```run
+(
+size=24000000          # pretend `docker image inspect -f '{{.Size}}'` printed this
+limit=20000000
+if [ "$size" -gt "$limit" ]; then echo "image too large: $size > $limit"; exit 1; fi
+echo "this line is not reached"
+)
+echo "exit code: $?"
+```
+
+The subshell ends with exit code `1` (shown above); in Jenkins that non-zero exit stops the stage and fails the build, which is exactly how a quality gate works.
+
+:::warn Common mistakes
+- **Tagging images only `latest`.** Tag with the build number or Git commit so a deployment is traceable and rollback is possible.
+- **Deploying without a verification step** (smoke test) and a rollback path.
+- **Rebuilding the artifact in each environment.** Build once, promote the same image.
+- **Credentials baked into the image or the log.**
+:::
+<!-- /deeper -->
+
 :::recap
 - A pipeline is ordered commands, fail-fast, with results kept. The Jenkins file wraps a script that you can run anywhere.
 - Real stages: lint, test, build, push, deploy, smoke test; rollback on a failed rollout.

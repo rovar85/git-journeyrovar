@@ -132,6 +132,39 @@ for n in inside gw outside; do sudo ip netns del $n; done
 sudo ip netns list | wc -l
 ```
 
+<!-- deeper -->
+## A worked solution
+
+```run
+cd ~/lab
+sudo ip netns del fw 2>/dev/null; sudo ip netns add fw
+sudo ip netns exec fw nft -f - <<'EOF'
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+    iif lo accept
+    ct state established,related accept
+    ip saddr 10.0.0.0/24 tcp dport 22 accept
+    tcp dport 443 accept
+  }
+}
+EOF
+sudo ip netns exec fw nft list chain inet filter input
+sudo ip netns del fw
+```
+
+Reading it: the **policy drop** is the default; the accepts above it are the exceptions. The rule that must exist **before the default drop starts blocking you** is the **`ct state established,related accept`** rule (so replies to connections you started, and your current SSH session, keep working). Add your SSH allow rule first, always, on a remote machine.
+
+:::warn Common mistakes
+- **Locking yourself out:** setting default drop before allowing SSH from your address.
+- **Forgetting `established,related`,** which breaks return traffic.
+- **Rule order.** The first matching rule wins; a broad accept above a specific drop makes the drop useless.
+- **Allowing too wide a source** (`0.0.0.0/0` for SSH or RDP).
+- **Rules not persisted.** `nft` rules live in memory; save them (`/etc/nftables.conf`) and enable the service.
+- **Forgetting IPv6.** An `inet` table covers both; an IPv4-only table leaves IPv6 open.
+:::
+<!-- /deeper -->
+
 :::recap
 - Firewall rules: match, then accept/drop/reject; first match wins; default deny.
 - drop causes timeouts; reject causes "refused".

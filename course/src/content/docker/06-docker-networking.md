@@ -109,6 +109,29 @@ docker network rm evnet backnet
 docker network ls -q | wc -l
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+docker rm -f c1 c2 c3 > /dev/null 2>&1; docker network rm lab6net > /dev/null 2>&1
+docker network create lab6net > /dev/null
+docker run -d --name c1 --network lab6net busybox sleep 120 > /dev/null
+docker run -d --name c2 --network lab6net busybox sleep 120 > /dev/null
+docker run -d --name c3 busybox sleep 120 > /dev/null
+echo "c2 -> c1 by NAME on the user-defined network:"; docker exec c2 ping -c1 -W1 c1 > /dev/null 2>&1 && echo reachable || echo "not reachable"
+echo "c3 (default bridge) -> c1 by name:"; docker exec c3 ping -c1 -W1 c1 > /dev/null 2>&1 && echo reachable || echo "not reachable: different network and no name resolution"
+docker rm -f c1 c2 c3 > /dev/null; docker network rm lab6net > /dev/null
+```
+
+:::warn Common mistakes
+- **Using the default bridge for multi-container apps** and hard-coding container IPs (they change).
+- **Expecting `localhost` inside a container to mean the host** (it is the container itself). Use the service name or `host.docker.internal`.
+- **Publishing every service's port** when containers on the same network can already reach each other.
+- **Forgetting that Compose creates its own network** per project.
+- **Debugging with a container that lacks tools.** Run a helper (`busybox`, `nicolaka/netshoot`) on the same network.
+:::
+<!-- /deeper -->
+
 :::recap
 - Default bridge = NAT'd virtual switch. User-defined bridge adds DNS by container name.
 - `-p` creates DNAT rules in the host firewall; bind to `127.0.0.1` when not public.

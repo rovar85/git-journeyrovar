@@ -154,6 +154,35 @@ pwsh -File fmt.ps1
 
 `ConvertTo-Json`, `ConvertTo-Csv`, `Export-Csv`, `Out-File` write data out; `ConvertFrom-Json`, `Import-Csv`, `Get-Content` read it in. **Do your filtering before formatting**, because `Format-*` cmdlets turn objects into display instructions that later cmdlets cannot use.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cat > log1.txt <<'EOF2'
+2025-03-01 09:00:01 INFO Indexer started
+2025-03-01 09:05:12 WARN Queue length 900
+2025-03-01 09:07:40 ERROR Disk full on E:
+2025-03-01 09:08:00 WARN Retrying
+EOF2
+cat > ans1.ps1 <<'EOF2'
+$lines = Get-Content log1.txt
+"WARN lines: " + ($lines | Where-Object { $_ -match ' WARN ' }).Count
+$first = $lines | Where-Object { $_ -match ' ERROR ' } | Select-Object -First 1
+"First ERROR at: " + ($first -split ' ')[1]
+EOF2
+pwsh -File ans1.ps1
+```
+
+`Where-Object` filters objects flowing through the pipeline, `-match` tests text with a regular expression, and `Select-Object -First 1` stops after the first hit.
+
+:::warn Common mistakes
+- **Treating output as text.** Commands return objects; use `Select-Object`, `Where-Object` and properties instead of cutting strings.
+- **Using `Format-Table` in the middle of a pipeline.** Formatting commands produce display objects; put them last.
+- **Not using `Get-Help` and `Get-Member`** to discover what a command accepts and returns.
+- **Forgetting that `-eq`, `-like`, `-match` are operators, not `==`.**
+:::
+<!-- /deeper -->
+
 :::recap
 - PowerShell passes objects, so you select properties by name instead of parsing text.
 - Cmdlets are `Verb-Noun`; discover with `Get-Command`, `Get-Help`, `Get-Member`.

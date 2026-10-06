@@ -158,6 +158,35 @@ docker rmi ev-leaky > /dev/null
 
 Anyone who can pull the image can read that. This is a real, common vulnerability.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+rm -rf ~/lab/envprint && mkdir ~/lab/envprint && cd ~/lab/envprint
+cat > Dockerfile <<'EOF'
+FROM busybox:1.37
+ENV GREETING="default greeting"
+CMD ["sh", "-c", "echo \"Message: $GREETING\""]
+EOF
+docker build -q -t envprint . > /dev/null
+echo "default:"; docker run --rm envprint
+echo "override 1:"; docker run --rm -e GREETING="hello from run 1" envprint
+echo "override 2:"; docker run --rm -e GREETING="hello from run 2" envprint
+docker rmi envprint > /dev/null
+```
+
+`ENV` sets a **default**; `-e` at run time **overrides** it. The `sh -c` wrapper is needed so the shell expands `$GREETING` (the exec-form `CMD ["echo", "$GREETING"]` would print the literal text).
+
+:::warn Common mistakes
+- **Putting the code `COPY` before the dependency install,** so every edit reinstalls everything.
+- **Shell form `CMD npm start`,** making `sh` PID 1; signals do not reach your program. Use exec form.
+- **Baking secrets in with `ENV` or `COPY`.** They stay in the image layers.
+- **Missing `.dockerignore`,** sending `.git` and large folders to the build every time.
+- **Running as root by default.** Add a `USER` instruction.
+- **Many `RUN` lines that each leave junk behind.** Clean up in the same layer.
+:::
+<!-- /deeper -->
+
 :::recap
 - Dockerfile instructions: `FROM`, `WORKDIR`, `COPY`, `RUN`, `ENV`, `EXPOSE`, `USER`, `CMD`, `ENTRYPOINT`.
 - `docker build -t name:tag .`. Build cache: rarely-changing steps first.

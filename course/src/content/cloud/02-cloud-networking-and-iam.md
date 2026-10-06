@@ -159,6 +159,38 @@ Statement 1 is **least privilege**: read one bucket. Statements 2 and 3 are the 
 
 Services get private DNS names inside the VPC; public names live in a DNS service (Route 53, Azure DNS) with **health-checked records**. A load balancer (Layer 4 TCP/UDP or Layer 7 HTTP) sits in front of the app tier across zones, so a failed instance or zone is removed automatically, which ties back to Kubernetes Services and Ingress.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+python3 - <<'PY'
+import ipaddress
+vpc = ipaddress.ip_network("10.10.0.0/16")
+subnets = list(vpc.subnets(new_prefix=24))
+tiers = ["web", "app", "sql", "backup"]
+zones = ["a", "b", "c"]
+used = len(tiers) * len(zones)
+print("total /24 subnets in the /16:", len(subnets))
+print("used by 4 tiers x 3 zones:    ", used)
+print("left for growth:              ", len(subnets) - used)
+i = 0
+for t in tiers:
+    for z in zones:
+        print(f"  {t:7s} zone-{z}  {subnets[i]}")
+        i += 1
+PY
+```
+
+A /16 holds 256 /24 networks. Twelve are used, so 244 remain. In practice cloud providers reserve a few addresses per subnet (AWS keeps 5), so a /24 gives about 251 usable hosts.
+
+:::warn Common mistakes
+- **Overlapping CIDR ranges** with the corporate network or another VPC, which makes peering and VPN impossible later.
+- **Choosing a tiny VPC** that cannot grow. Resizing is painful; plan big.
+- **Wide-open security groups** (`0.0.0.0/0` on SQL or RDP).
+- **Long-lived access keys and admin rights for everyone** instead of roles with least privilege.
+:::
+<!-- /deeper -->
+
 :::recap
 - A VPC/VNet is a private network you plan with CIDR: public, app and data subnets across at least two zones, no overlap with other networks.
 - Security groups (stateful, per resource), route tables and load balancers control traffic; reference groups instead of IPs; no admin ports open to the world.

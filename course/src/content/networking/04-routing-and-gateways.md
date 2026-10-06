@@ -95,6 +95,34 @@ for n in a r b; do sudo ip netns del $n; done
 sudo ip netns list | wc -l
 ```
 
+<!-- deeper -->
+## Worked answer and common mistakes
+
+Add a network `10.3.0.0/24` behind `b` (reached through a new router `b` or a router interface). The rule is: **every router on the path needs a route to the destination, and the destination needs a route back**.
+
+| Machine | Needs | Because |
+|---|---|---|
+| `a` | default via `r` (already has it) | everything off-link goes to the router `r` |
+| `r` | `10.3.0.0/24 via 10.2.0.2` (b's address) | `r` must know that `b` is the way to the new network |
+| `b` | `ip_forward=1` and a connected interface in `10.3.0.0/24` | `b` is now also a router for that network |
+| hosts in `10.3.0.0/24` | default via `b`'s interface in that network | replies must find their way back |
+
+```run
+cd ~/lab
+echo "The one command r needs (printed, not run):"
+echo "  sudo ip -n r route add 10.3.0.0/24 via 10.2.0.2"
+echo "and on b:  sudo ip netns exec b sysctl -w net.ipv4.ip_forward=1"
+```
+
+:::warn Common mistakes
+- **Fixing only one direction.** Packets arrive but replies cannot return; traceroute shows where it stops, ping to the far side may seem fine from one end only.
+- **Forgetting `ip_forward`** on the router (it quietly drops transit traffic).
+- **A default route on the wrong interface,** or two default routes.
+- **Overlapping routes.** The most specific (longest prefix) wins; a stray `/24` can hijack traffic meant for a `/16`.
+- **Static routes that vanish at reboot.** Put them in the network configuration (netplan, NetworkManager) or use a routing daemon.
+:::
+<!-- /deeper -->
+
 :::recap
 - A route is "to reach this network, send to this next hop".
 - The default gateway (`default via`) catches everything not matched by a more specific route.

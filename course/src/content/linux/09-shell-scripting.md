@@ -159,6 +159,42 @@ chmod +x report.sh
 
 Exit code 1 is how a script tells another program (a scheduler, Jenkins, Ansible) that something failed. This simple idea underlies all automation.
 
+<!-- deeper -->
+## A worked solution
+
+```run
+cd ~/lab
+cat > disk_check.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+dir="${1:?usage: disk_check.sh FOLDER LIMIT_KB}"
+limit="${2:?usage: disk_check.sh FOLDER LIMIT_KB}"
+used=$(du -sk "$dir" | cut -f1)
+if [ "$used" -gt "$limit" ]; then
+  echo "WARNING: $dir uses ${used} KB, above the limit of ${limit} KB" >&2
+  exit 1
+fi
+echo "ok: $dir uses ${used} KB (limit ${limit} KB)"
+EOF
+chmod +x disk_check.sh
+./disk_check.sh ev 100000; echo "exit code: $?"
+./disk_check.sh ev 1; echo "exit code: $?"
+./disk_check.sh 2>&1 | head -1; echo "exit code: ${PIPESTATUS[0]}"
+```
+
+The three runs show the three outcomes: under the limit (exit 0), over the limit (exit 1, message on **stderr**), and missing arguments (`${1:?...}` stops the script with a usage message).
+
+:::warn Common mistakes
+- **Unquoted variables** (`rm $dir/*` when `dir` has a space or is empty). Always `"$dir"`.
+- **No `set -euo pipefail`,** so a failed step is ignored and later steps do damage.
+- **Spaces around `=`** in assignments (`x = 5` is an error; write `x=5`).
+- **`[ $a = $b ]` with an empty variable.** Quote: `[ "$a" = "$b" ]`.
+- **Using `==` in plain `sh`;** `=` is portable, `==` is a bash extension.
+- **Printing errors to standard output.** Send diagnostics to stderr (`>&2`) and use meaningful exit codes.
+- **Parsing `ls` output.** Use globs (`for f in *.log`) or `find`.
+:::
+<!-- /deeper -->
+
 :::recap
 - A script is a file with a shebang and executable permission.
 - `$1`, `$#`, `$?`, quoting, `${var:-default}`.

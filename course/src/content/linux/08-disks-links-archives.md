@@ -123,6 +123,38 @@ mkdir -p restore && tar -xzf ev-backup.tar.gz -C restore
 diff -r ev/config restore/ev/config && echo "restored copy is identical"
 ```
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+The order to work in when a file system is full:
+
+```term
+$ df -h /var                                  # 1. confirm which file system is full
+$ df -i /var                                  # 2. check inodes too (many tiny files can fill it)
+$ sudo du -xh /var --max-depth=2 | sort -rh | head -15      # 3. find the biggest folders
+$ sudo find /var/log -type f -size +100M -exec ls -lh {} \; # 4. find the large files
+$ sudo lsof +L1                               # 5. files that are deleted but still held open
+```
+
+**Why deleting a huge log may not free space:** a running program still has the file open. The name is gone, but the data stays on disk until the program closes it. `lsof +L1` shows it. Fix: restart the service (or truncate the file instead of deleting it: `: > /var/log/big.log`). Then add **log rotation** so it does not recur.
+
+Try the truncate-versus-delete idea safely:
+
+```run
+cd ~/lab
+( exec 3> held.log; dd if=/dev/zero bs=1M count=3 >&3 2>/dev/null; rm held.log
+  echo "file deleted, but this shell still holds it open:"; ls -l /proc/$BASHPID/fd/3 | sed 's#.*-> ##'; exec 3>&- )
+```
+
+:::warn Common mistakes
+- **Deleting random files in `/var` to free space.** Find what is big and why first; some files (databases, journals) are vital.
+- **Forgetting inodes.** `df -h` looks fine but "No space left on device" appears: `df -i`.
+- **Deleting a log a service is writing** instead of truncating or rotating it.
+- **`rm -rf` on a mount point** that is actually another disk.
+- **No monitoring.** Alert at 80% so it never reaches 100%.
+:::
+<!-- /deeper -->
+
 :::recap
 - One directory tree; disks are mounted onto folders. `df -h`, `du -sh`, `lsblk`, `findmnt`.
 - Full disk: `df -h` to find the full filesystem, `du` to find the hog, remove or move, check `df -i` and `lsof +L1`.

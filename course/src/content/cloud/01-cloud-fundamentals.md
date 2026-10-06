@@ -132,6 +132,34 @@ $ az vm list -d -o table
 
 (Example output formats for the CLIs; not run here.)
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+python3 - <<'PY'
+lb = 0.9999
+app_each = 0.995
+db = 0.9995
+app_pair = 1 - (1 - app_each) ** 2     # parallel: both must fail
+total = lb * app_pair * db             # series: all layers needed
+print(f"two app servers together: {app_pair*100:.4f}%")
+print(f"whole service:            {total*100:.4f}%")
+print("meets 99.95%?", total >= 0.9995)
+minutes = (1 - total) * 365 * 24 * 60
+print(f"expected downtime: {minutes:.0f} minutes a year")
+PY
+```
+
+The two app servers together are very reliable (parallel parts multiply their *failure* chances), but the service is a **chain**: its availability is the product of every layer, so it ends up **below** its weakest component, the database. To reach 99.95% you must improve the database layer (for example a managed multi-zone database), not add a third app server.
+
+:::warn Common mistakes
+- **Believing "two servers" means the service is highly available** when a single database, load balancer or DNS record is still a single point of failure.
+- **Confusing a provider's SLA with your design's availability.** The SLA is per service; you combine them.
+- **Ignoring the shared responsibility model:** the provider secures the cloud, you secure what you put in it.
+- **Treating the cloud like a bigger datacentre** instead of using managed services and automation.
+:::
+<!-- /deeper -->
+
 :::recap
 - IaaS, PaaS, SaaS and serverless differ in who manages what. Security is a shared responsibility; most breaches are misconfiguration.
 - Regions contain availability zones; design across at least two AZs.

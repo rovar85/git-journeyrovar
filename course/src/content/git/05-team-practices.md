@@ -118,6 +118,40 @@ git reflog                  find lost commits
 EOF
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+git config --global user.name "Rohan Student"; git config --global user.email "student@example.com"; git config --global init.defaultBranch main
+rm -rf ~/lab/hooked && mkdir ~/lab/hooked && cd ~/lab/hooked && git init -q
+cat > .git/hooks/pre-commit <<'EOF'
+#!/bin/bash
+limit=$((1024 * 1024))
+for f in $(git diff --cached --name-only --diff-filter=ACM); do
+  size=$(wc -c < "$f")
+  if [ "$size" -gt "$limit" ]; then
+    echo "pre-commit: $f is $size bytes (limit $limit). Commit refused."
+    exit 1
+  fi
+done
+EOF
+chmod +x .git/hooks/pre-commit
+head -c 2000000 /dev/zero > big.bin; echo small > small.txt
+git add small.txt && git commit -q -m "small file" && echo "small file: committed"
+git add big.bin && git commit -m "big file"; echo "exit code: $?"
+```
+
+The hook inspects only the **staged** files (`--cached`), measures each, and exits non-zero to stop the commit. Remember a local hook can be bypassed with `--no-verify`, and is not copied by `git clone`: put the same check in CI (and in server-side rules) as well. For genuinely large files, use **Git LFS** instead of committing them directly.
+
+:::warn Common mistakes
+- **Relying on local hooks as the only control** (they can be skipped and are per-clone).
+- **Hooks that are slow,** so people bypass them. Keep them to seconds.
+- **Forgetting `chmod +x`** on the hook (it silently does nothing).
+- **Committing large binaries** and bloating the repository permanently (history keeps them).
+- **Tagging without a message or a convention,** then not knowing what a release contained.
+:::
+<!-- /deeper -->
+
 :::recap
 - Tags mark releases; semantic versioning is common.
 - `blame`, `log -S` and `bisect` find who/when/why.

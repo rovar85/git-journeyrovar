@@ -162,6 +162,40 @@ kubectl get pods -l app=web --no-headers | wc -l
 
 Nobody recreated it. A bare Pod that is deleted (or whose node dies) is gone. That is the job of a **controller**, which is the next lesson.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cat > two.yaml <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata: {name: duo}
+spec:
+  containers:
+  - name: web
+    image: nginx:1.27-alpine
+  - name: poller
+    image: busybox:1.37
+    command: ["sh", "-c", "sleep 3; while true; do wget -qO- http://localhost | grep -o '<title>.*</title>'; sleep 2; done"]
+EOF
+kubectl apply -f two.yaml
+kubectl wait --for=condition=Ready pod/duo --timeout=60s
+sleep 6
+kubectl logs duo -c poller | sort | uniq -c
+kubectl logs duo -c web | head -1 | cut -c1-60
+```
+
+The poller reached nginx on **`localhost`** because both containers share one network namespace (one IP, one port space). `-c NAME` picks which container's log to read (without it Kubernetes asks which one).
+
+:::warn Common mistakes
+- **Putting two unrelated apps in one Pod.** Use separate Deployments; share a Pod only for tightly coupled helpers.
+- **Both containers listening on the same port** (they share the port space).
+- **Forgetting `-c`** when reading logs and thinking logs are missing.
+- **Expecting the Pod's IP to be stable.** Use a Service.
+- **Running a bare Pod in production** (no self-healing).
+:::
+<!-- /deeper -->
+
 :::recap
 - A Pod is one or more containers sharing one IP and volumes, scheduled together. Pods are disposable.
 - `kubectl run`/`apply -f`, `get`, `describe`, `logs` (`--previous`), `exec`, `port-forward`.

@@ -168,6 +168,38 @@ find . -name "*.conf" -o -name "*.sh"
 4. Before deleting `practice`, list what is inside with `ls -R practice`. Then remove it.
 :::
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+rm -rf practice
+mkdir practice
+touch practice/{a,b,c}.txt
+ls practice
+echo "--- 2: copy a folder and rename the copy"
+cp -r ev/logs practice/
+mv practice/logs practice/logs-old
+ls practice
+echo "--- 3: how many .log files exist under ev?"
+find ev -name "*.log" | wc -l
+echo "--- 4: look before you delete"
+ls -R practice
+rm -r practice
+ls practice 2>&1 | head -1
+```
+
+`cp -r` is needed to copy a folder (recursive). `{a,b,c}` is **brace expansion**: the shell turns it into three names before `touch` runs. `ls -R` before `rm -r` is the habit that prevents disasters.
+
+:::warn Common mistakes
+- **`rm -rf` with a typo or an empty variable.** `rm -rf $DIR/` with `DIR` unset becomes `rm -rf /`. Always `ls` first; quote variables.
+- **`cp` without `-r` on a folder** ("omitting directory").
+- **Unquoted file names with spaces.** `rm my file.txt` tries to delete two files called `my` and `file.txt`. Quote: `rm "my file.txt"`.
+- **Using `mv` to "copy".** It removes the original.
+- **Wildcard surprises.** `rm *.log` deletes in the current folder only; check what `ls *.log` matches first.
+:::
+<!-- /deeper -->
+
 :::recap
 - One tree starting at `/`. `/etc` is configuration, `/var/log` is logs, `/home` is people's files.
 - Absolute paths start with `/`. Relative paths do not. `.` is here, `..` is the parent, `~` is home.

@@ -158,6 +158,44 @@ When ten repositories copy the same 80 lines, move them to a **shared library** 
 | Pin tool and image versions | repeatable builds |
 | Make steps idempotent and re-runnable | retries are safe |
 
+<!-- deeper -->
+## Answer and common mistakes
+
+One reasonable answer to the exercise:
+
+```groovy
+pipeline {
+  agent any
+  stages {
+    stage('Checks') {
+      parallel {
+        stage('Lint') { steps { sh './lint.sh' } }
+        stage('Test') { steps { sh './test.sh' } }
+      }
+    }
+    stage('Build image') {
+      steps { sh 'docker build -t myapp:${BUILD_NUMBER} .' }
+    }
+    stage('Push') {
+      when { branch 'main' }
+      steps { sh 'docker push registry.example.com/myapp:${BUILD_NUMBER}' }
+    }
+  }
+  post { always { cleanWs() } }
+}
+```
+
+(Example, not run here: `when { branch }` needs a *multibranch* pipeline, and the push needs registry credentials, shown in lesson 4.)
+
+:::warn Common mistakes
+- **Scripted and declarative syntax mixed up.** Start declarative (`pipeline { }`), and use `script { }` blocks sparingly.
+- **Long Groovy logic inside the Jenkinsfile.** Put real logic in scripts in the repository so developers can run them locally.
+- **`agent any` everywhere** so builds land on whichever machine has the wrong tools. Label your agents.
+- **No `post` cleanup,** so workspaces fill the disk.
+- **Forgetting that each `sh` step is a new shell:** `cd` and exported variables do not carry over.
+:::
+<!-- /deeper -->
+
 :::recap
 - A `Jenkinsfile` in Git defines the pipeline: `agent`, `options`, `environment`, `stages`/`steps`, `when`, `parallel`, `input`, `post`.
 - Credentials are referenced by ID with `withCredentials`, masked in logs; use single quotes for `sh`.

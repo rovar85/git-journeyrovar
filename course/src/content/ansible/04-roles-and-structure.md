@@ -164,6 +164,32 @@ ansible-project/
 
 Separate inventories for test and production mean the **same roles** are run against both (`-i inventories/test`), which is how you test changes safely first. **Collections** (`ansible-galaxy collection install community.general`) are bundles of modules and roles from the community or vendors (for example `ansible.windows`, `amazon.aws`).
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans3
+cat >> roles/ev_indexing/tasks/main.yml <<'EOF'
+
+- name: Write a README into logs
+  ansible.builtin.copy:
+    dest: "{{ ev_base_dir }}/logs/README.txt"
+    content: "Logs for {{ inventory_hostname }}\n"
+  tags: [docs]
+EOF
+echo "--- only the docs tag:"; ansible-playbook site.yml --tags docs | grep -E "TASK|ok="  | sed 's/ \*\*\*.*//'
+echo "--- check mode afterwards: nothing left to change"; ansible-playbook site.yml --check | grep -E "ok="
+```
+
+:::warn Common mistakes
+- **Putting everything in `vars/`** so nobody can override it; user-facing settings belong in `defaults/`.
+- **Role variables without a prefix,** colliding with other roles.
+- **Huge roles that do unrelated things.** Split by responsibility.
+- **Relying on tag names nobody documented.**
+- **Forgetting `roles_path`** (or a relative path problem) and getting "role not found".
+:::
+<!-- /deeper -->
+
 :::recap
 - A role = tasks, handlers, defaults, templates, files in a standard folder layout.
 - `ansible-galaxy role init`. Use `roles:` in a play.

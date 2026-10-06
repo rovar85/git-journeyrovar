@@ -157,6 +157,24 @@ The next lesson shows the `Jenkinsfile`.
 Never paste parameter values into a shell command without care: a value like `x; rm -rf /` becomes a command. Use choices instead of free text where possible, quote variables (`"$VERSION"`), and validate formats.
 :::
 
+<!-- deeper -->
+## Answer and common mistakes
+
+**Free-text parameter risk.** A `NOTES` string parameter is **user-controlled input** that ends up in a shell command. If the script does `echo $NOTES` unquoted, a value such as `x; rm -rf ~` runs as a command (**command injection**). Reduce the risk by:
+
+- quoting (`echo "$NOTES"`) and never building commands from parameters,
+- using **choice** parameters or a validated pattern where possible,
+- passing values as environment variables instead of pasting them into script text,
+- running builds with least privilege so a mistake cannot do much harm.
+
+:::warn Common mistakes
+- **Treating parameters as trusted.** They are input from people.
+- **Polling the repository every minute** instead of using a webhook (load and delay).
+- **Not archiving the artifacts** that a later deployment job needs, or archiving everything and filling the disk (set a retention policy).
+- **Chains with no failure handling.** Decide what happens downstream when an upstream job fails.
+:::
+<!-- /deeper -->
+
 :::recap
 - Parameters become environment variables; give safe defaults.
 - Archive small outputs as artifacts; use a real repository for packages.

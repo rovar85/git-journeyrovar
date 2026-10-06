@@ -99,6 +99,30 @@ docker volume rm evdata evbackup
 docker volume ls -q | wc -l
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+docker volume rm logvol > /dev/null 2>&1; docker volume create logvol > /dev/null
+for i in 1 2 3; do
+  docker run --rm -v logvol:/data busybox sh -c 'echo "run at $(date +%s%N)" >> /data/log.txt'
+done
+echo "lines in the file, read by a FOURTH container (read-only mount):"
+docker run --rm -v logvol:/data:ro busybox sh -c 'wc -l < /data/log.txt'
+docker volume rm logvol > /dev/null
+```
+
+Three short-lived containers each appended a line; the data stayed in the volume. Ownership and permissions matter: the container's user must be allowed to write the volume.
+
+:::warn Common mistakes
+- **Storing data in the container layer** and losing it at the next `docker rm`.
+- **Running `docker compose down -v` or `docker volume prune`** and deleting data you wanted.
+- **Bind-mounting with the wrong ownership,** causing "permission denied".
+- **Backing up a running database by copying its files.** Use the database's own dump or backup tool.
+- **Mounting a volume over a folder that has files in the image** and wondering where they went (with a bind mount the host folder hides them).
+:::
+<!-- /deeper -->
+
 :::recap
 - Container storage is disposable; use volumes for data that must live on.
 - Named volume = Docker-managed; bind mount = a host folder; tmpfs = memory.

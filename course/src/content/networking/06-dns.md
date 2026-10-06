@@ -110,6 +110,34 @@ sudo ip netns list | wc -l
 
 `nslookup sql01`, `Resolve-DnsName sql01`, `ipconfig /flushdns` (clear cache), `ipconfig /displaydns`. In an EV/Active Directory world, DNS also stores where the **domain controllers** are (SRV records), so broken DNS breaks logins, not just names.
 
+<!-- deeper -->
+## Worked answer and common mistakes
+
+`ping 10.0.0.20` works, so the network path is fine; the failure is **name resolution**. Check in this order:
+
+1. **What does this machine think the name is?** `getent hosts sql01` (checks `/etc/hosts`, then DNS, exactly as applications do).
+2. **Which DNS server is it using, and does that server know the name?** `cat /etc/resolv.conf` then `dig @DNSSERVER sql01 +short` (and `dig @DNSSERVER sql01.corp.local` with the full domain: a **missing search suffix** is a classic cause).
+3. **Is the DNS server reachable?** `dig @DNSSERVER . +time=2 +tries=1`, or `nc -zvu DNSSERVER 53`. Timeout here is a different problem from NXDOMAIN.
+
+```run
+cd ~/lab
+echo "--- how this machine resolves names (order and servers):"
+grep '^hosts:' /etc/nsswitch.conf
+echo "--- an unknown name through the system resolver:"
+getent hosts sql01-does-not-exist || echo "no answer (NXDOMAIN or no DNS)"
+```
+
+Fixes depend on the finding: add the record (or correct it) on the DNS server; fix the client's DNS server or search domain (DHCP option or `resolv.conf`); flush stale caches (`resolvectl flush-caches`, `ipconfig /flushdns` on Windows).
+
+:::warn Common mistakes
+- **Assuming "the network is down"** when only DNS is.
+- **Using a short name where the full name is needed** (search suffix not configured).
+- **Stale caches.** The record is fixed on the server but the client (or an intermediate cache) still holds the old answer until the TTL expires.
+- **A hosts-file entry forgotten for years** overriding DNS on one machine only: "works on that server, not this one".
+- **Querying only one DNS server** when the machine uses several.
+:::
+<!-- /deeper -->
+
 :::recap
 - DNS translates names to addresses; records: A, AAAA, CNAME, MX, TXT, PTR, NS, SRV.
 - Resolution order: hosts file, cache, the configured DNS server (which recurses and caches by TTL).

@@ -140,6 +140,40 @@ cat .gitignore
 terraform destroy -auto-approve | grep "Destroy complete"
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/tf4
+echo "--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson)."
+echo "--- with a moved block the plan is a pure state move. A suitable .gitignore:"
+cat > .gitignore <<'EOF'
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+# variable files that may contain secrets
+*.tfvars
+*.tfvars.json
+# keep the dependency lock file (do NOT ignore .terraform.lock.hcl)
+EOF
+cat .gitignore | grep -v '^#' | grep .
+git check-ignore -v terraform.tfstate .terraform.lock.hcl 2>/dev/null | head -2 || true
+```
+
+Keep **`.terraform.lock.hcl`** in Git (it pins provider versions and checksums for everyone); ignore state, plans and secret variable files.
+
+:::warn Common mistakes
+- **Editing `terraform.tfstate` by hand.** Use `terraform state` commands.
+- **Forgetting that renaming a resource is a destroy and create** unless you add `moved`.
+- **`terraform state rm`** and then being surprised the real resource still exists (and may be created twice).
+- **No remote state locking,** so two applies run at once.
+- **Importing existing resources and forgetting to write matching code.**
+:::
+<!-- /deeper -->
+
 :::recap
 - State maps code to real objects. It is JSON; do not hand-edit it.
 - `terraform state list/show/mv/rm`; `moved` blocks refactor safely; `import` adopts existing resources.

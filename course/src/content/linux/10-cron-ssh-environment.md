@@ -106,6 +106,35 @@ Host ev01
 
 Now `ssh ev01` is enough. Never share or commit a private key; if it leaks, remove the public key from servers and generate a new pair.
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+The crontab line for 02:30 every Sunday (fields: minute, hour, day-of-month, month, day-of-week; Sunday is 0 or 7):
+
+```term
+30 2 * * 0  /opt/ev/backup.sh >> /var/log/ev-backup.log 2>&1
+```
+
+Check how it will be read with the cron explainer from this lesson, or test the idea locally:
+
+```run
+cd ~/lab
+echo "30 2 * * 0" | awk '{printf "minute=%s hour=%s day-of-month=%s month=%s day-of-week=%s (0 = Sunday)\n", $1,$2,$3,$4,$5}'
+```
+
+`>> file 2>&1` appends normal output **and** error output to one log. Without it cron tries to email the output (or drops it), and you will not know a job failed.
+
+:::warn Common mistakes
+- **Relative paths and commands** that work in your terminal but not in cron's minimal environment. Use absolute paths, and set `PATH` at the top of the crontab if needed.
+- **`%` characters** in a crontab command: cron treats an unescaped `%` as a newline. Escape as `\%`.
+- **Day-of-month and day-of-week both set** is an OR, not an AND (`0 2 1 * 1` runs on the 1st **and** every Monday).
+- **No log, no alert.** A silent backup that fails for weeks is worse than no backup.
+- **Overlapping runs.** If a job can take longer than its interval, guard it with `flock`.
+- **Passwords in cron lines** (visible in `ps` and backups). Use key files with `600` permissions.
+- **SSH key permissions.** Private keys must be `600` and `~/.ssh` `700`, or SSH refuses them.
+:::
+<!-- /deeper -->
+
 :::recap
 - Environment variables are inherited by child processes only when exported; PATH decides where commands are found.
 - cron: five time fields plus a command. Use full paths and log output.

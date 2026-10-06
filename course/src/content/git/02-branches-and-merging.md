@@ -108,6 +108,35 @@ The graph shows both lines of work joining at the merge commit. Conflicts are no
 | `git merge --abort` | cancel a conflicted merge |
 | `git log --graph --oneline --all` | picture of the history |
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+git config --global user.name "Rohan Student"; git config --global user.email "student@example.com"; git config --global init.defaultBranch main
+rm -rf ~/lab/conflict && mkdir ~/lab/conflict && cd ~/lab/conflict && git init -q
+echo "timeout=10" > app.conf && git add . && git commit -q -m "Initial"
+git switch -q -c fast; echo "timeout=5" > app.conf; git commit -qam "Use 5 second timeout"
+git switch -q main; git switch -q -c safe; echo "timeout=30" > app.conf; git commit -qam "Use 30 second timeout"
+git switch -q main
+git merge fast > /dev/null && echo "merged fast (fast-forward)"
+echo "--- now merge the second branch: conflict"
+git merge safe 2>&1 | grep -E "CONFLICT|Automatic" 
+echo "--- the file now contains markers:"; cat app.conf
+echo "--- back out:"
+git merge --abort && git status -sb | head -1 && cat app.conf
+echo "--- merge again and resolve by choosing a value:"
+git merge safe > /dev/null 2>&1; echo "timeout=15" > app.conf; git add app.conf && git commit -q -m "Resolve: 15 seconds" && git log --graph --format='%s' | head -5
+```
+
+:::warn Common mistakes
+- **Committing the conflict markers** (`<<<<<<<`) because you did not search the file for them. `grep -rn '<<<<<<<' .` before committing.
+- **Resolving by taking "mine" blindly,** losing the other person's change. Read both sides; talk to them.
+- **Long-lived branches.** The longer a branch lives, the worse the conflicts; merge `main` into it often.
+- **Panicking mid-merge.** `git merge --abort` returns you to the state before the merge.
+- **Merging into the wrong branch.** Check `git branch --show-current` first.
+:::
+<!-- /deeper -->
+
 :::recap
 - A branch is a label on a commit. Create one per piece of work.
 - Merge brings changes together: fast-forward when possible, otherwise a merge commit.

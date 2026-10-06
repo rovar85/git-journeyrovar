@@ -261,6 +261,36 @@ Cordon marks the node unschedulable (existing Pods stay); `drain` also evicts th
 kubectl delete namespace lab10 --wait=false > /dev/null
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+mkdir -p gen/base gen/overlays/big && cd gen
+kubectl create deployment x --image=nginx:1.27-alpine --dry-run=client -o yaml > base/deploy.yaml
+echo "generated $(wc -l < base/deploy.yaml) lines of YAML without touching the cluster; replicas in the base: $(grep replicas base/deploy.yaml)"
+printf 'resources:\n- deploy.yaml\n' > base/kustomization.yaml
+cat > overlays/big/kustomization.yaml <<'EOF'
+resources:
+- ../../base
+replicas:
+- name: x
+  count: 5
+EOF
+kubectl kustomize overlays/big | grep -E "kind:|replicas:|image:"
+cd ..
+```
+
+`--dry-run=client -o yaml` is the fastest way to get correct YAML to edit, and it is how people work in the CKA/CKAD exams. The overlay changed only the replica count; the base is untouched, so the same base can feed test and production overlays.
+
+:::warn Common mistakes
+- **Treating Helm values and Kustomize patches as magic.** Always render and read the result (`helm template`, `kubectl kustomize`) before applying.
+- **Using `kubectl edit` in production,** leaving the cluster different from Git.
+- **Drain without PodDisruptionBudgets,** taking all replicas of a service down at once.
+- **Ignoring Job history and CronJob overlap,** filling the cluster with finished Pods (set history limits and `concurrencyPolicy`).
+- **Not planning upgrades:** skipping minor versions is unsupported; upgrade one at a time and read release notes.
+:::
+<!-- /deeper -->
+
 :::recap
 - Pick the controller by workload: Deployment, StatefulSet, DaemonSet, Job, CronJob.
 - Kustomize overlays plain YAML; Helm packages charts with templates and releases.

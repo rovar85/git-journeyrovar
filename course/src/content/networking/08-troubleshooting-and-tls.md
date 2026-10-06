@@ -91,6 +91,39 @@ Three different results from one server: untrusted issuer, name mismatch, succes
 `ev.key` is `600` for a reason. Anyone with it can impersonate the server. Never commit keys to Git; use a secrets manager (the Terraform and Jenkins tracks return to this).
 :::
 
+<!-- deeper -->
+## Worked answer and common mistakes
+
+Check the expiry date of the certificate the server actually presents:
+
+```term
+$ echo | openssl s_client -connect ev.corp.local:443 -servername ev.corp.local 2>/dev/null | openssl x509 -noout -dates -subject -issuer
+notBefore=Jan  5 00:00:00 2025 GMT
+notAfter=Jan  5 00:00:00 2026 GMT
+```
+
+(Example output; there is no real server here.) The two other TLS problems to rule out: a **wrong name** (the certificate's subject alternative names do not include the host name users type) and an **untrusted or incomplete chain** (the CA or an intermediate is not trusted or not sent). Also check the **clock** on the client and the server: a wrong date makes valid certificates look expired. Try the checks on a certificate you can make yourself:
+
+```run
+cd ~/lab
+openssl req -x509 -newkey rsa:2048 -nodes -keyout t.key -out t.crt -days 1 -subj "/CN=ev01.corp.local" -addext "subjectAltName=DNS:ev01.corp.local" 2>/dev/null
+echo "valid for the next 24h?  $(openssl x509 -in t.crt -noout -checkend 86400 >/dev/null && echo yes || echo 'no: expires within 24h')"
+echo "valid for the next 2 days? $(openssl x509 -in t.crt -noout -checkend 172800 >/dev/null && echo yes || echo 'no: expires within 2 days')"
+openssl x509 -in t.crt -noout -ext subjectAltName | tail -1 | sed 's/^ *//'
+rm -f t.key t.crt
+```
+
+`-checkend SECONDS` is a monitoring-friendly check: exit status 0 if the certificate is still valid that many seconds from now.
+
+:::warn Common mistakes
+- **Looking at the certificate file on disk** instead of the one the server **presents** (the service may not have been restarted after renewal).
+- **Renewing the leaf certificate but not the intermediates** (broken chain).
+- **Using a name not in the SAN list** (the old Common Name is ignored by modern clients).
+- **No expiry monitoring.** Alert at 30 and 7 days; many outages are simply a forgotten renewal.
+- **Disabling certificate checks (`curl -k`)** as a "fix" and leaving it in scripts.
+:::
+<!-- /deeper -->
+
 :::recap
 - Troubleshoot bottom-up: link, address, route, IP reachability, DNS, port, application, firewall.
 - HTTP status classes: 2xx ok, 3xx redirect, 4xx client problem, 5xx server problem.

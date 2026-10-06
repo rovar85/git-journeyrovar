@@ -121,6 +121,29 @@ WantedBy=multi-user.target
 
 Then: `sudo systemctl daemon-reload && sudo systemctl enable --now evcheck`. `Restart=on-failure` is the self-healing part: if the script crashes, systemd restarts it five seconds later.
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+The two problems are separate: the service is **stopped now**, and it is **not enabled at boot**. On a real server:
+
+```term
+$ sudo systemctl start ev-indexing        # fixes "stopped now"
+$ sudo systemctl enable ev-indexing       # fixes "will not come back after a reboot"
+$ sudo systemctl enable --now ev-indexing # both in one command
+$ systemctl status ev-indexing            # verify: "Active: active (running)" and "enabled"
+```
+
+(Example commands: the lab has no systemd. The service name `ev-indexing` is made up.) If it fails to start, read why: `journalctl -u ev-indexing -n 50 --no-pager`.
+
+:::warn Common mistakes
+- **Starting a service but never enabling it,** so it dies at the next reboot (or enabling but never starting it).
+- **Editing a unit file and forgetting `systemctl daemon-reload`.**
+- **`apt install` without `apt update` first,** so the package list is stale and the install fails or installs an old version.
+- **Mixing package managers** (installing the same software by `apt` and by a downloaded installer) and then not knowing which copy runs; `which -a` and `dpkg -S` tell you.
+- **Not reading the log.** `systemctl status` shows only the last lines; `journalctl -u NAME` shows the story.
+:::
+<!-- /deeper -->
+
 :::recap
 - Package managers install, update and remove software and its dependencies from repositories.
 - `apt`/`dpkg` for Debian and Ubuntu; `dnf`/`rpm` for the Red Hat family.

@@ -127,6 +127,36 @@ git log --format='%s' | head -2
 
 The commit was never deleted, only unreachable. This is why Git feels forgiving: committed work is very hard to lose. (Uncommitted work is another matter, so commit often.)
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+git config --global user.name "Rohan Student"; git config --global user.email "student@example.com"; git config --global init.defaultBranch main
+rm -rf ~/lab/undo2 && mkdir ~/lab/undo2 && cd ~/lab/undo2 && git init -q
+echo one > f.txt && git add . && git commit -q -m "one"
+echo two >> f.txt && git commit -qam "two"
+echo three >> f.txt && git commit -qam "three"
+echo "--- reset hard to the first commit:"; git reset -q --hard HEAD~2; git log --format='%s'; cat f.txt
+echo "--- recover 'three' from the reflog:"
+id=$(git reflog --format='%h %gs' | grep "commit: three" | cut -d' ' -f1)
+git reset -q --hard $id; git log --format='%s'
+echo "--- revert the middle commit instead (history is kept, a new commit undoes it):"
+mid=$(git log --format='%h %s' | grep " two" | cut -d' ' -f1)
+git revert --no-edit $mid > /dev/null 2>&1 || { git checkout --theirs . 2>/dev/null; git status -sb | head -2; }
+git log --format='%s' | head -4
+```
+
+If the revert reports a conflict (the later commit builds on the middle one, as here), Git stops and waits: that is normal; fix the file, `git add`, then `git revert --continue`. The point: **reset moves a label (history changes); revert adds a new commit (history preserved)**.
+
+:::warn Common mistakes
+- **`git reset --hard` with uncommitted work.** That work is not in the reflog and is gone for good. Commit or stash first.
+- **Resetting a shared branch.** Revert instead.
+- **`git checkout -- file` or `git restore` on the wrong file** discarding hours of edits; run `git diff file` first.
+- **Panicking about "lost" commits.** Committed work is almost always recoverable through the reflog for about 90 days.
+- **`git clean -fd`** deletes untracked files for good; use `-n` (dry run) first.
+:::
+<!-- /deeper -->
+
 :::recap
 - `restore` for edits, `restore --staged` to unstage, `amend` for the last local commit.
 - `revert` for shared history, `reset` for local-only history.

@@ -139,6 +139,32 @@ and
 
 Detect (alert) -> triage (dashboards, logs, traces) -> mitigate (roll back, restart, fail over) -> communicate -> resolve -> **blameless post-mortem** with action items. Observability exists to make that loop short.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+python3 - <<'PY'
+slo = 0.999                      # 99.9% of searches succeed within 2 seconds
+days = 30
+minutes = days * 24 * 60
+budget = (1 - slo) * minutes
+print(f"error budget over {days} days: {budget:.1f} minutes of bad service")
+for burn in (14.4, 6, 1):
+    hours_to_empty = days * 24 / burn
+    print(f"burning at {burn:>4}x: budget gone in {hours_to_empty:6.1f} hours")
+PY
+```
+
+A sensible pair of alerts: **page** when the budget burns at ~14x for 5 minutes (it would be gone in about 2 days), and open a **ticket** when it burns at ~1x over 6 hours (slow leak). The **SLI** here is "fraction of search requests that succeed in under 2 seconds".
+
+:::warn Common mistakes
+- **100% targets.** They leave no budget for change and cannot be met.
+- **SLOs on things users do not notice** (server CPU).
+- **No agreed action when the budget is exhausted** (slow down releases, fix reliability).
+- **Logs, metrics and traces collected separately** with no shared request ID to connect them.
+:::
+<!-- /deeper -->
+
 :::recap
 - Logs: structured, centralised, no secrets, linked by `trace_id`. Stacks: agent plus Loki/ELK/Splunk plus Grafana/Kibana.
 - Traces show where time goes across services; OpenTelemetry is the standard.

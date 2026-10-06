@@ -165,6 +165,42 @@ ansible-playbook tmpl.yml | grep -E "RUNNING HANDLER|msg"
 
 In a real playbook the handler would be `ansible.builtin.service: name=evault state=restarted`. You have just seen how Ansible restarts services **only when needed**, with no downtime on repeat runs.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans2
+printf 'max_connections: 100\n' >> group_vars/all.yml
+printf 'max_connections: 500\n' >> host_vars/sql01.yml
+cat > templates/limits.conf.j2 <<'EOF'
+# for {{ inventory_hostname }}
+max_connections={{ max_connections }}
+EOF
+cat > limits.yml <<'EOF'
+- hosts: all
+  gather_facts: false
+  tasks:
+    - ansible.builtin.file: {path: "{{ base_dir }}", state: directory}
+    - ansible.builtin.template: {src: limits.conf.j2, dest: "{{ base_dir }}/limits.conf"}
+EOF
+ansible-playbook limits.yml | grep -E "ok="
+echo "--- rendered:"; cat /tmp/lab-hosts/ev01/limits.conf /tmp/lab-hosts/sql01/limits.conf | grep -v '^#'
+echo "--- change only sql01's value; who reports a change?"
+sed -i 's/max_connections: 500/max_connections: 600/' host_vars/sql01.yml
+ansible-playbook limits.yml | grep -E "ok="
+```
+
+Only `sql01` reports `changed=1`; `ev01` did not change because its rendered file is identical.
+
+:::warn Common mistakes
+- **Variable precedence surprises.** The same name in `group_vars`, `host_vars` and `-e` follows a fixed order; use `ansible-inventory --host NAME` to see the final values.
+- **Naming variables like Ansible keywords** (`retries`, `name`) which triggers warnings or odd behaviour. Prefix them (`ev_retries`).
+- **YAML booleans and numbers as strings** (`yes`, `no`, `08`). Quote when in doubt.
+- **Jinja2 `{{ }}` at the start of a YAML value without quotes** (YAML thinks it is a dictionary). Always quote: `"{{ var }}"`.
+- **Handlers that never run** because the notifying task did not change anything (that is by design).
+:::
+<!-- /deeper -->
+
 :::recap
 - Variables from `group_vars`, `host_vars`, `vars:` and `-e` (strongest). `inventory_hostname` and facts are built in.
 - `when:` conditions, `loop:` repetition.

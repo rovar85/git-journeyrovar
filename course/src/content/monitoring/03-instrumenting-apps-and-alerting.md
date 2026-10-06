@@ -218,6 +218,32 @@ docker rm -f prometheus > /dev/null
 | Track **SLOs** and alert on **burn rate** (consuming the error budget too fast) | alerts tied to business impact |
 | Review and delete noisy alerts | **alert fatigue** makes people ignore real ones |
 
+<!-- deeper -->
+## Answer and common mistakes
+
+An alert rule that fires when traffic stops:
+
+```yaml
+groups:
+- name: traffic
+  rules:
+  - alert: NoTraffic
+    expr: sum(rate(lab_requests_total[10s])) == 0
+    for: 10s
+    labels: {severity: page}
+    annotations: {summary: "No requests for 10 seconds"}
+```
+
+An alert moves through **inactive, pending** (condition true, waiting out `for:`) and **firing**. The `for:` delay prevents a single blip from paging someone.
+
+:::warn Common mistakes
+- **Alerting on causes** (CPU 80%) instead of **symptoms users feel** (errors, latency).
+- **No `for:` duration,** so every spike pages.
+- **Alerts with no action:** if nobody knows what to do, it should be a dashboard, not a page.
+- **Not testing the alert** by making the condition true on purpose, as you just did.
+:::
+<!-- /deeper -->
+
 :::recap
 - Instrument apps with a counter by status and a duration histogram; keep label cardinality low.
 - RED in PromQL: `rate` of requests, error ratio, `histogram_quantile` for latency percentiles.

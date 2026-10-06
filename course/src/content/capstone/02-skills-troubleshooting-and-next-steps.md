@@ -134,6 +134,31 @@ Answer each aloud in two minutes, giving a concrete example:
 
 You do not become an expert by finishing a course; you become one by **operating real systems, breaking them, fixing them and writing down what you learned**. This course gave you the map and a working lab for every area. Pick the weakest square on your skills map, build something small this week, and keep going.
 
+<!-- deeper -->
+## Answer and common mistakes
+
+A runbook entry has the same shape at every layer: *command → good result → bad result → next step*.
+
+| Layer | Command | Bad result looks like |
+|---|---|---|
+| User / DNS | `nslookup ev-search.corp.local` | no answer or wrong IP |
+| Network | `ping`, `nc -zv host 443` | timeout, `refused` |
+| Firewall | `sudo ss -tlnp`, `sudo iptables -L -n` | port not listening, or dropped |
+| Server | `df -h`, `free -m`, `systemctl status` | disk 100%, service failed |
+| Container | `docker ps`, `docker logs` | restarting, exited |
+| Kubernetes | `kubectl get pods`, `kubectl describe pod` | CrashLoopBackOff, Pending |
+| Application | logs, metrics, `curl /health` | errors, 5xx, no metrics |
+| Database | connectivity, free space, blocking | login failure, log full |
+
+Work **from the user inward**: confirm the symptom, then walk down the layers, changing one thing at a time and writing down what you saw.
+
+:::warn Common mistakes
+- **Guessing and restarting things** before gathering evidence, which destroys the evidence.
+- **Changing several things at once,** so you never learn what fixed it.
+- **No post-incident review,** so the same fault returns.
+:::
+<!-- /deeper -->
+
 :::recap
 - Troubleshoot top-down in layers (user, application, metrics, resources, dependencies, network, platform, delivery, infrastructure, configuration); restore first, investigate second.
 - Use the skills map to find gaps; projects matter more than certificates.

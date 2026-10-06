@@ -115,6 +115,32 @@ git show HEAD~2:check.sh
 
 `HEAD` means "the commit I am on now"; `HEAD~1` is its parent and `HEAD~2` its grandparent. `git show HEAD~2:check.sh` prints the file as it was two commits ago.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+git config --global user.name "Rohan Student"; git config --global user.email "student@example.com"; git config --global init.defaultBranch main
+rm -rf ~/lab/backup-tool && mkdir ~/lab/backup-tool && cd ~/lab/backup-tool && git init -q
+printf '#!/bin/bash\necho "backup start"\n' > backup.sh && git add . && git commit -q -m "Add backup script skeleton"
+echo 'tar -czf /tmp/ev.tar.gz /opt/ev' >> backup.sh && git commit -q -am "Archive the EV folder"
+echo 'echo "backup done"' >> backup.sh && git commit -q -am "Print a completion message"
+echo "--- which commit introduced the tar line?"
+git log -S"tar -czf" --format='%s'
+echo "--- the same, with the change shown"
+git log -p -S"tar -czf" --format='commit: %s' | grep -E '^(commit|\+)' | grep -v '^+++'
+```
+
+`git log -S"text"` ("pickaxe") finds the commits that **added or removed** that text, the fastest way to answer "when did this line appear?".
+
+:::warn Common mistakes
+- **One giant commit** with unrelated changes ("updates"). Small, focused commits are reviewable and revertable.
+- **`git add .` without looking.** Check `git status` and `git diff --staged`, so you do not commit logs, keys or build output.
+- **Committing secrets**, then deleting them in a later commit. The history keeps them; rotate the secret.
+- **Committing as the wrong person or not configuring name/email,** which makes history unattributable.
+- **Vague messages** like "fix" and "stuff". Say what and why in the imperative.
+:::
+<!-- /deeper -->
+
 :::recap
 - Git stores snapshots (commits). Working directory, staging area, repository.
 - Loop: edit, `git diff`, `git add`, `git commit`.

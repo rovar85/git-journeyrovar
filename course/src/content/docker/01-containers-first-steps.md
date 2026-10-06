@@ -111,6 +111,31 @@ Exit code 0 means success; 125 means Docker itself failed; 126/127 mean the comm
 Docker Desktop runs a small Linux VM and gives you the same `docker` command in PowerShell. Windows containers also exist but Linux containers are by far the norm.
 :::
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+docker rm -f ticker > /dev/null 2>&1
+docker run -d --name ticker busybox sh -c 'while true; do date; sleep 2; done' > /dev/null
+sleep 5
+echo "--- last 3 log lines (timestamps differ on every run, so we show the count):"; docker logs --tail 3 ticker | wc -l
+echo "--- run date INSIDE the container:"; docker exec ticker sh -c 'date +%Y > /dev/null && echo "exec works: $(hostname | cut -c1-4)..."'
+docker stop ticker > /dev/null
+docker inspect -f 'exit code after docker stop: {{.State.ExitCode}}' ticker
+docker rm ticker > /dev/null
+```
+
+The exit code is **137** (128 + 9, SIGKILL) because the shell loop is PID 1 and **ignores SIGTERM** (a shell as PID 1 does not forward or handle it), so after Docker's 10-second grace period it is killed. A program that handles SIGTERM exits 0 or 143 immediately. This is why you use `exec` form or a proper init (`docker run --init`).
+
+:::warn Common mistakes
+- **Running in the foreground and losing the terminal.** Use `-d` for services, `-it` only for interactive shells.
+- **Not naming containers,** then juggling random names. Use `--name`.
+- **Piling up stopped containers and images.** Use `--rm` for one-offs; prune regularly.
+- **Debugging by guessing.** `docker logs`, `docker inspect` and `docker exec` answer most questions.
+- **Treating a container like a VM** and installing things by hand inside it. Change the Dockerfile and rebuild.
+:::
+<!-- /deeper -->
+
 :::recap
 - Image = template, container = running instance. A container lives as long as its main process.
 - `run`, `ps`, `logs`, `exec`, `stop`, `rm`, `inspect`.

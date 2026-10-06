@@ -105,6 +105,33 @@ docker run --rm --user 1000:1000 busybox id
 docker run --rm --read-only --user 1000:1000 busybox sh -c 'touch /x 2>&1 | head -1'
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+docker rm -f p1 p2 > /dev/null 2>&1
+docker run -d --name p1 -p 9000:80 busybox sh -c 'mkdir -p /www; echo hello > /www/index.html; httpd -f -p 80 -h /www' > /dev/null
+sleep 1
+echo "published on all interfaces:"; docker port p1
+echo "fetch from this machine:"; curl -s http://localhost:9000/
+docker rm -f p1 > /dev/null
+docker run -d --name p2 -p 127.0.0.1:9000:80 busybox sh -c 'mkdir -p /www; echo hello > /www/index.html; httpd -f -p 80 -h /www' > /dev/null
+sleep 1
+echo "published on loopback only:"; docker port p2
+docker rm -f p2 > /dev/null
+```
+
+The first form, `0.0.0.0:9000`, is reachable from **other machines** on the network; the second, `127.0.0.1:9000`, is reachable **only from this host**. Use the loopback form for databases and admin tools; publish to all interfaces only for services meant to be public. (Docker edits the firewall itself, so `ufw` rules may not protect a published port.)
+
+:::warn Common mistakes
+- **Publishing databases to the world** (`-p 5432:5432`) when only another container needs them. Use a Docker network instead.
+- **Swapping the port order:** it is `HOST:CONTAINER`.
+- **Putting secrets in `-e` on the command line** (visible in `docker inspect` and shell history); use files or secret stores.
+- **No memory limit,** so one container takes down the host.
+- **Using `--restart always` to hide a crash loop;** look at the logs and fix the cause.
+:::
+<!-- /deeper -->
+
 :::recap
 - `-p host:container` publishes ports. `-e` / `--env-file` pass configuration.
 - `--memory` and `--cpus` set limits; exceeding memory means OOM kill, exit 137.

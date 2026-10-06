@@ -163,6 +163,30 @@ Cloud resources cost money while they exist. Habits that save you:
 
 In 2023 HashiCorp changed Terraform's license. The community forked it as **OpenTofu** (Linux Foundation). The language, providers and workflow are the same, and the commands are `tofu init/plan/apply`. Everything in this track applies to both.
 
+<!-- deeper -->
+## A worked answer and common mistakes
+
+One reasonable layering for an Enterprise Vault environment, with the **outputs each layer publishes** for the next:
+
+| Layer (own state) | Contains | Publishes (outputs) |
+|---|---|---|
+| 1. **network** | VPC/VNet, subnets, route tables, security groups, DNS zone | `vpc_id`, `subnet_ids`, `sg_ids`, `dns_zone_id` |
+| 2. **identity and secrets** | roles, managed identities, key vault / secrets manager | `role_arns`, `secret_ids` |
+| 3. **data** | SQL servers/managed databases, backup storage account/bucket | `sql_endpoint`, `backup_bucket`, `db_sg_id` |
+| 4. **compute** | EV servers (VMs) and load balancer | `ev_private_ips`, `lb_dns_name` |
+| 5. **dns and edge** | records pointing at the load balancer, certificates | `public_hostnames` |
+
+Each layer reads the previous layers' outputs with `terraform_remote_state` (or data sources), exactly as the lesson demonstrated. Layers change at different speeds (the network rarely, compute often) and have different owners, so separate states reduce blast radius and speed up plans.
+
+:::warn Common mistakes
+- **One state for everything,** so every change plans (and risks) the whole estate.
+- **Circular layering** (network depends on compute). Keep dependencies flowing one way.
+- **Putting secrets in outputs.** Output identifiers, not passwords.
+- **Allowing wide permissions to the state** (it contains sensitive attributes).
+- **No tagging standard,** so cost and ownership are unknowable.
+:::
+<!-- /deeper -->
+
 :::recap
 - Real configurations: networks, security groups, servers, data sources, templated bootstrap scripts.
 - Authenticate with short-lived identities (SSO, roles, OIDC), never keys in code.

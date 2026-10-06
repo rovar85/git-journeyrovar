@@ -139,6 +139,47 @@ docker compose down 2>&1 | grep -E "Removed|Stopped" | sed 's/ [0-9.]*s$//' | so
 docker ps -a | wc -l
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/evapp 2>/dev/null || { mkdir -p ~/lab/evapp/site && cd ~/lab/evapp; }
+echo "<h1>EV</h1>" > site/index.html
+cat > compose.yaml <<'EOF'
+name: evapp2
+services:
+  web:
+    image: busybox
+    command: ["httpd", "-f", "-p", "80", "-h", "/www"]
+    volumes: ["./site:/www:ro"]
+    networks: [front]
+  checker1:
+    image: busybox
+    command: ["sh", "-c", "while true; do wget -q -O /dev/null http://web/ && echo checker1-ok; sleep 2; done"]
+    networks: [front]
+  checker2:
+    image: busybox
+    command: ["sh", "-c", "while true; do wget -q -O /dev/null http://web/ && echo checker2-ok; sleep 2; done"]
+    networks: [front]
+networks:
+  front: {}
+EOF
+docker compose up -d > /dev/null 2>&1
+sleep 8
+for s in checker1 checker2; do docker compose logs $s 2>&1 | grep -q "$s-ok" && echo "$s sees web: yes" || echo "$s sees web: no"; done
+docker compose down > /dev/null 2>&1
+```
+
+:::warn Common mistakes
+- **Tabs in YAML.** Use spaces only; a single tab breaks the file. `docker compose config` validates.
+- **Wrong indentation** that silently moves a key under the wrong parent.
+- **Assuming `depends_on` waits for readiness.** Add healthchecks and `condition: service_healthy`.
+- **Hard-coding passwords in `compose.yaml`** committed to Git; use `.env` (git-ignored) or secrets.
+- **`docker compose down -v` in the wrong folder** deleting volumes.
+- **Mixing the older `docker-compose` (v1) syntax and the `docker compose` plugin.**
+:::
+<!-- /deeper -->
+
 :::recap
 - Compose = whole application in `compose.yaml`: services, networks, volumes, env, ports.
 - Services reach each other by service name. `up -d`, `ps`, `logs`, `exec`, `down`.

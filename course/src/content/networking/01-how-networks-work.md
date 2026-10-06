@@ -82,6 +82,37 @@ ss -ltn | awk '$4 ~ /:8099$/ {print "listening on", $4}'
 kill $pid
 ```
 
+<!-- deeper -->
+## Worked answer and common mistakes
+
+Work from the bottom layer up and stop at the first failure:
+
+1. **Cable / Wi-Fi connected?** (`ip -br link` shows `UP`)
+2. **Machine has an IP address?** (`ip -br addr`; a 169.254.x.x address means DHCP failed)
+3. **Gateway reachable?** (`ip route`, then `ping GATEWAY`)
+4. **Name resolves?** (`getent hosts ev-search.corp.local`, `dig`)
+5. **Port 443 reachable?** (`nc -zv ev-search.corp.local 443`)
+6. **Web page loads?** (`curl -v https://...`; read the status code and any certificate error)
+
+Order matters because each layer depends on the one below: if there is no IP address, checking DNS is a waste of time.
+
+```run
+cd ~/lab
+echo "1-2) interface up and addressed:"; ip -brief addr show lo | awk '{print $1, $2, $3}'
+echo "3) default route (empty in this lab means no gateway configured):"; ip route | grep -c default | awk '{print "default routes:", $1}'
+echo "4) name resolution of something that cannot exist:"; getent hosts no-such-host.example || echo "   -> does not resolve (a DNS-layer failure)"
+echo "5) a closed port:"; nc -zv -w 1 127.0.0.1 9 2>&1 | tail -1
+```
+
+:::warn Common mistakes
+- **Starting at the application** ("restart the web server") before proving the network path.
+- **Treating "ping fails" as "host down".** Many hosts block ICMP; test the real port with `nc -zv` or `curl`.
+- **Confusing the three addresses:** MAC is the card, IP is the machine, port is the program.
+- **Assuming DNS is fine because IPs work,** or vice versa; test each separately.
+- **Testing from the wrong machine.** A path that works from your laptop can fail from the server; run checks from where the problem is.
+:::
+<!-- /deeper -->
+
 :::recap
 - Layers: application, transport (TCP/UDP + ports), internet (IP), link (MAC).
 - MAC = card, IP = machine, port = program.

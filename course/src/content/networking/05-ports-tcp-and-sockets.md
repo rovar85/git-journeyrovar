@@ -100,6 +100,28 @@ sudo ip netns list | wc -l
 Cannot reach a service? Run in this order: `ping IP` (route and link), `nc -zv IP PORT` (port), `curl -v URL` (application). The first one that fails tells you the layer.
 :::
 
+<!-- deeper -->
+## Worked answer and common mistakes
+
+"Ping works but the port times out" points to a **firewall (or the wrong address or route for TCP) rather than a stopped SQL service**. If the SQL service were stopped, the host would still be reachable and its network stack would answer the connection attempt with a TCP **reset**, which you see immediately as **"connection refused"**. A **timeout** means the SYN was silently dropped or the reply never came back, which is what firewalls (and wrong routes) do. Verify:
+
+```run
+cd ~/lab
+echo "refused = the machine answered 'nothing listens here':"
+nc -zv -w 2 127.0.0.1 1433 2>&1 | tail -1
+echo "From the real SQL server's side you would then check:  ss -ltn | grep 1433   (is it listening?)"
+echo "and on the path:  nft list ruleset / Windows Firewall rules / cloud security group for TCP 1433"
+```
+
+:::warn Common mistakes
+- **Equating timeout with "service down".** Refused = reachable but nothing listening; timeout = something is dropping or blocking.
+- **Testing with ping only,** which may be allowed while the application port is blocked (or the reverse).
+- **Testing from the wrong place.** A rule might allow your laptop but block the EV server's subnet.
+- **Forgetting that UDP has no refusal,** so a UDP "open" test cannot be trusted the same way.
+- **Looking only at the host firewall.** Network firewalls, load balancers and cloud security groups are in the path as well.
+:::
+<!-- /deeper -->
+
 :::recap
 - Servers listen on ports; clients connect from random high ports.
 - `ss -ltn` lists listeners, `nc -zv` and `curl` test them.

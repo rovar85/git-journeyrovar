@@ -96,6 +96,39 @@ $ getent hosts SQL01         # what does this machine think the name is?
 $ nc -zv SQL01 1433          # is the SQL port reachable?
 ```
 
+<!-- deeper -->
+## Worked answers
+
+A sensible first five commands for "the server is slow", and what each tells you:
+
+| # | Command | What it tells you |
+|---|---|---|
+| 1 | `uptime` | load averages; compare with `nproc` (cores) |
+| 2 | `top` (then `P`/`M`) or `ps aux --sort=-%cpu \| head` | which process is using CPU or memory |
+| 3 | `free -m` | is memory available, or is the system swapping? |
+| 4 | `df -h` and `df -i` | any full file system or exhausted inodes? |
+| 5 | `journalctl -p err -b` or `tail /var/log/syslog` | recent errors and clues about what changed |
+
+Then, by what you found: `iostat -x 1` (disk waits), `ss -tn` (connections), `lsof -p PID` (what a process has open), `strace -p PID` (what it is doing).
+
+```run
+cd ~/lab
+echo "cores: $(nproc)"; awk '{print "load averages 1/5/15 min: " $1 " " $2 " " $3}' /proc/loadavg | sed -E 's/[0-9.]+/<n>/g'
+free -m | head -1
+df -h / | tail -1 | awk '{print "root file system use:", $5}' | sed -E 's/[0-9]+%/<n>%/'
+```
+
+(Numbers are masked here because they differ on every machine; on your server read the real values.)
+
+:::warn Common mistakes
+- **Changing things before looking.** Observe first; one change at a time; write down what you did.
+- **Judging memory by the "free" column.** Check "available".
+- **Reading load without core count.** A load of 8 is fine on 16 cores, terrible on 2.
+- **Fixing the symptom** (restarting) and never finding the cause; capture logs and metrics *before* restarting.
+- **Assuming it is the application** when it is DNS, disk or a full queue downstream.
+:::
+<!-- /deeper -->
+
 :::recap
 - Method: symptom, what changed, resources, logs, hypothesis. One change at a time.
 - Load vs cores, available memory, iowait, disk space and inodes.

@@ -124,6 +124,28 @@ status: {}                 # the ACTUAL state (Kubernetes writes this)
 | Troubleshooting | finding what is wrong | 9 |
 | Jobs, DaemonSets, StatefulSets, Helm | the rest of the toolbox | 10 |
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+kubectl explain deployment.spec.strategy | sed -n 1,12p
+echo "--- the two strategy types:"
+kubectl explain deployment.spec.strategy.type | grep -iE "recreate|rollingupdate" | head -3
+```
+
+The two types are **RollingUpdate** (default: replace gradually) and **Recreate** (stop all old Pods, then start new ones).
+
+**If etcd were lost:** the API server could no longer read or write cluster state, so `kubectl` would fail, nothing could be created, scheduled, scaled or healed, and controllers could not work. Pods already running on nodes **keep running** (the kubelet and container runtime carry on), but the cluster is effectively frozen and a restore of the etcd backup is needed. This is why etcd backups, and several etcd members on separate machines, matter.
+
+:::warn Common mistakes
+- **Treating Kubernetes as a VM manager.** It reconciles declared state; change the manifest, not the running pod.
+- **Not backing up etcd** (or backing up but never testing a restore).
+- **Running a single control-plane node in production.**
+- **Using `kubectl` against the wrong cluster or namespace.** Check `kubectl config current-context` before any destructive command.
+- **Memorising YAML instead of using `kubectl explain` and `--dry-run=client -o yaml`.**
+:::
+<!-- /deeper -->
+
 :::recap
 - Kubernetes keeps declared desired state true, through controllers running reconciliation loops.
 - Control plane: apiserver, etcd, scheduler, controller-manager. Node: kubelet, runtime, kube-proxy, CNI.

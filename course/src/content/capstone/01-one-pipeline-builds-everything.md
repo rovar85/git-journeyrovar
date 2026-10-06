@@ -297,6 +297,23 @@ echo "environment removed; the repository can rebuild it with ./pipeline.sh"
 | Policy and security checks | `terraform validate`, `ansible-lint`, image scanning, Pod Security |
 | GitOps for the cluster side | Argo CD or Flux watching the `k8s/` folder |
 
+<!-- deeper -->
+## Answer and common mistakes
+
+Adding `ev02` shows the division of labour:
+
+1. **Terraform** sees a new key in the server map and plans **one addition**; the existing servers show no change.
+2. **Ansible** runs against the new host and reports `changed` there only. On hosts already in the desired state it reports `ok`: that is idempotency.
+3. When the unit test is broken on purpose, the pipeline stops at the test stage with a non-zero exit, so **nothing downstream (build, deploy) runs**. That is the whole point of a pipeline: a failed gate prevents a bad release.
+
+:::warn Common mistakes
+- **Fixing the server by hand** and not the code. The next pipeline run silently reverts or conflicts with your edit.
+- **Skipping the plan review** because "it's only one server".
+- **Bypassing the test gate** to meet a deadline.
+- **Not keeping the pipeline files in Git,** so nobody can see why something changed.
+:::
+<!-- /deeper -->
+
 :::recap
 - Terraform's output (inventory) feeds Ansible; Ansible prepares servers; Docker builds the artefact; Kubernetes runs it; a script verifies it.
 - Everything lives in Git; one script (later one Jenkins pipeline) runs the whole chain.

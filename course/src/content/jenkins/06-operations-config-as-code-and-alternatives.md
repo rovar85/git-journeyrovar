@@ -159,6 +159,32 @@ jobs:
 
 Choose by where your code lives and who maintains the platform. Jenkins is still very common in enterprises with large existing estates; many new projects start on a hosted service. The skills transfer completely: triggers, agents/runners, stages/jobs, caching, secrets, artifacts, environments and approvals.
 
+<!-- deeper -->
+## Answer and common mistakes
+
+Concept mapping from Jenkins to GitHub Actions:
+
+| Jenkins | GitHub Actions |
+|---|---|
+| Jenkinsfile | workflow file in `.github/workflows/` |
+| `pipeline` / job | workflow |
+| `stage` | job (stages become jobs, ordered with `needs:`) |
+| `steps` / `sh` | `steps` / `run:` |
+| agent / label | `runs-on:` |
+| `parallel` | jobs without `needs:` run in parallel |
+| `when { branch 'main' }` | `if: github.ref == 'refs/heads/main'` |
+| credentials | secrets (and OIDC for the cloud) |
+| plugins | marketplace actions |
+| `post { always }` | `if: always()` on a step |
+
+:::warn Common mistakes
+- **Changing Jenkins settings by hand on a live server** instead of through Configuration as Code in Git.
+- **No tested restore** of `JENKINS_HOME`.
+- **Upgrading plugins and core on the same day with no rollback plan.**
+- **Migrating by translating syntax line by line** instead of redesigning around the new tool's strengths.
+:::
+<!-- /deeper -->
+
 :::recap
 - `JENKINS_HOME` is plain files: back it up (with the `secrets` keys) and test the restore.
 - Configuration as Code (`jenkins.yaml`) plus `plugins.txt` makes the controller reproducible from Git.

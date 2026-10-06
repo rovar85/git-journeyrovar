@@ -176,6 +176,39 @@ Two classic causes of "it works for me but not for the service": the service acc
 4. Look at `ls -l /usr/bin/passwd`. Which special character appears in the owner's execute position, and why does `passwd` need it?
 :::
 
+<!-- deeper -->
+## Worked answers and common mistakes
+
+```run
+cd ~/lab
+echo "--- 1: a private file"
+echo "top secret" > secret.txt
+chmod 600 secret.txt
+stat -c '%a %A %n' secret.txt
+echo "--- 2: make a script executable and run it"
+printf '#!/bin/bash\necho "hello from my script"\n' > hello.sh
+./hello.sh 2>&1 | head -1
+chmod +x hello.sh
+./hello.sh
+echo "--- 3: octal values (r=4, w=2, x=1)"
+python3 -c "
+def octal(s): return ''.join(str(sum(v for c, v in zip(s[i:i+3], (4,2,1)) if c != '-')) for i in (0,3,6))
+for s in ('rwxr-x---', 'rw-rw-r--'): print(s, '=', octal(s))"
+echo "--- 4: the special character on passwd"
+ls -l /usr/bin/passwd | cut -c1-10
+```
+
+Answers: `rwxr-x---` is **750**; `rw-rw-r--` is **664**. The first attempt to run `hello.sh` failed ("Permission denied") until `chmod +x`. In task 4 the owner's execute position shows **`s`**: the **setuid** bit. `passwd` must edit `/etc/shadow`, which only root may write, so the program runs **as its owner (root)** whoever starts it; that is a controlled, deliberate exception.
+
+:::warn Common mistakes
+- **`chmod 777` to "fix" a permission error.** It lets everyone modify the file. Find who needs what and grant exactly that (a group, or `750`/`640`).
+- **Forgetting that folders need `x`.** To enter a folder you need execute permission on it.
+- **Running everything with `sudo`.** Files created as root later cannot be edited by your user; use sudo only for the one command.
+- **Secrets world-readable.** Private keys and password files should be `600`; SSH refuses keys that are not.
+- **Confusing user, group and others** in `chmod g+w` versus `chmod o+w`.
+:::
+<!-- /deeper -->
+
 :::recap
 - Every file has an owner, a group and permissions for owner, group, others: read 4, write 2, execute 1.
 - `chmod` changes permissions (`u+x`, `755`). `chown` changes owner. `sudo` runs one command as root.

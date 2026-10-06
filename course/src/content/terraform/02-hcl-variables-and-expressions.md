@@ -170,6 +170,33 @@ cd ~/lab/tf2
 terraform destroy -auto-approve | grep -E "Destroy complete"
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/tf2
+terraform destroy -auto-approve > /dev/null 2>&1
+printf 'environment = "prod"\nserver_names = ["ev01", "ev02"]\n' > prod.tfvars
+rm -f terraform.tfvars
+terraform apply -auto-approve -var-file=prod.tfvars | grep -E "summary"
+echo "--- first three /24 subnets of 192.168.0.0/16:"
+terraform console <<'EOF'
+[for i in range(3) : cidrsubnet("192.168.0.0/16", 8, i)]
+EOF
+terraform destroy -auto-approve -var-file=prod.tfvars | grep "Destroy complete"
+```
+
+`cidrsubnet(prefix, newbits, netnum)` adds `newbits` to the prefix length (16 + 8 = /24) and picks the `netnum`-th subnet. It is how real VPC subnet plans are generated.
+
+:::warn Common mistakes
+- **Committing `.tfvars` files that contain secrets.** Keep secrets in a vault or environment variables (`TF_VAR_name`).
+- **Forgetting the type** on variables, so a typo becomes a silent string.
+- **Over-using `count` and conditionals** until the code is unreadable; use `for_each` and locals.
+- **Not validating inputs** (`validation {}` blocks catch mistakes at plan time).
+- **Expecting sensitive values to be encrypted.** They are hidden from output only; state holds them.
+:::
+<!-- /deeper -->
+
 :::recap
 - `variable` (input), `locals` (internal names), `output` (result). Types and `validation` catch errors early.
 - Value precedence: default < `TF_VAR_` < tfvars < `*.auto.tfvars` < `-var-file` / `-var`.

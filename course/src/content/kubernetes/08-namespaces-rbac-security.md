@@ -174,6 +174,32 @@ The privileged Pod is refused with a list of violations, while the hardened Pod 
 kubectl delete namespace team-a team-b --wait=false > /dev/null
 ```
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+kubectl create namespace rbac8 > /dev/null
+kubectl -n rbac8 create serviceaccount cfg-reader > /dev/null
+kubectl -n rbac8 create role cm-get --verb=get --resource=configmaps > /dev/null
+kubectl -n rbac8 create rolebinding cfg-reader-binding --role=cm-get --serviceaccount=rbac8:cfg-reader > /dev/null
+sa=system:serviceaccount:rbac8:cfg-reader
+for q in "get configmaps" "list configmaps" "get secrets" "delete configmaps"; do
+  printf '%-18s -> %s\n' "$q" "$(kubectl auth can-i $q -n rbac8 --as=$sa)"
+done
+kubectl delete namespace rbac8 --wait=false > /dev/null
+```
+
+Only `get configmaps` is allowed. Notice `list` is a **separate verb** from `get`: a client that lists first would fail. Add verbs deliberately.
+
+:::warn Common mistakes
+- **Granting `cluster-admin` to fix a Forbidden error.** Read the error: it names the user, verb and resource.
+- **Binding roles to groups like `system:authenticated`** (every user).
+- **Forgetting that RBAC is additive** (there is no deny); check all bindings that apply (`kubectl auth can-i --list`).
+- **Using the default ServiceAccount** for workloads that need distinct permissions.
+- **Wildcards (`*`) in verbs or resources** in anything but a break-glass role.
+:::
+<!-- /deeper -->
+
 :::recap
 - Namespaces partition a cluster; ResourceQuota and LimitRange share it fairly.
 - Requests pass authentication, authorisation (RBAC) and admission.

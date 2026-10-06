@@ -110,6 +110,32 @@ docker system df --format '{{.Type}}: {{.Reclaimable}}' | sed 's/ ([0-9]*%)//'
 
 `docker system prune` removes stopped containers, unused networks and dangling images; add `-a` for all unused images and `--volumes` for unused volumes (data loss!).
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab
+docker rm -f hardened > /dev/null 2>&1
+docker run -d --name hardened --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m -p 127.0.0.1:8099:8080 busybox sh -c 'echo hardened > /tmp/index.html 2>/dev/null; mkdir -p /tmp/www; echo hardened > /tmp/www/index.html; httpd -f -p 8080 -h /tmp/www' > /dev/null
+sleep 2
+echo "port 8080 as non-root:"; curl -s http://127.0.0.1:8099/ || docker logs hardened | head -2
+docker rm -f hardened > /dev/null
+echo "--- the same on port 80 as non-root:"
+docker run --rm --user 10001:10001 --cap-drop ALL busybox sh -c 'httpd -f -p 80 -h /tmp 2>&1 | head -1' 2>&1 | head -1
+```
+
+Port 8080 works (note the container needed a writable `/tmp`; with `--read-only` you would normally add `--tmpfs /tmp`). **Port 80 fails** for a non-root user because ports below 1024 are **privileged**: binding needs root or the `NET_BIND_SERVICE` capability, which we dropped. The right design is to listen on a high port (8080) inside the container and map it: `-p 80:8080`.
+
+:::warn Common mistakes
+- **Running as root "because it works".** Fix permissions instead.
+- **`--privileged`** to get past an error; it removes almost all isolation.
+- **Mounting `/var/run/docker.sock`** into a container: it hands out root on the host.
+- **Read-only filesystem without tmpfs** for the places that must be writable (`/tmp`, `/var/run`).
+- **Skipping image scans** and base-image updates; vulnerable packages sit unnoticed.
+- **Logging to files inside the container** instead of stdout/stderr.
+:::
+<!-- /deeper -->
+
 :::recap
 - Harden: non-root, read-only, drop capabilities, scan images, no secrets in images, limits.
 - Log to stdout/stderr, cap log size, ship centrally.

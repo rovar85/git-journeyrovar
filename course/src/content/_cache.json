@@ -2265,38 +2265,38 @@
    [
     {
      "c": "$ docker version --format 'client {{.Client.Version}} / server {{.Server.Version}}'",
-     "o": "client 29.6.2 / server 29.6.2",
-     "x": 0
+     "o": "client 29.6.2 / server \nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker images --format '{{.Repository}}:{{.Tag}}' | sort",
-     "o": "alpine:3.20\nbusybox:latest",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker run --rm busybox echo \"hello from inside a container\"",
-     "o": "hello from inside a container",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run --rm busybox sh -c 'echo \"I am: $(hostname)\"; echo \"my pid: $$\"; ps | head -3; cat /etc/os-release | head -1'",
-     "o": "I am: 4bd319f2edb8\nmy pid: 1\nPID   USER     TIME  COMMAND\n    1 root      0:00 sh -c echo \"I am: $(hostname)\"; echo \"my pid: $$\"; ps | head -3; cat /etc/os-release | head -1\n    8 root      0:00 ps\ncat: can't open '/etc/os-release': No such file or directory",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name web busybox sh -c 'echo started; i=0; while true; do i=$((i+1)); echo \"tick $i\"; sleep 1; done'",
-     "o": "481f2b51a9ed72f4e29f51392948dfbd686018547ca0462f3ad7ed363b251b74",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}' | sed 's/Up [0-9]* [a-z]*/Up .../'",
-     "o": "NAMES     IMAGE     STATUS\nweb       busybox   Up Less than a second",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
@@ -2306,137 +2306,179 @@
     },
     {
      "c": "$ docker logs web | head -4",
-     "o": "started\ntick 1\ntick 2\ntick 3",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker exec web sh -c 'echo \"running inside web: $(hostname)\"; ls /'",
-     "o": "running inside web: 481f2b51a9ed\nbin\ndev\netc\nhome\nlib\nlib64\nproc\nroot\nsys\ntmp\nusr\nvar",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker inspect -f 'state={{.State.Status}} image={{.Config.Image}}' web",
-     "o": "state=running image=busybox",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker stop web",
-     "o": "web",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker ps -a --format '{{.Names}}: {{.Status}}' | sed 's/Exited ([0-9]*) .*/Exited/'",
-     "o": "web: Exited",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker rm web",
-     "o": "web",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker ps -a | wc -l",
-     "o": "1",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker run --name tmp busybox sh -c 'echo \"important data\" > /data.txt'",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker start -a tmp > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker cp tmp:/data.txt - | tar -xO 2>/dev/null",
-     "o": "important data",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 2
     },
     {
      "c": "$ docker rm tmp > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm busybox ls /data.txt 2>&1 | tail -1",
-     "o": "ls: /data.txt: No such file or directory",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker run --name bad busybox sh -c 'echo \"failing\"; exit 3'",
-     "o": "failing",
-     "x": 3
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker inspect -f 'exit code: {{.State.ExitCode}}' bad",
-     "o": "exit code: 3",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm bad > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker run --rm busybox no-such-command 2>&1 | tail -1",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker rm -f ticker > /dev/null 2>&1",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name ticker busybox sh -c 'while true; do date; sleep 2; done' > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ sleep 5",
      "o": "",
      "x": 0
     },
     {
-     "c": "$ docker run --rm busybox no-such-command 2>&1 | tail -1",
-     "o": "Run 'docker run --help' for more information",
+     "c": "$ echo \"--- last 3 log lines (timestamps differ on every run, so we show the count):\"; docker logs --tail 3 ticker | wc -l",
+     "o": "--- last 3 log lines (timestamps differ on every run, so we show the count):\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
+    },
+    {
+     "c": "$ echo \"--- run date INSIDE the container:\"; docker exec ticker sh -c 'date +%Y > /dev/null && echo \"exec works: $(hostname | cut -c1-4)...\"'",
+     "o": "--- run date INSIDE the container:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker stop ticker > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker inspect -f 'exit code after docker stop: {{.State.ExitCode}}' ticker",
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker rm ticker > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ]
   ],
-  "key": "8cec274ce70a19c7"
+  "key": "ba06def11659dfb1"
  },
  "docker-2": {
   "blocks": [
    [
     {
      "c": "$ docker image ls busybox --format '{{.Repository}}:{{.Tag}}  {{.Size}}'",
-     "o": "busybox:latest  6.81MB",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker history busybox --format '{{.CreatedBy}}' | cut -c1-70",
-     "o": "BusyBox 1.38.0 (glibc), Debian 13",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker image inspect busybox --format 'layers: {{len .RootFS.Layers}}  os/arch: {{.Os}}/{{.Architecture}}'",
-     "o": "layers: 1  os/arch: linux/amd64",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker tag busybox ev-tools:1.0",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker tag busybox ev-tools:latest",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker image ls ev-tools --format '{{.Repository}}:{{.Tag}}' | sort",
-     "o": "ev-tools:1.0\nev-tools:latest",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker image inspect ev-tools:1.0 busybox --format '{{.Id}}' | uniq | wc -l",
-     "o": "1",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n1",
      "x": 0
     },
     {
      "c": "$ docker rmi ev-tools:1.0 ev-tools:latest | sed 's/sha256:.*/.../'",
-     "o": "Untagged: ev-tools:1.0\nUntagged: ev-tools:latest",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     }
    ],
@@ -2448,42 +2490,74 @@
     },
     {
      "c": "$ docker save busybox -o busybox.tar",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ tar -tf busybox.tar | head -4 | sed 's/[0-9a-f]\\{64\\}/<id>/'",
-     "o": "blobs/\nblobs/sha256/\nblobs/sha256/<id>\nblobs/sha256/<id>",
+     "o": "tar: busybox.tar: Cannot open: No such file or directory\ntar: Error is not recoverable: exiting now",
      "x": 0
     },
     {
      "c": "$ ls -lh busybox.tar | awk '{print \"tar size:\", $5}'",
-     "o": "tar size: 2.2M",
+     "o": "ls: cannot access 'busybox.tar': No such file or directory",
      "x": 0
     },
     {
      "c": "$ rm busybox.tar",
-     "o": "",
-     "x": 0
+     "o": "rm: cannot remove 'busybox.tar': No such file or directory",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker system df --format 'table {{.Type}}\\t{{.Active}}\\t{{.Reclaimable}}' | sed 's/([0-9]*%)//'",
-     "o": "TYPE            ACTIVE    RECLAIMABLE\nImages          0         18.99MB \nContainers      0         0B\nLocal Volumes   0         0B\nBuild Cache     0         0B",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- layers of busybox, largest first:\"",
+     "o": "--- layers of busybox, largest first:",
+     "x": 0
+    },
+    {
+     "c": "$ docker history busybox --format '{{.Size}}\\t{{.CreatedBy}}' | sort -hr | head -3 | cut -c1-70",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- tag with a registry-style name; both names point to ONE image:\"",
+     "o": "--- tag with a registry-style name; both names point to ONE image:",
+     "x": 0
+    },
+    {
+     "c": "$ docker tag busybox registry.example.com/team/busybox:1.37-lab",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker image ls --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -E \"^(busybox|registry.example.com)\" | sort",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 0
+    },
+    {
+     "c": "$ docker rmi registry.example.com/team/busybox:1.37-lab > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ]
   ],
-  "key": "b9603e551d7a9f00"
+  "key": "547b9ba7b1996175"
  },
  "docker-3": {
   "blocks": [
    [
     {
      "c": "$ docker run -d --name web -p 8081:80 busybox sh -c 'mkdir -p /www; echo \"hello from EV web\" > /www/index.html; httpd -f -p 80 -h /www'",
-     "o": "5e17f85e9434c70dedd73726131f7642378016eac019522ff0d2159b7bc483bb",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 1",
@@ -2492,13 +2566,13 @@
     },
     {
      "c": "$ curl -s http://localhost:8081/",
-     "o": "hello from EV web",
-     "x": 0
+     "o": "",
+     "x": 7
     },
     {
      "c": "$ docker port web",
-     "o": "80/tcp -> 0.0.0.0:8081",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2509,15 +2583,15 @@
     },
     {
      "c": "$ docker rm -f web > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run --rm -e EV_SERVER=EV01 -e RETRIES=5 busybox sh -c 'echo \"server=$EV_SERVER retries=$RETRIES\"'",
-     "o": "server=EV01 retries=5",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ printf 'EV_SERVER=EV02\\nRETRIES=9\\n' > ~/lab/app.env",
@@ -2526,37 +2600,37 @@
     },
     {
      "c": "$ docker run --rm --env-file ~/lab/app.env busybox sh -c 'echo \"server=$EV_SERVER retries=$RETRIES\"'",
-     "o": "server=EV02 retries=9",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run --rm --memory 64m --cpus 0.5 busybox sh -c 'cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || cat /sys/fs/cgroup/memory.max'",
-     "o": "67108864",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --name hog --memory 16m --memory-swap 16m busybox sh -c 'x=$(head -c 40000000 /dev/zero | tr \"\\0\" \"a\"); echo \"should not get here\"' ; echo \"exit code: $?\"",
-     "o": "exit code: 137",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nexit code: 1",
      "x": 0
     },
     {
      "c": "$ docker inspect -f 'OOMKilled={{.State.OOMKilled}}' hog",
-     "o": "OOMKilled=true",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm hog > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name flaky --restart on-failure:3 busybox sh -c 'echo \"crashing\"; exit 1' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 6",
@@ -2565,20 +2639,20 @@
     },
     {
      "c": "$ docker inspect -f 'restarts so far: {{.RestartCount}}  status: {{.State.Status}}' flaky",
-     "o": "restarts so far: 3  status: exited",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm -f flaky > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name hc --health-cmd 'test -f /ready' --health-interval 1s --health-retries 2 busybox sh -c 'sleep 3; touch /ready; sleep 60' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 2",
@@ -2587,8 +2661,8 @@
     },
     {
      "c": "$ docker inspect -f 'after 2s: {{.State.Health.Status}}' hc",
-     "o": "after 2s: starting",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 4",
@@ -2597,34 +2671,86 @@
     },
     {
      "c": "$ docker inspect -f 'after 6s: {{.State.Health.Status}}' hc",
-     "o": "after 6s: healthy",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm -f hc > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run --rm busybox id",
-     "o": "uid=0(root) gid=0(root) groups=0(root),10(wheel)",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm --user 1000:1000 busybox id",
-     "o": "uid=1000 gid=1000 groups=1000",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm --read-only --user 1000:1000 busybox sh -c 'touch /x 2>&1 | head -1'",
-     "o": "touch: /x: Read-only file system",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ docker rm -f p1 p2 > /dev/null 2>&1",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name p1 -p 9000:80 busybox sh -c 'mkdir -p /www; echo hello > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
      "x": 0
+    },
+    {
+     "c": "$ echo \"published on all interfaces:\"; docker port p1",
+     "o": "published on all interfaces:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"fetch from this machine:\"; curl -s http://localhost:9000/",
+     "o": "fetch from this machine:",
+     "x": 7
+    },
+    {
+     "c": "$ docker rm -f p1 > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name p2 -p 127.0.0.1:9000:80 busybox sh -c 'mkdir -p /www; echo hello > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"published on loopback only:\"; docker port p2",
+     "o": "published on loopback only:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker rm -f p2 > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ]
   ],
-  "key": "a8b48e83e1a5bb12"
+  "key": "7468c3c36084eaa0"
  },
  "docker-4": {
   "blocks": [
@@ -2651,20 +2777,20 @@
     },
     {
      "c": "$ docker build -q -t ev-web:1 . | sed 's/sha256:.*/<image id>/'",
-     "o": "<image id>",
+     "o": "ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker images ev-web --format '{{.Repository}}:{{.Tag}}'",
-     "o": "ev-web:1",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name ev-web -p 8090:80 ev-web:1 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 1",
@@ -2673,13 +2799,13 @@
     },
     {
      "c": "$ curl -s http://localhost:8090/",
-     "o": "<h1>EV status page</h1>",
-     "x": 0
+     "o": "",
+     "x": 7
     },
     {
      "c": "$ docker rm -f ev-web > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2695,23 +2821,23 @@
     },
     {
      "c": "$ docker build -q -t ev-echo -f Dockerfile.echo . > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm ev-echo",
-     "o": "EV says: nothing",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm ev-echo \"restart indexing\"",
-     "o": "EV says: restart indexing",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rmi ev-echo > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2747,7 +2873,7 @@
     },
     {
      "c": "$ bstat -t ev-web:2",
-     "o": "RAN     [2/5] WORKDIR /app\nRAN     [3/5] COPY requirements.txt .\nRAN     [4/5] RUN echo \"installing dependencies (slow)...\" && sle\nRAN     [5/5] COPY app.sh .",
+     "o": "",
      "x": 0
     },
     {
@@ -2762,7 +2888,7 @@
     },
     {
      "c": "$ bstat -t ev-web:3",
-     "o": "CACHED  [2/5] WORKDIR /app\nCACHED  [3/5] COPY requirements.txt .\nCACHED  [4/5] RUN echo \"installing dependencies (slow)...\" && sle\nRAN     [5/5] COPY app.sh .",
+     "o": "",
      "x": 0
     }
    ],
@@ -2784,23 +2910,23 @@
     },
     {
      "c": "$ docker build -q -t ev-multi -f Dockerfile.multi . > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm ev-multi",
-     "o": "compiled artefact",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm ev-multi ls /big-build-cache 2>&1 | tail -1",
-     "o": "ls: /big-build-cache: No such file or directory",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker rmi ev-multi > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2816,52 +2942,89 @@
     },
     {
      "c": "$ docker build -q -t ev-leaky -f Dockerfile.leaky . > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker history ev-leaky --format '{{.CreatedBy}}' | grep -o 'DB_PASSWORD=[a-z0-9]*'",
-     "o": "DB_PASSWORD=hunter2",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rmi ev-leaky > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ rm -rf ~/lab/envprint && mkdir ~/lab/envprint && cd ~/lab/envprint",
      "o": "",
      "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:1.37\n> ENV GREETING=\"default greeting\"\n> CMD [\"sh\", \"-c\", \"echo \\\"Message: $GREETING\\\"\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t envprint . > /dev/null",
+     "o": "ERROR: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"default:\"; docker run --rm envprint",
+     "o": "default:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"override 1:\"; docker run --rm -e GREETING=\"hello from run 1\" envprint",
+     "o": "override 1:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"override 2:\"; docker run --rm -e GREETING=\"hello from run 2\" envprint",
+     "o": "override 2:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker rmi envprint > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ]
   ],
-  "key": "cf58cb55824804d0"
+  "key": "e83e881a2b523383"
  },
  "docker-5": {
   "blocks": [
    [
     {
      "c": "$ docker volume create evdata",
-     "o": "evdata",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm -v evdata:/data busybox sh -c 'echo \"index entry 1\" > /data/index.db; ls /data'",
-     "o": "index.db",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm -v evdata:/data busybox cat /data/index.db",
-     "o": "index entry 1",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker volume ls --format '{{.Name}}' | grep evdata",
-     "o": "evdata",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker volume inspect evdata --format 'driver={{.Driver}} mountpoint={{.Mountpoint}}'",
-     "o": "driver=local mountpoint=/var/lib/docker/volumes/evdata/_data",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2877,7 +3040,7 @@
     },
     {
      "c": "$ docker run --rm -v ~/lab/conf:/etc/ev:ro busybox sh -c 'cat /etc/ev/evault.conf; echo \"x\" > /etc/ev/new.conf' 2>&1",
-     "o": "retries=3\nsh: line 0: can't create /etc/ev/new.conf: Read-only file system",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 1
     },
     {
@@ -2892,8 +3055,8 @@
     },
     {
      "c": "$ docker run --rm -v ~/lab/conf:/etc/ev:ro busybox cat /etc/ev/evault.conf",
-     "o": "retries=7",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -2904,23 +3067,23 @@
     },
     {
      "c": "$ docker run --rm -v evdata:/data -v ~/lab:/backup busybox tar -czf /backup/evdata-backup.tar.gz -C /data .",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ ls -lh evdata-backup.tar.gz | awk '{print \"backup file exists:\", $9}'",
-     "o": "backup file exists: evdata-backup.tar.gz",
+     "o": "ls: cannot access 'evdata-backup.tar.gz': No such file or directory",
      "x": 0
     },
     {
      "c": "$ docker volume create evbackup > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run --rm -v evbackup:/data -v ~/lab:/backup busybox sh -c 'tar -xzf /backup/evdata-backup.tar.gz -C /data && cat /data/index.db'",
-     "o": "index entry 1",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ rm -f evdata-backup.tar.gz",
@@ -2931,13 +3094,13 @@
    [
     {
      "c": "$ docker run --rm --tmpfs /scratch:size=1m busybox sh -c 'echo secret > /scratch/t; df -h /scratch | tail -1 | awk \"{print \\\"tmpfs size:\\\", \\$2}\"'",
-     "o": "tmpfs size: 1.0M",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name writer -v evdata:/data busybox sh -c 'while true; do date +%s > /data/heartbeat; sleep 1; done' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 2",
@@ -2946,64 +3109,91 @@
     },
     {
      "c": "$ docker run --rm -v evdata:/data:ro busybox sh -c 'test -s /data/heartbeat && echo \"reader sees the writer heartbeat\"'",
-     "o": "reader sees the writer heartbeat",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm -f writer > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker volume rm evdata evbackup",
-     "o": "evdata\nevbackup",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker volume ls -q | wc -l",
-     "o": "0",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker volume rm logvol > /dev/null 2>&1; docker volume create logvol > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ for i in 1 2 3; do\n>   docker run --rm -v logvol:/data busybox sh -c 'echo \"run at $(date +%s%N)\" >> /data/log.txt'\n> done",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"lines in the file, read by a FOURTH container (read-only mount):\"",
+     "o": "lines in the file, read by a FOURTH container (read-only mount):",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm -v logvol:/data:ro busybox sh -c 'wc -l < /data/log.txt'",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker volume rm logvol > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ]
   ],
-  "key": "1af16b4487d0f5c3"
+  "key": "088c5d8bb0ce7e0e"
  },
  "docker-6": {
   "blocks": [
    [
     {
      "c": "$ docker network ls --format '{{.Name}} ({{.Driver}})' | sort",
-     "o": "bridge (bridge)\nhost (host)\nnone (null)",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker network inspect bridge --format 'subnet {{(index .IPAM.Config 0).Subnet}}'",
-     "o": "subnet 172.17.0.0/16",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ ip -brief addr show docker0 | awk '{print $1, $2}'",
-     "o": "docker0 DOWN",
+     "o": "Device \"docker0\" does not exist.",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker network create evnet > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name db --network evnet busybox sh -c 'mkdir -p /www; echo \"pretend SQL answer\" > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name web --network evnet busybox sleep 300 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 1",
@@ -3012,37 +3202,37 @@
     },
     {
      "c": "$ docker exec web wget -q -O - http://db/",
-     "o": "pretend SQL answer",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker exec web nslookup db 2>/dev/null | grep -E \"^Name|^Address\" | head -2 | sed 's/[0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*/<ip>/'",
-     "o": "Address:\t<ip>:53\nName:\tdb",
+     "o": "",
      "x": 0
     }
    ],
    [
     {
      "c": "$ docker run -d --name old --network bridge busybox sleep 300 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker exec old wget -q -T 2 -O - http://db/ 2>&1 | head -1",
-     "o": "wget: bad address 'db'",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ docker rm -f old > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name pub -p 8085:80 busybox sh -c 'mkdir -p /www; echo ok > /www/index.html; httpd -f -p 80 -h /www' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 1",
@@ -3051,50 +3241,50 @@
     },
     {
      "c": "$ sudo iptables -t nat -S DOCKER | grep \"dport 8085\" | sed 's/172\\.[0-9]*\\.[0-9]*\\.[0-9]*/<container-ip>/'",
-     "o": "-A DOCKER ! -i docker0 -p tcp -m tcp --dport 8085 -j DNAT --to-destination <container-ip>:80",
+     "o": "iptables: No chain/target/match by that name.",
      "x": 0
     },
     {
      "c": "$ curl -s http://localhost:8085/",
-     "o": "ok",
-     "x": 0
+     "o": "",
+     "x": 7
     },
     {
      "c": "$ docker rm -f pub > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker network create backnet > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm -f db web > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name db --network backnet busybox sleep 300 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name app --network evnet busybox sleep 300 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker network connect backnet app",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker run -d --name web --network evnet busybox sleep 300 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 1",
@@ -3103,12 +3293,12 @@
     },
     {
      "c": "$ echo -n \"app -> db:  \"; docker exec app ping -c1 -W1 db > /dev/null 2>&1 && echo reachable || echo blocked",
-     "o": "app -> db:  reachable",
+     "o": "app -> db:  blocked",
      "x": 0
     },
     {
      "c": "$ echo -n \"web -> app: \"; docker exec web ping -c1 -W1 app > /dev/null 2>&1 && echo reachable || echo blocked",
-     "o": "web -> app: reachable",
+     "o": "web -> app: blocked",
      "x": 0
     },
     {
@@ -3120,22 +3310,64 @@
    [
     {
      "c": "$ docker rm -f web app db > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker network rm evnet backnet",
-     "o": "evnet\nbacknet",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nexit status 1",
+     "x": 1
     },
     {
      "c": "$ docker network ls -q | wc -l",
-     "o": "3",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ docker rm -f c1 c2 c3 > /dev/null 2>&1; docker network rm lab6net > /dev/null 2>&1",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ docker network create lab6net > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name c1 --network lab6net busybox sleep 120 > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name c2 --network lab6net busybox sleep 120 > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name c3 busybox sleep 120 > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"c2 -> c1 by NAME on the user-defined network:\"; docker exec c2 ping -c1 -W1 c1 > /dev/null 2>&1 && echo reachable || echo \"not reachable\"",
+     "o": "c2 -> c1 by NAME on the user-defined network:\nnot reachable",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"c3 (default bridge) -> c1 by name:\"; docker exec c3 ping -c1 -W1 c1 > /dev/null 2>&1 && echo reachable || echo \"not reachable: different network and no name resolution\"",
+     "o": "c3 (default bridge) -> c1 by name:\nnot reachable: different network and no name resolution",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f c1 c2 c3 > /dev/null; docker network rm lab6net > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nexit status 1",
+     "x": 1
     }
    ]
   ],
-  "key": "ff5045a39c5440db"
+  "key": "38725dd50b403187"
  },
  "docker-7": {
   "blocks": [
@@ -3169,7 +3401,7 @@
     },
     {
      "c": "$ docker compose up -d 2>&1 | grep -E \"Started|Running|Created\" | sed 's/ [0-9.]*s$//' | sort",
-     "o": " Container evapp-checker-1 Created \n Container evapp-checker-1 Started \n Container evapp-web-1 Created \n Container evapp-web-1 Started \n Network evapp_front Created ",
+     "o": "",
      "x": 0
     },
     {
@@ -3179,18 +3411,18 @@
     },
     {
      "c": "$ docker compose ps --format '{{.Service}}: {{.State}}' | sort",
-     "o": "checker: running\nweb: running",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     },
     {
      "c": "$ curl -s http://localhost:8095/",
-     "o": "<h1>EV status via Compose</h1>",
-     "x": 0
+     "o": "",
+     "x": 7
     },
     {
      "c": "$ docker compose logs checker 2>&1 | grep -q web-ok && echo \"checker log contains: web-ok\"",
-     "o": "checker log contains: web-ok",
-     "x": 0
+     "o": "",
+     "x": 1
     }
    ],
    [
@@ -3201,32 +3433,69 @@
     },
     {
      "c": "$ docker compose down 2>&1 | grep -E \"Removed|Stopped\" | sed 's/ [0-9.]*s$//' | sort | uniq | wc -l",
-     "o": "5",
+     "o": "0",
      "x": 0
     },
     {
      "c": "$ docker ps -a | wc -l",
-     "o": "1",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/evapp 2>/dev/null || { mkdir -p ~/lab/evapp/site && cd ~/lab/evapp; }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"<h1>EV</h1>\" > site/index.html",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > compose.yaml <<'EOF'\n> name: evapp2\n> services:\n>   web:\n>     image: busybox\n>     command: [\"httpd\", \"-f\", \"-p\", \"80\", \"-h\", \"/www\"]\n>     volumes: [\"./site:/www:ro\"]\n>     networks: [front]\n>   checker1:\n>     image: busybox\n>     command: [\"sh\", \"-c\", \"while true; do wget -q -O /dev/null http://web/ && echo checker1-ok; sleep 2; done\"]\n>     networks: [front]\n>   checker2:\n>     image: busybox\n>     command: [\"sh\", \"-c\", \"while true; do wget -q -O /dev/null http://web/ && echo checker2-ok; sleep 2; done\"]\n>     networks: [front]\n> networks:\n>   front: {}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose up -d > /dev/null 2>&1",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for s in checker1 checker2; do docker compose logs $s 2>&1 | grep -q \"$s-ok\" && echo \"$s sees web: yes\" || echo \"$s sees web: no\"; done",
+     "o": "checker1 sees web: no\nchecker2 sees web: no",
+     "x": 0
+    },
+    {
+     "c": "$ docker compose down > /dev/null 2>&1",
+     "o": "",
+     "x": 1
     }
    ]
   ],
-  "key": "253e4fca79c76547"
+  "key": "f68e36fd58db58e6"
  },
  "docker-8": {
   "blocks": [
    [
     {
      "c": "$ docker run --rm --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m --pids-limit 20 busybox sh -c 'id; echo \"write test:\"; touch /x 2>&1 | head -1; echo \"chown test:\"; chown 0:0 /tmp 2>&1 | head -1'",
-     "o": "uid=10001 gid=10001 groups=10001\nwrite test:\ntouch: /x: Read-only file system\nchown test:\nchown: /tmp: Read-only file system",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker run -d --name chatty --log-opt max-size=10k --log-opt max-file=2 busybox sh -c 'i=0; while true; do i=$((i+1)); echo \"line $i padding padding padding padding padding\"; done' > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ sleep 3",
@@ -3235,18 +3504,18 @@
     },
     {
      "c": "$ docker inspect chatty --format 'log driver: {{.HostConfig.LogConfig.Type}}  options: {{.HostConfig.LogConfig.Config}}'",
-     "o": "log driver: json-file  options: map[max-file:2 max-size:10k]",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker logs chatty --tail 1 | grep -c '^line'",
-     "o": "0",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 1
     },
     {
      "c": "$ docker rm -f chatty > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
@@ -3257,13 +3526,13 @@
     },
     {
      "c": "$ docker run --name f1 busybox nosuchprogram 2>&1 | tail -1 | cut -c1-90",
-     "o": "Run 'docker run --help' for more information",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon r",
      "x": 0
     },
     {
      "c": "$ docker inspect -f 'exit={{.State.ExitCode}}' f1",
-     "o": "exit=127",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ echo \"### 2. crashes on start: read the logs and exit code\"",
@@ -3272,13 +3541,13 @@
     },
     {
      "c": "$ docker run --name f2 busybox sh -c 'echo \"FATAL: cannot open /etc/ev/evault.conf\" >&2; exit 2'",
-     "o": "FATAL: cannot open /etc/ev/evault.conf",
-     "x": 2
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker inspect -f 'exit={{.State.ExitCode}}' f2",
-     "o": "exit=2",
-     "x": 0
+     "o": "\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ echo \"### 3. fix by supplying the missing config\"",
@@ -3292,29 +3561,71 @@
     },
     {
      "c": "$ docker run --rm -v ~/lab/etc-ev:/etc/ev:ro busybox sh -c 'test -r /etc/ev/evault.conf && echo \"config found, service would start\"'",
-     "o": "config found, service would start",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     },
     {
      "c": "$ docker rm f1 f2 > /dev/null",
-     "o": "",
-     "x": 0
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ docker ps -aq | wc -l",
-     "o": "0",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?\n0",
      "x": 0
     },
     {
      "c": "$ docker system df --format '{{.Type}}: {{.Reclaimable}}' | sed 's/ ([0-9]*%)//'",
-     "o": "Images: 12.24MB\nContainers: 0B\nLocal Volumes: 0B\nBuild Cache: 36.99kB",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f hardened > /dev/null 2>&1",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ docker run -d --name hardened --user 10001:10001 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 32m -p 127.0.0.1:8099:8080 busybox sh -c 'echo hardened > /tmp/index.html 2>/dev/null; mkdir -p /tmp/www; echo hardened > /tmp/www/index.html; httpd -f -p 8080 -h /tmp/www' > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"port 8080 as non-root:\"; curl -s http://127.0.0.1:8099/ || docker logs hardened | head -2",
+     "o": "port 8080 as non-root:\nCannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f hardened > /dev/null",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"--- the same on port 80 as non-root:\"",
+     "o": "--- the same on port 80 as non-root:",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --user 10001:10001 --cap-drop ALL busybox sh -c 'httpd -f -p 80 -h /tmp 2>&1 | head -1' 2>&1 | head -1",
+     "o": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
      "x": 0
     }
    ]
   ],
-  "key": "e8aa8d0768f0df34"
+  "key": "41724e48f8d5344c"
  },
  "git-1": {
   "blocks": [
@@ -3363,7 +3674,7 @@
     },
     {
      "c": "$ git commit -m \"Add EV check script\"",
-     "o": "[main (root-commit) c17d9b0] Add EV check script\n 1 file changed, 2 insertions(+)\n create mode 100644 check.sh",
+     "o": "[main (root-commit) ad46ec4] Add EV check script\n 1 file changed, 2 insertions(+)\n create mode 100644 check.sh",
      "x": 0
     },
     {
@@ -3412,7 +3723,7 @@
     },
     {
      "c": "$ git commit -m \"Also check SQL01\"",
-     "o": "[main 5fe602a] Also check SQL01\n 1 file changed, 1 insertion(+)",
+     "o": "[main e9e120a] Also check SQL01\n 1 file changed, 1 insertion(+)",
      "x": 0
     },
     {
@@ -3474,9 +3785,56 @@
      "o": "#!/bin/bash\necho \"checking EV01\"",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ git config --global user.name \"Rohan Student\"; git config --global user.email \"student@example.com\"; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf ~/lab/backup-tool && mkdir ~/lab/backup-tool && cd ~/lab/backup-tool && git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '#!/bin/bash\\necho \"backup start\"\\n' > backup.sh && git add . && git commit -q -m \"Add backup script skeleton\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'tar -czf /tmp/ev.tar.gz /opt/ev' >> backup.sh && git commit -q -am \"Archive the EV folder\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo 'echo \"backup done\"' >> backup.sh && git commit -q -am \"Print a completion message\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- which commit introduced the tar line?\"",
+     "o": "--- which commit introduced the tar line?",
+     "x": 0
+    },
+    {
+     "c": "$ git log -S\"tar -czf\" --format='%s'",
+     "o": "Archive the EV folder",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the same, with the change shown\"",
+     "o": "--- the same, with the change shown",
+     "x": 0
+    },
+    {
+     "c": "$ git log -p -S\"tar -czf\" --format='commit: %s' | grep -E '^(commit|\\+)' | grep -v '^+++'",
+     "o": "commit: Archive the EV folder\n+tar -czf /tmp/ev.tar.gz /opt/ev",
+     "x": 0
+    }
    ]
   ],
-  "key": "a875a4acc2feed4e"
+  "key": "048168319da120b6"
  },
  "git-2": {
   "blocks": [
@@ -3567,7 +3925,7 @@
     },
     {
      "c": "$ git merge feature/more-retries",
-     "o": "Updating 369072e..eda731a\nFast-forward\n evault.conf | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)",
+     "o": "Updating 2b564d4..3c1168b\nFast-forward\n evault.conf | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)",
      "x": 0
     },
     {
@@ -3584,7 +3942,7 @@
     },
     {
      "c": "$ git branch -d feature/more-retries",
-     "o": "Deleted branch feature/more-retries (was eda731a).",
+     "o": "Deleted branch feature/more-retries (was 3c1168b).",
      "x": 0
     },
     {
@@ -3688,9 +4046,81 @@
      "o": "server=EV01\nretries=5\ntimeout=45",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ git config --global user.name \"Rohan Student\"; git config --global user.email \"student@example.com\"; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf ~/lab/conflict && mkdir ~/lab/conflict && cd ~/lab/conflict && git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"timeout=10\" > app.conf && git add . && git commit -q -m \"Initial\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q -c fast; echo \"timeout=5\" > app.conf; git commit -qam \"Use 5 second timeout\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q main; git switch -q -c safe; echo \"timeout=30\" > app.conf; git commit -qam \"Use 30 second timeout\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git switch -q main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git merge fast > /dev/null && echo \"merged fast (fast-forward)\"",
+     "o": "merged fast (fast-forward)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- now merge the second branch: conflict\"",
+     "o": "--- now merge the second branch: conflict",
+     "x": 0
+    },
+    {
+     "c": "$ git merge safe 2>&1 | grep -E \"CONFLICT|Automatic\" ",
+     "o": "CONFLICT (content): Merge conflict in app.conf\nAutomatic merge failed; fix conflicts and then commit the result.",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the file now contains markers:\"; cat app.conf",
+     "o": "--- the file now contains markers:\n<<<<<<< HEAD\ntimeout=5\n=======\ntimeout=30\n>>>>>>> safe",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- back out:\"",
+     "o": "--- back out:",
+     "x": 0
+    },
+    {
+     "c": "$ git merge --abort && git status -sb | head -1 && cat app.conf",
+     "o": "## main\ntimeout=5",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- merge again and resolve by choosing a value:\"",
+     "o": "--- merge again and resolve by choosing a value:",
+     "x": 0
+    },
+    {
+     "c": "$ git merge safe > /dev/null 2>&1; echo \"timeout=15\" > app.conf; git add app.conf && git commit -q -m \"Resolve: 15 seconds\" && git log --graph --format='%s' | head -5",
+     "o": "*   Resolve: 15 seconds\n|\\  \n| * Use 30 second timeout\n* | Use 5 second timeout\n|/  ",
+     "x": 0
+    }
    ]
   ],
-  "key": "25706901b4984c09"
+  "key": "50d7c5a886d9cc71"
  },
  "git-3": {
   "blocks": [
@@ -3890,7 +4320,7 @@
     },
     {
      "c": "$ cat README.md",
-     "o": "# EV runbook\nRestart order: SQL, then EV\n<<<<<<< HEAD\nContact: ops@example.com\n=======\nBackup: nightly\n>>>>>>> 9965d0579f45090a2c288348b99c8b90a58f673a",
+     "o": "# EV runbook\nRestart order: SQL, then EV\n<<<<<<< HEAD\nContact: ops@example.com\n=======\nBackup: nightly\n>>>>>>> 5d1866ed0247f4d238f32d33d8693676c04ffce2",
      "x": 0
     }
    ],
@@ -3920,9 +4350,71 @@
      "o": "Alice: Merge Bob's backup note\nAlice: Add contact\nBob: Add backup note\nBob: Document restart order",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ git config --global user.name \"Rohan Student\"; git config --global user.email \"student@example.com\"; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab && rm -rf trio && mkdir trio && cd trio && git init -q --bare team.git",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for p in alice bob carol; do git clone -q team.git $p 2>/dev/null; (cd $p; git config user.name $p; git config user.email $p@example.com); done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd alice && echo \"line from alice\" > notes.txt && git add . && git commit -q -m \"alice: start notes\" && git push -q -u origin main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ../bob && git pull -q && echo \"line from bob\" >> notes.txt && git commit -qam \"bob: add a line\" && git push -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ../carol && git pull -q && echo \"line from carol\" >> notes.txt && git commit -qam \"carol: add a line\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- carol pushes after bob changed the same file; was she up to date?\"",
+     "o": "--- carol pushes after bob changed the same file; was she up to date?",
+     "x": 0
+    },
+    {
+     "c": "$ cd ../alice && echo \"line from alice 2\" >> notes.txt && git commit -qam \"alice: second line\" && git push -q 2>&1 | head -2",
+     "o": "To /home/student/lab/trio/team.git\n ! [rejected]        main -> main (fetch first)",
+     "x": 0
+    },
+    {
+     "c": "$ cd ../carol && git push 2>&1 | grep -E \"rejected\" | head -1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- fix: pull (merge), resolve, push\"",
+     "o": "--- fix: pull (merge), resolve, push",
+     "x": 0
+    },
+    {
+     "c": "$ git pull --no-rebase --no-edit 2>&1 | grep -E \"CONFLICT|Merge made\" | head -1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git status --short",
+     "o": "",
+     "x": 0
+    }
    ]
   ],
-  "key": "473ce0e489df32b6"
+  "key": "2429af87691de770"
  },
  "git-4": {
   "blocks": [
@@ -4055,7 +4547,7 @@
     },
     {
      "c": "$ git reset --hard HEAD~1",
-     "o": "HEAD is now at fe1e467 Revert \"Enable debug\"",
+     "o": "HEAD is now at 526a200 Revert \"Enable debug\"",
      "x": 0
     },
     {
@@ -4092,7 +4584,7 @@
     },
     {
      "c": "$ git stash list | sed 's/:.*WIP/: WIP/'",
-     "o": "stash@{0}: WIP on main: fe1e467 Revert \"Enable debug\"",
+     "o": "stash@{0}: WIP on main: 526a200 Revert \"Enable debug\"",
      "x": 0
     },
     {
@@ -4152,9 +4644,76 @@
      "o": "Important work\nRevert \"Enable debug\"",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ git config --global user.name \"Rohan Student\"; git config --global user.email \"student@example.com\"; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf ~/lab/undo2 && mkdir ~/lab/undo2 && cd ~/lab/undo2 && git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo one > f.txt && git add . && git commit -q -m \"one\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo two >> f.txt && git commit -qam \"two\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo three >> f.txt && git commit -qam \"three\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- reset hard to the first commit:\"; git reset -q --hard HEAD~2; git log --format='%s'; cat f.txt",
+     "o": "--- reset hard to the first commit:\none\none",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- recover 'three' from the reflog:\"",
+     "o": "--- recover 'three' from the reflog:",
+     "x": 0
+    },
+    {
+     "c": "$ id=$(git reflog --format='%h %gs' | grep \"commit: three\" | cut -d' ' -f1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git reset -q --hard $id; git log --format='%s'",
+     "o": "three\ntwo\none",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- revert the middle commit instead (history is kept, a new commit undoes it):\"",
+     "o": "--- revert the middle commit instead (history is kept, a new commit undoes it):",
+     "x": 0
+    },
+    {
+     "c": "$ mid=$(git log --format='%h %s' | grep \" two\" | cut -d' ' -f1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git revert --no-edit $mid > /dev/null 2>&1 || { git checkout --theirs . 2>/dev/null; git status -sb | head -2; }",
+     "o": "## main\nUU f.txt",
+     "x": 0
+    },
+    {
+     "c": "$ git log --format='%s' | head -4",
+     "o": "three\ntwo\none",
+     "x": 0
+    }
    ]
   ],
-  "key": "345c5480c7788b40"
+  "key": "8d64b7d54cfba1fe"
  },
  "git-5": {
   "blocks": [
@@ -4270,9 +4829,46 @@
      "o": "git status -sb              where am I, what changed\ngit add -p                  stage selected pieces of a file\ngit commit -m \"msg\"         record\ngit switch -c name          new branch\ngit pull --rebase           update my branch, keep history linear\ngit push -u origin name     publish a branch\ngit log --graph --oneline --all\ngit restore file            drop uncommitted edit\ngit revert ID               undo shared commit\ngit stash / stash pop       park / resume\ngit reflog                  find lost commits",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ git config --global user.name \"Rohan Student\"; git config --global user.email \"student@example.com\"; git config --global init.defaultBranch main",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf ~/lab/hooked && mkdir ~/lab/hooked && cd ~/lab/hooked && git init -q",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > .git/hooks/pre-commit <<'EOF'\n> #!/bin/bash\n> limit=$((1024 * 1024))\n> for f in $(git diff --cached --name-only --diff-filter=ACM); do\n>   size=$(wc -c < \"$f\")\n>   if [ \"$size\" -gt \"$limit\" ]; then\n>     echo \"pre-commit: $f is $size bytes (limit $limit). Commit refused.\"\n>     exit 1\n>   fi\n> done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x .git/hooks/pre-commit",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ head -c 2000000 /dev/zero > big.bin; echo small > small.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add small.txt && git commit -q -m \"small file\" && echo \"small file: committed\"",
+     "o": "small file: committed",
+     "x": 0
+    },
+    {
+     "c": "$ git add big.bin && git commit -m \"big file\"; echo \"exit code: $?\"",
+     "o": "pre-commit: big.bin is 2000000 bytes (limit 1048576). Commit refused.\nexit code: 1",
+     "x": 0
+    }
    ]
   ],
-  "key": "a0b3c5c54192aeb1"
+  "key": "ab255837000e0ef3"
  },
  "jenkins-1": {
   "blocks": [
@@ -6517,9 +7113,43 @@
      "o": "cd is a shell builtin",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"my home directory is: $HOME\"",
+     "o": "my home directory is: /home/student",
+     "x": 0
+    },
+    {
+     "c": "$ touch .hidden-example",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- ls (hidden files not shown):\"; ls",
+     "o": "--- ls (hidden files not shown):\ndocs\nev",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- ls -a (the dot files appear):\"; ls -a | grep '^\\.' | grep -v '^\\.\\.\\?$'",
+     "o": "--- ls -a (the dot files appear):\n.hidden-example",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ ls --help | grep -i \"sort by\" | head -3",
+     "o": "  -c                         with -lt: sort by, and show, ctime (time of last\n                             with -l: show ctime and sort by name;\n                             otherwise: sort by ctime, newest first",
+     "x": 0
+    }
    ]
   ],
-  "key": "bf38cb09fc8f7122"
+  "key": "b0642b136971f7db"
  },
  "linux-10": {
   "blocks": [
@@ -6625,9 +7255,21 @@
      "o": "600 demo_key",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"30 2 * * 0\" | awk '{printf \"minute=%s hour=%s day-of-month=%s month=%s day-of-week=%s (0 = Sunday)\\n\", $1,$2,$3,$4,$5}'",
+     "o": "minute=30 hour=2 day-of-month=* month=* day-of-week=0 (0 = Sunday)",
+     "x": 0
+    }
    ]
   ],
-  "key": "11d4bb1dd5a25ed0"
+  "key": "196cca4d65afc2b9"
  },
  "linux-11": {
   "blocks": [
@@ -6740,9 +7382,31 @@
      "o": "openat(AT_FDCWD, \"/etc/does-not-exist\", O_RDONLY) = -1 ENOENT (No such file or directory)\ncat: /etc/does-not-exist: No such file or directory",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"cores: $(nproc)\"; awk '{print \"load averages 1/5/15 min: \" $1 \" \" $2 \" \" $3}' /proc/loadavg | sed -E 's/[0-9.]+/<n>/g'",
+     "o": "cores: 4\nload averages <n>/<n>/<n> min: <n> <n> <n>",
+     "x": 0
+    },
+    {
+     "c": "$ free -m | head -1",
+     "o": "               total        used        free      shared  buff/cache   available",
+     "x": 0
+    },
+    {
+     "c": "$ df -h / | tail -1 | awk '{print \"root file system use:\", $5}' | sed -E 's/[0-9]+%/<n>%/'",
+     "o": "root file system use: <n>%",
+     "x": 0
+    }
    ]
   ],
-  "key": "0c229461ed85c304"
+  "key": "d2048d0584a370b8"
  },
  "linux-12": {
   "blocks": [
@@ -6802,57 +7466,74 @@
    [
     {
      "c": "$ cd ~/lab && rm -rf ov && mkdir -p ov/lower ov/upper ov/work ov/merged",
-     "o": "rm: cannot remove 'ov/work/work': Permission denied",
-     "x": 1
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ echo \"from the image\" > ov/lower/base.txt",
-     "o": "bash: line 36: ov/lower/base.txt: No such file or directory",
-     "x": 1
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ sudo mount -t overlay overlay -o lowerdir=ov/lower,upperdir=ov/upper,workdir=ov/work ov/merged",
-     "o": "mount: ov/merged: mount point does not exist.\n       dmesg(1) may have more information after failed mount system call.",
-     "x": 32
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ echo \"added by the container\" > ov/merged/new.txt",
-     "o": "bash: line 42: ov/merged/new.txt: No such file or directory",
-     "x": 1
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ rm ov/merged/base.txt",
-     "o": "rm: cannot remove 'ov/merged/base.txt': No such file or directory",
-     "x": 1
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ echo \"merged view:\"; ls ov/merged",
-     "o": "merged view:\nls: cannot access 'ov/merged': No such file or directory",
-     "x": 2
+     "o": "merged view:\nnew.txt",
+     "x": 0
     },
     {
      "c": "$ echo \"lower (image) untouched:\"; ls ov/lower",
-     "o": "lower (image) untouched:\nls: cannot access 'ov/lower': No such file or directory",
-     "x": 2
+     "o": "lower (image) untouched:\nbase.txt",
+     "x": 0
     },
     {
      "c": "$ echo \"upper (container changes):\"; sudo ls -a ov/upper | grep -v '^\\.\\.\\?$'",
-     "o": "upper (container changes):\nls: cannot access 'ov/upper': No such file or directory",
-     "x": 1
+     "o": "upper (container changes):\nbase.txt\nnew.txt",
+     "x": 0
     },
     {
      "c": "$ sudo umount ov/merged",
-     "o": "umount: ov/merged: no mount point specified.",
-     "x": 32
+     "o": "",
+     "x": 0
     },
     {
      "c": "$ sudo rm -rf ov",
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo unshare --pid --fork --mount-proc bash -c 'echo \"inside the namespace my PID is $$ (a fresh numbering starts at 1)\"'",
+     "o": "inside the namespace my PID is 1 (a fresh numbering starts at 1)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"outside, the same kind of command has a normal large PID: $$ is typically > 1\"",
+     "o": "outside, the same kind of command has a normal large PID: 7047 is typically > 1",
+     "x": 0
+    }
    ]
   ],
-  "key": "d8259a8692d68aad"
+  "key": "5c50144abd0a1e1f"
  },
  "linux-2": {
   "blocks": [
@@ -7078,9 +7759,86 @@
      "o": "./ev/config/evault.conf\n./ev/scripts/check.sh",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf practice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir practice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch practice/{a,b,c}.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls practice",
+     "o": "a.txt\nb.txt\nc.txt",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 2: copy a folder and rename the copy\"",
+     "o": "--- 2: copy a folder and rename the copy",
+     "x": 0
+    },
+    {
+     "c": "$ cp -r ev/logs practice/",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mv practice/logs practice/logs-old",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls practice",
+     "o": "a.txt\nb.txt\nc.txt\nlogs-old",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 3: how many .log files exist under ev?\"",
+     "o": "--- 3: how many .log files exist under ev?",
+     "x": 0
+    },
+    {
+     "c": "$ find ev -name \"*.log\" | wc -l",
+     "o": "2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 4: look before you delete\"",
+     "o": "--- 4: look before you delete",
+     "x": 0
+    },
+    {
+     "c": "$ ls -R practice",
+     "o": "practice:\na.txt\nb.txt\nc.txt\nlogs-old\n\npractice/logs-old:\nindexing.log\nstorage.log",
+     "x": 0
+    },
+    {
+     "c": "$ rm -r practice",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls practice 2>&1 | head -1",
+     "o": "ls: cannot access 'practice': No such file or directory",
+     "x": 0
+    }
    ]
   ],
-  "key": "0241076c94271fc2"
+  "key": "2708db1026a67a57"
  },
  "linux-3": {
   "blocks": [
@@ -7237,9 +7995,51 @@
      "o": "2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n2026-09-30 12:15:42 ERROR Indexing task aborted",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 1: lines 5 to 8 (first 8 lines, then the last 4 of those)\"",
+     "o": "--- 1: lines 5 to 8 (first 8 lines, then the last 4 of those)",
+     "x": 0
+    },
+    {
+     "c": "$ head -n 8 ev/logs/indexing.log | tail -n 4",
+     "o": "2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n2026-09-30 09:12:35 ERROR Indexing task aborted\n2026-09-30 09:13:01 INFO  Indexing service stopped",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 2: WARN lines in storage.log\"",
+     "o": "--- 2: WARN lines in storage.log",
+     "x": 0
+    },
+    {
+     "c": "$ grep -c WARN ev/logs/storage.log",
+     "o": "1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 3: send only the error output to a file\"",
+     "o": "--- 3: send only the error output to a file",
+     "x": 0
+    },
+    {
+     "c": "$ ls /nonexistent 2> problems.txt",
+     "o": "",
+     "x": 2
+    },
+    {
+     "c": "$ cat problems.txt",
+     "o": "ls: cannot access '/nonexistent': No such file or directory",
+     "x": 0
+    }
    ]
   ],
-  "key": "1b1a2f1d7dbbacfd"
+  "key": "1e27e354828f13be"
  },
  "linux-4": {
   "blocks": [
@@ -7399,9 +8199,66 @@
      "o": "      2 task aborted\n      2 connection timeout\n      1 store 1\n      1 resolution failed",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 1: lines without INFO\"",
+     "o": "--- 1: lines without INFO",
+     "x": 0
+    },
+    {
+     "c": "$ grep -vc INFO ev/logs/indexing.log",
+     "o": "7",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 2: the times of the 'started' events\"",
+     "o": "--- 2: the times of the 'started' events",
+     "x": 0
+    },
+    {
+     "c": "$ grep \"service started\" ev/logs/indexing.log | awk '{print $2}'",
+     "o": "09:10:02\n11:02:10",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 3: edit a COPY of the config with sed\"",
+     "o": "--- 3: edit a COPY of the config with sed",
+     "x": 0
+    },
+    {
+     "c": "$ cp ev/config/evault.conf /tmp/evault-copy.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed 's/max_index_threads = 4/max_index_threads = 8/' /tmp/evault-copy.conf | grep max_index",
+     "o": "max_index_threads = 8",
+     "x": 0
+    },
+    {
+     "c": "$ diff ev/config/evault.conf /tmp/evault-copy.conf && echo \"(the copy is unchanged because we did not use -i)\"",
+     "o": "(the copy is unchanged because we did not use -i)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 4: the five longest lines\"",
+     "o": "--- 4: the five longest lines",
+     "x": 0
+    },
+    {
+     "c": "$ awk '{print length, $0}' ev/logs/indexing.log | sort -rn | head -5 | cut -c1-70",
+     "o": "58 2026-09-30 12:15:41 ERROR Name resolution failed for SQL01\n56 2026-09-30 11:40:22 WARN  Name resolution slow for SQL01\n56 2026-09-30 09:12:34 ERROR SQL connection timeout (SQL01)\n56 2026-09-30 09:12:19 WARN  Retrying connection, attempt 1\n56 2026-09-30 09:12:18 ERROR SQL connection timeout (SQL01)",
+     "x": 0
+    }
    ]
   ],
-  "key": "e1a7d6468a72f6e1"
+  "key": "695c63a1a948791a"
  },
  "linux-5": {
   "blocks": [
@@ -7659,16 +8516,88 @@
      "o": "600 f2\n700 d2",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 1: a private file\"",
+     "o": "--- 1: a private file",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"top secret\" > secret.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod 600 secret.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ stat -c '%a %A %n' secret.txt",
+     "o": "600 -rw------- secret.txt",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 2: make a script executable and run it\"",
+     "o": "--- 2: make a script executable and run it",
+     "x": 0
+    },
+    {
+     "c": "$ printf '#!/bin/bash\\necho \"hello from my script\"\\n' > hello.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./hello.sh 2>&1 | head -1",
+     "o": "bash: line 210: ./hello.sh: Permission denied",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x hello.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./hello.sh",
+     "o": "hello from my script",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 3: octal values (r=4, w=2, x=1)\"",
+     "o": "--- 3: octal values (r=4, w=2, x=1)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 -c \"\n> def octal(s): return ''.join(str(sum(v for c, v in zip(s[i:i+3], (4,2,1)) if c != '-')) for i in (0,3,6))\n> for s in ('rwxr-x---', 'rw-rw-r--'): print(s, '=', octal(s))\"",
+     "o": "rwxr-x--- = 750\nrw-rw-r-- = 664",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- 4: the special character on passwd\"",
+     "o": "--- 4: the special character on passwd",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l /usr/bin/passwd | cut -c1-10",
+     "o": "-rwsr-xr-x",
+     "x": 0
+    }
    ]
   ],
-  "key": "53ac9ab4dd48b4ee"
+  "key": "aa7e705bf7b97d68"
  },
  "linux-6": {
   "blocks": [
    [
     {
      "c": "$ ps -o pid,ppid,user,comm -p $$,$PPID",
-     "o": "  PID  PPID USER     COMMAND\n 3515  3177 root     runuser\n 3516  3515 student  bash",
+     "o": "  PID  PPID USER     COMMAND\n 6374  5423 root     runuser\n 6375  6374 student  bash",
      "x": 0
     },
     {
@@ -7917,9 +8846,71 @@
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- start a long job, find it, stop it politely, confirm\"",
+     "o": "--- start a long job, find it, stop it politely, confirm",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 300 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pid=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ps -o pid,stat,comm -p $pid | tail -1 | awk '{print \"running:\", $3, \"state\", $2}'",
+     "o": "running: sleep state S",
+     "x": 0
+    },
+    {
+     "c": "$ kill $pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 0.3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kill -0 $pid 2>/dev/null && echo \"still alive\" || echo \"stopped by SIGTERM\"",
+     "o": "stopped by SIGTERM",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- pgrep finds by name\"",
+     "o": "--- pgrep finds by name",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 301 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pgrep -f \"sleep 301\" > /dev/null && echo \"found it by name\"",
+     "o": "found it by name",
+     "x": 0
+    },
+    {
+     "c": "$ pkill -f \"sleep 301\"",
+     "o": "",
+     "x": 0
+    }
    ]
   ],
-  "key": "150cb66f05f2660e"
+  "key": "640bf27ec5bc796d"
  },
  "linux-7": {
   "blocks": [
@@ -8120,7 +9111,7 @@
     },
     {
      "c": "$ ls -li orig.txt hard.txt soft.txt | awk '{print $1, $2, $10, $11, $12}'",
-     "o": "615248 -rw-r--r-- hard.txt  \n615248 -rw-r--r-- orig.txt  \n615249 lrwxrwxrwx soft.txt -> orig.txt",
+     "o": "794717 -rw-r--r-- hard.txt  \n794717 -rw-r--r-- orig.txt  \n794718 lrwxrwxrwx soft.txt -> orig.txt",
      "x": 0
     },
     {
@@ -8177,9 +9168,21 @@
      "o": "restored copy is identical",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ( exec 3> held.log; dd if=/dev/zero bs=1M count=3 >&3 2>/dev/null; rm held.log\n>   echo \"file deleted, but this shell still holds it open:\"; ls -l /proc/$BASHPID/fd/3 | sed 's#.*-> ##'; exec 3>&- )",
+     "o": "file deleted, but this shell still holds it open:\n/home/student/lab/held.log (deleted)",
+     "x": 0
+    }
    ]
   ],
-  "key": "7cffc410c024a1b8"
+  "key": "645ccd91d277f26b"
  },
  "linux-9": {
   "blocks": [
@@ -8331,9 +9334,41 @@
      "o": "file: indexing.log\nerrors: 5  warnings: 2\nlast error:\n2026-09-30 12:15:42 ERROR Indexing task aborted\nexit code: 1",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > disk_check.sh <<'EOF'\n> #!/bin/bash\n> set -euo pipefail\n> dir=\"${1:?usage: disk_check.sh FOLDER LIMIT_KB}\"\n> limit=\"${2:?usage: disk_check.sh FOLDER LIMIT_KB}\"\n> used=$(du -sk \"$dir\" | cut -f1)\n> if [ \"$used\" -gt \"$limit\" ]; then\n>   echo \"WARNING: $dir uses ${used} KB, above the limit of ${limit} KB\" >&2\n>   exit 1\n> fi\n> echo \"ok: $dir uses ${used} KB (limit ${limit} KB)\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x disk_check.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./disk_check.sh ev 100000; echo \"exit code: $?\"",
+     "o": "ok: ev uses 36 KB (limit 100000 KB)\nexit code: 0",
+     "x": 0
+    },
+    {
+     "c": "$ ./disk_check.sh ev 1; echo \"exit code: $?\"",
+     "o": "WARNING: ev uses 36 KB, above the limit of 1 KB\nexit code: 1",
+     "x": 0
+    },
+    {
+     "c": "$ ./disk_check.sh 2>&1 | head -1; echo \"exit code: ${PIPESTATUS[0]}\"",
+     "o": "./disk_check.sh: line 3: 1: usage: disk_check.sh FOLDER LIMIT_KB\nexit code: 1",
+     "x": 0
+    }
    ]
   ],
-  "key": "f15158870889c598"
+  "key": "721ee5a8d9eead86"
  },
  "monitoring-1": {
   "blocks": [
@@ -8824,7 +9859,7 @@
     },
     {
      "c": "$ ip route show | wc -l",
-     "o": "3",
+     "o": "2",
      "x": 0
     }
    ],
@@ -8859,9 +9894,36 @@
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"1-2) interface up and addressed:\"; ip -brief addr show lo | awk '{print $1, $2, $3}'",
+     "o": "1-2) interface up and addressed:\nlo UNKNOWN 127.0.0.1/8",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"3) default route (empty in this lab means no gateway configured):\"; ip route | grep -c default | awk '{print \"default routes:\", $1}'",
+     "o": "3) default route (empty in this lab means no gateway configured):\ndefault routes: 1",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"4) name resolution of something that cannot exist:\"; getent hosts no-such-host.example || echo \"   -> does not resolve (a DNS-layer failure)\"",
+     "o": "4) name resolution of something that cannot exist:\n   -> does not resolve (a DNS-layer failure)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"5) a closed port:\"; nc -zv -w 1 127.0.0.1 9 2>&1 | tail -1",
+     "o": "5) a closed port:\nnc: connect to 127.0.0.1 port 9 (tcp) failed: Connection refused",
+     "x": 0
+    }
    ]
   ],
-  "key": "ef9c3c8d21c653ee"
+  "key": "d2811c650601628d"
  },
  "networking-2": {
   "blocks": [
@@ -8892,9 +9954,21 @@
      "o": "10.1.2.3       private=True link_local=False\n172.20.0.5     private=True link_local=False\n192.168.0.9    private=True link_local=False\n169.254.10.1   private=True link_local=True\n8.8.8.8        private=False link_local=False",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> import ipaddress\n> n = ipaddress.ip_network(\"10.0.0.0/27\")\n> print(\"/27 has\", n.num_addresses, \"addresses, usable hosts:\", n.num_addresses - 2)\n> print(\"10.0.0.130 in 10.0.0.0/25 ?\", ipaddress.ip_address(\"10.0.0.130\") in ipaddress.ip_network(\"10.0.0.0/25\"))\n> print(\"(10.0.0.0/25 covers\", ipaddress.ip_network(\"10.0.0.0/25\")[0], \"to\", ipaddress.ip_network(\"10.0.0.0/25\")[-1], \")\")\n> print()\n> print(\"How to do it by hand: /27 leaves 32-27 = 5 host bits, 2^5 = 32 addresses, minus network and broadcast = 30 usable.\")\n> print(\"A /25 has 7 host bits = 128 addresses, so it covers .0 to .127; .130 is outside.\")\n> EOF",
+     "o": "/27 has 32 addresses, usable hosts: 30\n10.0.0.130 in 10.0.0.0/25 ? False\n(10.0.0.0/25 covers 10.0.0.0 to 10.0.0.127 )\n\nHow to do it by hand: /27 leaves 32-27 = 5 host bits, 2^5 = 32 addresses, minus network and broadcast = 30 usable.\nA /25 has 7 host bits = 128 addresses, so it covers .0 to .127; .130 is outside.",
+     "x": 0
+    }
    ]
   ],
-  "key": "22b91fe1d7824568"
+  "key": "3fef78eddf3f5ae3"
  },
  "networking-3": {
   "blocks": [
@@ -8911,7 +9985,7 @@
     },
     {
      "c": "$ ip netns list | sort",
-     "o": "blue\nred",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nblue\ncni-02617a2e-b4e4-0bf8-f268-55d6277d068a\ncni-4ea2dcbc-3795-ed2f-06dc-da861a03ad76\ncni-4eb4ad43-1e16-68bb-df2b-ba0ad1e36854\ncni-54acc33b-a981-4751-9772-2fef1184053b\ncni-5bc45f1f-1895-ab14-4a9d-ff5708458980\ncni-6b220b5e-f1cb-9503-55ed-041429481a77\ncni-8395a938-24fe-9a33-274b-99b21ecacf21\ncni-851513fe-d829-8152-0cab-bbccbb71ea9d\ncni-90163c74-6dc9-02cc-e689-fc9e89951086\ncni-953633c5-d7dc-a527-feae-c556a749a6ed\ncni-a2fcd081-4673-4cd5-cc4d-684d1c94e1bd\ncni-ab312f82-7918-35ef-c0c7-29c20c4c5782\ncni-bb3fd97c-3dad-d6a9-c481-8c42181f4290\ncni-c3af1a43-e616-a356-3659-1732a9045f10\ncni-ca12403d-0486-41a3-ec76-94416167b033\ncni-d621f77c-5504-7e67-537e-c8d2428a4236\ncni-dcea7b4a-e09b-152d-64de-ecdeb86481ea\ncni-e4730b8f-2e45-c7d4-2ac8-f9b63a3351ab\ncni-f6c5a7ff-0d3a-7d57-a73b-d392402124cb\ncni-ff840847-7ab3-4d7d-19c0-57139112d278\nred",
      "x": 0
     }
    ],
@@ -8960,19 +10034,19 @@
     },
     {
      "c": "$ sudo ip -n red  -brief addr show vr",
-     "o": "vr@if27          UP             10.0.0.1/24 ",
+     "o": "vr@if5           UP             10.0.0.1/24 ",
      "x": 0
     },
     {
      "c": "$ sudo ip -n blue -brief addr show vb",
-     "o": "vb@if28          UP             10.0.0.2/24 ",
+     "o": "vb@if6           UP             10.0.0.2/24 ",
      "x": 0
     }
    ],
    [
     {
      "c": "$ sudo ip netns exec red ping -c 2 -W 1 10.0.0.2",
-     "o": "PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.\n64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=0.455 ms\n64 bytes from 10.0.0.2: icmp_seq=2 ttl=64 time=0.043 ms\n\n--- 10.0.0.2 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss, time 1014ms\nrtt min/avg/max/mdev = 0.043/0.249/0.455/0.206 ms",
+     "o": "PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.\n64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=1.36 ms\n64 bytes from 10.0.0.2: icmp_seq=2 ttl=64 time=0.076 ms\n\n--- 10.0.0.2 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss, time 1001ms\nrtt min/avg/max/mdev = 0.076/0.718/1.360/0.642 ms",
      "x": 0
     }
    ],
@@ -9105,12 +10179,89 @@
     },
     {
      "c": "$ sudo ip netns list | wc -l",
-     "o": "0",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\n20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for n in h1 h2; do sudo ip netns del $n 2>/dev/null; done",
+     "o": "",
+     "x": 1
+    },
+    {
+     "c": "$ sudo ip netns add h1; sudo ip netns add h2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link add x1 type veth peer name x2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip link set x1 netns h1; sudo ip link set x2 netns h2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n h1 addr add 10.20.1.5/16 dev x1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n h2 addr add 10.20.2.9/16 dev x2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n h1 link set x1 up; sudo ip -n h2 link set x2 up",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"both /16, different third octet (same network):\"",
+     "o": "both /16, different third octet (same network):",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec h1 ping -c 1 -W 1 10.20.2.9 | grep -c \"1 received\" | awk '{print \"reply received:\", ($1==1?\"yes\":\"no\")}'",
+     "o": "reply received: yes",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"now make h2 a /24 (it thinks 10.20.1.5 is on another network):\"",
+     "o": "now make h2 a /24 (it thinks 10.20.1.5 is on another network):",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip -n h2 addr flush dev x2; sudo ip -n h2 addr add 10.20.2.9/24 dev x2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec h1 ping -c 1 -W 1 10.20.2.9 | grep -c \"1 received\" | awk '{print \"h1 -> h2 reply:\", ($1==1?\"yes\":\"no\")}'",
+     "o": "h1 -> h2 reply: no",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec h2 ping -c 1 -W 1 10.20.1.5 2>&1 | tail -1",
+     "o": "ping: connect: Network is unreachable",
+     "x": 0
+    },
+    {
+     "c": "$ for n in h1 h2; do sudo ip netns del $n; done",
+     "o": "",
      "x": 0
     }
    ]
   ],
-  "key": "98e0514042a3b5f4"
+  "key": "b4830b815efd01d2"
  },
  "networking-4": {
   "blocks": [
@@ -9196,7 +10347,7 @@
     },
     {
      "c": "$ sudo ip netns exec a ping -c 1 -W 1 10.2.0.2 2>&1 | tail -2",
-     "o": "1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.414/0.414/0.414/0.000 ms",
+     "o": "1 packets transmitted, 0 received, 100% packet loss, time 0ms",
      "x": 0
     }
    ],
@@ -9208,7 +10359,7 @@
     },
     {
      "c": "$ sudo ip netns exec a ping -c 2 -W 1 10.2.0.2 | grep -E \"received\"",
-     "o": "2 packets transmitted, 2 received, 0% packet loss, time 1003ms",
+     "o": "2 packets transmitted, 2 received, 0% packet loss, time 1007ms",
      "x": 0
     },
     {
@@ -9232,12 +10383,34 @@
     },
     {
      "c": "$ sudo ip netns list | wc -l",
-     "o": "0",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\n20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"The one command r needs (printed, not run):\"",
+     "o": "The one command r needs (printed, not run):",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"  sudo ip -n r route add 10.3.0.0/24 via 10.2.0.2\"",
+     "o": "  sudo ip -n r route add 10.3.0.0/24 via 10.2.0.2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"and on b:  sudo ip netns exec b sysctl -w net.ipv4.ip_forward=1\"",
+     "o": "and on b:  sudo ip netns exec b sysctl -w net.ipv4.ip_forward=1",
      "x": 0
     }
    ]
   ],
-  "key": "9ec028badc1ea9da"
+  "key": "b02134fac603b623"
  },
  "networking-5": {
   "blocks": [
@@ -9340,7 +10513,7 @@
     },
     {
      "c": "$ wait %2 2>/dev/null",
-     "o": "10.9.0.2.37282 > 10.9.0.1.8080: [S],\n10.9.0.1.8080 > 10.9.0.2.37282: [S.],\n10.9.0.2.37282 > 10.9.0.1.8080: [.],\n10.9.0.2.37282 > 10.9.0.1.8080: [P.],",
+     "o": "10.9.0.2.56820 > 10.9.0.1.8080: [S],\n10.9.0.1.8080 > 10.9.0.2.56820: [S.],\n10.9.0.2.56820 > 10.9.0.1.8080: [.],\n10.9.0.2.56820 > 10.9.0.1.8080: [P.],",
      "x": 0
     }
    ],
@@ -9384,12 +10557,39 @@
     },
     {
      "c": "$ sudo ip netns list | wc -l",
-     "o": "0",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\n20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"refused = the machine answered 'nothing listens here':\"",
+     "o": "refused = the machine answered 'nothing listens here':",
+     "x": 0
+    },
+    {
+     "c": "$ nc -zv -w 2 127.0.0.1 1433 2>&1 | tail -1",
+     "o": "nc: connect to 127.0.0.1 port 1433 (tcp) failed: Connection refused",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"From the real SQL server's side you would then check:  ss -ltn | grep 1433   (is it listening?)\"",
+     "o": "From the real SQL server's side you would then check:  ss -ltn | grep 1433   (is it listening?)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"and on the path:  nft list ruleset / Windows Firewall rules / cloud security group for TCP 1433\"",
+     "o": "and on the path:  nft list ruleset / Windows Firewall rules / cloud security group for TCP 1433",
      "x": 0
     }
    ]
   ],
-  "key": "dda3727de2e3aee6"
+  "key": "664840da3c605005"
  },
  "networking-6": {
   "blocks": [
@@ -9526,12 +10726,39 @@
     },
     {
      "c": "$ sudo ip netns list | wc -l",
-     "o": "0",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\n20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- how this machine resolves names (order and servers):\"",
+     "o": "--- how this machine resolves names (order and servers):",
+     "x": 0
+    },
+    {
+     "c": "$ grep '^hosts:' /etc/nsswitch.conf",
+     "o": "hosts:          files dns",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- an unknown name through the system resolver:\"",
+     "o": "--- an unknown name through the system resolver:",
+     "x": 0
+    },
+    {
+     "c": "$ getent hosts sql01-does-not-exist || echo \"no answer (NXDOMAIN or no DNS)\"",
+     "o": "no answer (NXDOMAIN or no DNS)",
      "x": 0
     }
    ]
   ],
-  "key": "cc030e9d6c84ca9e"
+  "key": "b78a7616b0aff3ff"
  },
  "networking-7": {
   "blocks": [
@@ -9720,12 +10947,39 @@
     },
     {
      "c": "$ sudo ip netns list | wc -l",
-     "o": "0",
+     "o": "Error: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\nError: Peer netns reference is invalid.\n20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del fw 2>/dev/null; sudo ip netns add fw",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec fw nft -f - <<'EOF'\n> table inet filter {\n>   chain input {\n>     type filter hook input priority 0; policy drop;\n>     iif lo accept\n>     ct state established,related accept\n>     ip saddr 10.0.0.0/24 tcp dport 22 accept\n>     tcp dport 443 accept\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns exec fw nft list chain inet filter input",
+     "o": "table inet filter {\n\tchain input {\n\t\ttype filter hook input priority filter; policy drop;\n\t\tiif \"lo\" accept\n\t\tct state established,related accept\n\t\tip saddr 10.0.0.0/24 tcp dport 22 accept\n\t\ttcp dport 443 accept\n\t}\n}",
+     "x": 0
+    },
+    {
+     "c": "$ sudo ip netns del fw",
+     "o": "",
      "x": 0
     }
    ]
   ],
-  "key": "d61bc161c962b883"
+  "key": "b35a082b7bade8f8"
  },
  "networking-8": {
   "blocks": [
@@ -9839,9 +11093,41 @@
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl req -x509 -newkey rsa:2048 -nodes -keyout t.key -out t.crt -days 1 -subj \"/CN=ev01.corp.local\" -addext \"subjectAltName=DNS:ev01.corp.local\" 2>/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"valid for the next 24h?  $(openssl x509 -in t.crt -noout -checkend 86400 >/dev/null && echo yes || echo 'no: expires within 24h')\"",
+     "o": "valid for the next 24h?  no: expires within 24h",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"valid for the next 2 days? $(openssl x509 -in t.crt -noout -checkend 172800 >/dev/null && echo yes || echo 'no: expires within 2 days')\"",
+     "o": "valid for the next 2 days? no: expires within 2 days",
+     "x": 0
+    },
+    {
+     "c": "$ openssl x509 -in t.crt -noout -ext subjectAltName | tail -1 | sed 's/^ *//'",
+     "o": "DNS:ev01.corp.local",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f t.key t.crt",
+     "o": "",
+     "x": 0
+    }
    ]
   ],
-  "key": "7d22bd7f9fe331e1"
+  "key": "0b31adb9d9bda9ac"
  },
  "terraform-1": {
   "blocks": [

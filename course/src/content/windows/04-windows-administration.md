@@ -176,6 +176,33 @@ if ($results | Where-Object { $_.StoppedAuto -or $_.LowDiskGB -or $_.CertsExpire
 
 Run it from Jenkins (a Windows agent, see the Jenkins track), schedule it, and send the result to your monitoring system: PowerShell, CI and monitoring working together.
 
+<!-- deeper -->
+## Answer and common mistakes
+
+The exercise needs a real Windows Server, so here is the **shape** of a good answer (Example, not run here):
+
+```powershell
+$problems = @()
+$problems += Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -ne 'Running' } |
+    ForEach-Object { "Service stopped: $($_.Name)" }
+$problems += Get-Volume | Where-Object { $_.DriveLetter -and ($_.SizeRemaining / $_.Size) -lt 0.20 } |
+    ForEach-Object { "Low disk: $($_.DriveLetter): $([int](100*$_.SizeRemaining/$_.Size))% free" }
+$problems += Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.NotAfter -lt (Get-Date).AddDays(60) } |
+    ForEach-Object { "Certificate expires soon: $($_.Subject)" }
+$problems
+if ($problems.Count -gt 0) { exit 1 } else { exit 0 }
+```
+
+The non-zero exit lets Task Scheduler, Jenkins or a monitoring agent treat the script as a health check.
+
+:::warn Common mistakes
+- **Changing production services interactively** with no record. Script it and keep the script in Git.
+- **Opening remoting to everyone.** Limit PowerShell remoting by firewall and group membership.
+- **Storing passwords in scripts.** Use the credential store, a vault or managed identities.
+- **No `-WhatIf` / `-Confirm` rehearsal** for destructive commands.
+:::
+<!-- /deeper -->
+
 :::recap
 - Services (`Get-Service`), event logs (`Get-WinEvent -FilterHashtable`), processes and disks, registry drives, scheduled tasks.
 - Remoting with `Invoke-Command` and `Enter-PSSession`; Ansible reaches Windows over WinRM too.

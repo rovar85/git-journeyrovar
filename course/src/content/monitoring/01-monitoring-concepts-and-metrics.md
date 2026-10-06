@@ -125,6 +125,28 @@ Memory utilisation `= (total - available) / total`, a typical derived metric you
 
 Pull has a built-in health check: if a target does not answer, you know immediately.
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+python3 - <<'PY'
+uptime = float(open("/proc/uptime").read().split()[0])
+print("# HELP lab_uptime_seconds Seconds since the machine booted.")
+print("# TYPE lab_uptime_seconds gauge")
+print(f"lab_uptime_seconds {uptime}")
+PY
+```
+
+This is the Prometheus **text format**: a `HELP` line, a `TYPE` line, then `name value`. Uptime goes up and down across reboots, so it is a **gauge**. (A value that only ever increases, like requests served, would be a **counter**.)
+
+:::warn Common mistakes
+- **Using a gauge for something that only increases,** or a counter for something that can fall.
+- **Naming without units** (`latency` instead of `request_duration_seconds`).
+- **Labels with unlimited values** (user IDs, email addresses, URLs with IDs). Each value creates a new time series and can overload Prometheus.
+- **Measuring only machine health** (CPU, memory) and not what users experience (errors, latency).
+:::
+<!-- /deeper -->
+
 :::recap
 - Metrics, logs and traces complement each other. Start with metrics.
 - Golden signals: latency, traffic, errors, saturation. RED for services, USE for resources.

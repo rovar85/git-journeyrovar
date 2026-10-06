@@ -119,6 +119,39 @@ rm -f /tmp/wrong_pass
 | Templates rendered with wide permissions | set `mode: "0600"` and the right owner |
 | Facts and registered variables | don't register secret-bearing results without `no_log` |
 
+<!-- deeper -->
+## A worked solution and common mistakes
+
+```run
+cd ~/lab/ans4
+ansible-vault encrypt_string 'S3cr3t-single-value' --name 'api_token' | head -3 | cut -c1-70
+ansible-vault encrypt_string 'S3cr3t-single-value' --name 'api_token' > group_vars/token.yml
+cat > use2.yml <<'EOF'
+- hosts: ev01
+  gather_facts: false
+  tasks:
+    - name: Write the token to a private file
+      ansible.builtin.copy:
+        dest: /tmp/ev-token.txt
+        content: "{{ api_token }}\n"
+        mode: "0600"
+      no_log: true
+EOF
+ansible-playbook use2.yml | grep -E "ok="
+ssh ev01 'stat -c "%a %n" /tmp/ev-token.txt; rm -f /tmp/ev-token.txt'
+```
+
+The encrypted string (`!vault |` followed by ciphertext) is safe to commit; only the vault password decrypts it. The result file is `0600`.
+
+:::warn Common mistakes
+- **Committing the vault password file** or `ansible.cfg` that points to it in the repository. Ignore it in Git.
+- **Printing secrets** with `debug` or running with `-vvv` on secret tasks.
+- **Leaving `no_log` off,** so a failure message includes the secret.
+- **One shared vault password for every environment.** Use vault IDs per environment.
+- **Passing secrets on the command line** (`-e password=...`): visible in `ps` and shell history.
+:::
+<!-- /deeper -->
+
 :::recap
 - Never store plain-text secrets in Git. `ansible-vault` encrypts files or single values.
 - The vault password stays out of the repo; CI stores it as a secret.
