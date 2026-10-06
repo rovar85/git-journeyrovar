@@ -58,10 +58,13 @@ out = ["<title>Agent School</title>", fonts,
 out += [c[2] for c in chapter_html]
 out.append(rd("tail.html"))
 subprocess.run([sys.executable, os.path.join(here, "gen_traces.py")], check=True, stdout=subprocess.DEVNULL)
+import glossary
+out.append("<script>window.CMDREF=" + json.dumps(list(glossary.GLOSSARY.values()), ensure_ascii=False).replace("</", "<\\/") + ";</script>")
 out.append("<script>window.TRACES=" + rd("traces.json") + ";window.TRACKS=" + json.dumps(tracks) + ";</script>")
 out.append("<script>\n" + rd("common.js") + "\n</script>")
 for j in sorted(glob.glob(os.path.join(src, "js", "ch[0-9][0-9].js"))) + sorted(glob.glob(os.path.join(src, "js", "w_*.js"))):
     out.append("<script>\n(function(){\n\"use strict\";\nvar $=H.$,$$=H.$$,esc=H.esc;\n" + open(j, encoding="utf-8").read() + "\n})();\n</script>")
 out.append("<script>H.init();</script>")
 open(os.path.join(here, "index.html"), "w", encoding="utf-8").write("\n".join(out))
+if mdconv.MISSING: print("commands without a glossary entry:", ", ".join(sorted(mdconv.MISSING)), file=sys.stderr)
 print("built", len(chapter_html), "lessons;", {t["id"]: t["count"] for t in tracks if t["count"]})

@@ -1,0 +1,146 @@
+## ip addr | Networking
+what: Shows (or sets) IP addresses on network interfaces.
+when: What IP address does this machine have? ip -br addr gives a short table.
+flags: add 10.0.0.1/24 dev eth0: assign an address; flush dev eth0: remove addresses
+
+## ip link | Networking
+what: Shows and changes the link layer of interfaces: up/down, creating virtual links and bridges.
+when: Bringing an interface up (ip link set X up), creating a veth pair or a bridge.
+flags: add NAME type veth peer name OTHER: make a virtual cable; set X master BR: plug into a bridge
+
+## ip route | Networking
+what: Shows or edits the routing table: where traffic for each network is sent.
+when: Why can I not reach that network? Adding a static route or default gateway.
+flags: add default via GW: set the default gateway; add NET via GW: static route
+
+## ip neigh | Networking
+what: Shows the ARP table: which MAC address belongs to which neighbouring IP.
+when: Checking that the local network resolved a neighbour (ARP worked).
+
+## ip netns | Networking
+what: Manages network namespaces: separate virtual machines' worth of network stack inside one Linux machine.
+when: Building practice networks, and understanding how containers get their network.
+flags: add NAME: create; exec NAME CMD: run a command inside; del NAME: delete; list: show namespaces
+
+## bridge | Networking
+what: Shows and manages Linux bridges (virtual switches) and their ports.
+when: Seeing which interfaces are plugged into a bridge such as docker0.
+
+## sysctl | Linux
+what: Reads or changes kernel settings at run time.
+when: Turning on IP forwarding (net.ipv4.ip_forward=1) to make Linux act as a router.
+flags: -w name=value: change a setting; -a: list all
+
+## dnsmasq | Networking
+what: A small DNS and DHCP server.
+when: Running a tiny DNS server for a lab or a home network.
+
+## nslookup | Networking
+what: Looks up a name in DNS (older, simpler than dig; also available on Windows).
+when: Quick check that a name resolves to an address.
+
+## git init | Git
+what: Turns the current folder into a Git repository by creating the hidden .git folder.
+when: Starting version control for a new project.
+
+## git config | Git
+what: Reads or sets Git settings such as your name, email and default branch.
+when: First-time setup on a machine: git config --global user.name "Your Name".
+flags: --global: for all your repositories; --list: show current settings
+
+## git status | Git
+what: Shows what changed since the last commit and what is staged.
+when: Before every commit, and whenever you are unsure what state the repository is in.
+flags: -s: short format; -sb: short with branch information
+
+## git add | Git
+what: Puts changes into the staging area, selecting what goes into the next commit.
+when: After editing files and reviewing the diff.
+flags: file: stage one file; .: stage everything in this folder; -p: choose pieces of a file interactively
+
+## git commit | Git
+what: Records the staged changes as a new snapshot with a message.
+when: After finishing a logical piece of work. Write a message saying what and why.
+flags: -m "message": give the message on the command line; -a: also stage changes to tracked files; --amend: redo the last commit
+careful: Do not amend commits that you have already pushed.
+
+## git diff | Git
+what: Shows line-by-line what changed.
+when: Reviewing your edits before staging or committing.
+flags: --staged: changes already staged; --stat: summary per file
+
+## git log | Git
+what: Shows the commit history.
+when: Finding who changed what and when; understanding the history of a file.
+flags: --oneline: one line per commit; --graph --all: draw branches; -p: include the changes; --format='%s': choose the output fields; -S"text": commits that added or removed this text
+
+## git show | Git
+what: Shows one commit (or a file as it was in a commit).
+when: Looking at exactly what a commit changed; git show HEAD~2:file prints an old version.
+
+## git switch | Git
+what: Moves to another branch (and -c creates one).
+when: Starting a new piece of work on its own branch, or going back to main.
+flags: -c NAME: create and switch
+
+## git branch | Git
+what: Lists, creates or deletes branches.
+when: Seeing which branches exist; git branch -d NAME removes a merged branch.
+flags: -d: delete a merged branch; --show-current: print the current branch name
+
+## git merge | Git
+what: Brings the changes of another branch into the current branch.
+when: Finishing a feature branch. If both sides changed the same lines you must resolve a conflict.
+flags: --abort: cancel a conflicted merge; --no-ff: always create a merge commit
+
+## git clone | Git
+what: Copies a repository, with its whole history, to your machine.
+when: Starting work on an existing project.
+
+## git pull | Git
+what: Downloads new commits from the remote and merges them into your branch (fetch plus merge).
+when: Updating your local branch before you start work or before pushing.
+flags: --rebase: replay your commits on top instead of making a merge commit
+
+## git fetch | Git
+what: Downloads new commits from the remote without changing your files.
+when: Looking at what others have pushed before deciding how to combine it.
+
+## git push | Git
+what: Uploads your commits to the remote repository.
+when: Sharing your work. A rejected push means the remote has commits you must pull first.
+flags: -u origin NAME: set the upstream branch the first time; --tags: push tags too
+careful: Avoid git push --force on shared branches; it can erase other people's work.
+
+## git restore | Git
+what: Discards uncommitted changes in a file, or unstages it.
+when: Undoing a bad edit (git restore file) or unstaging (git restore --staged file).
+careful: Discarded edits cannot be recovered.
+
+## git reset | Git
+what: Moves the current branch back to an earlier commit.
+when: Undoing local commits you have not shared. --hard also throws away file changes.
+flags: --soft: keep changes staged; --mixed (default): keep changes unstaged; --hard: discard changes
+careful: Never reset commits that others already have; use git revert instead.
+
+## git revert | Git
+what: Creates a new commit that undoes an earlier commit.
+when: Safely undoing a change that is already shared.
+
+## git stash | Git
+what: Sets your uncommitted work aside so you can switch tasks; git stash pop brings it back.
+when: You are mid-edit and need a clean working folder for a moment.
+
+## git tag | Git
+what: Puts a permanent name on a commit, normally a release such as v1.2.0.
+when: Marking releases that pipelines deploy.
+flags: -a NAME -m "msg": an annotated tag
+
+## git reflog | Git
+what: Shows where HEAD has been, including commits no branch points to any more.
+when: Recovering "lost" work after a reset or a bad rebase.
+
+## git blame | Git
+what: Shows who last changed each line of a file and in which commit.
+when: Asking "why is this line like this?"
+

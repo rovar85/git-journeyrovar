@@ -1,16 +1,130 @@
 [
- {"id":"linux","name":"Linux","group":"Foundations","level":"Beginner to advanced","blurb":"The operating system under almost every server, container and cloud. Files, permissions, processes, text tools, scripting, services and troubleshooting.","why":"Every later track assumes you can work in a Linux shell."},
- {"id":"networking","name":"Linux networking","group":"Foundations","level":"Beginner to advanced","blurb":"IP addressing, DNS, ports, routing, firewalls, packet capture, TLS and a method for finding where a connection breaks.","why":"Most real outages are network problems. This is the skill behind \"SQL is unreachable\"."},
- {"id":"git","name":"Git","group":"Foundations","level":"Beginner to advanced","blurb":"Track changes, work in branches, undo mistakes and collaborate. The base of every pipeline.","why":"Infrastructure, pipelines and tests all live in Git."},
- {"id":"python","name":"Python for automation","group":"Foundations","level":"Beginner to advanced","blurb":"The coding track: variables to a complete runnable Enterprise Vault diagnostic agent, with a step-through code player.","why":"Glue code, tests and agents are written in Python."},
- {"id":"docker","name":"Docker","group":"Build and ship","level":"Beginner to advanced","blurb":"Containers, images, Dockerfiles, volumes, networks, Compose, security and how it all works underneath.","why":"Repeatable test environments and the unit that Kubernetes runs."},
- {"id":"jenkins","name":"Jenkins and CI/CD","group":"Build and ship","level":"Beginner to advanced","blurb":"Automate build, test and delivery. Pipelines as code, agents, credentials, test reports and scaling.","why":"Run your regression suite automatically on every change."},
- {"id":"ansible","name":"Ansible","group":"Build and ship","level":"Beginner to advanced","blurb":"Configure many machines from one description. Playbooks, idempotency, roles, secrets, and managing Windows.","why":"Make servers (including Windows servers) configured the same way every time."},
- {"id":"terraform","name":"Terraform","group":"Build and ship","level":"Beginner to advanced","blurb":"Describe infrastructure as code and let Terraform build it. State, modules, workflows and testing.","why":"Create and destroy whole test labs on demand."},
- {"id":"kubernetes","name":"Kubernetes","group":"Run at scale","level":"Beginner to advanced","blurb":"Run containers across many machines. Pods, Deployments, Services, storage, security and troubleshooting.","why":"The standard platform for running container workloads."},
- {"id":"monitoring","name":"Monitoring and observability","group":"Run at scale","level":"Beginner to advanced","blurb":"Metrics, logs, traces, alerts and service-level objectives: knowing what your systems are doing.","why":"You cannot fix or improve what you cannot see."},
- {"id":"windows","name":"Windows and PowerShell","group":"Platforms","level":"Beginner to advanced","blurb":"PowerShell, Windows services, event logs, remoting and automation, the world Enterprise Vault runs in.","why":"Your Enterprise Vault servers are Windows servers."},
- {"id":"cloud","name":"Cloud fundamentals","group":"Platforms","level":"Beginner to intermediate","blurb":"Regions, networks, identity, compute, storage and cost on the major clouds.","why":"Labs and environments increasingly live in the cloud."},
- {"id":"capstone","name":"Capstone: lab as code","group":"Put it together","level":"Advanced","blurb":"Combine Docker, Ansible, Terraform and a pipeline to build, test and tear down a reproducible lab.","why":"Where the tools become one workflow."},
- {"id":"ai","name":"AI and agents","group":"AI","level":"Beginner to advanced","blurb":"How language models work, how to build, test, secure and connect AI agents, ending with an Enterprise Vault diagnostic agent.","why":"The reason this course began."}
+ {
+  "id": "linux",
+  "name": "Linux",
+  "group": "Foundations",
+  "level": "Beginner to advanced",
+  "blurb": "The operating system under almost every server, container and cloud. Files, permissions, processes, text tools, scripting, services and troubleshooting.",
+  "why": "Every later track assumes you can work in a Linux shell."
+ },
+ {
+  "id": "networking",
+  "name": "Linux networking",
+  "group": "Foundations",
+  "level": "Beginner to advanced",
+  "blurb": "IP addressing, DNS, ports, routing, firewalls, packet capture, TLS and a method for finding where a connection breaks.",
+  "why": "Most real outages are network problems. This is the skill behind \"SQL is unreachable\"."
+ },
+ {
+  "id": "git",
+  "name": "Git",
+  "group": "Foundations",
+  "level": "Beginner to advanced",
+  "blurb": "Track changes, work in branches, undo mistakes and collaborate. The base of every pipeline.",
+  "why": "Infrastructure, pipelines and tests all live in Git."
+ },
+ {
+  "id": "python",
+  "name": "Python for automation",
+  "group": "Foundations",
+  "level": "Beginner to advanced",
+  "blurb": "The coding track: variables to a complete runnable Enterprise Vault diagnostic agent, with a step-through code player.",
+  "why": "Glue code, tests and agents are written in Python."
+ },
+ {
+  "id": "docker",
+  "name": "Docker",
+  "group": "Build and ship",
+  "level": "Beginner to advanced",
+  "blurb": "Containers, images, Dockerfiles, volumes, networks, Compose, security and how it all works underneath.",
+  "why": "Repeatable test environments and the unit that Kubernetes runs."
+ },
+ {
+  "id": "jenkins",
+  "name": "Jenkins and CI/CD",
+  "group": "Build and ship",
+  "level": "Beginner to advanced",
+  "blurb": "Automate build, test and delivery. Pipelines as code, agents, credentials, test reports and scaling.",
+  "why": "Run your regression suite automatically on every change."
+ },
+ {
+  "id": "ansible",
+  "name": "Ansible",
+  "group": "Build and ship",
+  "level": "Beginner to advanced",
+  "blurb": "Configure many machines from one description. Playbooks, idempotency, roles, secrets, and managing Windows.",
+  "why": "Make servers (including Windows servers) configured the same way every time."
+ },
+ {
+  "id": "terraform",
+  "name": "Terraform",
+  "group": "Build and ship",
+  "level": "Beginner to advanced",
+  "blurb": "Describe infrastructure as code and let Terraform build it. State, modules, workflows and testing.",
+  "why": "Create and destroy whole test labs on demand."
+ },
+ {
+  "id": "kubernetes",
+  "name": "Kubernetes",
+  "group": "Run at scale",
+  "level": "Beginner to advanced",
+  "blurb": "Run containers across many machines. Pods, Deployments, Services, storage, security and troubleshooting.",
+  "why": "The standard platform for running container workloads."
+ },
+ {
+  "id": "monitoring",
+  "name": "Monitoring and observability",
+  "group": "Run at scale",
+  "level": "Beginner to advanced",
+  "blurb": "Metrics, logs, traces, alerts and service-level objectives: knowing what your systems are doing.",
+  "why": "You cannot fix or improve what you cannot see."
+ },
+ {
+  "id": "windows",
+  "name": "Windows and PowerShell",
+  "group": "Platforms",
+  "level": "Beginner to advanced",
+  "blurb": "PowerShell, Windows services, event logs, remoting and automation, the world Enterprise Vault runs in.",
+  "why": "Your Enterprise Vault servers are Windows servers."
+ },
+ {
+  "id": "cloud",
+  "name": "Cloud fundamentals",
+  "group": "Platforms",
+  "level": "Beginner to intermediate",
+  "blurb": "Regions, networks, identity, compute, storage and cost on the major clouds.",
+  "why": "Labs and environments increasingly live in the cloud."
+ },
+ {
+  "id": "capstone",
+  "name": "Capstone: lab as code",
+  "group": "Put it together",
+  "level": "Advanced",
+  "blurb": "Combine Docker, Ansible, Terraform and a pipeline to build, test and tear down a reproducible lab.",
+  "why": "Where the tools become one workflow."
+ },
+ {
+  "id": "reference",
+  "name": "Command reference",
+  "group": "Reference",
+  "level": "Look things up",
+  "blurb": "Every command used in this course: what it does, when to use it, and the flags that matter. Searchable.",
+  "why": "You do not have to memorise commands. You have to know what exists and when to reach for it."
+ },
+ {
+  "id": "ai",
+  "name": "AI and agents",
+  "group": "AI",
+  "level": "Beginner to advanced",
+  "blurb": "How language models work, how to build, test, secure and connect AI agents, ending with an Enterprise Vault diagnostic agent.",
+  "why": "The reason this course began."
+ },
+ {
+  "id": "aideep",
+  "name": "AI and agents: deep dive",
+  "group": "AI",
+  "level": "Intermediate to expert",
+  "blurb": "The same 14 topics again, one level deeper: the maths worked step by step, small real programs you can run, how practitioners do it, common mistakes, and practice questions with answers.",
+  "why": "Chapters 1 to 14 give you the map. The deep dive gives you the working knowledge to build, test and defend a design."
+ }
 ]

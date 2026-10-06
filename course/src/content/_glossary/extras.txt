@@ -1,0 +1,67 @@
+## exit | Linux
+what: Ends the shell or script and returns a status code (0 means success, anything else means failure).
+when: In scripts, to tell the caller that something failed: exit 1.
+
+## seq | Linux
+what: Prints a sequence of numbers.
+when: Loops: for i in $(seq 1 10).
+
+## read | Linux
+what: Reads a line of input into a variable.
+when: Asking the user for input in a script, or processing a file line by line (while read line).
+
+## for | Linux
+what: A loop that repeats commands once for each item in a list.
+when: Doing the same thing to several files, servers or numbers: for h in ev01 sql01; do ...; done.
+
+## while | Linux
+what: A loop that repeats commands as long as a condition is true.
+when: Waiting for something (while ! nc -z host 80; do sleep 1; done), or reading lines.
+
+## if | Linux
+what: Runs commands only if a condition is true.
+when: Scripts that must behave differently depending on a test, such as whether a file exists.
+
+## docker | Docker
+what: The Docker command-line client. Subcommands such as run, ps and build do the work.
+when: Everything you do with containers.
+
+## httpd | Linux
+what: BusyBox's tiny web server (in other systems httpd is Apache).
+when: Serving files from a folder inside small containers.
+
+## cowsay | Linux
+what: Prints a text message spoken by an ASCII-art cow.
+when: A harmless package to practise installing and removing software.
+
+## nano | Linux
+what: A simple terminal text editor.
+when: Editing a file on a server. Ctrl+O saves, Ctrl+X exits.
+
+## vi | Linux
+what: A powerful terminal text editor found on every Linux server.
+when: Editing files when nothing else is installed. Press i to type, Esc then :wq to save and quit, :q! to quit without saving.
+
+## aws | Cloud
+what: The Amazon Web Services command-line client.
+when: Managing AWS resources from a terminal or a script.
+
+## az | Cloud
+what: The Microsoft Azure command-line client.
+when: Managing Azure resources from a terminal or a script.
+
+## helm | Kubernetes
+what: The Kubernetes package manager: installs ready-made applications ("charts") as versioned releases.
+when: Installing databases, monitoring stacks and other software on a cluster.
+
+## wsl | Windows
+what: Windows Subsystem for Linux: runs a real Linux distribution inside Windows.
+when: Getting a Linux terminal on a Windows laptop: wsl --install.
+
+## java | Linux
+what: Runs a Java program.
+when: Running Java-based tools such as Jenkins agents.
+
+## bstat | Lab helper
+what: Lab helper defined in the Docker lesson: runs docker build and prints one line per build step saying whether it was CACHED or RAN.
+when: Seeing the effect of the build cache after you change a file.

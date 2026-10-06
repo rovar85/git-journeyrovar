@@ -13,6 +13,7 @@ Inline: `code`, **bold**, *italic*, [text](url), {{term|definition}}
 """
 import html, json, os, re
 import runner
+import glossary
 
 def inline(s):
     codes = []
@@ -44,7 +45,34 @@ class Ctx:
         self.quizzes = []
         self.html_parts = []
 
-def term_html(entries, kind):
+SEEN = set()
+MISSING = {}
+
+def guide_html(first_lines, lesson_id):
+    keys = []
+    for ln in first_lines:
+        for k in glossary.keys_for(ln):
+            if k in glossary.GLOSSARY:
+                if k not in SEEN and k not in keys:
+                    keys.append(k)
+            elif re.match(r"^[a-z][a-z0-9_.+-]*$", k) and k not in ("do", "done"):
+                MISSING.setdefault(k, set()).add(lesson_id)
+    if not keys:
+        return ""
+    keys = keys[:10]
+    SEEN.update(keys)
+    items = []
+    for k in keys:
+        g = glossary.GLOSSARY[k]
+        fl = ""
+        if g["flags"]:
+            fl = '<div class="gflags">' + "".join(f"<span><code>{html.escape(f, quote=False)}</code> {html.escape(d, quote=False)}</span>" for f, d in g["flags"][:6]) + "</div>"
+        cv = f'<p class="gcare"><b>Careful:</b> {html.escape(g["careful"], quote=False)}</p>' if g["careful"] else ""
+        items.append(f'<dt><code>{html.escape(k, quote=False)}</code></dt><dd><p><b>What it does:</b> {html.escape(g["what"], quote=False)}</p><p><b>When to use it:</b> {html.escape(g["when"], quote=False)}</p>{fl}{cv}</dd>')
+    n = len(keys)
+    return f'<details class="cmdguide"><summary>What {"does this command" if n == 1 else "do these " + str(n) + " commands"} do, and when would I use {"it" if n == 1 else "them"}?</summary><dl>' + "".join(items) + '</dl><p class="gref"><a href="#reference-1">Open the full command reference</a></p></details>'
+
+def term_html(entries, kind, lesson_id=""):
     badge = ('<span class="badge real">Real output</span>' if kind == "real" else '<span class="badge ex">Example output (not run here)</span>')
     cmds = []
     body = []
@@ -63,7 +91,9 @@ def term_html(entries, kind):
         if e.get("o"):
             body.append(html.escape(e["o"], quote=False))
     copy = html.escape("\n".join(cmds), quote=True)
-    return f'<div class="term" data-copy="{copy}"><div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>{badge}</div><pre class="term-body">' + "\n".join(body) + "</pre></div>"
+    firsts = [e["c"].split("\n")[0][2:] for e in entries if e["c"].startswith("$ ")]
+    guide = guide_html(firsts, lesson_id)
+    return f'<div class="term" data-copy="{copy}"><div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>{badge}</div><pre class="term-body">' + "\n".join(body) + "</pre></div>" + guide
 
 def parse_term(text):
     entries, cur = [], None
@@ -132,7 +162,7 @@ def blocks(text, ctx):
             elif info == "setup":
                 ctx.setup.append(body)
             elif info == "term":
-                out.append(term_html(parse_term(body), "example"))
+                out.append(term_html(parse_term(body), "example", ctx.lesson_id))
             else:
                 lang, _, fname = info.partition(":")
                 out.append(code_html(body, lang, fname))
@@ -207,13 +237,14 @@ def convert(path, track_id, track_name, number):
     text = open(path, encoding="utf-8").read()
     meta, body = parse_front(text)
     lesson_id = f"{track_id}-{number}"
+    SEEN.clear()
     ctx = Ctx(lesson_id)
     parts = blocks(body, ctx)
     rendered = runner.run_lesson(lesson_id, ctx.setup, ctx.runs) if ctx.runs else []
     final = []
     for p in parts:
         m = re.fullmatch(r"@@RUN(\d+)@@", p)
-        final.append(term_html(rendered[int(m.group(1))], "real") if m else p)
+        final.append(term_html(rendered[int(m.group(1))], "real", lesson_id) if m else p)
     title = meta.get("title", f"Lesson {number}")
     sec = (f'<section class="chapter" id="{lesson_id}" data-track="{track_id}" data-n="{number}" data-title="{html.escape(number_label(number) + " · " + meta.get("short", title), quote=True)}" '
            f'data-road="{html.escape(title, quote=True)}" data-sub="{html.escape(meta.get("sub", ""), quote=True)}">'

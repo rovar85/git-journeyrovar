@@ -1,0 +1,109 @@
+## terraform init | Terraform
+what: Prepares a Terraform folder: downloads providers and modules and sets up the backend for state.
+when: The first command in a new folder, and again after adding a provider, module or backend.
+
+## terraform plan | Terraform
+what: Compares your code, the state and the real world, and shows what Terraform would change. It changes nothing.
+when: Before every apply, and in pull requests. Read it carefully, especially lines marked "replaced".
+flags: -out=FILE: save the plan to apply later; -var 'x=y': set a variable; -replace=ADDR: plan a rebuild of one resource
+
+## terraform apply | Terraform
+what: Makes the changes shown in the plan, then updates the state.
+when: After reviewing the plan. Without -auto-approve it asks you to confirm.
+flags: -auto-approve: skip the confirmation (for pipelines); PLANFILE: apply a saved plan; -var-file=F: variable values from a file
+
+## terraform destroy | Terraform
+what: Deletes everything the configuration manages.
+when: Tearing down a test environment.
+careful: In production this removes real infrastructure. Check the plan; use prevent_destroy for critical resources.
+
+## terraform validate | Terraform
+what: Checks that the configuration is syntactically valid and consistent, without contacting any cloud.
+when: A fast check in CI and before committing.
+
+## terraform fmt | Terraform
+what: Rewrites .tf files into the standard style.
+when: Before committing; terraform fmt -check fails if formatting is wrong (good for CI).
+flags: -check: only report; -diff: show what would change; -recursive
+
+## terraform state | Terraform
+what: Inspects and edits the state: list, show, mv, rm.
+when: Seeing what Terraform manages, or renaming a resource without rebuilding it.
+careful: Do not edit the state file by hand.
+
+## terraform output | Terraform
+what: Prints the output values from the last apply.
+when: Reading addresses or IDs created by Terraform for use in scripts.
+
+## terraform console | Terraform
+what: An interactive prompt to try expressions and functions.
+when: Learning functions or testing an expression without applying anything.
+
+## terraform workspace | Terraform
+what: Manages separate state files within one configuration.
+when: Short-lived copies of an environment.
+
+## terraform test | Terraform
+what: Runs the .tftest.hcl tests in the folder.
+when: Checking modules and variables in CI.
+
+## terraform graph | Terraform
+what: Prints the dependency graph in DOT format.
+when: Understanding creation order.
+
+## terraform show | Terraform
+what: Shows the state or a saved plan in readable form.
+when: Reviewing a plan file before applying it.
+
+## terraform version | Terraform
+what: Shows the Terraform version.
+when: Checking which version is installed.
+
+## ansible | Ansible
+what: Runs a single module on hosts from your inventory (an ad-hoc command).
+when: Quick checks and one-off actions: ansible all -m ping.
+flags: -m MODULE: which module; -a "ARGS": module arguments; -i FILE: inventory; -b: become root; --limit HOST: restrict the hosts
+
+## ansible-playbook | Ansible
+what: Runs a playbook: an ordered list of tasks that bring hosts to the desired state.
+when: Configuring servers repeatably.
+flags: --check: dry run, change nothing; --diff: show file differences; --syntax-check: validate only; -e var=value: set a variable; --tags NAME / --skip-tags NAME: run subsets; --limit HOST
+
+## ansible-inventory | Ansible
+what: Shows the inventory (hosts and groups) as Ansible understands it.
+when: Checking that groups and variables are what you expect.
+flags: --graph: tree of groups
+
+## ansible-galaxy | Ansible
+what: Creates role skeletons and installs community roles and collections.
+when: ansible-galaxy role init NAME for a new role.
+
+## ansible-vault | Ansible
+what: Encrypts and decrypts secret files and values used by Ansible.
+when: Keeping passwords out of plain text in Git.
+flags: encrypt/decrypt/view/edit FILE; encrypt_string 'value': encrypt a single value
+
+## jpost | Lab helper
+what: Lab helper used in the Jenkins lessons: sends an authenticated POST request to Jenkins with the CSRF crumb and session cookie.
+when: Creating jobs or starting builds through the Jenkins REST API.
+
+## jcurl | Lab helper
+what: Lab helper: curl with a valid Jenkins crumb and session cookie.
+when: Any Jenkins API call that changes something.
+
+## jwait | Lab helper
+what: Lab helper: waits until the latest build of a Jenkins job finishes and prints its result.
+when: Scripting "start a build, then check the result".
+
+## promq | Lab helper
+what: Lab helper for the monitoring lessons: runs one PromQL query against Prometheus and prints the result.
+when: Trying PromQL expressions from the command line.
+
+## pwsh | PowerShell
+what: Starts PowerShell 7 (in this lab inside a container). -File runs a script, -Command runs one command.
+when: Running PowerShell scripts on Linux, macOS or Windows.
+flags: -File script.ps1: run a script; -Command '...': run a command; -NoProfile: skip profile scripts
+
+## jobs | Linux
+what: Lists the background jobs of this shell.
+when: Seeing what you started with & or paused with Ctrl+Z.

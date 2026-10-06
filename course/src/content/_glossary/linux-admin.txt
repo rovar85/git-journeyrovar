@@ -1,0 +1,277 @@
+## grep | Linux
+what: Searches text for lines that match a pattern and prints those lines.
+when: Finding errors in a log, filtering the output of another command, or checking whether a setting exists in a file.
+flags: -i: ignore upper/lower case; -n: show line numbers; -r: search a whole folder; -v: show lines that do NOT match; -c: count matching lines; -E: extended regular expressions; -o: print only the matching part; -A N / -B N: also show N lines after / before each match
+careful: grep treats the pattern as a regular expression: characters like . and * are special. Use grep -F for plain text.
+
+## awk | Linux
+what: A small programming language for text columns: it splits each line into fields ($1, $2, ...) and runs actions on lines that match.
+when: Printing or adding up a column, or filtering lines by the value in one column.
+flags: -F ',': set the field separator; '{print $1}': print the first column; '$3 > 100': select rows where column 3 is above 100
+
+## sed | Linux
+what: A stream editor: applies edits such as search-and-replace to text as it flows through.
+when: Replacing a value in a config file or reformatting output in a pipeline.
+flags: s/old/new/g: replace all occurrences on each line; -i: edit the file in place; -n '5p': print only line 5; /pattern/d: delete matching lines
+careful: sed -i changes the file immediately. Test without -i first, or keep a backup (sed -i.bak).
+
+## sudo | Linux
+what: Runs one command with administrator (root) rights.
+when: Installing software, editing system files, managing services and users. Use it only for the commands that need it.
+careful: A mistake run with sudo can damage the whole system. Read the command twice.
+
+## su | Linux
+what: Switches to another user (root by default) for a whole session.
+when: Rarely; prefer sudo -u USER command for one-off actions.
+
+## chmod | Linux
+what: Changes who may read, write or execute a file or folder.
+when: Making a script executable (chmod +x), or protecting a secret (chmod 600).
+flags: +x / -x: add/remove execute; u/g/o/a: user, group, others, all; 644: rw-r--r--; 755: rwxr-xr-x; 600: rw-------; -R: apply to everything inside a folder
+careful: Never use chmod 777: it lets everyone modify the file.
+
+## chown | Linux
+what: Changes the owner (and optionally the group) of files.
+when: A service cannot write to its folder because it belongs to another user.
+flags: user:group: set both; -R: recursive
+
+## chgrp | Linux
+what: Changes the group that owns a file or folder.
+when: Setting up a shared folder for a team.
+
+## umask | Linux
+what: Shows or sets the default permissions removed from newly created files.
+when: Making sure new files are private (umask 077) or group-writable (umask 002).
+
+## useradd | Linux
+what: Creates a new user account.
+when: Adding a person or service account to a server.
+flags: -m: create a home folder; -G group: add to extra groups; -s SHELL: login shell; -r: system account
+
+## userdel | Linux
+what: Deletes a user account.
+when: Removing an account that is no longer needed.
+flags: -r: also remove the home folder
+
+## usermod | Linux
+what: Changes an existing user, for example adds them to a group.
+when: Giving a user access to another group: usermod -aG docker alice.
+careful: Always use -aG (append). -G alone replaces all the user's groups.
+
+## groupadd | Linux
+what: Creates a new group.
+when: Setting up a group for shared access before adding users.
+
+## groupdel | Linux
+what: Deletes a group.
+when: Cleaning up a group you no longer use.
+
+## passwd | Linux
+what: Sets or changes a user's password.
+when: Resetting an account's password; passwd -l locks it.
+
+## ps | Linux
+what: Shows a snapshot of running processes.
+when: Checking whether a program is running, or finding its process ID (PID).
+flags: aux: every process with CPU/memory; -ef: full listing with parent PID; -o pid,comm: choose columns; -p PID: just that process
+
+## top | Linux
+what: A live, updating view of processes and system load.
+when: Finding which process uses the most CPU or memory. Press q to quit, M sorts by memory, P by CPU.
+
+## htop | Linux
+what: A friendlier, coloured version of top.
+when: Same as top, if installed.
+
+## pgrep | Linux
+what: Finds process IDs by name.
+when: Is the service running? Which PIDs belong to it?
+flags: -f: match against the full command line; -a: show the command too
+
+## pkill | Linux
+what: Sends a signal to processes selected by name.
+when: Stopping all processes of a program.
+flags: -f: match full command line; -9: force kill
+careful: A loose pattern can kill things you did not intend. Check first with pgrep -a.
+
+## kill | Linux
+what: Sends a signal to a process (by default asks it to stop politely, SIGTERM).
+when: Stopping a process or job: kill PID. Use kill -9 PID only if it ignores the polite request.
+flags: -15 (default): please terminate; -9: force kill, no cleanup; -0: only check the process exists; -l: list signals
+
+## jobs | Linux
+what: Lists the background jobs started from this shell.
+when: Seeing what you have running with & or paused with Ctrl+Z.
+
+## wait | Linux
+what: Waits for background jobs to finish.
+when: In scripts, after starting several jobs with &.
+
+## nohup | Linux
+what: Runs a command so it keeps running after you log out.
+when: Starting a long task from a terminal that may close.
+
+## nice | Linux
+what: Starts a program with lower (or higher) scheduling priority.
+when: Running a heavy job without slowing other things.
+
+## sleep | Linux
+what: Pauses for a number of seconds.
+when: Waiting for a service to start, or spacing out retries in a script.
+
+## trap | Linux
+what: Runs a function when the shell receives a signal or exits.
+when: Cleaning up temporary files or stopping child processes when a script is interrupted.
+
+## free | Linux
+what: Shows memory and swap usage.
+when: Checking memory pressure. Look at the "available" column, not "free".
+flags: -m: megabytes; -h: human-readable
+
+## nproc | Linux
+what: Prints the number of CPU cores.
+when: Comparing system load to the number of cores.
+
+## uptime | Linux
+what: Shows how long the system has been running and the load averages.
+when: Quick health check; load higher than the core count means a queue of work.
+
+## lsof | Linux
+what: Lists open files, including network connections, and which process owns them.
+when: Which process has this file or port open? Why is the disk still full after deleting a file (lsof +L1)?
+flags: -i :80: who uses port 80; +L1: deleted files still open
+
+## strace | Linux
+what: Shows the system calls a program makes (file opens, network calls, errors).
+when: A program fails with a vague error and you want to see which file or permission it trips on.
+flags: -f: follow child processes; -e trace=openat: only file-open calls
+
+## dpkg | Linux
+what: Low-level Debian/Ubuntu package tool: lists and inspects installed packages.
+when: Which package owns this file (dpkg -S)? What files does a package install (dpkg -L)? Is it installed (dpkg -s)?
+flags: -s PKG: status; -L PKG: files installed; -S PATH: which package owns the file; -l: list all installed
+
+## apt-get | Linux
+what: Installs, removes and updates software on Debian and Ubuntu.
+when: apt-get install -y PKG to add software; apt-get update to refresh the package list.
+flags: -y: answer yes automatically; install / remove / update / upgrade
+
+## apt | Linux
+what: The friendlier front end to apt-get for interactive use.
+when: apt update, apt install PKG, apt search WORD on Ubuntu/Debian.
+
+## systemctl | Linux
+what: Controls services managed by systemd: start, stop, restart, enable at boot, show status.
+when: Managing a service on a modern Linux server.
+flags: status X: is it running and its recent log; restart X; enable --now X: start now and at every boot; list-units --failed: what is broken
+
+## journalctl | Linux
+what: Reads the systemd journal (the logs of services and the system).
+when: Why did the service fail? journalctl -u NAME shows its log.
+flags: -u NAME: one service; -f: follow live; --since "1 hour ago": time filter; -p err: only errors
+
+## crontab | Linux
+what: Edits or lists a user's scheduled jobs.
+when: Running a backup or report on a schedule: crontab -e to edit, crontab -l to list.
+
+## ssh | Linux
+what: Opens a secure shell on another machine, or runs one command there.
+when: Administering remote servers.
+flags: -p PORT: port; -i KEY: private key file; ssh host 'command': run one command and return
+
+## ssh-keygen | Linux
+what: Creates an SSH key pair (a private key and a public key).
+when: Setting up passwordless, safer login to servers.
+flags: -t ed25519: key type; -f FILE: file name; -N "": no passphrase (lab use only)
+
+## scp | Linux
+what: Copies files over SSH.
+when: Sending a file to or fetching one from another server.
+
+## rsync | Linux
+what: Copies only what changed between two folders, locally or over SSH.
+when: Backups and deployments; much faster than copying everything each time.
+flags: -a: archive mode (keeps permissions and times); -v: verbose; --delete: remove files that no longer exist at the source
+
+## nc | Linux
+what: Netcat: opens raw TCP/UDP connections, can test whether a port is open or act as a simple server.
+when: Is port 1433 reachable? nc -zv HOST PORT.
+flags: -z: just test, send no data; -v: verbose; -w N: timeout seconds; -u: UDP; -l: listen
+
+## wget | Linux
+what: Downloads a file from a URL.
+when: Fetching files in scripts or minimal containers that lack curl.
+flags: -q: quiet; -O -: write to the screen; -T N: timeout
+
+
+## unshare | Linux
+what: Runs a program in new Linux namespaces (its own hostname, process list, network...).
+when: Experimenting with how containers isolate processes.
+
+## ip | Linux
+what: The modern tool to show and configure network interfaces, addresses and routes.
+when: Check your IP address (ip addr), the routing table (ip route), links (ip link).
+flags: -br: brief one-line-per-interface output
+
+## openssl | Linux
+what: Toolkit for certificates, keys and encryption.
+when: Creating a test certificate, inspecting a certificate's names and dates, testing TLS connections.
+flags: req -x509: make a self-signed certificate; x509 -noout -dates: show validity dates; s_client: connect and show a server's certificate
+
+## base64 | Linux
+what: Encodes data as text, or decodes it with -d.
+when: Reading Kubernetes Secret values. It is an encoding, not encryption.
+
+## getent | Linux
+what: Looks up entries the way the system does (users, groups, host names).
+when: getent hosts NAME shows how a name resolves, including /etc/hosts.
+
+## python3 | Linux
+what: Runs the Python 3 interpreter: a script file, or a one-liner with -c.
+when: Quick calculations and data handling, running exporters and small tools.
+flags: -c 'code': run code; -m http.server: serve the current folder over HTTP; -m json.tool: pretty-print JSON
+
+## bash | Linux
+what: Runs the Bash shell: a script file, or one command with -c.
+when: Running a script without making it executable, or running a command string in a fresh shell.
+flags: -c 'cmd': run a command string; -n: check syntax only
+
+## ss | Linux
+what: Shows network sockets: listening ports and connections.
+when: Which program is listening on port 8080? Is the service up?
+flags: -l: listening; -t: TCP; -u: UDP; -n: numbers not names; -p: show the process
+
+## curl | Linux
+what: Makes web requests from the command line and prints the response.
+when: Testing an API or web page, checking HTTP status codes, downloading files.
+flags: -s: silent; -I: headers only; -o FILE: save to a file; -w '%{http_code}': print the status code; -v: show the whole conversation; -X POST: set the method; -H: add a header; -d: send data
+
+## ping | Linux
+what: Sends small test packets to see if a host answers and how long it takes.
+when: First reachability check for a server.
+flags: -c N: send N packets; -W N: wait N seconds
+
+## traceroute | Linux
+what: Shows the sequence of routers a packet crosses to reach a host.
+when: Finding where connectivity breaks or slows down.
+flags: -n: no name lookups; -m N: maximum hops
+
+## dig | Linux
+what: Asks DNS servers for records and shows the full answer.
+when: Debugging name resolution: dig @SERVER NAME TYPE.
+flags: +short: only the answer; @server: ask a specific DNS server; +noall +answer: print just the answer section
+
+## tcpdump | Linux
+what: Captures and prints network packets.
+when: Seeing what actually travels on a network interface, for example the TCP handshake.
+flags: -n: no name lookups; -i IF: interface; -c N: stop after N packets
+
+## nft | Linux
+what: Manages the Linux firewall (nftables rules).
+when: Allow or block ports, set up NAT.
+flags: list ruleset: show all rules; -f FILE: load rules from a file; add rule ...: add one rule
+
+## iptables | Linux
+what: The older command for the Linux firewall (still used by Docker and kube-proxy).
+when: Viewing or editing firewall and NAT rules on older systems.
+flags: -t nat -S: list NAT rules; -L -n: list rules with numbers

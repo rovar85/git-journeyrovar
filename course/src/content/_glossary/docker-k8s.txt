@@ -1,0 +1,230 @@
+## docker run | Docker
+what: Creates a new container from an image and starts it.
+when: Running any program or service in a container.
+flags: -d: run in the background; --name N: give it a name; -p HOST:CONTAINER: publish a port; -v SRC:DEST: mount storage; -e KEY=VAL: set an environment variable; --rm: delete the container when it exits; -it: interactive terminal; --network N: join a network; --restart POLICY: restart behaviour; --memory/--cpus: resource limits
+
+## docker ps | Docker
+what: Lists containers (only running ones unless -a).
+when: Which containers are up? Why did that one stop (ps -a)?
+flags: -a: include stopped; -q: only IDs; --format: choose columns
+
+## docker logs | Docker
+what: Shows what a container printed to its output.
+when: A container misbehaves or exits: read its logs first.
+flags: -f: follow; --tail N: last N lines
+
+## docker exec | Docker
+what: Runs a command inside a running container.
+when: Looking around inside it: docker exec -it NAME sh.
+flags: -it: interactive terminal
+
+## docker stop | Docker
+what: Asks a container to stop (SIGTERM, then kill after 10 seconds).
+when: Shutting down a container cleanly.
+
+## docker start | Docker
+what: Starts a stopped container again.
+when: Restarting a container you kept.
+
+## docker rm | Docker
+what: Deletes containers.
+when: Cleaning up. -f stops and deletes a running container in one go.
+flags: -f: force
+
+## docker rmi | Docker
+what: Deletes images.
+when: Freeing disk space or removing an old tag.
+
+## docker images | Docker
+what: Lists images stored locally.
+when: What is on this machine, and how big is it?
+
+## docker image | Docker
+what: Image management subcommands (ls, inspect, prune...).
+when: Inspecting an image's layers or removing unused ones: docker image prune.
+
+## docker pull | Docker
+what: Downloads an image from a registry.
+when: Getting an image ahead of time, or updating it.
+
+## docker push | Docker
+what: Uploads an image to a registry.
+when: Publishing a built image so servers and pipelines can pull it.
+
+## docker tag | Docker
+what: Gives an image another name (such as a registry path and version).
+when: Before pushing: docker tag app registry.example.com/team/app:1.2.
+
+## docker build | Docker
+what: Builds an image from a Dockerfile.
+when: Packaging your application.
+flags: -t NAME:TAG: name the image; -f FILE: use a different Dockerfile; -q: print only the image ID; --progress=plain: show full build output
+
+## docker inspect | Docker
+what: Prints detailed JSON about a container, image, network or volume.
+when: Finding IPs, mounts, exit codes, health status. Use -f '{{...}}' to pick one field.
+flags: -f TEMPLATE: pick fields
+
+## docker cp | Docker
+what: Copies files between a container and the host.
+when: Getting a log or config out of a container, or putting a file in.
+
+## docker history | Docker
+what: Shows the layers of an image and the commands that created them.
+when: Seeing why an image is large, or what a build did.
+
+## docker save | Docker
+what: Writes an image to a tar file.
+when: Moving images to a machine with no registry access.
+
+## docker port | Docker
+what: Shows which host ports map to a container's ports.
+when: Checking that a published port is what you expect.
+
+## docker network | Docker
+what: Creates and manages Docker networks.
+when: Letting containers find each other by name on a user-defined network.
+flags: create NAME; ls; connect NET CONTAINER; inspect NAME
+
+## docker volume | Docker
+what: Creates and manages named volumes (persistent storage).
+when: Keeping data after a container is removed.
+flags: create NAME; ls; rm NAME
+
+## docker system | Docker
+what: System-wide information and clean-up: disk use (df) and prune.
+when: The Docker host is running out of disk.
+careful: docker system prune -a --volumes removes unused images and volumes, including data.
+
+## docker version | Docker
+what: Shows the client and server versions.
+when: Checking Docker is running and which version.
+
+## docker compose | Docker
+what: Starts, stops and manages a whole multi-container application described in a compose.yaml file.
+when: Local development and small deployments with several services.
+flags: up -d: create and start in the background; down: stop and remove; ps; logs -f; config: validate the file
+
+## kubectl get | Kubernetes
+what: Lists Kubernetes objects (pods, services, deployments, nodes...).
+when: The first command of any investigation. Add -o wide, -o yaml, or -o custom-columns for more.
+flags: -n NS: namespace; -A: all namespaces; -o wide/yaml/json: output format; -l key=value: filter by label; -w: watch for changes
+
+## kubectl describe | Kubernetes
+what: Shows an object's details and, at the bottom, its recent events.
+when: A pod is not starting: read the Events section.
+
+## kubectl apply | Kubernetes
+what: Creates or updates objects from a YAML file, making the cluster match the file.
+when: Deploying declaratively. Running it twice is safe.
+flags: -f FILE: the file or folder; -k DIR: use Kustomize; --dry-run=server: validate without creating
+
+## kubectl create | Kubernetes
+what: Creates an object from the command line or a file (and fails if it exists).
+when: Quickly making a namespace, secret, configmap, deployment or job.
+
+## kubectl run | Kubernetes
+what: Starts a single pod from an image.
+when: Quick tests and debugging pods. Add --restart=Never for a one-shot pod.
+flags: --image=IMG: the image; --restart=Never: do not restart; --overrides: tweak the spec as JSON
+
+## kubectl delete | Kubernetes
+what: Deletes objects.
+when: Removing a pod (a controller will recreate it), a deployment or a whole namespace.
+flags: -f FILE: delete what a file defines; --wait=false: do not wait; --all: every object of that type
+
+## kubectl logs | Kubernetes
+what: Shows the output of a container in a pod.
+when: Debugging applications. --previous shows the run before a crash.
+flags: -f: follow; --previous: the crashed container; -c NAME: choose a container
+
+## kubectl exec | Kubernetes
+what: Runs a command inside a container of a pod.
+when: Looking inside a running pod: kubectl exec -it POD -- sh.
+
+## kubectl wait | Kubernetes
+what: Blocks until an object reaches a condition.
+when: In scripts: wait for a pod to be Ready or a job to complete.
+flags: --for=condition=Ready; --timeout=60s
+
+## kubectl rollout | Kubernetes
+what: Manages Deployment rollouts: status, history, undo, restart.
+when: Watching an update finish, or rolling back a bad release.
+flags: status: wait for completion; undo: go back one version; history; restart: recreate pods gradually
+
+## kubectl scale | Kubernetes
+what: Changes the number of replicas of a deployment.
+when: Handling more load, or scaling to zero.
+
+## kubectl set | Kubernetes
+what: Changes parts of an object, such as the container image of a deployment.
+when: Starting a rolling update: kubectl set image deployment/web nginx=nginx:1.28.
+
+## kubectl expose | Kubernetes
+what: Creates a Service for an existing deployment or pod.
+when: Making pods reachable by a stable name and address.
+flags: --port: service port; --type=NodePort: also open a port on the node
+
+## kubectl patch | Kubernetes
+what: Changes part of an object with a small JSON/YAML patch.
+when: Making a precise change without editing the whole file.
+
+## kubectl label | Kubernetes
+what: Adds or removes labels on objects.
+when: Tagging nodes or pods so selectors can find them.
+
+## kubectl annotate | Kubernetes
+what: Adds notes (annotations) to objects.
+when: Storing metadata such as the change cause of a rollout.
+
+## kubectl taint | Kubernetes
+what: Adds a taint to a node, repelling pods that do not tolerate it.
+when: Reserving a node for special workloads.
+
+## kubectl cordon | Kubernetes
+what: Marks a node unschedulable (no new pods).
+when: First step of node maintenance.
+
+## kubectl uncordon | Kubernetes
+what: Makes a node schedulable again.
+when: After maintenance.
+
+## kubectl drain | Kubernetes
+what: Evicts all pods from a node so it can be maintained.
+when: Before upgrading or rebooting a node.
+
+## kubectl port-forward | Kubernetes
+what: Opens a temporary tunnel from your machine to a pod or service.
+when: Testing a service that is not exposed, for example a database.
+
+## kubectl explain | Kubernetes
+what: Built-in documentation for any field of any object.
+when: What can I put in spec.containers? kubectl explain pod.spec.containers.
+
+## kubectl config | Kubernetes
+what: Views and changes the kubeconfig: clusters, users, contexts and the default namespace.
+when: Switching cluster or namespace.
+
+## kubectl api-resources | Kubernetes
+what: Lists every kind of object the cluster knows.
+when: Discovering names and short names for objects.
+
+## kubectl kustomize | Kubernetes
+what: Renders a Kustomize folder to plain YAML without applying it.
+when: Previewing what an overlay will create.
+
+## kubectl auth | Kubernetes
+what: Authorisation tools, mainly can-i to test permissions.
+when: Debugging RBAC: kubectl auth can-i list pods --as=USER.
+
+## kubectl version | Kubernetes
+what: Shows client and server versions.
+when: Checking compatibility.
+
+## kubectl debug | Kubernetes
+what: Starts a debugging container next to a pod.
+when: The image has no shell and you need to look inside.
+
+## kubectl | Kubernetes
+what: The Kubernetes command-line client. It talks to the API server using your kubeconfig.
+when: Everything you do with a cluster.

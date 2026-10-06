@@ -1,0 +1,272 @@
+## whoami | Linux
+what: Prints the name of the user you are currently logged in as.
+when: After switching accounts or using sudo, to confirm who you are before changing anything.
+
+## id | Linux
+what: Shows your numeric user ID (uid), primary group ID (gid) and all groups you belong to.
+when: Diagnosing "permission denied" problems: check whether the user is in the group that owns the file.
+flags: -un: only the user name; -gn: only the primary group name; -G: all group IDs
+
+## groups | Linux
+what: Lists the groups a user belongs to.
+when: Quick check of group membership, for example before using a shared folder or the docker group.
+
+## pwd | Linux
+what: Prints the full path of the folder you are in ("print working directory").
+when: When you are lost, or before running something destructive, to be sure where you are.
+
+## echo | Linux
+what: Prints text (and the values of variables) to the screen.
+when: Showing messages in scripts, checking what a variable contains (echo "$PATH"), or writing a line into a file with a redirect.
+flags: -n: no trailing newline; -e: interpret escapes like \n
+careful: Quote variables ("$name") so spaces in the value do not split it into several words.
+
+## printf | Linux
+what: Prints formatted text exactly as you describe it, including newlines (\n) and padded columns.
+when: When you need precise output or portable newlines in scripts; echo behaves differently between shells.
+flags: %s: a string; %d: an integer; \n: new line
+
+## uname | Linux
+what: Prints information about the operating system and kernel.
+when: Checking which OS or kernel version a server runs.
+flags: -s: kernel name; -r: kernel release; -m: hardware architecture; -a: everything
+
+## hostname | Linux
+what: Shows (or sets) the computer's name.
+when: Confirming which server you are on, especially when you have several terminals open.
+
+## date | Linux
+what: Prints (or formats) the current date and time.
+when: Timestamps in scripts and logs, for example date +%Y-%m-%d for a file name.
+flags: +%Y-%m-%d: custom format; -u: UTC time; +%s: seconds since 1970
+
+## help | Linux
+what: Shows built-in help for shell builtins such as cd or export.
+when: A shell builtin has no man page; use help cd instead.
+
+## type | Linux
+what: Tells you what a command name really is: a builtin, an alias, a function or a program (and where).
+when: Working out why a command behaves oddly, for example whether ls is an alias.
+
+## which | Linux
+what: Shows the full path of the program that would run for a command name.
+when: Checking which copy of a tool is used, or whether it is installed at all.
+
+## man | Linux
+what: Opens the manual page of a command.
+when: You want every option of a command. Press q to quit, / to search.
+
+## clear | Linux
+what: Clears the terminal screen.
+when: Tidying a cluttered terminal. Ctrl+L does the same.
+
+## history | Linux
+what: Lists the commands you typed earlier.
+when: Finding a command you used last week; combine with grep.
+flags: !!: repeat the last command; Ctrl+R: search history as you type
+
+## export | Linux
+what: Sets an environment variable that child programs also receive.
+when: Passing settings (like a server name or a PATH change) to programs you start from this shell.
+
+## unset | Linux
+what: Removes a shell variable.
+when: Clearing a variable you no longer want programs to see.
+
+## env | Linux
+what: Lists the environment variables, or runs a command with changed variables.
+when: Seeing what variables a program will inherit; env | grep NAME.
+
+## set | Linux
+what: Shows shell settings and variables, or changes shell options (set -e, set -x).
+when: In scripts, set -euo pipefail makes the script stop at the first error.
+flags: -e: exit on error; -u: error on unset variables; -x: print each command as it runs; -o pipefail: a pipeline fails if any part fails
+
+## alias | Linux
+what: Creates a short name for a longer command.
+when: Saving typing for commands you use daily; put it in ~/.bashrc to keep it.
+
+## cd | Linux
+what: Changes the current folder.
+when: Moving around the file system. cd alone goes home, cd - goes back to the previous folder, cd .. goes up one level.
+
+## ls | Linux
+what: Lists the files and folders in a directory.
+when: Seeing what is in a folder, checking sizes, dates and permissions.
+flags: -l: long format (permissions, owner, size, date); -a: include hidden files starting with a dot; -h: human-readable sizes; -t: newest first; -R: recurse into subfolders; -d: show the folder itself, not its contents
+
+## tree | Linux
+what: Draws a folder and everything below it as an indented tree.
+when: Getting an overview of a project's layout.
+
+## mkdir | Linux
+what: Creates a folder.
+when: Setting up folders for projects, logs or backups.
+flags: -p: create parent folders too and do not complain if it exists
+
+## rmdir | Linux
+what: Removes an empty folder.
+when: Safe clean-up: it refuses to delete a folder that still has files.
+
+## touch | Linux
+what: Creates an empty file, or updates a file's modified time.
+when: Making a placeholder file, or marking a file as freshly changed.
+
+## cp | Linux
+what: Copies files or folders.
+when: Making a backup copy before you edit a file.
+flags: -r: copy folders recursively; -a: preserve permissions, owners and times; -i: ask before overwriting; -v: show what was copied
+
+## mv | Linux
+what: Moves or renames files and folders.
+when: Renaming a file, or moving it to another folder (the same command does both).
+flags: -i: ask before overwriting; -n: never overwrite
+
+## rm | Linux
+what: Deletes files (there is no recycle bin).
+when: Removing files you no longer need. Add -r for folders.
+flags: -r: remove folders and their contents; -f: do not ask and ignore missing files; -i: ask for each file
+careful: Deleting cannot be undone. Never run rm -rf with a variable that might be empty (rm -rf "$DIR/") and check the path with ls first.
+
+## ln | Linux
+what: Creates links between files: hard links, or symbolic links with -s (shortcuts).
+when: Pointing a stable name (current) to a changing target (release-42), or sharing one file under two names.
+flags: -s: symbolic link; -f: replace an existing link
+
+## readlink | Linux
+what: Prints where a symbolic link points.
+when: Finding the real file behind a link; -f resolves the full path.
+
+## stat | Linux
+what: Shows detailed information about a file: size, permissions, owner, times, inode.
+when: Checking exact permissions in octal, or the last modification time.
+flags: -c '%a %U %n': custom format (octal permissions, owner, name)
+
+## file | Linux
+what: Guesses what kind of data a file contains (text, script, image, executable).
+when: Identifying an unknown file that has no useful extension.
+
+## find | Linux
+what: Searches a folder tree for files by name, type, size, age and more, and can run a command on each match.
+when: Locating a file, finding large or old files, cleaning up logs older than N days.
+flags: -name "*.log": match by name; -type f/d: files or directories; -mtime +7: modified more than 7 days ago; -size +100M: bigger than 100 MB; -exec CMD {} \;: run a command on every match
+
+## du | Linux
+what: Shows how much disk space files and folders use.
+when: Finding what is filling a disk.
+flags: -s: one total per argument; -h: human-readable; --max-depth=1: only one level deep
+
+## df | Linux
+what: Shows free and used space for each mounted file system.
+when: First check when a disk is full; df -i shows inodes (number of files) instead.
+flags: -h: human-readable sizes; -i: inode usage
+
+## lsblk | Linux
+what: Lists disks and partitions and where they are mounted.
+when: Seeing what storage a machine has.
+
+## mount | Linux
+what: Attaches a disk or file system to a folder (or lists what is mounted).
+when: Using a new disk, a network share or a disk image.
+
+## umount | Linux
+what: Detaches a mounted file system.
+when: Before removing a disk, or to clean up a test image. It fails if something is still using it.
+
+## findmnt | Linux
+what: Shows the mounted file systems as a tree, or details for one path.
+when: Seeing which file system a folder lives on and its type.
+
+## dd | Linux
+what: Copies raw data block by block, often used to create files of an exact size or copy disk images.
+when: Making a test file or disk image (dd if=/dev/zero of=file bs=1M count=10).
+careful: dd writes wherever you point it, including whole disks. Double-check the of= target.
+
+## mkfs.ext4 | Linux
+what: Creates an ext4 file system on a disk, partition or image file.
+when: Preparing new storage for use. It erases what was there.
+
+## tar | Linux
+what: Bundles many files into one archive, optionally compressed.
+when: Backups and moving a folder as one file.
+flags: -c: create; -x: extract; -t: list contents; -z: gzip compression; -f FILE: archive file name; -C DIR: change folder first
+
+## gzip | Linux
+what: Compresses a single file (making file.gz).
+when: Shrinking big log files.
+
+## gunzip | Linux
+what: Decompresses .gz files.
+when: Reading or restoring a compressed file.
+
+## zip | Linux
+what: Creates .zip archives that Windows users can open.
+when: Sending files to people who do not use tar.
+
+## unzip | Linux
+what: Extracts .zip archives.
+when: Opening zip files you receive.
+
+## diff | Linux
+what: Compares two files (or folders with -r) and shows the differences.
+when: Checking what changed between two versions of a config, or confirming a restored copy is identical.
+flags: -r: compare folders; -u: unified format (the same used by git diff)
+
+## cat | Linux
+what: Prints the contents of one or more files (and joins them together).
+when: Reading short files, or creating a file from a heredoc (cat > file <<'EOF').
+flags: -n: number the lines
+careful: For huge files use head, tail or less instead.
+
+## less | Linux
+what: Lets you page through a long file, forwards and backwards.
+when: Reading large files and logs. Space = next page, b = back, /word = search, q = quit.
+
+## head | Linux
+what: Prints the first lines of a file or of piped output.
+when: Peeking at the start of a file, or limiting output (command | head -5).
+flags: -n N: first N lines; -c N: first N bytes
+
+## tail | Linux
+what: Prints the last lines of a file.
+when: Reading the newest log entries; tail -f follows the file as it grows.
+flags: -n N: last N lines; -f: keep watching for new lines
+
+## wc | Linux
+what: Counts lines, words and bytes.
+when: How many lines did grep find? command | wc -l.
+flags: -l: lines; -w: words; -c: bytes
+
+## nl | Linux
+what: Prints a file with line numbers.
+when: Referring to specific lines of a file.
+
+## sort | Linux
+what: Sorts lines of text.
+when: Ordering output, or preparing for uniq (which needs sorted input).
+flags: -n: numeric sort; -r: reverse; -u: remove duplicates; -k N: sort by column N; -h: sort human-readable sizes like 2K, 1G
+
+## uniq | Linux
+what: Collapses repeated adjacent lines; with -c it counts them.
+when: Counting how often something occurs: sort | uniq -c | sort -rn.
+flags: -c: prefix lines with counts; -d: show only duplicated lines
+
+## cut | Linux
+what: Extracts columns (fields or characters) from each line.
+when: Pulling one field out of structured text such as /etc/passwd or CSV.
+flags: -d ',': field separator; -f 1,3: which fields; -c 1-10: character range
+
+## tr | Linux
+what: Translates or deletes single characters.
+when: Converting case (tr a-z A-Z), squeezing spaces, or turning separators into newlines.
+flags: -d: delete the characters; -s: squeeze repeats into one
+
+## tee | Linux
+what: Copies its input to both the screen and a file.
+when: Saving output while still watching it; with sudo it lets you write to a protected file (echo x | sudo tee file).
+flags: -a: append instead of overwrite
+
+## xargs | Linux
+what: Turns lines from input into arguments for another command.
+when: Running a command over a list: find ... | xargs rm.
+flags: -n 1: one argument per run; -I{}: place each item where {} appears

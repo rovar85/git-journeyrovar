@@ -286,3 +286,22 @@ table.mini td{padding:3px 0;font-family:var(--f-mono,monospace)}
 .ro-starting{border-style:dashed;border-color:var(--accent)}
 .ro-failing{border-color:#C0392B;background:rgba(192,57,43,.15)}
 .ro-msg{color:var(--muted);font-size:.95rem}
+
+/* command guide panels and reference */
+details.cmdguide{margin:-6px 0 22px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.cmdguide summary{cursor:pointer;padding:10px 14px;font-weight:700;color:var(--accent)}
+details.cmdguide dl{margin:0;padding:0 14px 8px}
+details.cmdguide dt{margin-top:12px;font-size:1.05rem}
+details.cmdguide dd{margin:4px 0 0 0;padding-left:12px;border-left:3px solid var(--line)}
+details.cmdguide dd p{margin:4px 0;font-size:.95rem}
+.gflags{display:flex;flex-direction:column;gap:2px;font-size:.88rem;color:var(--muted);margin:4px 0}
+.gflags code,.cr-flags code{font-weight:700}
+.gcare{background:var(--mark);padding:4px 8px;border-radius:6px}
+.gref{padding:0 14px 10px;font-size:.9rem}
+.cr-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0}
+.cr-bar input,.cr-bar select{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:100%}
+.cr-item{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:10px 0;background:var(--surface)}
+.cr-item h3{margin:4px 0}
+.cr-item h3 small{color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px}
+.cr-item p{margin:4px 0}
+.cr-flags{margin:4px 0 4px 18px;padding:0;font-size:.92rem}
