@@ -1139,9 +1139,36 @@
      "o": "    \"changed\": true,",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat >> inventory.ini <<'EOF'\n> \n> [extra]\n> ev02 ansible_host=127.0.0.1 ansible_port=2222\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-inventory --graph | grep -E \"ev0|extra\"",
+     "o": "  |  |  |--ev01\n  |--@extra:\n  |  |--ev02",
+     "x": 0
+    },
+    {
+     "c": "$ ansible ev02 -m ping | grep -E \"ev02|pong\"",
+     "o": "ev02 | SUCCESS => {\n    \"ping\": \"pong\"",
+     "x": 0
+    },
+    {
+     "c": "$ ansible 'ev02' --list-hosts | tail -1",
+     "o": "    ev02",
+     "x": 0
+    }
    ]
   ],
-  "key": "0b9e33d8744b6a9d"
+  "key": "6f7858540b8e0612"
  },
  "ansible-2": {
   "blocks": [
@@ -1293,9 +1320,46 @@
      "o": "TASK [This works] **************************************************************\nTASK [This fails] **************************************************************\nfatal: [ev01]: FAILED!\nPLAY RECAP *********************************************************************\nev01                       : ok=1    changed=0    unreachable=0    failed=1    skipped=0    rescued=",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > motd.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   tasks:\n>     - name: Ensure the folder exists\n>       ansible.builtin.file:\n>         path: /tmp/ev01-conf\n>         state: directory\n>     - name: Ensure the notice file has the right text\n>       ansible.builtin.copy:\n>         dest: /tmp/ev01-conf/motd.txt\n>         content: \"Authorised use only\\n\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- first run:\";  ansible-playbook motd.yml | grep -E \"ok=\"",
+     "o": "--- first run:\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- second run (idempotent):\"; ansible-playbook motd.yml | grep -E \"ok=\"",
+     "o": "--- second run (idempotent):\nev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/Authorised use only/Authorised use only. Activity is logged./' motd.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- preview of the edit:\"; ansible-playbook motd.yml --check --diff | grep -E '^[+-][^+-]|ok='",
+     "o": "--- preview of the edit:\n-Authorised use only\n+Authorised use only. Activity is logged.\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- apply it:\"; ansible-playbook motd.yml | grep -E \"ok=\"",
+     "o": "--- apply it:\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
    ]
   ],
-  "key": "816cd8b8b4e9498d"
+  "key": "8b7b2efd02e472fb"
  },
  "ansible-3": {
   "blocks": [
@@ -1458,9 +1522,61 @@
      "o": "RUNNING HANDLER [Report change] ************************************************\n    \"msg\": \"config changed on ev01\"",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'max_connections: 100\\n' >> group_vars/all.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'max_connections: 500\\n' >> host_vars/sql01.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > templates/limits.conf.j2 <<'EOF'\n> # for {{ inventory_hostname }}\n> max_connections={{ max_connections }}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > limits.yml <<'EOF'\n> - hosts: all\n>   gather_facts: false\n>   tasks:\n>     - ansible.builtin.file: {path: \"{{ base_dir }}\", state: directory}\n>     - ansible.builtin.template: {src: limits.conf.j2, dest: \"{{ base_dir }}/limits.conf\"}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook limits.yml | grep -E \"ok=\"",
+     "o": "ev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nsql01                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- rendered:\"; cat /tmp/lab-hosts/ev01/limits.conf /tmp/lab-hosts/sql01/limits.conf | grep -v '^#'",
+     "o": "--- rendered:\nmax_connections=100\nmax_connections=500",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- change only sql01's value; who reports a change?\"",
+     "o": "--- change only sql01's value; who reports a change?",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/max_connections: 500/max_connections: 600/' host_vars/sql01.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook limits.yml | grep -E \"ok=\"",
+     "o": "ev01                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nsql01                      : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
    ]
   ],
-  "key": "aac239694b101290"
+  "key": "9ee0dd0d25143494"
  },
  "ansible-4": {
   "blocks": [
@@ -1586,9 +1702,31 @@
      "o": "TASK [ev_indexing : Render indexing config]",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat >> roles/ev_indexing/tasks/main.yml <<'EOF'\n> \n> - name: Write a README into logs\n>   ansible.builtin.copy:\n>     dest: \"{{ ev_base_dir }}/logs/README.txt\"\n>     content: \"Logs for {{ inventory_hostname }}\\n\"\n>   tags: [docs]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- only the docs tag:\"; ansible-playbook site.yml --tags docs | grep -E \"TASK|ok=\"  | sed 's/ \\*\\*\\*.*//'",
+     "o": "--- only the docs tag:\nTASK [ev_indexing : Write a README into logs]\nev01                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- check mode afterwards: nothing left to change\"; ansible-playbook site.yml --check | grep -E \"ok=\"",
+     "o": "--- check mode afterwards: nothing left to change\nev01                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    }
    ]
   ],
-  "key": "31256219b3dc2af3"
+  "key": "9a8e6b29851ba421"
  },
  "ansible-5": {
   "blocks": [
@@ -1630,7 +1768,7 @@
     },
     {
      "c": "$ echo \"--- after:\"; head -3 group_vars/secrets.yml | cut -c1-60",
-     "o": "--- after:\n$ANSIBLE_VAULT;1.1;AES256\n616630323564643336653833616531653037333839646338646630303237\n3631363532326537393065353131313336653233663064340a3065613230",
+     "o": "--- after:\n$ANSIBLE_VAULT;1.1;AES256\n353063373763393562363435666338336137316364653639353735643434\n3232666538343737303938653531366364653039663861320a3637316332",
      "x": 0
     }
    ],
@@ -1694,9 +1832,41 @@
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-vault encrypt_string 'S3cr3t-single-value' --name 'api_token' | head -3 | cut -c1-70",
+     "o": "api_token: !vault |\n          $ANSIBLE_VAULT;1.1;AES256\n          636636653634666136333164656532316333343661643031356461376630",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-vault encrypt_string 'S3cr3t-single-value' --name 'api_token' > group_vars/token.yml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > use2.yml <<'EOF'\n> - hosts: ev01\n>   gather_facts: false\n>   tasks:\n>     - name: Write the token to a private file\n>       ansible.builtin.copy:\n>         dest: /tmp/ev-token.txt\n>         content: \"{{ api_token }}\\n\"\n>         mode: \"0600\"\n>       no_log: true\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook use2.yml | grep -E \"ok=\"",
+     "o": "ev01                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'stat -c \"%a %n\" /tmp/ev-token.txt; rm -f /tmp/ev-token.txt'",
+     "o": "600 /tmp/ev-token.txt",
+     "x": 0
+    }
    ]
   ],
-  "key": "f80dc04d4586a5d6"
+  "key": "c2305720f7d740e3"
  },
  "ansible-6": {
   "blocks": [
@@ -1812,9 +1982,51 @@
      "o": "[ERROR]: YAML parsing failed: While parsing a block mapping did not find expected key.",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/ans5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > marker.yml <<'EOF'\n> - hosts: evservers\n>   gather_facts: false\n>   serial: 1\n>   tasks:\n>     - name: Create a marker file named after the host\n>       ansible.builtin.file:\n>         path: \"/tmp/marker-{{ inventory_hostname }}\"\n>         state: touch\n>         modification_time: preserve\n>         access_time: preserve\n>     - ansible.builtin.debug:\n>         msg: \"finished {{ inventory_hostname }}\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- check mode first (nothing is created):\"",
+     "o": "--- check mode first (nothing is created):",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook marker.yml --check | grep -E \"^PLAY \\[|finished|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "PLAY [evservers]\n    \"msg\": \"finished ev01\"\nPLAY [evservers]\n    \"msg\": \"finished ev02\"\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nev02                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'ls /tmp/marker-* 2>&1 | head -2'",
+     "o": "ls: cannot access '/tmp/marker-*': No such file or directory",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- real run:\"",
+     "o": "--- real run:",
+     "x": 0
+    },
+    {
+     "c": "$ ansible-playbook marker.yml | grep -E \"^PLAY \\[|finished|ok=\" | sed 's/ \\*\\*\\*.*//'",
+     "o": "PLAY [evservers]\n    \"msg\": \"finished ev01\"\nPLAY [evservers]\n    \"msg\": \"finished ev02\"\nev01                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \nev02                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   ",
+     "x": 0
+    },
+    {
+     "c": "$ ssh ev01 'ls /tmp/marker-*; rm -f /tmp/marker-*'",
+     "o": "/tmp/marker-ev01\n/tmp/marker-ev02",
+     "x": 0
+    }
    ]
   ],
-  "key": "504259fdd106b939"
+  "key": "4b5dad6f09b088f0"
  },
  "capstone-1": {
   "blocks": [
@@ -5407,18 +5619,18 @@
    [
     {
      "c": "$ kubectl version | grep -E \"Client|Server\"",
-     "o": "Client Version: v1.37.1\nServer Version: v1.37.1",
+     "o": "Unable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout\nClient Version: v1.37.1",
      "x": 0
     },
     {
      "c": "$ kubectl get nodes -o custom-columns=NAME:.metadata.name,STATUS:.status.conditions[-1].type,VERSION:.status.nodeInfo.kubeletVersion",
-     "o": "NAME       STATUS   VERSION\nlab-node   Ready    v1.37.1",
-     "x": 0
+     "o": "E1006 05:57:22.737078   22472 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:57:52.739279   22472 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:58:22.741033   22472 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:58:52.743787   22472 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 05:59:22.745460   22472 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     },
     {
      "c": "$ kubectl get --raw=/readyz",
-     "o": "ok",
-     "x": 0
+     "o": "Unable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     }
    ],
    [
@@ -5429,36 +5641,53 @@
     },
     {
      "c": "$ kubectl describe node lab-node | grep -E \"^Name:|Roles|Capacity|Allocatable|Container Runtime|Kubelet Version|Operating System\" | sed 's/  */ /g'",
-     "o": "Name: lab-node\nRoles: <none>\nCapacity:\nAllocatable:\n Operating System: linux\n Container Runtime Version: containerd://2.2.6\n Kubelet Version: v1.37.1",
+     "o": "E1006 06:00:23.037133   22536 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:00:53.038289   22536 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:01:23.038918   22536 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:01:53.040340   22536 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:02:23.041452   22536 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
      "x": 0
     }
    ],
    [
     {
      "c": "$ kubectl get pods -n kube-system -o custom-columns=APP:.metadata.labels.k8s-app,STATUS:.status.phase",
-     "o": "APP        STATUS\nkube-dns   Running",
-     "x": 0
+     "o": "E1006 06:02:53.123962   22583 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:03:23.125353   22583 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:03:53.126786   22583 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:04:23.130713   22583 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:04:53.132299   22583 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     },
     {
      "c": "$ kubectl get namespaces -o custom-columns=NAME:.metadata.name,STATUS:.status.phase",
-     "o": "NAME              STATUS\ndefault           Active\nkube-node-lease   Active\nkube-public       Active\nkube-system       Active\nlab2              Active",
-     "x": 0
+     "o": "E1006 06:05:23.209247   22631 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:05:53.210819   22631 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:06:23.211669   22631 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:06:53.213303   22631 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:07:23.214615   22631 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 1
     }
    ],
    [
     {
      "c": "$ kubectl api-resources --no-headers | awk '{print $1}' | grep -E \"^(pods|services|deployments|replicasets|configmaps|secrets|namespaces|nodes|persistentvolumeclaims|ingresses|jobs|cronjobs|statefulsets|daemonsets)$\" | sort | tr '\\n' ' '; echo",
-     "o": "configmaps cronjobs daemonsets deployments ingresses jobs namespaces nodes persistentvolumeclaims pods replicasets secrets services statefulsets ",
+     "o": "E1006 06:07:53.274409   22682 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
      "x": 0
     },
     {
      "c": "$ kubectl explain pod.spec.containers.image | head -6",
-     "o": "KIND:       Pod\nVERSION:    v1\n\nFIELD: image <string>",
+     "o": "E1006 06:08:23.346392   22700 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:08:53.347391   22700 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl explain deployment.spec.strategy | sed -n 1,12p",
+     "o": "E1006 06:09:23.436302   22720 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:09:53.437452   22720 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the two strategy types:\"",
+     "o": "--- the two strategy types:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl explain deployment.spec.strategy.type | grep -iE \"recreate|rollingupdate\" | head -3",
+     "o": "E1006 06:10:23.496947   22742 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nE1006 06:10:53.498605   22742 memcache.go:381] \"Couldn't get current server API group list\" err=\"Get \\\"https://10.255.255.1:6443/api?timeout=32s\\\": dial tcp 10.255.255.1:6443: i/o timeout\"\nUnable to connect to the server: dial tcp 10.255.255.1:6443: i/o timeout",
      "x": 0
     }
    ]
   ],
-  "key": "895081dd5130cbd8"
+  "key": "63047f8d5447367d"
  },
  "kubernetes-10": {
   "blocks": [
@@ -11310,9 +11539,56 @@
      "o": "0",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf1b && cd ~/lab/tf1b",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"first\" {\n>   input = \"alpha\"\n> }\n> resource \"terraform_data\" \"second\" {\n>   input = \"derived from ${terraform_data.first.output}\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 2 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"alpha\"/\"beta\"/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- plan after changing the first input:\"",
+     "o": "--- plan after changing the first input:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"^  # |Plan:\"",
+     "o": "  # terraform_data.first will be updated in-place\n  # terraform_data.second will be updated in-place\nPlan: 0 to add, 2 to change, 0 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 0 added, 2 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep -E \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 2 destroyed.",
+     "x": 0
+    }
    ]
   ],
-  "key": "8dfbdef4ac118739"
+  "key": "904810dce3e7b917"
  },
  "terraform-2": {
   "blocks": [
@@ -11454,9 +11730,51 @@
      "o": "Destroy complete! Resources: 1 destroyed.",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'environment = \"prod\"\\nserver_names = [\"ev01\", \"ev02\"]\\n' > prod.tfvars",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f terraform.tfvars",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -var-file=prod.tfvars | grep -E \"summary\"",
+     "o": "  + summary     = \"prod-evault: 2 servers, size large\"\nsummary = \"prod-evault: 2 servers, size large\"",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- first three /24 subnets of 192.168.0.0/16:\"",
+     "o": "--- first three /24 subnets of 192.168.0.0/16:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform console <<'EOF'\n> [for i in range(3) : cidrsubnet(\"192.168.0.0/16\", 8, i)]\n> EOF",
+     "o": "[\n  \"192.168.0.0/24\",\n  \"192.168.1.0/24\",\n  \"192.168.2.0/24\",\n]",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve -var-file=prod.tfvars | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 1 destroyed.",
+     "x": 0
+    }
    ]
   ],
-  "key": "136990141aa8889f"
+  "key": "6656b05be5ad6bdf"
  },
  "terraform-3": {
   "blocks": [
@@ -11608,9 +11926,56 @@
      "o": "",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/tf3b && cd ~/lab/tf3b",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"servers\" {\n>   type = map(object({ size = string }))\n>   default = {\n>     ev01  = { size = \"large\" }\n>     ev02  = { size = \"small\" }\n>     sql01 = { size = \"xlarge\" }\n>   }\n> }\n> \n> resource \"terraform_data\" \"server\" {\n>   for_each = var.servers\n>   input    = { name = each.key, size = each.value.size }\n> }\n> \n> output \"sizes\" {\n>   value = { for name, s in terraform_data.server : name => s.output.size }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 3 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output sizes",
+     "o": "{\n  \"ev01\" = \"large\"\n  \"ev02\" = \"small\"\n  \"sql01\" = \"xlarge\"\n}",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- change one size: only that server is touched\"",
+     "o": "--- change one size: only that server is touched",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/ev02  = { size = \"small\" }/ev02  = { size = \"medium\" }/' main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan | grep -E \"^  # |Plan:\"",
+     "o": "  # terraform_data.server[\"ev02\"] will be updated in-place\nPlan: 0 to add, 1 to change, 0 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 3 destroyed.",
+     "x": 0
+    }
    ]
   ],
-  "key": "eda16209474b0320"
+  "key": "53e375569a71941b"
  },
  "terraform-4": {
   "blocks": [
@@ -11770,9 +12135,41 @@
      "o": "Destroy complete! Resources: 1 destroyed.",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson).\"",
+     "o": "--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson).",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- with a moved block the plan is a pure state move. A suitable .gitignore:\"",
+     "o": "--- with a moved block the plan is a pure state move. A suitable .gitignore:",
+     "x": 0
+    },
+    {
+     "c": "$ cat > .gitignore <<'EOF'\n> # Terraform\n> .terraform/\n> *.tfstate\n> *.tfstate.*\n> crash.log\n> *.tfplan\n> # variable files that may contain secrets\n> *.tfvars\n> *.tfvars.json\n> # keep the dependency lock file (do NOT ignore .terraform.lock.hcl)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat .gitignore | grep -v '^#' | grep .",
+     "o": ".terraform/\n*.tfstate\n*.tfstate.*\ncrash.log\n*.tfplan\n*.tfvars\n*.tfvars.json",
+     "x": 0
+    },
+    {
+     "c": "$ git check-ignore -v terraform.tfstate .terraform.lock.hcl 2>/dev/null | head -2 || true",
+     "o": "",
+     "x": 0
+    }
    ]
   ],
-  "key": "74091e0194254452"
+  "key": "de735d5242b22dbc"
  },
  "terraform-5": {
   "blocks": [
@@ -11861,9 +12258,46 @@
      "o": "Destroy complete! Resources: 8 destroyed.",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/ev_server/tags.tf <<'EOF'\n> variable \"tags\" {\n>   type    = map(string)\n>   default = {}\n> }\n> locals {\n>   all_tags = merge({ Managed = \"terraform\", Name = var.name }, var.tags)\n> }\n> output \"tags\" {\n>   value = local.all_tags\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > envs.tf <<'EOF'\n> module \"test_env\" {\n>   source      = \"./modules/ev_server\"\n>   name        = \"ev-test\"\n>   environment = \"test\"\n>   tags        = { Env = \"test\", Owner = \"qa\" }\n> }\n> module \"prod_env\" {\n>   source      = \"./modules/ev_server\"\n>   name        = \"ev-prod\"\n>   environment = \"prod\"\n>   tags        = { Env = \"prod\", Owner = \"ops\", Name = \"overridden\" }\n> }\n> output \"merged_tags\" {\n>   value = { test = module.test_env.tags, prod = module.prod_env.tags }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 12 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output -json merged_tags | python3 -m json.tool | head -14",
+     "o": "{\n    \"prod\": {\n        \"Env\": \"prod\",\n        \"Managed\": \"terraform\",\n        \"Name\": \"overridden\",\n        \"Owner\": \"ops\"\n    },\n    \"test\": {\n        \"Env\": \"test\",\n        \"Managed\": \"terraform\",\n        \"Name\": \"ev-test\",\n        \"Owner\": \"qa\"\n    }\n}",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 12 destroyed.",
+     "x": 0
+    }
    ]
   ],
-  "key": "49b0053ce82cb66d"
+  "key": "9c18e03621ab7953"
  },
  "terraform-6": {
   "blocks": [
@@ -12011,9 +12445,36 @@
      "o": "Destroy complete! Resources: 2 destroyed.",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/tf6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"replicas\" {\n>   type    = number\n>   default = 2\n> \n>   validation {\n>     condition     = var.replicas <= 10\n>     error_message = \"replicas must be 10 or fewer.\"\n>   }\n> }\n> \n> resource \"terraform_data\" \"worker\" {\n>   count = var.replicas\n>   input = \"worker-${count.index}\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tests.tftest.hcl <<'EOF'\n> run \"accepts_ten\" {\n>   command = plan\n>   variables { replicas = 10 }\n>   assert {\n>     condition     = length(terraform_data.worker) == 10\n>     error_message = \"ten replicas should be allowed\"\n>   }\n> }\n> \n> run \"rejects_eleven\" {\n>   command = plan\n>   variables { replicas = 11 }\n>   expect_failures = [var.replicas]\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform test | grep -E \"pass|fail|Success\"",
+     "o": "  run \"accepts_ten\"... pass\n  run \"rejects_eleven\"... pass\ntests.tftest.hcl... pass\nSuccess! 2 passed, 0 failed.",
+     "x": 0
+    }
    ]
   ],
-  "key": "2e2ddac3e535ad4d"
+  "key": "9a86a2da5967890a"
  },
  "terraform-7": {
   "blocks": [
