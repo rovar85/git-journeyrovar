@@ -145,8 +145,7 @@ terraform destroy -auto-approve | grep "Destroy complete"
 
 ```run
 cd ~/lab/tf4
-echo "--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson)."
-echo "--- with a moved block the plan is a pure state move. A suitable .gitignore:"
+echo "--- a suitable .gitignore for a Terraform repository:"
 cat > .gitignore <<'EOF'
 # Terraform
 .terraform/
@@ -160,7 +159,6 @@ crash.log
 # keep the dependency lock file (do NOT ignore .terraform.lock.hcl)
 EOF
 cat .gitignore | grep -v '^#' | grep .
-git check-ignore -v terraform.tfstate .terraform.lock.hcl 2>/dev/null | head -2 || true
 ```
 
 Keep **`.terraform.lock.hcl`** in Git (it pins provider versions and checksums for everyone); ignore state, plans and secret variable files.

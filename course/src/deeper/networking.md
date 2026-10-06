@@ -15,7 +15,7 @@ Order matters because each layer depends on the one below: if there is no IP add
 ```run
 cd ~/lab
 echo "1-2) interface up and addressed:"; ip -brief addr show lo | awk '{print $1, $2, $3}'
-echo "3) default route (empty in this lab means no gateway configured):"; ip route | grep -c default | awk '{print "default routes:", $1}'
+echo "3) default routes (0 would mean no gateway is configured):"; ip route | grep -c default | awk '{print "default routes:", $1}'
 echo "4) name resolution of something that cannot exist:"; getent hosts no-such-host.example || echo "   -> does not resolve (a DNS-layer failure)"
 echo "5) a closed port:"; nc -zv -w 1 127.0.0.1 9 2>&1 | tail -1
 ```
