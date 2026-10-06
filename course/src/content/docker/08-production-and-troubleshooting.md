@@ -120,11 +120,11 @@ docker run -d --name hardened --user 10001:10001 --read-only --cap-drop ALL --se
 sleep 2
 echo "port 8080 as non-root:"; curl -s http://127.0.0.1:8099/ || docker logs hardened | head -2
 docker rm -f hardened > /dev/null
-echo "--- the same on port 80 as non-root:"
-docker run --rm --user 10001:10001 --cap-drop ALL busybox sh -c 'httpd -f -p 80 -h /tmp 2>&1 | head -1' 2>&1 | head -1
+echo "--- is the root filesystem really read-only? (new container, same flags)"
+docker run --rm --user 10001:10001 --read-only --cap-drop ALL busybox sh -c 'touch /x 2>&1 | head -1; touch /tmp/x 2>&1 | head -1'
 ```
 
-Port 8080 works (note the container needed a writable `/tmp`; with `--read-only` you would normally add `--tmpfs /tmp`). **Port 80 fails** for a non-root user because ports below 1024 are **privileged**: binding needs root or the `NET_BIND_SERVICE` capability, which we dropped. The right design is to listen on a high port (8080) inside the container and map it: `-p 80:8080`.
+The service answers on a high port as a non-root user, with every capability dropped and a 32 MB memory limit. The read-only test shows why `--read-only` needs a `--tmpfs /tmp` (or a volume) for the places an application must write. Note that Docker lets container processes bind low ports by default (it sets `net.ipv4.ip_unprivileged_port_start`), so the habit of listening on a high port such as 8080 inside the container and mapping it with `-p 80:8080` is about portability (Kubernetes and other runtimes do not always allow low ports for non-root) rather than something Docker enforces.
 
 :::warn Common mistakes
 - **Running as root "because it works".** Fix permissions instead.

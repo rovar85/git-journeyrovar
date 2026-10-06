@@ -6451,8 +6451,8 @@
      "x": 0
     },
     {
-     "c": "$ ./hello.sh 2>&1 | head -1",
-     "o": "bash: line 210: ./hello.sh: Permission denied",
+     "c": "$ ./hello.sh 2>&1 | sed -E 's/line [0-9]+: //' | head -1",
+     "o": "/home/student/.lesson-tmp/run.sh: ./hello.sh: Permission denied",
      "x": 0
     },
     {
@@ -6487,7 +6487,7 @@
     }
    ]
   ],
-  "key": "aa7e705bf7b97d68"
+  "key": "3932ca628371627b"
  },
  "linux-6": {
   "blocks": [
@@ -7277,12 +7277,12 @@
     },
     {
      "c": "$ ip -brief addr show lo",
-     "o": "lo               UNKNOWN        127.0.0.1/8 ",
+     "o": "lo               UNKNOWN        127.0.0.1/8 10.255.255.1/32 ",
      "x": 0
     },
     {
      "c": "$ ip route show | wc -l",
-     "o": "2",
+     "o": "4",
      "x": 0
     }
    ],
@@ -7330,8 +7330,8 @@
      "x": 0
     },
     {
-     "c": "$ echo \"3) default route (empty in this lab means no gateway configured):\"; ip route | grep -c default | awk '{print \"default routes:\", $1}'",
-     "o": "3) default route (empty in this lab means no gateway configured):\ndefault routes: 1",
+     "c": "$ echo \"3) default routes (0 would mean no gateway is configured):\"; ip route | grep -c default | awk '{print \"default routes:\", $1}'",
+     "o": "3) default routes (0 would mean no gateway is configured):\ndefault routes: 1",
      "x": 0
     },
     {
@@ -7346,7 +7346,7 @@
     }
    ]
   ],
-  "key": "d2811c650601628d"
+  "key": "721892f25455be8a"
  },
  "networking-2": {
   "blocks": [
@@ -9131,200 +9131,6 @@
    ]
   ],
   "key": "53e375569a71941b"
- },
- "terraform-4": {
-  "blocks": [
-   [
-    {
-     "c": "$ mkdir -p ~/lab/tf4 && cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"ev\" {\n>   input = \"EV01\"\n>   provisioner \"local-exec\" {\n>     command = \"echo hello > ev.txt\"\n>   }\n> }\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform init > /dev/null 2>&1",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
-     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
-     "x": 0
-    },
-    {
-     "c": "$ ls -A | grep -v '^\\.terraform'",
-     "o": "ev.txt\nmain.tf\nterraform.tfstate",
-     "x": 0
-    },
-    {
-     "c": "$ python3 - <<'PY'\n> import json\n> s = json.load(open(\"terraform.tfstate\"))\n> print(\"state format version:\", s[\"version\"])\n> print(\"resources recorded  :\", [(r[\"type\"], r[\"name\"]) for r in s[\"resources\"]])\n> print(\"keys at top level   :\", sorted(s.keys()))\n> PY",
-     "o": "state format version: 4\nresources recorded  : [('terraform_data', 'ev')]\nkeys at top level   : ['check_results', 'lineage', 'outputs', 'resources', 'serial', 'terraform_version', 'version']",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform state list",
-     "o": "terraform_data.ev",
-     "x": 0
-    },
-    {
-     "c": "$ terraform state show terraform_data.ev | grep -E \"input|output\" | sed 's/  */ /g'",
-     "o": " input = \"EV01\"\n output = \"EV01\"",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ sed -i 's/\"ev\"/\"ev_server\"/' main.tf",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ echo \"--- after renaming without telling Terraform:\"",
-     "o": "--- after renaming without telling Terraform:",
-     "x": 0
-    },
-    {
-     "c": "$ terraform plan | grep -E \"Plan:|will be (destroyed|created)\"",
-     "o": "  # terraform_data.ev will be destroyed\n  # terraform_data.ev_server will be created\nPlan: 1 to add, 0 to change, 1 to destroy.",
-     "x": 0
-    },
-    {
-     "c": "$ cat >> main.tf <<'EOF'\n> \n> moved {\n>   from = terraform_data.ev\n>   to   = terraform_data.ev_server\n> }\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ echo \"--- with a moved block:\"",
-     "o": "--- with a moved block:",
-     "x": 0
-    },
-    {
-     "c": "$ terraform plan | grep -E \"Plan:|has moved|No changes\"",
-     "o": "  # terraform_data.ev has moved to terraform_data.ev_server\nPlan: 0 to add, 0 to change, 0 to destroy.",
-     "x": 0
-    },
-    {
-     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
-     "o": "Apply complete! Resources: 0 added, 0 changed, 0 destroyed.",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat > drift.tf <<'EOF'\n> variable \"msg\" {\n>   default = \"expected\"\n> }\n> resource \"terraform_data\" \"note\" {\n>   input = var.msg\n>   provisioner \"local-exec\" {\n>     command = \"echo ${var.msg} > note.txt\"\n>   }\n> }\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform apply -auto-approve | grep \"Apply complete\"",
-     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
-     "x": 0
-    },
-    {
-     "c": "$ echo \"someone edited the real thing by hand\" > note.txt",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform plan | grep -E \"No changes|Plan:\"",
-     "o": "No changes. Your infrastructure matches the configuration.",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ rm drift.tf note.txt",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ terraform apply -auto-approve | grep -E \"Apply complete\"",
-     "o": "Apply complete! Resources: 0 added, 0 changed, 1 destroyed.",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ printf '.terraform/\\n*.tfstate\\n*.tfstate.*\\n*.tfvars\\ncrash.log\\n' > .gitignore",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat .gitignore",
-     "o": ".terraform/\n*.tfstate\n*.tfstate.*\n*.tfvars\ncrash.log",
-     "x": 0
-    },
-    {
-     "c": "$ terraform destroy -auto-approve | grep \"Destroy complete\"",
-     "o": "Destroy complete! Resources: 1 destroyed.",
-     "x": 0
-    }
-   ],
-   [
-    {
-     "c": "$ cd ~/lab/tf4",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ echo \"--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson).\"",
-     "o": "--- rename WITHOUT a moved block would plan a destroy and create (shown earlier in this lesson).",
-     "x": 0
-    },
-    {
-     "c": "$ echo \"--- with a moved block the plan is a pure state move. A suitable .gitignore:\"",
-     "o": "--- with a moved block the plan is a pure state move. A suitable .gitignore:",
-     "x": 0
-    },
-    {
-     "c": "$ cat > .gitignore <<'EOF'\n> # Terraform\n> .terraform/\n> *.tfstate\n> *.tfstate.*\n> crash.log\n> *.tfplan\n> # variable files that may contain secrets\n> *.tfvars\n> *.tfvars.json\n> # keep the dependency lock file (do NOT ignore .terraform.lock.hcl)\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat .gitignore | grep -v '^#' | grep .",
-     "o": ".terraform/\n*.tfstate\n*.tfstate.*\ncrash.log\n*.tfplan\n*.tfvars\n*.tfvars.json",
-     "x": 0
-    },
-    {
-     "c": "$ git check-ignore -v terraform.tfstate .terraform.lock.hcl 2>/dev/null | head -2 || true",
-     "o": "",
-     "x": 0
-    }
-   ]
-  ],
-  "key": "de735d5242b22dbc"
  },
  "terraform-5": {
   "blocks": [
