@@ -3787,6 +3787,1389 @@
   ],
   "key": "30eab8e8ee7f6d13"
  },
+ "cloudsenior-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > avail.py <<'EOF'\n> def pct(x): return f\"{x * 100:.4f}%\"\n> def downtime_min(a): return (1 - a) * 365 * 24 * 60\n> \n> region = 0.9995           # one region's application stack, as designed with several zones\n> db_one = 0.9995           # database service in one region\n> dns_gtm = 0.9999          # global traffic manager / DNS, itself a shared dependency\n> \n> single_region = region * db_one\n> two_regions_parallel = 1 - (1 - single_region) ** 2        # IF failures are independent and failover is instant and perfect\n> u = 1 - single_region                                      # chance one region is down\n> failover_ok = 0.99                                         # failover works cleanly in 99% of regional outages\n> both_or_failed = u * ((1 - failover_ok) + failover_ok * u) # outage where failover fails, or the second region is down too\n> realistic = dns_gtm * (1 - both_or_failed)                 # and the shared global layer must be up as well\n> \n> print(f\"one region (app x db):                 {pct(single_region)}  -> {downtime_min(single_region):7.0f} min/year down\")\n> print(f\"two regions, ideal parallel:           {pct(two_regions_parallel)}  -> {downtime_min(two_regions_parallel):7.1f} min/year down\")\n> print(f\"two regions, with a 99.99% global layer and 99% clean failovers: {pct(realistic)}  -> {downtime_min(realistic):7.0f} min/year down\")\n> print(\"\\nThe ideal number is a fantasy: the shared global layer and imperfect failover dominate the real figure.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 avail.py",
+     "o": "one region (app x db):                 99.9000%  ->     525 min/year down\ntwo regions, ideal parallel:           99.9999%  ->     0.5 min/year down\ntwo regions, with a 99.99% global layer and 99% clean failovers: 99.9889%  ->      58 min/year down\n\nThe ideal number is a fantasy: the shared global layer and imperfect failover dominate the real figure.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rpo.py <<'EOF'\n> import random, math\n> random.seed(21)\n> \n> # --- the physics: light in fibre travels about 200 km per millisecond (about two thirds of c)\n> def rtt_ms(km): return 2 * km / 200 * 1.4          # x1.4: cables are not straight lines, plus equipment delay\n> for pair, km in ((\"same metro, two zones\", 60), (\"London - Dublin\", 460), (\"London - Virginia\", 5600), (\"London - Sydney\", 17000)):\n>     print(f\"{pair:24} {km:6} km  round trip >= {rtt_ms(km):6.1f} ms  (a synchronous write waits at least this long)\")\n> \n> # --- the simulation: 200 transactions/second, asynchronous replication with variable lag\n> def lost_transactions(tps=200, mean_lag_s=2.0, trials=2000):\n>     losses = []\n>     for _ in range(trials):\n>         lag = random.lognormvariate(math.log(mean_lag_s), 0.8)       # lag varies: usually small, sometimes large\n>         losses.append(int(lag * tps))                                  # transactions committed but not yet replicated\n>     losses.sort()\n>     return losses[len(losses) // 2], losses[int(0.99 * len(losses))], max(losses)\n> \n> print(\"\\nRegion fails at a random moment (asynchronous replication, 200 tx/s):\")\n> for mean in (0.5, 2.0, 10.0):\n>     p50, p99, worst = lost_transactions(mean_lag_s=mean)\n>     print(f\"  typical lag {mean:4.1f} s -> lost transactions: median {p50:5d}, p99 {p99:6d}, worst {worst:6d}\")\n> print(\"\\nAn RPO of 'zero' with asynchronous replication is not achievable; it needs synchronous replication or a different data model.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rpo.py",
+     "o": "same metro, two zones        60 km  round trip >=    0.8 ms  (a synchronous write waits at least this long)\nLondon - Dublin             460 km  round trip >=    6.4 ms  (a synchronous write waits at least this long)\nLondon - Virginia          5600 km  round trip >=   78.4 ms  (a synchronous write waits at least this long)\nLondon - Sydney           17000 km  round trip >=  238.0 ms  (a synchronous write waits at least this long)\n\nRegion fails at a random moment (asynchronous replication, 200 tx/s):\n  typical lag  0.5 s -> lost transactions: median    96, p99    667, worst   1772\n  typical lag  2.0 s -> lost transactions: median   395, p99   3048, worst   7984\n  typical lag 10.0 s -> lost transactions: median  1943, p99  13889, worst  27611\n\nAn RPO of 'zero' with asynchronous replication is not achievable; it needs synchronous replication or a different data model.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> stages = [(\"detect the failure (monitoring and alert)\", 3), (\"page and assemble the on-call engineers\", 7),\n>           (\"decide to fail over (a human decision for a big step)\", 10), (\"promote the database replica\", 4),\n>           (\"scale up compute in the target region\", 6), (\"shift traffic (DNS TTL and caches)\", 5), (\"verify and announce\", 5)]\n> total = 0\n> print(f\"{'stage':56} {'minutes':>8}\")\n> for name, m in stages:\n>     total += m; print(f\"{name:56} {m:8d}\")\n> print(f\"{'RTO if everything is manual':56} {total:8d}\")\n> auto = [(\"detect\", 1), (\"automatic decision with health checks\", 1), (\"promote database\", 2), (\"traffic shifts at the load balancer, not DNS\", 1)]\n> print(f\"{'RTO with tested automation (warm standby)':56} {sum(m for _, m in auto):8d}\")\n> EOF",
+     "o": "stage                                                     minutes\ndetect the failure (monitoring and alert)                       3\npage and assemble the on-call engineers                         7\ndecide to fail over (a human decision for a big step)          10\npromote the database replica                                    4\nscale up compute in the target region                           6\nshift traffic (DNS TTL and caches)                              5\nverify and announce                                             5\nRTO if everything is manual                                    40\nRTO with tested automation (warm standby)                       5",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "112e1d289f57c592"
+ },
+ "cloudsenior-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ cat > bluegreen.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: app-blue}\n> spec:\n>   replicas: 2\n>   selector: {matchLabels: {app: shop, track: blue}}\n>   template:\n>     metadata: {labels: {app: shop, track: blue}}\n>     spec:\n>       containers:\n>       - name: web\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"mkdir -p /w; echo 'shop version 1 (blue)' > /w/index.html; httpd -f -p 8080 -h /w\"]\n>         readinessProbe: {httpGet: {path: /, port: 8080}, periodSeconds: 2}\n> ---\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: app-green}\n> spec:\n>   replicas: 2\n>   selector: {matchLabels: {app: shop, track: green}}\n>   template:\n>     metadata: {labels: {app: shop, track: green}}\n>     spec:\n>       containers:\n>       - name: web\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"mkdir -p /w; echo 'shop version 2 (green)' > /w/index.html; httpd -f -p 8080 -h /w\"]\n>         readinessProbe: {httpGet: {path: /, port: 8080}, periodSeconds: 2}\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata: {name: shop}\n> spec:\n>   selector: {app: shop, track: blue}          # production traffic goes to BLUE\n>   ports: [{port: 80, targetPort: 8080}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f bluegreen.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app-blue --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app-green --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run client --image=busybox:1.37 --restart=Never -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/client --timeout=60s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ask() { kubectl exec client -- wget -T 3 -qO- http://shop.labcicd.svc.cluster.local; }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"users see:            $(ask)\"",
+     "o": "users see:            shop version 1 (blue)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"(green is running and testable on its own, with no user traffic yet)\"",
+     "o": "(green is running and testable on its own, with no user traffic yet)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- cut over: change the selector from blue to green\"",
+     "o": "--- cut over: change the selector from blue to green",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch service shop -p '{\"spec\":{\"selector\":{\"app\":\"shop\",\"track\":\"green\"}}}' > /dev/null; sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"users now see:        $(ask)\"",
+     "o": "users now see:        shop version 2 (green)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- problem found: roll back by switching the selector back\"",
+     "o": "--- problem found: roll back by switching the selector back",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch service shop -p '{\"spec\":{\"selector\":{\"app\":\"shop\",\"track\":\"blue\"}}}' > /dev/null; sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"after the rollback:   $(ask)\"",
+     "o": "after the rollback:   shop version 1 (blue)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete deployment app-green > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch service shop --type=json -p '[{\"op\":\"replace\",\"path\":\"/spec/selector\",\"value\":{\"app\":\"shop\"}}]' > /dev/null   # select both tracks (a plain merge patch would keep track=blue)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl scale deployment app-blue --replicas=4 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > canary.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: app-canary}\n> spec:\n>   replicas: 1\n>   selector: {matchLabels: {app: shop, track: canary}}\n>   template:\n>     metadata: {labels: {app: shop, track: canary}}\n>     spec:\n>       containers:\n>       - name: web\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"mkdir -p /w; echo 'shop version 2 (canary)' > /w/index.html; httpd -f -p 8080 -h /w\"]\n>         readinessProbe: {httpGet: {path: /, port: 8080}, periodSeconds: 2}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f canary.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app-blue --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app-canary --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"100 requests through the Service (4 stable Pods, 1 canary Pod):\"",
+     "o": "100 requests through the Service (4 stable Pods, 1 canary Pod):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec client -- sh -c 'for i in $(seq 1 100); do wget -T 3 -qO- http://shop.labcicd.svc.cluster.local; done' | sort | uniq -c | sort -rn",
+     "o": "     84 shop version 1 (blue)\n     16 shop version 2 (canary)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > analysis.py <<'EOF'\n> import random, subprocess\n> random.seed(3)\n> \n> def window(error_rate, latency_ms, n=500):\n>     \"\"\"Simulated metrics for n requests.\"\"\"\n>     errors = sum(random.random() < error_rate for _ in range(n))\n>     lats = sorted(random.gauss(latency_ms, latency_ms * 0.2) for _ in range(n))\n>     return errors / n, lats[int(0.95 * n)]\n> \n> def decide(stable, canary, max_error_delta=0.01, max_latency_ratio=1.25):\n>     err_s, p95_s = stable; err_c, p95_c = canary\n>     if err_c - err_s > max_error_delta:        return \"ROLLBACK\", f\"error rate {err_c:.1%} vs {err_s:.1%} (limit +{max_error_delta:.0%})\"\n>     if p95_c > p95_s * max_latency_ratio:      return \"ROLLBACK\", f\"p95 latency {p95_c:.0f} ms vs {p95_s:.0f} ms (limit x{max_latency_ratio})\"\n>     return \"PROMOTE\", \"within limits\"\n> \n> def kubectl(*a): return subprocess.run([\"kubectl\", *a], capture_output=True, text=True).stdout.strip()\n> \n> for label, canary_metrics in ((\"a healthy canary\", window(0.004, 120)), (\"a canary with a hidden bug\", window(0.06, 125))):\n>     stable = window(0.004, 120)\n>     verdict, why = decide(stable, canary_metrics)\n>     print(f\"{label:28} -> {verdict}: {why}\")\n>     if verdict == \"ROLLBACK\":\n>         kubectl(\"scale\", \"deployment\", \"app-canary\", \"--replicas=0\")\n>         print(\"   action: canary scaled to 0, all traffic back on the stable version\")\n>     else:\n>         kubectl(\"scale\", \"deployment\", \"app-canary\", \"--replicas=2\")\n>         print(\"   action: canary increased to 2 Pods (next step of the progressive rollout: 20% -> 40% -> ...)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 analysis.py",
+     "o": "a healthy canary             -> PROMOTE: within limits\n   action: canary increased to 2 Pods (next step of the progressive rollout: 20% -> 40% -> ...)\na canary with a hidden bug   -> ROLLBACK: error rate 5.8% vs 0.4% (limit +1%)\n   action: canary scaled to 0, all traffic back on the stable version",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment app-canary --no-headers | awk '{print \"canary replicas now:\", $2}'",
+     "o": "canary replicas now: 0/0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete deployment app-blue app-canary > /dev/null; kubectl delete service shop > /dev/null; kubectl delete pod client --wait=false > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2a41078504e7af30"
+ },
+ "cloudsenior-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs/kms && cd ~/lab/cs/kms",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f * ",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# The \"KMS\": a key encryption key that never leaves this directory (in real life it never leaves the service or the HSM).",
+     "o": ""
+    },
+    {
+     "c": "$ openssl rand -hex 32 > kek-v1.key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"archived mail export, tenant A\" > data-A.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ head -c 200000 /dev/urandom | base64 >> data-A.txt                          # make it a decent size",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ encrypt() {  # encrypt file $1 with a fresh DEK; store ciphertext and the DEK wrapped by KEK file $2\n>   openssl rand -hex 32 > dek.tmp\n>   openssl enc -aes-256-cbc -pbkdf2 -salt -in \"$1\" -out \"$1.enc\" -pass file:dek.tmp\n>   openssl enc -aes-256-cbc -pbkdf2 -salt -in dek.tmp -out \"$1.dek.wrapped\" -pass file:\"$2\"\n>   rm dek.tmp\n> }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ decrypt() {  # unwrap the DEK with KEK file $2, then decrypt file $1.enc\n>   openssl enc -d -aes-256-cbc -pbkdf2 -in \"$1.dek.wrapped\" -out dek.tmp -pass file:\"$2\" 2> /dev/null || { echo \"cannot unwrap the DEK with that key\"; return 1; }\n>   openssl enc -d -aes-256-cbc -pbkdf2 -in \"$1.enc\" -pass file:dek.tmp 2> /dev/null; rm -f dek.tmp\n> }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ encrypt data-A.txt kek-v1.key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"stored: $(ls | grep -E 'enc|wrapped' | tr '\\n' ' ')\"",
+     "o": "stored: data-A.txt.dek.wrapped data-A.txt.enc ",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"plaintext data deleted; decrypt with the KEK:\"; mv data-A.txt original-A.txt",
+     "o": "plaintext data deleted; decrypt with the KEK:",
+     "x": 0
+    },
+    {
+     "c": "$ decrypt data-A.txt kek-v1.key | head -1",
+     "o": "archived mail export, tenant A",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- rotate the KEK: only the small wrapped DEK is re-wrapped; the 270 KB of data is not touched\"",
+     "o": "--- rotate the KEK: only the small wrapped DEK is re-wrapped; the 270 KB of data is not touched",
+     "x": 0
+    },
+    {
+     "c": "$ openssl rand -hex 32 > kek-v2.key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ before=$(sha256sum data-A.txt.enc | cut -c1-12)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl enc -d -aes-256-cbc -pbkdf2 -in data-A.txt.dek.wrapped -out dek.tmp -pass file:kek-v1.key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl enc -aes-256-cbc -pbkdf2 -salt -in dek.tmp -out data-A.txt.dek.wrapped -pass file:kek-v2.key; rm dek.tmp",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ after=$(sha256sum data-A.txt.enc | cut -c1-12)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"ciphertext unchanged by rotation: $([ \"$before\" = \"$after\" ] && echo yes || echo no) ($before)\"",
+     "o": "ciphertext unchanged by rotation: yes (137cfcfdee74)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"old key v1 now: $(decrypt data-A.txt kek-v1.key 2>&1 | head -1)\"",
+     "o": "old key v1 now: cannot unwrap the DEK with that key",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"new key v2 now: $(decrypt data-A.txt kek-v2.key | head -1)\"",
+     "o": "new key v2 now: archived mail export, tenant A",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- crypto-shredding: destroy the wrapped DEK (or the KEK) and the data is gone for good\"",
+     "o": "--- crypto-shredding: destroy the wrapped DEK (or the KEK) and the data is gone for good",
+     "x": 0
+    },
+    {
+     "c": "$ rm data-A.txt.dek.wrapped",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"after shredding: $(decrypt data-A.txt kek-v2.key 2>&1 | head -1)\"",
+     "o": "after shredding: cannot unwrap the DEK with that key",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p repo && cd repo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > config.py <<'EOF'\n> DB_HOST = \"sql01.corp.local\"\n> DB_PASSWORD = \"Winter2026!\"                      # a hard-coded password\n> AWS_ACCESS_KEY_ID = \"AKIAABCDEFGHIJKLMNOP\"       # looks like a cloud access key id\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > deploy.sh <<'EOF'\n> curl -H \"Authorization: Bearer ghp_0123456789abcdefghijklmnopqrstuvwxyz12\" https://api.example.com\n> echo \"deploying to $ENVIRONMENT\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > scanner.py <<'EOF'\n> import re, sys, pathlib\n> RULES = [\n>     (\"cloud access key id\",       re.compile(r\"\\bAKIA[0-9A-Z]{16}\\b\")),\n>     (\"hard-coded password\",       re.compile(r\"(?i)\\w*(password|passwd|pwd|secret)\\w*\\s*[:=]\\s*[\\\"'][^\\\"']{6,}[\\\"']\")),\n>     (\"bearer or personal token\",  re.compile(r\"\\b(ghp_[A-Za-z0-9]{30,}|Bearer\\s+[A-Za-z0-9._-]{20,})\")),\n>     (\"private key block\",         re.compile(r\"-----BEGIN [A-Z ]*PRIVATE KEY-----\")),\n> ]\n> hits = 0\n> for path in sorted(pathlib.Path(\".\").glob(\"*\")):\n>     if path.name == \"scanner.py\" or not path.is_file(): continue\n>     for n, line in enumerate(path.read_text().splitlines(), 1):\n>         for name, rx in RULES:\n>             if rx.search(line):\n>                 hits += 1\n>                 print(f\"{path}:{n}: {name}\")\n> print(f\"\\n{hits} potential secret(s) found\")\n> sys.exit(1 if hits else 0)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 scanner.py; echo \"exit code $? (a pre-commit hook or pipeline step would block the commit)\"",
+     "o": "config.py:2: hard-coded password\nconfig.py:3: cloud access key id\ndeploy.sh:1: bearer or personal token\n\n3 potential secret(s) found\nexit code 1 (a pre-commit hook or pipeline step would block the commit)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create secret generic db-credentials --from-literal=password='Winter2026!' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- what 'kubectl get' shows (base64):\"",
+     "o": "--- what 'kubectl get' shows (base64):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get secret db-credentials -o jsonpath='{.data.password}'; echo",
+     "o": "V2ludGVyMjAyNiE=",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- anyone with read access decodes it in one step:\"",
+     "o": "--- anyone with read access decodes it in one step:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get secret db-credentials -o jsonpath='{.data.password}' | base64 -d; echo",
+     "o": "Winter2026!",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- and the raw bytes stored in etcd (the database behind the API server):\"",
+     "o": "--- and the raw bytes stored in etcd (the database behind the API server):",
+     "x": 0
+    },
+    {
+     "c": "$ ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 get /registry/secrets/labsec/db-credentials --print-value-only | strings | grep -E \"Winter|password\"",
+     "o": "/{\"f:data\":{\".\":{},\"f:password\":{}},\"f:type\":{}}B\npassword\nWinter2026!",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl delete secret db-credentials > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "67881afba169604d"
+ },
+ "cloudsenior-12": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > burn.py <<'EOF'\n> SLO = 0.999                       # 99.9% over 30 days\n> BUDGET = 1 - SLO\n> WINDOW_H = 30 * 24\n> \n> def burn_rate(error_ratio): return error_ratio / BUDGET\n> def hours_to_exhaust(rate):  return WINDOW_H / rate if rate > 0 else float(\"inf\")\n> \n> print(f\"error budget: {BUDGET:.3%} of requests = {BUDGET * WINDOW_H * 60:.1f} minutes of full outage per 30 days\\n\")\n> print(f\"{'error ratio now':>16} {'burn rate':>10} {'budget gone in':>18}\")\n> for er in (0.0005, 0.001, 0.005, 0.0144, 0.05, 0.5):\n>     r = burn_rate(er)\n>     h = hours_to_exhaust(r)\n>     gone = f\"{h / 24:.1f} days\" if h >= 48 else f\"{h:.1f} hours\"\n>     print(f\"{er:16.2%} {r:10.1f} {gone:>18}\")\n> \n> # Multi-window, multi-burn-rate policy (factors follow the common SRE-workbook table; verify before adopting):\n> POLICY = [(\"PAGE\", 14.4, \"1h\", \"5m\"), (\"PAGE\", 6.0, \"6h\", \"30m\"), (\"TICKET\", 1.0, \"3d\", \"6h\")]\n> print(\"\\npolicy: alert when BOTH the long and the short window exceed the burn rate\")\n> for sev, rate, long_w, short_w in POLICY:\n>     print(f\"  {sev:6} burn rate >= {rate:4.1f} over {long_w:>3} and {short_w:>3}  -> budget would be gone in {hours_to_exhaust(rate) / 24:.1f} days if it continued\")\n> \n> # Simulation: which approach pages for which kind of incident?\n> incidents = {\n>     \"total outage, 10 min\":           [(0, 10, 1.00)],\n>     \"brownout 5% errors for 3 hours\": [(0, 180, 0.05)],\n>     \"slow leak 0.3% errors for 5 days\": [(0, 5 * 24 * 60, 0.003)],\n>     \"30-second blip\":                 [(0, 0.5, 1.00)],\n> }\n> print(f\"\\n{'incident':34} {'budget used':>12} {'threshold (5% for 5 min)':>26} {'burn-rate policy':>18}\")\n> for name, parts in incidents.items():\n>     used = sum((dur / (WINDOW_H * 60)) * er / BUDGET for _, dur, er in parts)\n>     er, dur = parts[0][2], parts[0][1]\n>     threshold_pages = er >= 0.05 and dur >= 5\n>     br_pages = (burn_rate(er) >= 14.4 and dur >= 5) or (burn_rate(er) >= 6 and dur >= 30) or (burn_rate(er) >= 1.0 and dur >= 6 * 60)\n>     kind = \"page\" if br_pages and burn_rate(er) >= 6 else (\"ticket\" if br_pages else \"no alert\")\n>     print(f\"{name:34} {used:12.1%} {'PAGE' if threshold_pages else 'no alert':>26} {kind:>18}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 burn.py",
+     "o": "error budget: 0.100% of requests = 43.2 minutes of full outage per 30 days\n\n error ratio now  burn rate     budget gone in\n           0.05%        0.5          60.0 days\n           0.10%        1.0          30.0 days\n           0.50%        5.0           6.0 days\n           1.44%       14.4           2.1 days\n           5.00%       50.0         14.4 hours\n          50.00%      500.0          1.4 hours\n\npolicy: alert when BOTH the long and the short window exceed the burn rate\n  PAGE   burn rate >= 14.4 over  1h and  5m  -> budget would be gone in 2.1 days if it continued\n  PAGE   burn rate >=  6.0 over  6h and 30m  -> budget would be gone in 5.0 days if it continued\n  TICKET burn rate >=  1.0 over  3d and  6h  -> budget would be gone in 30.0 days if it continued\n\nincident                            budget used   threshold (5% for 5 min)   burn-rate policy\ntotal outage, 10 min                      23.1%                       PAGE               page\nbrownout 5% errors for 3 hours            20.8%                       PAGE               page\nslow leak 0.3% errors for 5 days          50.0%                   no alert             ticket\n30-second blip                             1.2%                   no alert           no alert",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> from math import prod\n> def series(labels): return prod(labels.values())\n> good = {\"service\": 40, \"region\": 4, \"status_class\": 5, \"method\": 6}\n> bad  = dict(good, user_id=100_000)\n> print(f\"labelled sensibly:             {series(good):>14,} time series\")\n> print(f\"plus a user_id label:          {series(bad):>14,} time series ({series(bad) // series(good):,}x more)\")\n> print(f\"at ~3 KB of memory per series: {series(good) * 3 / 1e6:6.3f} GB vs {series(bad) * 3 / 1e6:10,.0f} GB\")\n> print(\"Put high-cardinality identifiers in traces and logs, never in metric labels.\")\n> EOF",
+     "o": "labelled sensibly:                      4,800 time series\nplus a user_id label:             480,000,000 time series (100,000x more)\nat ~3 KB of memory per series:  0.014 GB vs      1,440 GB\nPut high-cardinality identifiers in traces and logs, never in metric labels.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > sampling.py <<'EOF'\n> import random\n> random.seed(17)\n> N = 100_000\n> traces = []\n> for _ in range(N):\n>     error = random.random() < 0.01                       # 1% errors\n>     slow = random.random() < 0.03                        # 3% slow\n>     traces.append((error, slow))\n> \n> def head(rate):  return [t for t in traces if random.random() < rate]\n> def tail(rate):  return [t for t in traces if t[0] or t[1] or random.random() < rate]      # keep all errors and all slow traces\n> \n> def report(name, kept):\n>     errs = sum(1 for e, _ in kept if e); slows = sum(1 for _, s in kept if s)\n>     total_err = sum(1 for e, _ in traces if e); total_slow = sum(1 for _, s in traces if s)\n>     print(f\"{name:34} stored {len(kept) / N:6.1%} of traces | errors kept {errs / total_err:6.1%} | slow kept {slows / total_slow:6.1%}\")\n> \n> report(\"keep everything\", traces)\n> report(\"head sampling at 1%\", head(0.01))\n> report(\"tail sampling (errors+slow+1% rest)\", tail(0.01))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 sampling.py",
+     "o": "keep everything                    stored 100.0% of traces | errors kept 100.0% | slow kept 100.0%\nhead sampling at 1%                stored   1.0% of traces | errors kept   0.8% | slow kept   1.3%\ntail sampling (errors+slow+1% rest) stored   5.0% of traces | errors kept 100.0% | slow kept 100.0%",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a648b20f6722755b"
+ },
+ "cloudsenior-13": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/plat && cd ~/plat",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > vend.sh <<'SH'\n> #!/bin/bash\n> # usage: vend.sh <team> <cost-centre> <cpu-quota> <mem-quota> <max-pods>\n> set -euo pipefail\n> team=$1; cc=$2; cpu=$3; mem=$4; pods=$5\n> ns=\"team-$team\"\n> \n> kubectl create namespace \"$ns\" --dry-run=client -o yaml | kubectl apply -f - >/dev/null\n> kubectl label namespace \"$ns\" owner=\"$team\" cost-centre=\"$cc\" env=lab managed-by=platform --overwrite >/dev/null\n> \n> kubectl apply -n \"$ns\" -f - >/dev/null <<EOF\n> apiVersion: v1\n> kind: ResourceQuota\n> metadata: {name: team-quota}\n> spec:\n>   hard:\n>     requests.cpu: \"$cpu\"\n>     requests.memory: \"$mem\"\n>     pods: \"$pods\"\n> ---\n> apiVersion: v1\n> kind: LimitRange\n> metadata: {name: team-defaults}\n> spec:\n>   limits:\n>   - type: Container\n>     default:        {cpu: 100m, memory: 64Mi}\n>     defaultRequest: {cpu: 50m,  memory: 32Mi}\n>     max:            {cpu: 500m, memory: 256Mi}\n> ---\n> apiVersion: rbac.authorization.k8s.io/v1\n> kind: RoleBinding\n> metadata: {name: team-edit}\n> subjects:\n> - {kind: Group, name: \"grp-$team\", apiGroup: rbac.authorization.k8s.io}\n> roleRef: {kind: ClusterRole, name: edit, apiGroup: rbac.authorization.k8s.io}\n> EOF\n> echo \"vended $ns (owner=$team cost-centre=$cc quota: cpu=$cpu mem=$mem pods=$pods)\"\n> SH",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x vend.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./vend.sh payments CC-1001 1 512Mi 5",
+     "o": "vended team-payments (owner=payments cost-centre=CC-1001 quota: cpu=1 mem=512Mi pods=5)",
+     "x": 0
+    },
+    {
+     "c": "$ ./vend.sh search   CC-2002 500m 256Mi 3",
+     "o": "vended team-search (owner=search cost-centre=CC-2002 quota: cpu=500m mem=256Mi pods=3)",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get ns -l managed-by=platform --show-labels | cut -c1-110",
+     "o": "NAME            STATUS   AGE     LABELS\nteam-payments   Active   3m18s   cost-centre=CC-1001,env=lab,kubernetes.io/metadata.name=team-payments,managed\nteam-search     Active   3m18s   cost-centre=CC-2002,env=lab,kubernetes.io/metadata.name=team-search,managed-b",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl describe quota team-quota -n team-payments | sed -n 1,12p",
+     "o": "Name:            team-quota\nNamespace:       team-payments\nResource         Used   Hard\n--------         ----   ----\npods             3      5\nrequests.cpu     600m   1\nrequests.memory  192Mi  512Mi",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get rolebinding team-edit -n team-payments -o jsonpath='{.subjects[0].kind}/{.subjects[0].name} -> {.roleRef.name}{\"\\n\"}'",
+     "o": "Group/grp-payments -> edit",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/plat",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create deployment web -n team-search --image=busybox:1.36 --replicas=1 -- sleep 3600 >/dev/null",
+     "o": "error: failed to create deployment: deployments.apps \"web\" already exists",
+     "x": 1
+    },
+    {
+     "c": "$ kubectl wait --for=condition=available deployment/web -n team-search --timeout=60s",
+     "o": "error: timed out waiting for the condition on deployments/web",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"--- what the defaults added (the team wrote no resources):\"",
+     "o": "--- what the defaults added (the team wrote no resources):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod -n team-search -o jsonpath='{.items[0].spec.containers[0].resources}{\"\\n\"}'",
+     "o": "{\"limits\":{\"cpu\":\"100m\",\"memory\":\"64Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"32Mi\"}}",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- ask for a container above the per-container maximum:\"",
+     "o": "--- ask for a container above the per-container maximum:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run big -n team-search --image=busybox:1.36 --restart=Never --overrides='{\"spec\":{\"containers\":[{\"name\":\"big\",\"image\":\"busybox:1.36\",\"command\":[\"sleep\",\"60\"],\"resources\":{\"requests\":{\"cpu\":\"2\"},\"limits\":{\"cpu\":\"2\"}}}]}}' 2>&1 | cut -c1-200",
+     "o": "Error from server (Forbidden): pods \"big\" is forbidden: maximum cpu usage per Container is 500m, but limit is 2",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- scale beyond the namespace quota (search quota: 3 pods, 500m CPU):\"",
+     "o": "--- scale beyond the namespace quota (search quota: 3 pods, 500m CPU):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl scale deployment web -n team-search --replicas=8 >/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment web -n team-search",
+     "o": "NAME   READY   UP-TO-DATE   AVAILABLE   AGE\nweb    3/8     3            3           4m22s",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events -n team-search --field-selector reason=FailedCreate 2>/dev/null | tail -2 | cut -c1-220",
+     "o": "4m21s       Warning   FailedCreate   replicaset/web-85557dd64f   Error creating: pods \"web-85557dd64f-pq8j8\" is forbidden: exceeded quota: team-quota, requested: pods=1, used: pods=3, limited: pods=3\n15s         Warning   FailedCreate   replicaset/web-85557dd64f   (combined from similar events): Error creating: pods \"web-85557dd64f-xljsh\" is forbidden: exceeded quota: team-quota, requested: pods=1, used: pods=3, limi",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"payments group, in its own namespace:\"",
+     "o": "payments group, in its own namespace:",
+     "x": 0
+    },
+    {
+     "c": "$ for v in create delete; do\n>   printf '  %-7s deployments: ' $v\n>   kubectl auth can-i $v deployments -n team-payments --as=alice --as-group=grp-payments\n> done",
+     "o": "  create  deployments: yes\n  delete  deployments: yes",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"payments group, in the other team's namespace:\"",
+     "o": "payments group, in the other team's namespace:",
+     "x": 0
+    },
+    {
+     "c": "$ printf '  create deployments: '",
+     "o": "  create deployments: ",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl auth can-i create deployments -n team-search --as=alice --as-group=grp-payments",
+     "o": "no",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"payments group, cluster-wide actions:\"",
+     "o": "payments group, cluster-wide actions:",
+     "x": 0
+    },
+    {
+     "c": "$ printf '  create namespaces:  '",
+     "o": "  create namespaces:  ",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl auth can-i create namespaces --as=alice --as-group=grp-payments",
+     "o": "Warning: resource 'namespaces' is not namespace scoped\n\nno",
+     "x": 1
+    },
+    {
+     "c": "$ printf '  delete nodes:       '",
+     "o": "  delete nodes:       ",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl auth can-i delete nodes --as=alice --as-group=grp-payments",
+     "o": "Warning: resource 'nodes' is not namespace scoped\n\nno",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/plat",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -n team-payments -f - >/dev/null <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: api}\n> spec:\n>   replicas: 3\n>   selector: {matchLabels: {app: api}}\n>   template:\n>     metadata: {labels: {app: api}}\n>     spec:\n>       containers:\n>       - name: api\n>         image: busybox:1.36\n>         command: [\"sleep\",\"3600\"]\n>         resources: {requests: {cpu: 200m, memory: 64Mi}, limits: {cpu: 300m, memory: 128Mi}}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=available deployment/api -n team-payments --timeout=60s >/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > showback.py <<'PY'\n> import json, subprocess\n> \n> CPU_PER_CORE_MONTH = 25.0     # made-up prices, not any provider's\n> GB_PER_MONTH       = 3.5\n> \n> def cores(v): return float(v[:-1]) / 1000 if v.endswith(\"m\") else float(v)\n> def gib(v):\n>     units = {\"Ki\": 1/1048576, \"Mi\": 1/1024, \"Gi\": 1.0}\n>     for u, f in units.items():\n>         if v.endswith(u): return float(v[:-2]) * f\n>     return float(v) / 2**30\n> \n> ns = json.loads(subprocess.check_output([\"kubectl\",\"get\",\"ns\",\"-l\",\"managed-by=platform\",\"-o\",\"json\"]))\n> print(f\"{'team':10} {'cost centre':12} {'cpu req':>8} {'mem req':>9} {'est $/mo':>9}\")\n> total = 0\n> for item in ns[\"items\"]:\n>     name = item[\"metadata\"][\"name\"]; labels = item[\"metadata\"][\"labels\"]\n>     pods = json.loads(subprocess.check_output([\"kubectl\",\"get\",\"pods\",\"-n\",name,\"-o\",\"json\"]))[\"items\"]\n>     cpu = mem = 0.0\n>     for p in pods:\n>         if p[\"status\"][\"phase\"] not in (\"Running\",\"Pending\"): continue\n>         for c in p[\"spec\"][\"containers\"]:\n>             r = c.get(\"resources\",{}).get(\"requests\",{})\n>             cpu += cores(r.get(\"cpu\",\"0\")); mem += gib(r.get(\"memory\",\"0\"))\n>     cost = cpu * CPU_PER_CORE_MONTH + mem * GB_PER_MONTH\n>     total += cost\n>     print(f\"{labels['owner']:10} {labels['cost-centre']:12} {cpu:8.2f} {mem:8.2f}G {cost:9.2f}\")\n> print(f\"{'total':32} {'':>9} {total:9.2f}   (prices are made up)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 showback.py",
+     "o": "team       cost centre   cpu req   mem req  est $/mo\npayments   CC-1001          0.60     0.19G     15.66\nsearch     CC-2002          0.15     0.09G      4.08\ntotal                                          19.73   (prices are made up)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4455594a3a2eb458"
+ },
+ "cloudsenior-14": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/mig && cd ~/mig",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > estate.py <<'PY'\n> # name: (owner, disposition, servers, risk 1-5, depends_on)\n> ESTATE = {\n>   \"intranet-wiki\":    (\"hr-it\",    \"rehost\",     2, 1, []),\n>   \"print-service\":    (\"it-ops\",   \"retire\",     2, 1, []),\n>   \"time-sheets\":      (\"hr-it\",    \"repurchase\", 3, 2, [\"hr-db\"]),\n>   \"hr-db\":            (\"hr-it\",    \"replatform\", 2, 3, []),\n>   \"auth-gateway\":     (\"security\", \"rehost\",     4, 4, [\"directory\"]),\n>   \"directory\":        (\"security\", \"retain\",     2, 5, []),\n>   \"reporting\":        (\"finance\",  \"replatform\", 3, 2, [\"data-warehouse\"]),\n>   \"data-warehouse\":   (\"finance\",  \"replatform\", 6, 4, [\"erp-db\"]),\n>   \"erp-db\":           (\"finance\",  \"rehost\",     4, 5, []),\n>   \"erp-app\":          (\"finance\",  \"rehost\",     8, 4, [\"erp-db\", \"auth-gateway\"]),\n>   \"web-shop\":         (\"digital\",  \"refactor\",   10, 4, [\"catalog\", \"payments\", \"auth-gateway\"]),\n>   \"catalog\":          (\"digital\",  \"replatform\", 3, 3, [\"catalog-db\"]),\n>   \"catalog-db\":       (\"digital\",  \"replatform\", 2, 3, []),\n>   \"payments\":         (\"digital\",  \"rehost\",     5, 5, [\"fraud\", \"catalog-db\"]),\n>   \"fraud\":            (\"digital\",  \"rehost\",     3, 4, [\"payments\"]),\n> }\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > plan.py <<'PY'\n> from estate import ESTATE\n> import sys\n> \n> CAPACITY = int(sys.argv[1]) if len(sys.argv) > 1 else 12     # servers movable per wave\n> \n> move = {n: v for n, v in ESTATE.items() if v[1] not in (\"retire\", \"retain\")}\n> skipped = {n: v[1] for n, v in ESTATE.items() if v[1] in (\"retire\", \"retain\")}\n> print(\"not moved:\", \", \".join(f\"{n} ({d})\" for n, d in skipped.items()))\n> \n> # dependencies on retained systems need connectivity, not movement\n> hybrid = sorted({(n, d) for n, v in move.items() for d in v[4] if d in skipped and skipped[d] == \"retain\"})\n> for n, d in hybrid:\n>     print(f\"  note: {n} depends on {d}, which stays on premises -> needs hybrid connectivity and latency testing\")\n> \n> deps = {n: {d for d in v[4] if d in move} for n, v in move.items()}\n> \n> # cycle detection: strongly connected groups (simple fixed-point on reachability)\n> def reach(n, seen=None):\n>     seen = seen or set()\n>     for d in deps[n]:\n>         if d not in seen:\n>             seen.add(d); reach(d, seen)\n>     return seen\n> groups, done = [], set()\n> for n in sorted(deps):\n>     if n in done: continue\n>     g = {n} | {m for m in deps if m in reach(n) and n in reach(m)}\n>     groups.append(sorted(g)); done |= g\n> cyc = [g for g in groups if len(g) > 1]\n> for g in cyc:\n>     print(f\"  CYCLE: {', '.join(g)} -> migrate together as one unit\")\n> \n> # collapse groups into units\n> unit_of = {n: i for i, g in enumerate(groups) for n in g}\n> units = {i: {\"members\": g,\n>              \"servers\": sum(move[m][2] for m in g),\n>              \"risk\": max(move[m][3] for m in g),\n>              \"deps\": {unit_of[d] for m in g for d in deps[m]} - {i}} for i, g in enumerate(groups)}\n> \n> waves, placed = [], set()\n> while len(placed) < len(units):\n>     ready = [i for i, u in units.items() if i not in placed and u[\"deps\"] <= placed]\n>     if not ready:\n>         sys.exit(\"no progress: unresolved dependencies\")\n>     ready.sort(key=lambda i: (units[i][\"risk\"], units[i][\"servers\"]))     # low risk first\n>     if not waves and not any(units[i][\"risk\"] <= 3 for i in ready):\n>         sys.exit(\"no low-risk pilot candidate\")\n>     wave, used = [], 0\n>     for i in ready:\n>         s = units[i][\"servers\"]\n>         if not waves and units[i][\"risk\"] > 3:      # the pilot wave takes only low-risk units\n>             continue\n>         if used + s <= CAPACITY or not wave:        # a single oversize unit gets its own wave\n>             wave.append(i); used += s\n>     waves.append((wave, used)); placed |= set(wave)\n> \n> print()\n> for k, (wave, used) in enumerate(waves, 1):\n>     names = \" + \".join(\"/\".join(units[i][\"members\"]) for i in wave)\n>     risk = max(units[i][\"risk\"] for i in wave)\n>     label = \"pilot\" if k == 1 else \"\"\n>     print(f\"wave {k}: {used:2} servers, max risk {risk}  {label:5} {names}\")\n> print(f\"\\n{len(units)} units in {len(waves)} waves, {sum(u['servers'] for u in units.values())} servers to move\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 plan.py",
+     "o": "not moved: print-service (retire), directory (retain)\n  note: auth-gateway depends on directory, which stays on premises -> needs hybrid connectivity and latency testing\n  CYCLE: fraud, payments -> migrate together as one unit\n\nwave 1:  6 servers, max risk 3  pilot intranet-wiki + catalog-db + hr-db\nwave 2: 10 servers, max risk 4        time-sheets + catalog + auth-gateway\nwave 3: 12 servers, max risk 5        erp-db + fraud/payments\nwave 4:  6 servers, max risk 4        data-warehouse\nwave 5: 11 servers, max risk 4        reporting + erp-app\nwave 6: 10 servers, max risk 4        web-shop\n\n12 units in 6 waves, 55 servers to move",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/mig",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 plan.py 8 | tail -9",
+     "o": "wave 2:  6 servers, max risk 3        time-sheets + catalog\nwave 3:  8 servers, max risk 5        auth-gateway + erp-db\nwave 4:  6 servers, max risk 4        data-warehouse\nwave 5:  3 servers, max risk 2        reporting\nwave 6:  8 servers, max risk 4        erp-app\nwave 7:  8 servers, max risk 5        fraud/payments\nwave 8: 10 servers, max risk 4        web-shop\n\n12 units in 8 waves, 55 servers to move",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/mig",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p src dst",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 40); do echo \"row $i,$((i*37 % 101))\" > src/part-$i.csv; done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cp -r src/. dst/",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# simulate a silent copy problem on one file and a missing file",
+     "o": ""
+    },
+    {
+     "c": "$ echo \"row 7,CORRUPT\" > dst/part-7.csv",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm dst/part-23.csv",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > validate.py <<'PY'\n> import hashlib, os, sys\n> def digest(path):\n>     return {f: hashlib.sha256(open(os.path.join(path, f), \"rb\").read()).hexdigest() for f in os.listdir(path)}\n> a, b = digest(sys.argv[1]), digest(sys.argv[2])\n> missing = sorted(set(a) - set(b)); extra = sorted(set(b) - set(a))\n> bad = sorted(f for f in set(a) & set(b) if a[f] != b[f])\n> print(f\"source files: {len(a)}  destination files: {len(b)}\")\n> print(\"missing at destination:\", missing or \"none\")\n> print(\"unexpected at destination:\", extra or \"none\")\n> print(\"content mismatch:\", bad or \"none\")\n> ok = not (missing or extra or bad)\n> print(\"RESULT:\", \"GO\" if ok else \"NO-GO (do not cut over)\")\n> sys.exit(0 if ok else 1)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 validate.py src dst; echo \"exit code: $?\"",
+     "o": "source files: 40  destination files: 39\nmissing at destination: ['part-23.csv']\nunexpected at destination: none\ncontent mismatch: ['part-7.csv']\nRESULT: NO-GO (do not cut over)\nexit code: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "eb36e60b0da1c79a"
+ },
+ "cloudsenior-15": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/adr && cd ~/adr",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > 0007-use-managed-postgres.md <<'MD'\n> # ADR 0007: Use a managed relational database for new services\n> \n> Status: accepted\n> Date: 2026-03-02\n> Deciders: platform-architecture, payments-lead\n> \n> ## Context\n> Teams run self-managed databases on VMs. Patching and backups consume about a quarter of on-call time. We need point-in-time recovery for regulated data.\n> \n> ## Decision\n> New services use the managed relational database offering. Self-managed databases need an approved exception.\n> \n> ## Alternatives considered\n> - Self-managed on VMs: full control, high operational cost.\n> - Fully serverless database: cheaper at low volume, limits on extensions we use.\n> \n> ## Consequences\n> - Good: automated backups, patching, point-in-time recovery.\n> - Bad: less control over versions and extensions; provider lock-in is higher.\n> - Review date: 2027-03-02\n> MD",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > 0008-pick-a-queue.md <<'MD'\n> # ADR 0008: Pick a queue\n> \n> Status: proposed\n> \n> ## Decision\n> We will use Kafka.\n> MD",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > check_adr.py <<'PY'\n> import glob, re, sys\n> \n> REQUIRED = [\"Status\", \"Date\", \"Context\", \"Decision\", \"Alternatives considered\", \"Consequences\"]\n> VALID_STATUS = {\"proposed\", \"accepted\", \"superseded\", \"deprecated\", \"rejected\"}\n> failed = 0\n> for path in sorted(glob.glob(\"0*.md\")):\n>     text = open(path).read()\n>     problems = []\n>     for key in REQUIRED:\n>         if not re.search(rf\"^(#+\\s*)?{re.escape(key)}\\b\", text, re.M | re.I):\n>             problems.append(f\"missing '{key}'\")\n>     m = re.search(r\"^Status:\\s*(\\w+)\", text, re.M)\n>     if m and m.group(1).lower() not in VALID_STATUS:\n>         problems.append(f\"unknown status '{m.group(1)}'\")\n>     if \"Consequences\" in text and not re.search(r\"^- Bad:\", text, re.M):\n>         problems.append(\"consequences list no downside (every decision has one)\")\n>     if problems:\n>         failed += 1\n>     print(f\"{'FAIL' if problems else 'ok  '} {path}\" + (\"\" if not problems else \"  -> \" + \"; \".join(problems)))\n> sys.exit(1 if failed else 0)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check_adr.py; echo \"exit code: $?\"",
+     "o": "ok   0007-use-managed-postgres.md\nFAIL 0008-pick-a-queue.md  -> missing 'Date'; missing 'Context'; missing 'Alternatives considered'; missing 'Consequences'\nexit code: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/review && cd ~/review",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > answers.csv <<'CSV'\n> pillar,question,weight,score,evidence\n> security,\"Is data encrypted at rest and in transit?\",5,2,\"policy scan green, KMS keys per account\"\n> security,\"Are secrets kept out of code and rotated?\",5,1,\"vault in use, two legacy services still read env files\"\n> security,\"Is access least-privilege and group-based?\",4,2,\"access review last month\"\n> reliability,\"Is there a tested restore from backup?\",5,0,\"backups exist, no restore drill recorded\"\n> reliability,\"Does the service survive loss of one zone?\",4,1,\"2 zones, but database is single-zone\"\n> reliability,\"Are SLOs defined and alerts burn-rate based?\",3,1,\"SLO defined, alerts are threshold based\"\n> operations,\"Is infrastructure defined as code and reviewed?\",4,2,\"all in Terraform, modules versioned\"\n> operations,\"Is there a runbook and on-call rotation?\",3,2,\"runbook reviewed in Q2\"\n> cost,\"Are resources tagged and costs visible per team?\",3,1,\"70% tagged\"\n> cost,\"Are idle and oversized resources reviewed?\",2,0,\"no review process\"\n> performance,\"Is load tested before major releases?\",3,1,\"last test 9 months ago\"\n> sustainability,\"Are workloads right-sized and scheduled off when idle?\",1,0,\"not considered\"\n> CSV",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > score.py <<'PY'\n> import csv, collections\n> \n> rows = list(csv.DictReader(open(\"answers.csv\")))\n> by_pillar = collections.defaultdict(lambda: [0, 0])\n> gaps = []\n> for r in rows:\n>     w, s = int(r[\"weight\"]), int(r[\"score\"])\n>     by_pillar[r[\"pillar\"]][0] += w * s\n>     by_pillar[r[\"pillar\"]][1] += w * 2\n>     risk = w * (2 - s)                       # how much is missing, weighted\n>     if risk:\n>         gaps.append((risk, r[\"pillar\"], r[\"question\"], r[\"evidence\"]))\n> \n> print(f\"{'pillar':16} {'score':>6}  bar\")\n> for p, (got, best) in sorted(by_pillar.items(), key=lambda kv: kv[1][0] / kv[1][1]):\n>     pct = 100 * got / best\n>     print(f\"{p:16} {pct:5.0f}%  {'#' * int(pct / 5)}\")\n> \n> total = 100 * sum(g for g, _ in by_pillar.values()) / sum(b for _, b in by_pillar.values())\n> print(f\"\\noverall: {total:.0f}%\\n\")\n> print(\"top gaps (risk = weight x missing score):\")\n> for risk, pillar, q, ev in sorted(gaps, reverse=True)[:5]:\n>     print(f\"  risk {risk:2}  [{pillar}] {q}\\n           evidence: {ev}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 score.py",
+     "o": "pillar            score  bar\nsustainability       0%  \nreliability         29%  #####\ncost                30%  ######\nperformance         50%  ##########\nsecurity            82%  ################\noperations         100%  ####################\n\noverall: 60%\n\ntop gaps (risk = weight x missing score):\n  risk 10  [reliability] Is there a tested restore from backup?\n           evidence: backups exist, no restore drill recorded\n  risk  5  [security] Are secrets kept out of code and rotated?\n           evidence: vault in use, two legacy services still read env files\n  risk  4  [reliability] Does the service survive loss of one zone?\n           evidence: 2 zones, but database is single-zone\n  risk  4  [cost] Are idle and oversized resources reviewed?\n           evidence: no review process\n  risk  3  [reliability] Are SLOs defined and alerts burn-rate based?\n           evidence: SLO defined, alerts are threshold based",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/review",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > maturity.py <<'PY'\n> capabilities = {            # capability: (current level, target level, business importance 1-5)\n>     \"infrastructure as code\":     (3, 4, 4),\n>     \"security guardrails\":        (3, 4, 5),\n>     \"backup and recovery\":        (2, 4, 5),\n>     \"observability and slos\":     (2, 3, 4),\n>     \"cost visibility\":            (2, 3, 3),\n>     \"incident response\":          (3, 4, 4),\n>     \"self-service platform\":      (2, 3, 3),\n> }\n> print(f\"{'capability':26} {'now':>3} {'target':>6} {'gap x importance':>17}\")\n> ranked = sorted(capabilities.items(), key=lambda kv: -(kv[1][1] - kv[1][0]) * kv[1][2])\n> for name, (now, target, imp) in ranked:\n>     print(f\"{name:26} {now:3} {target:6} {(target - now) * imp:17}\")\n> print(\"\\nnext quarter:\", \", \".join(n for n, _ in ranked[:3]))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 maturity.py",
+     "o": "capability                 now target  gap x importance\nbackup and recovery          2      4                10\nsecurity guardrails          3      4                 5\ninfrastructure as code       3      4                 4\nobservability and slos       2      3                 4\nincident response            3      4                 4\ncost visibility              2      3                 3\nself-service platform        2      3                 3\n\nnext quarter: backup and recovery, security guardrails, infrastructure as code",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4ba6ab01a28bf7be"
+ },
+ "cloudsenior-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > decide.py <<'EOF'\n> CRITERIA = {          # criterion: weight (how much this workload cares, 0-5)\n>     \"needs OS-level control or custom install\": 5,\n>     \"spiky or mostly idle load\":                1,\n>     \"short tasks (seconds)\":                    0,\n>     \"small team, low ops capacity\":             3,\n>     \"strict latency, no cold starts\":           4,\n>     \"low lock-in\":                              2,\n> }\n> # score of each model per criterion, 0 (poor) to 5 (excellent)  -- a judgement you defend, not a fact\n> SCORES = {\n>     \"IaaS\":       [5, 2, 3, 1, 5, 5],\n>     \"PaaS\":       [2, 3, 3, 4, 4, 3],\n>     \"Serverless\": [0, 5, 5, 5, 2, 1],\n> }\n> def rank(criteria, scores):\n>     w = list(criteria.values())\n>     total = sum(w)\n>     out = {m: sum(a * b for a, b in zip(w, s)) / (5 * total) for m, s in scores.items()}\n>     return sorted(out.items(), key=lambda kv: -kv[1])\n> \n> print(\"Workload: a legacy Windows application with a long-running service, steady load, small team\")\n> for model, score in rank(CRITERIA, SCORES):\n>     print(f\"  {model:11} {score:5.0%}\")\n> CRITERIA2 = {\"needs OS-level control or custom install\": 0, \"spiky or mostly idle load\": 5, \"short tasks (seconds)\": 5,\n>              \"small team, low ops capacity\": 4, \"strict latency, no cold starts\": 1, \"low lock-in\": 1}\n> print(\"\\nWorkload: an event handler that runs for 2 seconds a few thousand times a day, nobody wants to patch anything\")\n> for model, score in rank(CRITERIA2, SCORES):\n>     print(f\"  {model:11} {score:5.0%}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 decide.py",
+     "o": "Workload: a legacy Windows application with a long-running service, steady load, small team\n  IaaS          80%\n  PaaS          63%\n  Serverless    40%\n\nWorkload: an event handler that runs for 2 seconds a few thousand times a day, nobody wants to patch anything\n  Serverless    91%\n  PaaS          66%\n  IaaS          49%",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > breakeven.py <<'EOF'\n> # Illustrative prices (NOT any provider's current list):\n> VM_MONTH = 0.10 * 730                 # a small always-on VM at $0.10 per hour\n> PER_MILLION_REQ = 0.20                # serverless request charge per million invocations\n> GB_SECOND = 0.0000166667              # serverless compute charge per GB-second\n> MEM_GB, DURATION_S = 0.5, 0.2         # each invocation: 512 MB for 200 ms\n> \n> def serverless_month(requests):\n>     return requests / 1e6 * PER_MILLION_REQ + requests * MEM_GB * DURATION_S * GB_SECOND\n> \n> print(f\"always-on VM: ${VM_MONTH:,.0f} per month, whatever the load\\n\")\n> print(f\"{'requests/month':>16} {'serverless':>12} {'cheaper':>10}\")\n> for r in (100_000, 1_000_000, 10_000_000, 50_000_000, 100_000_000):\n>     s = serverless_month(r)\n>     print(f\"{r:16,} {'$' + format(s, ',.2f'):>12} {'serverless' if s < VM_MONTH else 'VM':>10}\")\n> \n> lo, hi = 1, 10**10\n> while hi - lo > 1:\n>     mid = (lo + hi) // 2\n>     lo, hi = (mid, hi) if serverless_month(mid) < VM_MONTH else (lo, mid)\n> print(f\"\\nbreak-even at about {lo:,} requests per month (about {lo / (730 * 3600):.1f} per second, continuously)\")\n> print(\"Below it, serverless wins on cost. Above it, always-on wins, unless you also count the people cost of running the VM.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 breakeven.py",
+     "o": "always-on VM: $73 per month, whatever the load\n\n  requests/month   serverless    cheaper\n         100,000        $0.19 serverless\n       1,000,000        $1.87 serverless\n      10,000,000       $18.67 serverless\n      50,000,000       $93.33         VM\n     100,000,000      $186.67         VM\n\nbreak-even at about 39,107,073 requests per month (about 14.9 per second, continuously)\nBelow it, serverless wins on cost. Above it, always-on wins, unless you also count the people cost of running the VM.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "56ea8dbb815c6318"
+ },
+ "cloudsenior-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lz_check.py <<'EOF'\n> ALLOWED_REGIONS = {\"eu-west\", \"eu-north\"}              # data residency guardrail (Q4)\n> REQUIRED_TAGS = {\"owner\", \"cost_center\", \"env\"}\n> PLAN = {\n>     \"log-archive\":  {\"group\": \"Security\",       \"tags\": {\"owner\": \"secops\", \"cost_center\": \"CC10\", \"env\": \"prod\"}, \"region\": \"eu-west\", \"budget\": 500,  \"admins\": []},\n>     \"net-hub\":      {\"group\": \"Infrastructure\", \"tags\": {\"owner\": \"platform\", \"cost_center\": \"CC11\", \"env\": \"prod\"}, \"region\": \"eu-west\", \"budget\": 3000, \"admins\": []},\n>     \"ev-prod\":      {\"group\": \"Workloads/Production\", \"tags\": {\"owner\": \"ev-team\", \"cost_center\": \"CC20\", \"env\": \"prod\"}, \"region\": \"eu-west\", \"budget\": 9000, \"admins\": []},\n>     \"ev-test\":      {\"group\": \"Workloads/Production\", \"tags\": {\"owner\": \"ev-team\", \"env\": \"test\"}, \"region\": \"us-east\", \"budget\": None, \"admins\": [\"alice\"]},\n>     \"play-bob\":     {\"group\": \"Sandbox\",        \"tags\": {\"owner\": \"bob\", \"cost_center\": \"CC99\", \"env\": \"sandbox\"}, \"region\": \"eu-north\", \"budget\": 100, \"admins\": [\"bob\"]},\n> }\n> \n> def check(plan):\n>     problems = []\n>     if \"log-archive\" not in plan:\n>         problems.append(\"plan: there is no central log archive account\")\n>     for name, a in plan.items():\n>         missing = REQUIRED_TAGS - set(a[\"tags\"])\n>         if missing:                                    problems.append(f\"{name}: missing tags {sorted(missing)}\")\n>         if a[\"region\"] not in ALLOWED_REGIONS:         problems.append(f\"{name}: region {a['region']} is not allowed (data residency)\")\n>         if a[\"budget\"] is None:                        problems.append(f\"{name}: no budget alert configured\")\n>         if a[\"tags\"].get(\"env\") != \"prod\" and a[\"group\"].endswith(\"Production\"):\n>                                                        problems.append(f\"{name}: a {a['tags'].get('env')} account is in the Production group\")\n>         if a[\"admins\"] and not a[\"group\"].startswith(\"Sandbox\"):\n>                                                        problems.append(f\"{name}: standing admin users {a['admins']} outside Sandbox (use SSO roles with approval)\")\n>     return problems\n> \n> issues = check(PLAN)\n> print(f\"{len(PLAN)} accounts checked, {len(issues)} problem(s):\")\n> for p in issues: print(\"  -\", p)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lz_check.py",
+     "o": "5 accounts checked, 5 problem(s):\n  - ev-test: missing tags ['cost_center']\n  - ev-test: region us-east is not allowed (data residency)\n  - ev-test: no budget alert configured\n  - ev-test: a test account is in the Production group\n  - ev-test: standing admin users ['alice'] outside Sandbox (use SSO roles with approval)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs/lz && cd ~/lab/cs/lz",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"accounts\" {\n>   type = map(object({\n>     group       = string\n>     env         = string\n>     owner       = string\n>     cost_center = string\n>     region      = string\n>   }))\n> \n>   validation {\n>     condition     = alltrue([for k, a in var.accounts : contains([\"eu-west\", \"eu-north\"], a.region)])\n>     error_message = \"Each account must use an allowed region: eu-west or eu-north.\"\n>   }\n>   validation {\n>     condition     = alltrue([for k, a in var.accounts : a.owner != \"\" && a.cost_center != \"\"])\n>     error_message = \"Every account needs an owner and a cost centre.\"\n>   }\n>   validation {\n>     condition     = alltrue([for k, a in var.accounts : a.env == \"prod\" || !endswith(a.group, \"Production\")])\n>     error_message = \"Only prod accounts may be placed in the Production group.\"\n>   }\n> }\n> \n> resource \"terraform_data\" \"account\" {\n>   for_each = var.accounts\n>   input    = merge(each.value, { name = each.key })\n> }\n> \n> output \"vended\" { value = sort(keys(terraform_data.account)) }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > good.tfvars <<'EOF'\n> accounts = {\n>   ev-prod = { group = \"Workloads/Production\", env = \"prod\", owner = \"ev-team\", cost_center = \"CC20\", region = \"eu-west\" }\n>   play-bob = { group = \"Sandbox\", env = \"sandbox\", owner = \"bob\", cost_center = \"CC99\", region = \"eu-north\" }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bad.tfvars <<'EOF'\n> accounts = {\n>   ev-test = { group = \"Workloads/Production\", env = \"test\", owner = \"ev-team\", cost_center = \"CC20\", region = \"us-east\" }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- compliant request:\"",
+     "o": "--- compliant request:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -var-file=good.tfvars | grep \"Apply complete\"",
+     "o": "Apply complete! Resources: 2 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform output -json vended",
+     "o": "[\"ev-prod\",\"play-bob\"]",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- non-compliant request (wrong region, test account in Production):\"",
+     "o": "--- non-compliant request (wrong region, test account in Production):",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -var-file=bad.tfvars 2>&1 | sed 's/[\u2502\u2577\u2575]//g' | grep -E \"^ *(Each account|Only prod|Error: Invalid)\" | sed 's/^ *//'",
+     "o": "Error: Invalid value for variable\nEach account must use an allowed region: eu-west or eu-north.\nError: Invalid value for variable\nOnly prod accounts may be placed in the Production group.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform destroy -auto-approve -var-file=good.tfvars | grep \"Destroy complete\"",
+     "o": "Destroy complete! Resources: 2 destroyed.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "447b70ad2eba0741"
+ },
+ "cloudsenior-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > scan.py <<'EOF'\n> import sys, datetime\n> TODAY = datetime.date(2026, 10, 1)\n> ALLOWED_REGIONS = {\"eu-west\", \"eu-north\"}\n> \n> INVENTORY = [   # what a configuration scan returns, simplified\n>     {\"account\": \"ev-prod\", \"id\": \"sg-web\",     \"type\": \"firewall\",  \"ingress\": [(\"0.0.0.0/0\", 443), (\"10.0.0.0/8\", 22)], \"region\": \"eu-west\", \"owner\": \"ev-team\"},\n>     {\"account\": \"ev-prod\", \"id\": \"sg-admin\",   \"type\": \"firewall\",  \"ingress\": [(\"0.0.0.0/0\", 22)], \"region\": \"eu-west\", \"owner\": \"ev-team\"},\n>     {\"account\": \"ev-prod\", \"id\": \"archive-01\", \"type\": \"storage\",   \"public\": False, \"encrypted\": True,  \"versioning\": True,  \"region\": \"eu-west\", \"owner\": \"ev-team\"},\n>     {\"account\": \"ev-test\", \"id\": \"scratch-77\", \"type\": \"storage\",   \"public\": True,  \"encrypted\": False, \"versioning\": False, \"region\": \"us-east\", \"owner\": \"ev-team\"},\n>     {\"account\": \"ev-prod\", \"id\": \"sql-main\",   \"type\": \"database\",  \"public\": False, \"encrypted\": True,  \"backup_days\": 7,  \"region\": \"eu-west\", \"owner\": \"dba\"},\n>     {\"account\": \"ev-test\", \"id\": \"sql-test\",   \"type\": \"database\",  \"public\": False, \"encrypted\": False, \"backup_days\": 0,  \"region\": \"eu-west\", \"owner\": \"dba\"},\n>     {\"account\": \"hub\",     \"id\": \"trail\",      \"type\": \"audit-log\", \"enabled\": False, \"region\": \"eu-west\", \"owner\": \"secops\"},\n> ]\n> EXCEPTIONS = {(\"SEC-04\", \"ev-test/sql-test\"): datetime.date(2026, 12, 31)}   # (rule, resource) waived until a date; recorded and approved\n> \n> def rules(r):\n>     out = []\n>     if r[\"region\"] not in ALLOWED_REGIONS:\n>         out.append((\"SEC-01\", \"high\", \"resource is outside the allowed regions (data residency)\"))\n>     if r[\"type\"] == \"firewall\":\n>         for cidr, port in r[\"ingress\"]:\n>             if cidr == \"0.0.0.0/0\" and port in (22, 3389):\n>                 out.append((\"SEC-02\", \"critical\", f\"management port {port} open to the whole internet\"))\n>     if r[\"type\"] == \"storage\":\n>         if r[\"public\"]:      out.append((\"SEC-03\", \"critical\", \"storage is publicly accessible\"))\n>         if not r[\"encrypted\"]: out.append((\"SEC-04\", \"high\", \"storage is not encrypted at rest\"))\n>         if not r[\"versioning\"]: out.append((\"SEC-05\", \"medium\", \"versioning is off (cannot recover from deletion or ransomware)\"))\n>     if r[\"type\"] == \"database\":\n>         if not r[\"encrypted\"]: out.append((\"SEC-04\", \"high\", \"database is not encrypted at rest\"))\n>         if r[\"backup_days\"] < 7: out.append((\"SEC-06\", \"high\", f\"backup retention is {r['backup_days']} days (policy: at least 7)\"))\n>     if r[\"type\"] == \"audit-log\" and not r[\"enabled\"]:\n>         out.append((\"SEC-07\", \"critical\", \"audit logging is disabled\"))\n>     return out\n> \n> findings, waived = [], []\n> for r in INVENTORY:\n>     for rule, sev, msg in rules(r):\n>         key = (rule, f\"{r['account']}/{r['id']}\")\n>         if key in EXCEPTIONS and EXCEPTIONS[key] >= TODAY:\n>             waived.append((key, EXCEPTIONS[key])); continue\n>         findings.append((sev, rule, key[1], msg, r[\"owner\"]))\n> \n> order = {\"critical\": 0, \"high\": 1, \"medium\": 2}\n> for sev, rule, res, msg, owner in sorted(findings, key=lambda f: order[f[0]]):\n>     print(f\"{sev:8} {rule}  {res:18} -> {owner:8} {msg}\")\n> print()\n> for key, until in waived:\n>     print(f\"waived   {key[0]}  {key[1]:18} (approved exception until {until})\")\n> print(f\"\\n{len(INVENTORY)} resources, {len(findings)} open findings, {len(waived)} waived\")\n> crit = sum(1 for f in findings if f[0] == \"critical\")\n> print(\"PIPELINE GATE:\", \"FAIL (critical findings present)\" if crit else \"PASS\")\n> sys.exit(1 if crit else 0)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 scan.py; echo \"exit code: $?\"",
+     "o": "critical SEC-02  ev-prod/sg-admin   -> ev-team  management port 22 open to the whole internet\ncritical SEC-03  ev-test/scratch-77 -> ev-team  storage is publicly accessible\ncritical SEC-07  hub/trail          -> secops   audit logging is disabled\nhigh     SEC-01  ev-test/scratch-77 -> ev-team  resource is outside the allowed regions (data residency)\nhigh     SEC-04  ev-test/scratch-77 -> ev-team  storage is not encrypted at rest\nhigh     SEC-06  ev-test/sql-test   -> dba      backup retention is 0 days (policy: at least 7)\nmedium   SEC-05  ev-test/scratch-77 -> ev-team  versioning is off (cannot recover from deletion or ransomware)\n\nwaived   SEC-04  ev-test/sql-test   (approved exception until 2026-12-31)\n\n7 resources, 7 open findings, 1 waived\nPIPELINE GATE: FAIL (critical findings present)\nexit code: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "19e5c94243ef71b6"
+ },
+ "cloudsenior-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rightsize.py <<'EOF'\n> import random\n> random.seed(31)\n> SIZES = {\"large\": (2, 0.10), \"xlarge\": (4, 0.20), \"2xlarge\": (8, 0.40), \"4xlarge\": (16, 0.80)}   # vCPUs, illustrative $/hour\n> def series(base, spike):                                        # two weeks of hourly CPU utilisation (% of the current size)\n>     return [min(100, max(1, random.gauss(base, base * 0.25) + (spike if random.random() < 0.02 else 0))) for _ in range(24 * 14)]\n> \n> FLEET = {\"ev-index-01\": (\"4xlarge\", series(18, 40)), \"ev-index-02\": (\"4xlarge\", series(16, 35)),\n>          \"ev-web-01\": (\"2xlarge\", series(9, 30)), \"sql-main\": (\"4xlarge\", series(62, 25)), \"build-agent\": (\"xlarge\", series(55, 40))}\n> \n> def p(v, q): s = sorted(v); return s[min(len(s) - 1, int(q * len(s)))]\n> total_now = total_new = 0\n> print(f\"{'instance':13} {'now':8} {'p50':>5} {'p95':>5} {'p99':>5}  {'recommendation':16} {'saving/month':>12}\")\n> for name, (size, cpu) in FLEET.items():\n>     vcpu, price = SIZES[size]\n>     need = p(cpu, 0.99) / 100 * vcpu                             # vCPUs needed to cover the 99th percentile\n>     target = next((s for s, (v, _) in SIZES.items() if v * 0.70 >= need), \"4xlarge\")   # keep 30% headroom above the p99; the largest size is the ceiling\n>     saving = (price - SIZES[target][1]) * 730\n>     total_now += price * 730; total_new += SIZES[target][1] * 730\n>     rec = \"keep\" if target == size else f\"-> {target}\"\n>     print(f\"{name:13} {size:8} {p(cpu, .5):5.0f} {p(cpu, .95):5.0f} {p(cpu, .99):5.0f}  {rec:16} {saving:11,.0f}$\")\n> print(f\"\\nfleet cost now ${total_now:,.0f}/month, after rightsizing ${total_new:,.0f}/month, saving {1 - total_new / total_now:.0%}\")\n> print(\"Check memory, disk I/O and network too before changing: CPU alone can mislead. Roll changes out gradually and watch the SLOs.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rightsize.py",
+     "o": "instance      now        p50   p95   p99  recommendation   saving/month\nev-index-01   4xlarge     18    26    28  -> 2xlarge               292$\nev-index-02   4xlarge     16    24    54  keep                       0$\nev-web-01     2xlarge      9    13    38  keep                       0$\nsql-main      4xlarge     62    91   100  keep                       0$\nbuild-agent   xlarge      56    80    88  -> 2xlarge              -146$\n\nfleet cost now $2,190/month, after rightsizing $2,044/month, saving 7%\nCheck memory, disk I/O and network too before changing: CPU alone can mislead. Roll changes out gradually and watch the SLOs.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > commit.py <<'EOF'\n> import random\n> random.seed(8)\n> # hourly demand over a year, in \"instances\": steady base ~40, daily and weekly swings, growth, a few big peaks\n> demand = []\n> for h in range(24 * 365):\n>     day = h // 24\n>     base = 40 + 0.02 * day                                          # slow growth\n>     swing = 12 * (1 if 8 <= h % 24 <= 18 else 0) * (0.4 if (day % 7) >= 5 else 1)   # business hours, quieter weekends\n>     demand.append(max(5, random.gauss(base + swing, 3) + (25 if random.random() < 0.003 else 0)))\n> \n> ON_DEMAND, DISCOUNT = 0.20, 0.40                                     # $/instance-hour, 40% off when committed\n> \n> def yearly_cost(commit):\n>     c = commit * ON_DEMAND * (1 - DISCOUNT) * len(demand)              # you pay for the commitment every hour, used or not\n>     for d in demand:\n>         c += max(0, d - commit) * ON_DEMAND                            # demand above the commitment is on demand\n>     return c\n> \n> all_od = sum(d * ON_DEMAND for d in demand)\n> print(f\"all on demand: ${all_od:,.0f}/year   (average demand {sum(demand)/len(demand):.1f} instances)\\n\")\n> print(f\"{'commit':>7} {'cost':>12} {'saving':>8} {'commitment unused':>19}\")\n> best = None\n> for commit in range(0, 81, 10):\n>     cost = yearly_cost(commit)\n>     unused = sum(max(0, commit - d) for d in demand) / (commit * len(demand)) if commit else 0\n>     print(f\"{commit:7d} ${cost:11,.0f} {1 - cost / all_od:8.1%} {unused:18.0%}\")\n>     if best is None or cost < best[1]: best = (commit, cost)\n> print(f\"\\nbest of these levels: commit {best[0]} instances. Committing to the PEAK would pay for idle capacity most of the year.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 commit.py",
+     "o": "all on demand: $84,662/year   (average demand 48.3 instances)\n\n commit         cost   saving   commitment unused\n      0 $     84,662     0.0%                 0%\n     10 $     77,654     8.3%                 0%\n     20 $     70,646    16.6%                 0%\n     30 $     63,638    24.8%                 0%\n     40 $     56,929    32.8%                 0%\n     50 $     56,298    33.5%                 8%\n     60 $     63,319    25.2%                20%\n     70 $     73,637    13.0%                31%\n     80 $     84,108     0.7%                40%\n\nbest of these levels: commit 50 instances. Committing to the PEAK would pay for idle capacity most of the year.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > spot.py <<'EOF'\n> import random\n> random.seed(5)\n> JOB_HOURS, ON_DEMAND, SPOT = 20.0, 0.40, 0.12              # a 20-hour job, $/hour\n> GIVE_UP = 20 * JOB_HOURS                                   # stop a hopeless run after paying for 20x the job\n> def spot_run(interrupt_per_hour, checkpoint_every_h):\n>     done, hours_paid = 0.0, 0.0\n>     while done < JOB_HOURS:\n>         if hours_paid > GIVE_UP: return None, hours_paid                  # never finishes in practice\n>         step = 0.1\n>         hours_paid += step\n>         if random.random() < interrupt_per_hour * step:\n>             done = (done // checkpoint_every_h) * checkpoint_every_h        # lose progress since the last checkpoint\n>             hours_paid += 0.1                                               # restart delay while a replacement starts\n>         else:\n>             done += step\n>     return hours_paid * SPOT, hours_paid\n> \n> print(f\"on demand: ${JOB_HOURS * ON_DEMAND:,.2f}\")\n> print(f\"{'interrupts/hour':>16} {'checkpoint':>11} {'spot cost':>10} {'hours billed':>13} {'saving':>7}\")\n> for rate in (0.05, 0.2, 0.5):\n>     for cp in (0.25, 5.0, 100.0):\n>         cost, hours = spot_run(rate, cp)\n>         label = ('every ' + str(cp) + ' h') if cp < 100 else 'never'\n>         if cost is None: print(f\"{rate:16.2f} {label:>11} {'gave up':>10} {hours:13.1f}  (restarts from scratch forever)\")\n>         else:            print(f\"{rate:16.2f} {label:>11} ${cost:9,.2f} {hours:13.1f} {1 - cost / (JOB_HOURS * ON_DEMAND):7.0%}\")\n> print(\"\\nWithout checkpoints, a high interruption rate makes the job restart from scratch repeatedly: the discount is eaten by lost work.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 spot.py",
+     "o": "on demand: $8.00\n interrupts/hour  checkpoint  spot cost  hours billed  saving\n            0.05 every 0.25 h $     2.47          20.6     69%\n            0.05 every 5.0 h $     3.52          29.3     56%\n            0.05       never $     2.40          20.0     70%\n            0.20 every 0.25 h $     2.59          21.6     68%\n            0.20 every 5.0 h $     3.28          27.3     59%\n            0.20       never $    13.73         114.4    -72%\n            0.50 every 0.25 h $     2.75          22.9     66%\n            0.50 every 5.0 h $     7.75          64.6      3%\n            0.50       never    gave up         400.0  (restarts from scratch forever)\n\nWithout checkpoints, a high interruption rate makes the job restart from scratch repeatedly: the discount is eaten by lost work.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > anomaly.py <<'EOF'\n> import random, statistics\n> random.seed(12)\n> # 30 days of cost lines: (day, resource, cost, owner tag or None)\n> lines = []\n> for day in range(30):\n>     for res, base, owner in ((\"ev-prod-vms\", 900, \"ev-team\"), (\"archive-storage\", 500, \"ev-team\"), (\"sql\", 700, \"dba\"), (\"shared-net\", 300, \"platform\"), (\"mystery-1\", 150, None)):\n>         lines.append((day, res, base * random.uniform(0.95, 1.05), owner))\n>     lines.append((day, \"gpu-experiment\", 1800 if day >= 24 else 80, \"ml-team\"))       # something starts burning money on day 24\n> \n> total = sum(l[2] for l in lines)\n> untagged = sum(l[2] for l in lines if l[3] is None)\n> print(f\"total ${total:,.0f}; untagged (cannot be charged to anyone): ${untagged:,.0f} = {untagged / total:.1%}  (target: under 5%)\")\n> \n> daily = {}\n> for day, _, cost, _ in lines: daily[day] = daily.get(day, 0) + cost\n> mean, sd = statistics.mean(list(daily.values())[:20]), statistics.pstdev(list(daily.values())[:20])      # baseline from the first 20 days\n> print(\"\\nAnomaly detection (daily total vs the baseline of the first 20 days):\")\n> for day in range(20, 30):\n>     z = (daily[day] - mean) / sd\n>     flag = \"  <-- ALERT\" if z > 3 else \"\"\n>     if flag or day in (20, 29): print(f\"  day {day}: ${daily[day]:,.0f}  z-score {z:5.1f}{flag}\")\n> print(\"\\nAlerts should go to the owner of the resource that moved (find it by comparing resource costs, then check the tag).\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 anomaly.py",
+     "o": "total $89,127; untagged (cannot be charged to anyone): $4,515 = 5.1%  (target: under 5%)\n\nAnomaly detection (daily total vs the baseline of the first 20 days):\n  day 20: $2,608  z-score  -0.3\n  day 24: $4,334  z-score  57.7  <-- ALERT\n  day 25: $4,370  z-score  58.9  <-- ALERT\n  day 26: $4,382  z-score  59.3  <-- ALERT\n  day 27: $4,408  z-score  60.2  <-- ALERT\n  day 28: $4,369  z-score  58.9  <-- ALERT\n  day 29: $4,363  z-score  58.7  <-- ALERT\n\nAlerts should go to the owner of the resource that moved (find it by comparing resource costs, then check the tag).",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "ebe87880cd83e7be"
+ },
+ "cloudsenior-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ipam.py <<'EOF'\n> import ipaddress, itertools\n> \n> ORG_BLOCK = ipaddress.ip_network(\"10.64.0.0/12\")           # the whole organisation's cloud space\n> ONPREM = [ipaddress.ip_network(n) for n in (\"10.1.0.0/16\", \"10.2.0.0/16\", \"192.168.0.0/16\")]   # existing ranges to avoid\n> REQUESTS = [(\"hub-prod\", 20), (\"hub-nonprod\", 20), (\"ev-prod\", 18), (\"ev-test\", 20), (\"sql-prod\", 20), (\"data-lake\", 16), (\"sandbox-1\", 22), (\"sandbox-2\", 22)]\n> \n> allocated = {}\n> free = [ORG_BLOCK]\n> def allocate(prefix):\n>     for i, block in enumerate(free):\n>         if block.prefixlen <= prefix:\n>             net = next(block.subnets(new_prefix=prefix))                  # take the first block of the right size\n>             free.pop(i)\n>             free[i:i] = list(block.address_exclude(net))                  # return the remainder to the free list\n>             free.sort(key=lambda n: (-n.prefixlen, n))          # smallest adequate block first (best fit) limits fragmentation\n>             return net\n>     raise RuntimeError(\"address space exhausted\")\n> \n> for name, prefix in sorted(REQUESTS, key=lambda r: r[1]):                 # big blocks first avoids fragmentation\n>     allocated[name] = allocate(prefix)\n> \n> print(f\"{'network':12} {'range':18} {'addresses':>10}\")\n> for name, net in sorted(allocated.items(), key=lambda kv: kv[1]):\n>     print(f\"{name:12} {str(net):18} {net.num_addresses:10,}\")\n> \n> nets = list(allocated.items())\n> overlaps = [(a, b) for (a, na), (b, nb) in itertools.combinations(nets, 2) if na.overlaps(nb)]\n> clash = [(n, o) for n, na in nets for o in ONPREM if na.overlaps(o)]\n> used = sum(n.num_addresses for n in allocated.values())\n> print(f\"\\noverlaps between cloud networks: {overlaps or 'none'}\")\n> print(f\"overlaps with on-premises ranges: {clash or 'none'}\")\n> print(f\"used {used:,} of {ORG_BLOCK.num_addresses:,} addresses ({used / ORG_BLOCK.num_addresses:.1%}); largest free block: {max(free, key=lambda n: n.num_addresses)}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ipam.py",
+     "o": "network      range               addresses\ndata-lake    10.64.0.0/16           65,536\nev-prod      10.65.0.0/18           16,384\nhub-prod     10.65.64.0/20           4,096\nhub-nonprod  10.65.80.0/20           4,096\nev-test      10.65.96.0/20           4,096\nsql-prod     10.65.112.0/20          4,096\nsandbox-1    10.65.128.0/22          1,024\nsandbox-2    10.65.132.0/22          1,024\n\noverlaps between cloud networks: none\noverlaps with on-premises ranges: none\nused 100,352 of 1,048,576 addresses (9.6%); largest free block: 10.72.0.0/13",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> print(f\"{'networks':>9} {'peering mesh links':>20} {'hub-and-spoke links':>21}\")\n> for n in (5, 20, 100, 300):\n>     print(f\"{n:9d} {n * (n - 1) // 2:20,} {n:21,}\")\n> EOF",
+     "o": " networks   peering mesh links   hub-and-spoke links\n        5                   10                     5\n       20                  190                    20\n      100                4,950                   100\n      300               44,850                   300",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > reach.py <<'EOF'\n> # Each spoke attaches to the hub with a route table that lists the destinations it may reach.\n> ROUTES = {\n>     \"ev-prod\":   {\"hub-shared\", \"sql-prod\", \"onprem\"},\n>     \"sql-prod\":  {\"hub-shared\", \"ev-prod\"},\n>     \"ev-test\":   {\"hub-shared\", \"sandbox-1\"},       # allowed: test and sandbox may talk\n>     \"sandbox-1\": {\"hub-shared\", \"ev-test\", \"sql-prod\"},    # a mistake: the sandbox can reach production SQL!\n>     \"hub-shared\": {\"ev-prod\", \"sql-prod\", \"ev-test\", \"sandbox-1\", \"onprem\"},\n> }\n> FORBIDDEN = [(\"sandbox-1\", \"sql-prod\"), (\"sandbox-1\", \"ev-prod\"), (\"ev-test\", \"sql-prod\"), (\"ev-test\", \"ev-prod\")]   # policy: non-prod must never reach prod\n> \n> def can_reach(src, dst):\n>     \"\"\"Direct routes only; a fuller model also follows transit paths through the hub and the firewall rules.\"\"\"\n>     return dst in ROUTES.get(src, set())\n> \n> violations = [(s, d) for s, d in FORBIDDEN if can_reach(s, d)]\n> print(f\"checked {len(FORBIDDEN)} forbidden paths\")\n> for s, d in violations: print(f\"  VIOLATION: {s} can reach {d}\")\n> if not violations: print(\"  none\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 reach.py",
+     "o": "checked 4 forbidden paths\n  VIOLATION: sandbox-1 can reach sql-prod",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "31727ca385a1fb46"
+ },
+ "cloudsenior-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > retention.py <<'EOF'\n> import datetime\n> today = datetime.date(2026, 10, 1)\n> backups = [today - datetime.timedelta(days=d) for d in range(0, 400)]           # one backup per day for 400 days\n> \n> def keep(backups, daily=7, weekly=4, monthly=12):\n>     kept, reason = set(), {}\n>     for b in sorted(backups, reverse=True):\n>         age = (today - b).days\n>         if age < daily:                                      kept.add(b); reason[b] = \"daily\"\n>         elif b.weekday() == 6 and age < weekly * 7 + daily:  kept.add(b); reason[b] = \"weekly (Sunday)\"\n>         elif b.day == 1 and age < monthly * 31:              kept.add(b); reason[b] = \"monthly (1st)\"\n>     return kept, reason\n> \n> kept, reason = keep(backups)\n> by = {}\n> for b in kept: by[reason[b]] = by.get(reason[b], 0) + 1\n> print(f\"{len(backups)} daily backups taken over 400 days; the policy keeps {len(kept)}:\")\n> for k, v in sorted(by.items()): print(f\"   {v:3d} x {k}\")\n> oldest = min(kept)\n> print(f\"oldest restore point: {oldest} ({(today - oldest).days} days back)\")\n> print(f\"storage if every backup were kept: {len(backups)} units; with the policy: {len(kept)} units ({len(kept) / len(backups):.0%})\")\n> print(\"Regulations may require LONGER retention for some data (legal hold, financial records): retention is a legal question too.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 retention.py",
+     "o": "400 daily backups taken over 400 days; the policy keeps 23:\n     7 x daily\n    12 x monthly (1st)\n     4 x weekly (Sunday)\noldest restore point: 2025-10-01 (365 days back)\nstorage if every backup were kept: 400 units; with the policy: 23 units (6%)\nRegulations may require LONGER retention for some data (legal hold, financial records): retention is a legal question too.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf drill && mkdir -p drill/prod drill/backupA drill/backupB && cd drill",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for i in $(seq 1 200); do head -c 20000 /dev/urandom > prod/file$i.dat; done          # 200 files of data",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sha256sum prod/*.dat | sort -k2 > manifest.sha256                                   # the manifest travels with the backup",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -czf backupA/archive.tar.gz prod manifest.sha256 && cp backupA/archive.tar.gz backupB/archive.tar.gz",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"backup taken: $(du -sh backupA/archive.tar.gz | cut -f1) in two locations\"",
+     "o": "backup taken: 3.9M in two locations",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- disaster: production data is destroyed, and backup A is silently corrupted\"",
+     "o": "--- disaster: production data is destroyed, and backup A is silently corrupted",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf prod",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ head -c 3000 /dev/urandom | dd of=backupA/archive.tar.gz bs=1 seek=50000 conv=notrunc 2> /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- recovery: try each copy, verify before trusting it\"",
+     "o": "--- recovery: try each copy, verify before trusting it",
+     "x": 0
+    },
+    {
+     "c": "$ start=$(date +%s.%N)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for copy in backupA backupB; do\n>   rm -rf restore && mkdir restore\n>   if tar -xzf $copy/archive.tar.gz -C restore 2> /dev/null && (cd restore && sha256sum --quiet -c manifest.sha256 2> /dev/null); then\n>     echo \"$copy: restore verified, all 200 files match their checksums\"\n>     mv restore/prod prod; break\n>   else\n>     echo \"$copy: FAILED verification (corrupt), trying the next copy\"\n>   fi\n> done",
+     "o": "backupA: FAILED verification (corrupt), trying the next copy\nbackupB: restore verified, all 200 files match their checksums",
+     "x": 0
+    },
+    {
+     "c": "$ end=$(date +%s.%N)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ awk -v s=$start -v e=$end 'BEGIN {printf \"measured restore time for this dataset: %.2f seconds\\n\", e - s}'",
+     "o": "measured restore time for this dataset: 0.09 seconds",
+     "x": 0
+    },
+    {
+     "c": "$ ls prod | wc -l | awk '{print \"files restored:\", $1}'",
+     "o": "files restored: 200",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "93ad31bcb67ca4ae"
+ },
+ "cloudsenior-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs/iac/modules/bucket && cd ~/lab/cs/iac",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/bucket/main.tf <<'EOF'\n> variable \"name\" {\n>   type = string\n>   validation {\n>     condition     = can(regex(\"^[a-z0-9-]{3,40}$\", var.name))\n>     error_message = \"Name must be 3-40 characters: lowercase letters, digits and hyphens.\"\n>   }\n> }\n> \n> variable \"environment\" {\n>   type = string\n>   validation {\n>     condition     = contains([\"dev\", \"test\", \"prod\"], var.environment)\n>     error_message = \"Environment must be dev, test or prod.\"\n>   }\n> }\n> \n> variable \"owner\" {\n>   type = string\n> }\n> \n> variable \"public\" {\n>   type    = bool\n>   default = false\n> }\n> \n> locals {\n>   full_name = \"${var.environment}-${var.name}\"\n>   tags      = { owner = var.owner, environment = var.environment, managed_by = \"terraform\" }\n> }\n> \n> resource \"terraform_data\" \"bucket\" {\n>   input = {\n>     name       = local.full_name\n>     encrypted  = true # not an input: the module always encrypts\n>     versioning = var.environment == \"prod\"\n>     public     = var.public\n>     tags       = local.tags\n>   }\n> \n>   lifecycle {\n>     precondition {\n>       condition     = !(var.public && var.environment == \"prod\")\n>       error_message = \"Public buckets are not allowed in production.\"\n>     }\n>   }\n> }\n> \n> output \"name\" { value = local.full_name }\n> output \"config\" { value = terraform_data.bucket.input }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > modules/bucket/bucket.tftest.hcl <<'EOF'\n> run \"prod_gets_versioning_and_encryption\" {\n>   command = plan\n>   variables {\n>     name        = \"archive\"\n>     environment = \"prod\"\n>     owner       = \"ev-team\"\n>   }\n>   assert {\n>     condition     = terraform_data.bucket.input.versioning && terraform_data.bucket.input.encrypted\n>     error_message = \"prod buckets must be versioned and encrypted\"\n>   }\n> }\n> \n> run \"bad_name_is_rejected\" {\n>   command = plan\n>   variables {\n>     name        = \"Bad Name!\"\n>     environment = \"dev\"\n>     owner       = \"x\"\n>   }\n>   expect_failures = [var.name]\n> }\n> \n> run \"public_prod_is_rejected\" {\n>   command = plan\n>   variables {\n>     name        = \"site\"\n>     environment = \"prod\"\n>     owner       = \"web\"\n>     public      = true\n>   }\n>   expect_failures = [terraform_data.bucket]\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd modules/bucket && terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform test 2>&1 | grep -E \"pass|fail|Success\" | sed -E 's/ \\([0-9.]+s\\)//'",
+     "o": "  run \"prod_gets_versioning_and_encryption\"... pass\n  run \"bad_name_is_rejected\"... pass\n  run \"public_prod_is_rejected\"... pass\nbucket.tftest.hcl... pass\nSuccess! 3 passed, 0 failed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs/iac/modules/bucket",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform fmt -check -diff > /dev/null && echo \"fmt: formatted correctly\" || echo \"fmt: needs formatting\"",
+     "o": "fmt: formatted correctly",
+     "x": 0
+    },
+    {
+     "c": "$ terraform validate | grep -E \"Success|Error\"",
+     "o": "Success! The configuration is valid.",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'variable \"x\" {\\ntype=string\\n}\\n' > /tmp/unformatted.tf",
+     "o": "bash: line 114: /tmp/unformatted.tf: Permission denied",
+     "x": 1
+    },
+    {
+     "c": "$ terraform fmt -check /tmp/unformatted.tf > /dev/null; echo \"an unformatted file makes fmt -check exit with code $? (the pipeline fails)\"",
+     "o": "an unformatted file makes fmt -check exit with code 3 (the pipeline fails)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs/lock && cd ~/lab/cs/lock",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> resource \"terraform_data\" \"slow\" {\n>   provisioner \"local-exec\" {\n>     command = \"sleep 8\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve > /tmp/first-apply.log 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "bash: line 135: /tmp/first-apply.log: Permission denied",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a second apply while the first still holds the lock:\"",
+     "o": "--- a second apply while the first still holds the lock:",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve 2>&1 | sed 's/[\u2502\u2577\u2575]//g' | grep -E \"Error: Error acquiring the state lock|Lock Info|Operation:\" | sed 's/^ *//' | head -3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ wait",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ grep \"Apply complete\" /tmp/first-apply.log",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs/drift && cd ~/lab/cs/drift",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for s in network platform archive; do\n>   mkdir -p $s && echo \"setting=original\" > $s/settings.conf\n>   cat > $s/main.tf <<'EOF'\n> resource \"terraform_data\" \"config\" {\n>   triggers_replace = filemd5(\"${path.module}/settings.conf\")   # the real object this stack manages\n>   input            = file(\"${path.module}/settings.conf\")\n> }\n> EOF\n>   (cd $s && terraform init > /dev/null 2>&1 && terraform apply -auto-approve > /dev/null 2>&1)\n> done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"setting=changed-by-hand-in-the-console\" > archive/settings.conf          # somebody changes one of them outside the process",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > detect.sh <<'EOF'\n> #!/bin/bash\n> status=0\n> for s in \"$@\"; do\n>   (cd \"$s\" && terraform plan -detailed-exitcode -input=false > /tmp/plan-$s.log 2>&1)\n>   case $? in\n>     0) echo \"[ ok    ] $s: no drift\" ;;\n>     2) echo \"[ DRIFT ] $s: $(grep -E 'Plan:' /tmp/plan-$s.log)\"; status=2 ;;\n>     *) echo \"[ ERROR ] $s: plan failed\"; status=1 ;;\n>   esac\n> done\n> exit $status\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x detect.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./detect.sh network platform archive; echo \"detector exit code: $?   (non-zero would fail the scheduled job and notify the owner)\"",
+     "o": "./detect.sh: line 4: /tmp/plan-network.log: Permission denied\n[ ERROR ] network: plan failed\n./detect.sh: line 4: /tmp/plan-platform.log: Permission denied\n[ ERROR ] platform: plan failed\n./detect.sh: line 4: /tmp/plan-archive.log: Permission denied\n[ ERROR ] archive: plan failed\ndetector exit code: 1   (non-zero would fail the scheduled job and notify the owner)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- what changed in 'archive':\"",
+     "o": "--- what changed in 'archive':",
+     "x": 0
+    },
+    {
+     "c": "$ grep -E \"must be replaced|settings.conf|input\" /tmp/plan-archive.log | sed -E 's/^ *//' | head -3",
+     "o": "# terraform_data.config must be replaced\n~ input            = <<-EOT",
+     "x": 0
+    },
+    {
+     "c": "$ for s in network platform archive; do (cd $s && terraform destroy -auto-approve > /dev/null 2>&1); done",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "63df06f27f738612"
+ },
+ "cloudsenior-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cs && cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > timeline.py <<'EOF'\n> import datetime as dt\n> T = lambda s: dt.datetime.strptime(\"2026-03-14 \" + s, \"%Y-%m-%d %H:%M\")\n> # An ILLUSTRATIVE (fictional) timeline: an archive indexing outage caused by a full SQL disk.\n> EVENTS = [\n>     (\"02:00\", \"impact_start\", \"nightly backup starts; log files grow; the SQL data disk fills up\"),\n>     (\"02:10\", \"alert_gap\",    \"no alert fires: disk alert threshold was 95% and checked every 15 min (gap found later)\"),\n>     (\"04:50\", \"detected\",     \"support ticket: users cannot search the archive\"),\n>     (\"04:56\", \"acknowledged\", \"on-call engineer acknowledges the page\"),\n>     (\"05:05\", \"diagnosis\",    \"indexing errors point to SQL timeouts; disk found 100% full\"),\n>     (\"05:12\", \"mitigated\",    \"emergency: transaction log truncated after backup verified; service accepting writes again\"),\n>     (\"05:40\", \"resolved\",     \"indexing backlog drained; search latency back under SLO\"),\n> ]\n> start = T(\"02:00\")\n> def at(kind): return T(next(t for t, k, _ in EVENTS if k == kind))\n> first_detect = at(\"detected\")\n> m = lambda a, b: int((b - a).total_seconds() // 60)\n> print(\"timeline\")\n> for t, k, d in EVENTS: print(f\"  {t}  {k:13} {d}\")\n> print(\"\\nmetrics\")\n> print(f\"  time to detect (impact -> first human report): {m(start, first_detect):4d} min   <- the biggest problem\")\n> print(f\"  time to acknowledge (page -> response):        {m(first_detect, at('acknowledged')):4d} min\")\n> print(f\"  time to mitigate (impact -> service back):     {m(start, at('mitigated')):4d} min\")\n> print(f\"  time to resolve (impact -> fully restored):    {m(start, at('resolved')):4d} min\")\n> share = m(start, first_detect) / m(start, at('resolved'))\n> print(f\"\\nDetection took {share:.0%} of the total outage: the long-term fix is monitoring, not faster typing.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 timeline.py",
+     "o": "timeline\n  02:00  impact_start  nightly backup starts; log files grow; the SQL data disk fills up\n  02:10  alert_gap     no alert fires: disk alert threshold was 95% and checked every 15 min (gap found later)\n  04:50  detected      support ticket: users cannot search the archive\n  04:56  acknowledged  on-call engineer acknowledges the page\n  05:05  diagnosis     indexing errors point to SQL timeouts; disk found 100% full\n  05:12  mitigated     emergency: transaction log truncated after backup verified; service accepting writes again\n  05:40  resolved      indexing backlog drained; search latency back under SLO\n\nmetrics\n  time to detect (impact -> first human report):  170 min   <- the biggest problem\n  time to acknowledge (page -> response):           6 min\n  time to mitigate (impact -> service back):      192 min\n  time to resolve (impact -> fully restored):     220 min\n\nDetection took 77% of the total outage: the long-term fix is monitoring, not faster typing.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pir.py <<'EOF'\n> CHAIN = [\n>     (\"Why were users unable to search?\",           \"Indexing stopped: SQL requests timed out.\"),\n>     (\"Why did SQL requests time out?\",             \"The SQL data disk was 100% full.\"),\n>     (\"Why was the disk full?\",                     \"The nightly backup grew the transaction log faster than the backup job freed it, and growth was never reviewed.\"),\n>     (\"Why did nobody know before users did?\",      \"The disk alert fired only at 95% and was evaluated every 15 minutes; no alert on growth rate or on backup duration.\"),\n>     (\"Why was the alert design like that?\",        \"Alert thresholds were copied from a template for a small system and never revisited when data volume tripled.\"),\n> ]\n> ACTIONS = [\n>     (\"Alert on predicted time-to-full (growth rate) and at 80%, evaluated every minute\", \"platform team\", \"2 weeks\", \"alert fires in a game day test\"),\n>     (\"Backup duration and log growth as SLIs with dashboards\", \"dba\", \"3 weeks\", \"dashboard reviewed weekly\"),\n>     (\"Capacity review step added to the quarterly service review\", \"service owner\", \"1 month\", \"review recorded\"),\n>     (\"Runbook for 'disk full' with safe emergency steps, tested in a drill\", \"on-call lead\", \"2 weeks\", \"drill completed by all on-call engineers\"),\n> ]\n> print(\"CAUSAL CHAIN (blameless: no person appears in it)\")\n> for i, (q, a) in enumerate(CHAIN, 1): print(f\"  {i}. {q}\\n     -> {a}\")\n> print(\"\\nACTIONS (each needs an owner, a date and a way to prove it worked)\")\n> for what, owner, due, proof in ACTIONS: print(f\"  - {what}\\n      owner: {owner}; due: {due}; evidence: {proof}\")\n> print(\"\\nWhat went well: quick acknowledgement, safe mitigation, clear communication.   What did not: detection, capacity visibility.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pir.py",
+     "o": "CAUSAL CHAIN (blameless: no person appears in it)\n  1. Why were users unable to search?\n     -> Indexing stopped: SQL requests timed out.\n  2. Why did SQL requests time out?\n     -> The SQL data disk was 100% full.\n  3. Why was the disk full?\n     -> The nightly backup grew the transaction log faster than the backup job freed it, and growth was never reviewed.\n  4. Why did nobody know before users did?\n     -> The disk alert fired only at 95% and was evaluated every 15 minutes; no alert on growth rate or on backup duration.\n  5. Why was the alert design like that?\n     -> Alert thresholds were copied from a template for a small system and never revisited when data volume tripled.\n\nACTIONS (each needs an owner, a date and a way to prove it worked)\n  - Alert on predicted time-to-full (growth rate) and at 80%, evaluated every minute\n      owner: platform team; due: 2 weeks; evidence: alert fires in a game day test\n  - Backup duration and log growth as SLIs with dashboards\n      owner: dba; due: 3 weeks; evidence: dashboard reviewed weekly\n  - Capacity review step added to the quarterly service review\n      owner: service owner; due: 1 month; evidence: review recorded\n  - Runbook for 'disk full' with safe emergency steps, tested in a drill\n      owner: on-call lead; due: 2 weeks; evidence: drill completed by all on-call engineers\n\nWhat went well: quick acknowledgement, safe mitigation, clear communication.   What did not: detection, capacity visibility.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "31b2cc1249b867a2"
+ },
  "docker-1": {
   "blocks": [
    [

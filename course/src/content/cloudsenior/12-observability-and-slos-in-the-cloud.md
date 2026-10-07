@@ -80,7 +80,6 @@ for sev, rate, long_w, short_w in POLICY:
     print(f"  {sev:6} burn rate >= {rate:4.1f} over {long_w:>3} and {short_w:>3}  -> budget would be gone in {hours_to_exhaust(rate) / 24:.1f} days if it continued")
 
 # Simulation: which approach pages for which kind of incident?
-def minutes(spec): return spec
 incidents = {
     "total outage, 10 min":           [(0, 10, 1.00)],
     "brownout 5% errors for 3 hours": [(0, 180, 0.05)],
@@ -102,8 +101,8 @@ python3 burn.py
 Read the last table like an interviewer would:
 
 - The **30-second blip** pages nobody under the burn-rate policy (it used about 1% of the budget: not worth waking anyone) and **would not** page under the threshold either; good.
-- The **3-hour 5% brownout** burns **half the budget**: both approaches page, but the burn-rate version also **tells you how bad it is**.
-- The **slow leak** (0.3% errors for five days) **consumes most of the monthly budget** and the threshold alert **never fires**; the burn-rate policy **raises a ticket** because a 0.3% error ratio is a burn rate of 3, above 1 for long enough.
+- The **3-hour 5% brownout** burns **about a fifth of the budget** (20.8%): both approaches page, but the burn-rate version also **tells you how bad it is**.
+- The **slow leak** (0.3% errors for five days) **consumes half the monthly budget** (50%) and the threshold alert **never fires**; the burn-rate policy **raises a ticket** because a 0.3% error ratio is a burn rate of 3, above 1 for long enough.
 
 That is why mature teams page on **budget burn** rather than raw thresholds, and use **tickets** for slow burns.
 
@@ -122,7 +121,7 @@ good = {"service": 40, "region": 4, "status_class": 5, "method": 6}
 bad  = dict(good, user_id=100_000)
 print(f"labelled sensibly:             {series(good):>14,} time series")
 print(f"plus a user_id label:          {series(bad):>14,} time series ({series(bad) // series(good):,}x more)")
-print(f"at ~3 KB of memory per series: {series(good) * 3 / 1e6:6.1f} GB vs {series(bad) * 3 / 1e6:10,.0f} GB")
+print(f"at ~3 KB of memory per series: {series(good) * 3 / 1e6:6.3f} GB vs {series(bad) * 3 / 1e6:10,.0f} GB")
 print("Put high-cardinality identifiers in traces and logs, never in metric labels.")
 EOF
 ```
