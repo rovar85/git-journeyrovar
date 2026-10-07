@@ -16,11 +16,11 @@ sub: Git as the source of truth for a cluster: build and run a miniature GitOps 
 I **read the READMEs** of Argo CD and KEDA for this lesson. Their images are not available inside this lab, so **Argo CD and KEDA themselves are not run here**: their YAML is labelled **Example, not run here**. What **does run** is a small reconciler I wrote that implements the **same idea** (Git is the truth, the cluster is continuously made to match, drift is healed, removed files are pruned) against the **real Kubernetes cluster** of this lab. It is a teaching model, not a replacement for Argo CD: it has none of its safety, scale or UI.
 :::
 
-@setup k8s
-
 ```setup
 export LABNS=labgitops
 ```
+
+@setup k8s
 
 ## 1. What GitOps is
 

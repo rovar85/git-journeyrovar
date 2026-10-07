@@ -1492,6 +1492,841 @@
   ],
   "key": "6ec1d6d89c83b126"
  },
+ "aiinfra-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ if command -v nvidia-smi > /dev/null; then nvidia-smi -L; else echo \"nvidia-smi not found: this lab machine has no NVIDIA GPU or driver\"; fi",
+     "o": "nvidia-smi not found: this lab machine has no NVIDIA GPU or driver",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"CPU cores: $(nproc)\"",
+     "o": "CPU cores: 4",
+     "x": 0
+    },
+    {
+     "c": "$ free -g | awk 'NR==2 {print \"system RAM (GB): \" $2}'",
+     "o": "system RAM (GB): 15",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > fit.py <<'EOF'\n> GB = 1e9\n> models = {\"8B model\": 8e9, \"70B model\": 70e9}\n> precisions = {\"FP32\": 4, \"BF16\": 2, \"FP8\": 1, \"INT4\": 0.5}\n> gpus = {\"24 GB card\": 24, \"80 GB card\": 80}\n> \n> print(f\"{'':10}\" + \"\".join(f\"{p:>10}\" for p in precisions) + \"   (weights only, GB)\")\n> for name, params in models.items():\n>     print(f\"{name:10}\" + \"\".join(f\"{params * b / GB:10.0f}\" for b in precisions.values()))\n> \n> print(\"\\nDoes it fit with 20% reserved for KV cache, activations and overhead?\")\n> for name, params in models.items():\n>     for prec, b in precisions.items():\n>         need = params * b / GB / 0.8\n>         fits = [g for g, size in gpus.items() if need <= size]\n>         n80 = -(-need // 80)             # ceil: how many 80 GB GPUs\n>         print(f\"  {name:9} {prec:5} needs ~{need:6.0f} GB -> fits on: {', '.join(fits) or 'none'}; 80 GB GPUs needed: {int(n80)}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 fit.py",
+     "o": "                FP32      BF16       FP8      INT4   (weights only, GB)\n8B model          32        16         8         4\n70B model        280       140        70        35\n\nDoes it fit with 20% reserved for KV cache, activations and overhead?\n  8B model  FP32  needs ~    40 GB -> fits on: 80 GB card; 80 GB GPUs needed: 1\n  8B model  BF16  needs ~    20 GB -> fits on: 24 GB card, 80 GB card; 80 GB GPUs needed: 1\n  8B model  FP8   needs ~    10 GB -> fits on: 24 GB card, 80 GB card; 80 GB GPUs needed: 1\n  8B model  INT4  needs ~     5 GB -> fits on: 24 GB card, 80 GB card; 80 GB GPUs needed: 1\n  70B model FP32  needs ~   350 GB -> fits on: none; 80 GB GPUs needed: 5\n  70B model BF16  needs ~   175 GB -> fits on: none; 80 GB GPUs needed: 3\n  70B model FP8   needs ~    88 GB -> fits on: none; 80 GB GPUs needed: 2\n  70B model INT4  needs ~    44 GB -> fits on: 80 GB card; 80 GB GPUs needed: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> params = 8e9\n> infer = params * 2\n> train = params * 16\n> print(f\"8B model, weights for inference in BF16: {infer / 1e9:6.0f} GB\")\n> print(f\"8B model, training state (~16 bytes/param): {train / 1e9:6.0f} GB  ({train / infer:.0f}x the inference weights)\")\n> EOF",
+     "o": "8B model, weights for inference in BF16:     16 GB\n8B model, training state (~16 bytes/param):    128 GB  (8x the inference weights)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2fe0416b3250af18"
+ },
+ "aiinfra-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/bench && cd ~/lab/bench",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > mock_server.py <<'EOF'\n> import json, threading, time, http.server\n> \n> active = 0\n> lock = threading.Lock()\n> \n> class H(http.server.BaseHTTPRequestHandler):\n>     def do_POST(self):\n>         global active\n>         body = json.loads(self.rfile.read(int(self.headers[\"Content-Length\"])))\n>         prompt_tokens = len(body[\"messages\"][-1][\"content\"].split()) * 2\n>         n_out = body.get(\"max_tokens\", 40)\n>         with lock: active += 1\n>         try:\n>             self.send_response(200); self.send_header(\"Content-Type\", \"text/event-stream\"); self.end_headers()\n>             time.sleep(0.05 + prompt_tokens * 0.0005)                       # prefill: grows with prompt length\n>             for i in range(n_out):\n>                 with lock: n = active\n>                 time.sleep(0.008 + 0.0015 * n)                             # decode step: slower when busier\n>                 chunk = {\"choices\": [{\"delta\": {\"content\": f\"tok{i} \"}}]}\n>                 self.wfile.write(f\"data: {json.dumps(chunk)}\\n\\n\".encode()); self.wfile.flush()\n>             self.wfile.write(b\"data: [DONE]\\n\\n\"); self.wfile.flush()\n>         finally:\n>             with lock: active -= 1\n>     def log_message(self, *a): pass\n> \n> http.server.ThreadingHTTPServer((\"127.0.0.1\", 8123), H).serve_forever()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 mock_server.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo $! > server.pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s -N -X POST http://127.0.0.1:8123/v1/chat/completions -H 'Content-Type: application/json' \\\n>   -d '{\"model\":\"mock\",\"stream\":true,\"max_tokens\":3,\"messages\":[{\"role\":\"user\",\"content\":\"hello there\"}]}'",
+     "o": "data: {\"choices\": [{\"delta\": {\"content\": \"tok0 \"}}]}\n\ndata: {\"choices\": [{\"delta\": {\"content\": \"tok1 \"}}]}\n\ndata: {\"choices\": [{\"delta\": {\"content\": \"tok2 \"}}]}\n\ndata: [DONE]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/bench",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bench.py <<'EOF'\n> import json, sys, time, urllib.request, concurrent.futures as cf\n> \n> URL = sys.argv[1] if len(sys.argv) > 1 else \"http://127.0.0.1:8123/v1/chat/completions\"\n> PROMPT = \"summarise the indexing incident for the EV search team \" * 8        # about 80 words\n> \n> def one_request(_):\n>     body = json.dumps({\"model\": \"mock\", \"stream\": True, \"max_tokens\": 40, \"messages\": [{\"role\": \"user\", \"content\": PROMPT}]}).encode()\n>     req = urllib.request.Request(URL, body, {\"Content-Type\": \"application/json\"})\n>     t0, stamps = time.perf_counter(), []\n>     with urllib.request.urlopen(req) as resp:\n>         for raw in resp:\n>             line = raw.decode().strip()\n>             if line.startswith(\"data:\") and \"[DONE]\" not in line:\n>                 stamps.append(time.perf_counter())             # one timestamp per token chunk\n>     ttft = stamps[0] - t0\n>     gaps = [b - a for a, b in zip(stamps, stamps[1:])]\n>     return ttft, gaps, len(stamps), stamps[-1] - t0\n> \n> def pct(v, p):\n>     s = sorted(v); return s[min(len(s) - 1, int(p / 100 * len(s)))]\n> \n> def run(concurrency, requests=24):\n>     t0 = time.perf_counter()\n>     with cf.ThreadPoolExecutor(concurrency) as pool:\n>         results = list(pool.map(one_request, range(requests)))\n>     wall = time.perf_counter() - t0\n>     ttfts = [r[0] for r in results]; gaps = [g for r in results for g in r[1]]\n>     tokens = sum(r[2] for r in results)\n>     print(f\"concurrency {concurrency:2d} | TTFT p50 {pct(ttfts, 50) * 1000:5.0f} ms p95 {pct(ttfts, 95) * 1000:5.0f} ms \"\n>           f\"| ITL p50 {pct(gaps, 50) * 1000:5.1f} ms p95 {pct(gaps, 95) * 1000:5.1f} ms | throughput {tokens / wall:6.0f} tokens/s\")\n> \n> for c in (1, 4, 16):\n>     run(c)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bench.py",
+     "o": "concurrency  1 | TTFT p50   133 ms p95   135 ms | ITL p50   9.7 ms p95   9.9 ms | throughput     78 tokens/s\nconcurrency  4 | TTFT p50   138 ms p95   138 ms | ITL p50  14.2 ms p95  14.4 ms | throughput    230 tokens/s\nconcurrency 16 | TTFT p50   156 ms p95   157 ms | ITL p50  32.1 ms p95  32.4 ms | throughput    408 tokens/s",
+     "x": 0
+    },
+    {
+     "c": "$ kill $(cat server.pid)",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c49f3af9f530ba01"
+ },
+ "aiinfra-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kvcache.py <<'EOF'\n> import random, math\n> random.seed(3)\n> D = 16                                            # tiny model dimension\n> \n> def mat():  return [[random.uniform(-1, 1) for _ in range(D)] for _ in range(D)]\n> Wq, Wk, Wv = mat(), mat(), mat()\n> cost = {\"mults\": 0}\n> \n> def project(W, x):                                # one matrix-vector product: D*D multiply-adds\n>     cost[\"mults\"] += D * D\n>     return [sum(W[i][j] * x[j] for j in range(D)) for i in range(D)]\n> \n> def attend(q, keys, values):                      # one query attends over all cached keys and values\n>     scores = [sum(a * b for a, b in zip(q, k)) / math.sqrt(D) for k in keys]\n>     m = max(scores); w = [math.exp(s - m) for s in scores]; z = sum(w)\n>     return [sum(w[t] / z * values[t][i] for t in range(len(values))) for i in range(D)]\n> \n> tokens = [[random.uniform(-1, 1) for _ in range(D)] for _ in range(48)]   # stand-in token embeddings\n> \n> def generate(use_cache):\n>     cost[\"mults\"] = 0\n>     K, V, out = [], [], None\n>     for t in range(len(tokens)):\n>         if use_cache:\n>             K.append(project(Wk, tokens[t])); V.append(project(Wv, tokens[t]))      # only the NEW token\n>         else:\n>             K = [project(Wk, x) for x in tokens[:t + 1]]                              # recompute everything\n>             V = [project(Wv, x) for x in tokens[:t + 1]]\n>         q = project(Wq, tokens[t])\n>         out = attend(q, K, V)\n>     return out, cost[\"mults\"]\n> \n> plain, c_plain = generate(use_cache=False)\n> cached, c_cached = generate(use_cache=True)\n> print(f\"same final output: {all(abs(a - b) < 1e-9 for a, b in zip(plain, cached))}\")\n> print(f\"projection multiply-adds without a KV cache: {c_plain:>9,}\")\n> print(f\"projection multiply-adds with a KV cache:    {c_cached:>9,}\")\n> print(f\"work saved: {c_plain / c_cached:.1f}x for a 48-token sequence (the gap grows with length)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kvcache.py",
+     "o": "same final output: True\nprojection multiply-adds without a KV cache:   614,400\nprojection multiply-adds with a KV cache:       36,864\nwork saved: 16.7x for a 48-token sequence (the gap grows with length)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kvsize.py <<'EOF'\n> def per_token(layers, kv_heads, head_dim, bytes_per=2):\n>     return 2 * layers * kv_heads * head_dim * bytes_per\n> \n> models = {\n>     \"8B-class, GQA (32 layers, 8 KV heads)\":      per_token(32, 8, 128),\n>     \"8B-class, old multi-head (32 KV heads)\":     per_token(32, 32, 128),\n>     \"70B-class, GQA (80 layers, 8 KV heads)\":     per_token(80, 8, 128),\n> }\n> for name, b in models.items():\n>     print(f\"{name:45} {b / 1024:6.0f} KiB per token\")\n> \n> print(\"\\nMemory for the KV cache (FP16 values):\")\n> print(f\"{'model':45} {'context':>8} {'1 request':>10} {'32 requests':>12}\")\n> for name, b in list(models.items())[::2]:\n>     for ctx in (4096, 32768, 131072):\n>         one = b * ctx / 1e9\n>         print(f\"{name:45} {ctx:8,} {one:9.1f}G {one * 32:11.0f}G\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kvsize.py",
+     "o": "8B-class, GQA (32 layers, 8 KV heads)            128 KiB per token\n8B-class, old multi-head (32 KV heads)           512 KiB per token\n70B-class, GQA (80 layers, 8 KV heads)           320 KiB per token\n\nMemory for the KV cache (FP16 values):\nmodel                                          context  1 request  32 requests\n8B-class, GQA (32 layers, 8 KV heads)            4,096       0.5G          17G\n8B-class, GQA (32 layers, 8 KV heads)           32,768       4.3G         137G\n8B-class, GQA (32 layers, 8 KV heads)          131,072      17.2G         550G\n70B-class, GQA (80 layers, 8 KV heads)           4,096       1.3G          43G\n70B-class, GQA (80 layers, 8 KV heads)          32,768      10.7G         344G\n70B-class, GQA (80 layers, 8 KV heads)         131,072      42.9G        1374G",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "26e0db6571554f70"
+ },
+ "aiinfra-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > latency.py <<'EOF'\n> import random, statistics\n> random.seed(11)\n> \n> def request():\n>     \"\"\"Return (ttft, [inter-token gaps]) for one simulated request.\"\"\"\n>     queue   = random.expovariate(1 / 0.05)               # waiting for a slot, mean 50 ms\n>     prefill = random.gauss(0.18, 0.03)                    # prompt processing, ~180 ms\n>     gaps = []\n>     for _ in range(random.randint(80, 300)):              # 80-300 output tokens\n>         gap = random.gauss(0.022, 0.004)                  # ~22 ms per token\n>         if random.random() < 0.03:                        # 3% of tokens hit a stall (batch change, GC, preemption)\n>             gap += random.uniform(0.2, 0.6)\n>         gaps.append(max(gap, 0.005))\n>     return queue + prefill, gaps\n> \n> def pct(values, p):\n>     s = sorted(values)\n>     return s[min(len(s) - 1, int(p / 100 * len(s)))]\n> \n> ttfts, all_gaps, tpots, e2e = [], [], [], []\n> for _ in range(200):\n>     ttft, gaps = request()\n>     ttfts.append(ttft); all_gaps += gaps\n>     tpots.append(statistics.mean(gaps)); e2e.append(ttft + sum(gaps))\n> \n> def row(name, v, unit=1000):\n>     print(f\"{name:22} p50 {pct(v, 50) * unit:7.0f} ms   p95 {pct(v, 95) * unit:7.0f} ms   p99 {pct(v, 99) * unit:7.0f} ms   mean {statistics.mean(v) * unit:7.0f} ms\")\n> \n> row(\"TTFT\", ttfts)\n> row(\"TPOT (per request)\", tpots)\n> row(\"ITL (every token gap)\", all_gaps)\n> row(\"end-to-end latency\", e2e)\n> print(\"\\nNote how the ITL p99 is many times the p50: a few stalls dominate the tail even though the average looks healthy.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 latency.py",
+     "o": "TTFT                   p50     222 ms   p95     336 ms   p99     442 ms   mean     231 ms\nTPOT (per request)     p50      34 ms   p95      45 ms   p99      60 ms   mean      35 ms\nITL (every token gap)  p50      22 ms   p95      30 ms   p99     485 ms   mean      34 ms\nend-to-end latency     p50    6773 ms   p95   10306 ms   p99   11158 ms   mean    6661 ms\n\nNote how the ITL p99 is many times the p50: a few stalls dominate the tail even though the average looks healthy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > roofline.py <<'EOF'\n> PARAMS   = 8e9                 # 8B-parameter model\n> W_BYTES  = PARAMS * 2          # BF16 weights\n> PEAK     = 989e12              # FLOPS, approximate H100-class dense BF16\n> BW       = 3.35e12             # bytes/s HBM bandwidth, approximate\n> \n> ridge = PEAK / BW\n> print(f\"ridge point: {ridge:.0f} operations per byte; decode at batch 1 is {2 * PARAMS / W_BYTES:.0f} operation per byte -> memory-bound\\n\")\n> print(f\"{'batch':>6} {'step time':>10} {'bound by':>10} {'tokens/s total':>15} {'tokens/s per user':>18}\")\n> for b in (1, 2, 8, 32, 128, 256, 512, 1024):\n>     t_mem  = W_BYTES / BW                      # read all weights once per step\n>     t_comp = 2 * PARAMS * b / PEAK             # 2 FLOPs per parameter per token in the batch\n>     t = max(t_mem, t_comp)\n>     print(f\"{b:6d} {t * 1000:8.2f}ms {'memory' if t_mem >= t_comp else 'compute':>10} {b / t:15,.0f} {1 / t:18.0f}\")\n> \n> print(\"\\nPrefill of a 2,000-token prompt (all tokens in one pass):\")\n> t_prefill = 2 * PARAMS * 2000 / PEAK\n> print(f\"  ideal compute time: {t_prefill * 1000:.0f} ms  (compute-bound: intensity is about 2000 operations per weight byte)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 roofline.py",
+     "o": "ridge point: 295 operations per byte; decode at batch 1 is 1 operation per byte -> memory-bound\n\n batch  step time   bound by  tokens/s total  tokens/s per user\n     1     4.78ms     memory             209                209\n     2     4.78ms     memory             419                209\n     8     4.78ms     memory           1,675                209\n    32     4.78ms     memory           6,700                209\n   128     4.78ms     memory          26,800                209\n   256     4.78ms     memory          53,600                209\n   512     8.28ms    compute          61,812                121\n  1024    16.57ms    compute          61,812                 60\n\nPrefill of a 2,000-token prompt (all tokens in one pass):\n  ideal compute time: 32 ms  (compute-bound: intensity is about 2000 operations per weight byte)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "76978ccb9ad2a0a7"
+ },
+ "aiinfra-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > batching.py <<'EOF'\n> import random\n> random.seed(5)\n> SLOTS = 8                                        # the engine can decode 8 sequences per step\n> lengths = [random.randint(10, 200) for _ in range(48)]    # output tokens needed per request\n> \n> def static(lengths):\n>     t, done_at, i = 0, [], 0\n>     while i < len(lengths):\n>         group = lengths[i:i + SLOTS]; i += SLOTS\n>         t += max(group)                          # everyone waits for the longest one\n>         done_at += [t] * len(group)\n>     return t, done_at\n> \n> def continuous(lengths):\n>     t, done_at, waiting, running = 0, [], list(lengths), []\n>     while waiting or running:\n>         while waiting and len(running) < SLOTS:  # refill free slots every step\n>             running.append(waiting.pop(0))\n>         t += 1\n>         running = [r - 1 for r in running]\n>         finished = [r for r in running if r == 0]\n>         done_at += [t] * len(finished)\n>         running = [r for r in running if r > 0]\n>     return t, done_at\n> \n> total = sum(lengths)\n> for name, fn in ((\"static batching\", static), (\"continuous batching\", continuous)):\n>     steps, done = fn(lengths)\n>     print(f\"{name:20} total steps {steps:5d}   tokens/step {total / steps:5.2f} (max {SLOTS})   mean completion {sum(done) / len(done):7.1f} steps\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 batching.py",
+     "o": "static batching      total steps  1044   tokens/step  4.33 (max 8)   mean completion   628.8 steps\ncontinuous batching  total steps   657   tokens/step  6.88 (max 8)   mean completion   354.4 steps",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > paged.py <<'EOF'\n> import random\n> random.seed(9)\n> BUDGET_TOKENS = 32768          # KV memory the GPU has, measured in token slots\n> MAX_LEN = 4096                 # contiguous allocation must reserve the maximum possible length\n> BLOCK = 16\n> lengths = [random.randint(200, 1500) for _ in range(200)]    # real lengths are much shorter than the max\n> \n> def contiguous():\n>     n = BUDGET_TOKENS // MAX_LEN\n>     used = sum(lengths[:n])\n>     return n, used\n> \n> def paged():\n>     free, n, used = BUDGET_TOKENS // BLOCK, 0, 0\n>     for L in lengths:\n>         need = -(-L // BLOCK)                   # blocks needed, rounded up\n>         if need > free: break\n>         free -= need; n += 1; used += L\n>     return n, used\n> \n> for name, fn in ((\"contiguous (reserve max)\", contiguous), (\"paged (16-token blocks)\", paged)):\n>     n, used = fn()\n>     print(f\"{name:26} requests held at once: {n:3d}   tokens actually used: {used:6d} of {BUDGET_TOKENS}   ({used / BUDGET_TOKENS:4.0%} utilisation)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 paged.py",
+     "o": "contiguous (reserve max)   requests held at once:   8   tokens actually used:   6483 of 32768   ( 20% utilisation)\npaged (16-token blocks)    requests held at once:  40   tokens actually used:  32340 of 32768   ( 99% utilisation)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "67175c50c92d2f46"
+ },
+ "aiinfra-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tp.py <<'EOF'\n> # Illustrative cost model: time = fixed latency + bytes / bandwidth. Assumed figures, not measurements.\n> LINKS = {\n>     \"NVLink inside a node\":   dict(latency=10e-6, bw=400e9),\n>     \"network between nodes\":  dict(latency=40e-6, bw=50e9),\n> }\n> LAYERS, HIDDEN, BYTES = 80, 8192, 2            # 70B-class model, BF16 activations\n> TOKENS_IN_STEP = 64                             # decode batch of 64 sequences, one token each\n> TP = 8\n> \n> def allreduce_time(size, link, n=TP):\n>     traffic = 2 * (n - 1) / n * size            # ring all-reduce: each GPU sends about 2(n-1)/n of the data\n>     return link[\"latency\"] + traffic / link[\"bw\"]\n> \n> size = TOKENS_IN_STEP * HIDDEN * BYTES\n> print(f\"one all-reduce moves {size / 1e6:.2f} MB of activations; a token step needs {2 * LAYERS} of them\\n\")\n> for name, link in LINKS.items():\n>     per_step = 2 * LAYERS * allreduce_time(size, link)\n>     print(f\"TP={TP} over {name:24}: communication per decode step = {per_step * 1000:6.2f} ms\")\n> print(\"\\nCompare with the idealised weight-read time of about 4-9 ms per step from lesson 3:\")\n> print(\"communication over the slow link can cost more than the computation it is meant to speed up.\")\n> \n> print(\"\\nPipeline bubbles: with p stages and m micro-batches in flight, idle fraction = (p-1)/(m+p-1)\")\n> for p in (4, 8):\n>     for m in (1, 4, 16, 64):\n>         print(f\"  p={p} m={m:3d}: {((p - 1) / (m + p - 1)):5.1%} of stage-time idle\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 tp.py",
+     "o": "one all-reduce moves 1.05 MB of activations; a token step needs 160 of them\n\nTP=8 over NVLink inside a node    : communication per decode step =   2.33 ms\nTP=8 over network between nodes   : communication per decode step =  12.27 ms\n\nCompare with the idealised weight-read time of about 4-9 ms per step from lesson 3:\ncommunication over the slow link can cost more than the computation it is meant to speed up.\n\nPipeline bubbles: with p stages and m micro-batches in flight, idle fraction = (p-1)/(m+p-1)\n  p=4 m=  1: 75.0% of stage-time idle\n  p=4 m=  4: 42.9% of stage-time idle\n  p=4 m= 16: 15.8% of stage-time idle\n  p=4 m= 64:  4.5% of stage-time idle\n  p=8 m=  1: 87.5% of stage-time idle\n  p=8 m=  4: 63.6% of stage-time idle\n  p=8 m= 16: 30.4% of stage-time idle\n  p=8 m= 64:  9.9% of stage-time idle",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> weights = 70e9 * 2 / 1e9\n> for tp in (2, 4, 8):\n>     per_gpu_w = weights / tp\n>     free = 80 * 0.90 - per_gpu_w               # 90% of VRAM usable, minus this GPU's slice of the weights\n>     cache_total = free * tp\n>     per_request = 10.7                          # GB of KV cache for a 32k-token request on a 70B-class GQA model (lesson 2)\n>     print(f\"TP={tp}: weights {per_gpu_w:5.1f} GB/GPU, free for KV {free:5.1f} GB/GPU, {cache_total:6.0f} GB total -> about {int(cache_total / per_request):3d} concurrent 32k-token requests\")\n> EOF",
+     "o": "TP=2: weights  70.0 GB/GPU, free for KV   2.0 GB/GPU,      4 GB total -> about   0 concurrent 32k-token requests\nTP=4: weights  35.0 GB/GPU, free for KV  37.0 GB/GPU,    148 GB total -> about  13 concurrent 32k-token requests\nTP=8: weights  17.5 GB/GPU, free for KV  54.5 GB/GPU,    436 GB total -> about  40 concurrent 32k-token requests",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> kv_per_token = 2 * 80 * 8 * 128 * 2            # 70B-class GQA, FP16 (lesson 2): 327,680 bytes\n> for prompt in (1000, 4000, 32000):\n>     size = prompt * kv_per_token\n>     nv  = size / 400e9 * 1000                  # ms over an NVLink-class link\n>     net = size / 50e9 * 1000                   # ms over a 400 Gb/s network port\n>     prefill = 2 * 70e9 * prompt / 989e12 * 1000 / 8     # ideal prefill ms on 8 GPUs in parallel (compute-bound)\n>     print(f\"prompt {prompt:6,} tokens: KV {size / 1e9:5.2f} GB, transfer {nv:6.1f} ms (NVLink) / {net:7.1f} ms (network), ideal prefill about {prefill:6.0f} ms\")\n> EOF",
+     "o": "prompt  1,000 tokens: KV  0.33 GB, transfer    0.8 ms (NVLink) /     6.6 ms (network), ideal prefill about     18 ms\nprompt  4,000 tokens: KV  1.31 GB, transfer    3.3 ms (NVLink) /    26.2 ms (network), ideal prefill about     71 ms\nprompt 32,000 tokens: KV 10.49 GB, transfer   26.2 ms (NVLink) /   209.7 ms (network), ideal prefill about    566 ms",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > routing.py <<'EOF'\n> import random, zlib\n> random.seed(2)\n> REPLICAS = 4\n> PREFIXES = [f\"system-prompt-{i}\" for i in range(8)]      # 8 different long shared prefixes (agents, tenants...)\n> requests = [random.choice(PREFIXES) for _ in range(400)]\n> \n> def run(route):\n>     caches = [set() for _ in range(REPLICAS)]\n>     hits = 0\n>     for i, prefix in enumerate(requests):\n>         r = route(i, prefix)\n>         hits += prefix in caches[r]                      # prefill saved if this replica already cached the prefix\n>         caches[r].add(prefix)\n>     return hits / len(requests), sum(len(c) for c in caches)\n> \n> round_robin = lambda i, p: i % REPLICAS\n> prefix_aware = lambda i, p: zlib.crc32(p.encode()) % REPLICAS           # same prefix, same replica\n> \n> for name, route in ((\"round robin\", round_robin), (\"prefix-aware (KV-aware idea)\", prefix_aware)):\n>     rate, stored = run(route)\n>     print(f\"{name:30} prefix cache hit rate {rate:5.1%}   copies of prefixes stored: {stored}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 routing.py",
+     "o": "round robin                    prefix cache hit rate 92.0%   copies of prefixes stored: 32\nprefix-aware (KV-aware idea)   prefix cache hit rate 98.0%   copies of prefixes stored: 8",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "b19c9cb24d20c520"
+ },
+ "aiinfra-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiinfra && cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > capacity.py <<'EOF'\n> # Assumed model of one 8B-class replica on an H100-class GPU (ideal figures from lesson 3, plus a KV-read term)\n> WEIGHT_READ = 4.8e-3            # s per step to read the weights (memory-bound base cost)\n> KV_PER_REQ  = 0.10e-3           # s extra per step for each active request (reads its KV cache), assumed\n> GPU_COST_HR = 3.00              # dollars per GPU-hour, illustrative\n> SLO_ITL     = 0.030             # p95 inter-token latency target: 30 ms\n> \n> def step_time(batch):    return WEIGHT_READ + batch * KV_PER_REQ\n> def tokens_per_sec(batch): return batch / step_time(batch)\n> \n> best = max(b for b in range(1, 1000) if step_time(b) <= SLO_ITL)\n> print(f\"{'batch':>6} {'ITL (ms)':>9} {'tokens/s':>9} {'$/1M tokens':>12}  meets 30 ms SLO?\")\n> for b in (1, 8, 32, 64, best, 400):\n>     tps = tokens_per_sec(b)\n>     cost = GPU_COST_HR / (tps * 3600) * 1e6\n>     print(f\"{b:6d} {step_time(b) * 1000:9.1f} {tps:9,.0f} {cost:12.3f}  {'yes' if step_time(b) <= SLO_ITL else 'NO'}\")\n> print(f\"\\nLargest batch that still meets the SLO: {best} concurrent requests per replica.\")\n> print(\"The SLO, not the GPU's raw capability, sets how many users one replica can carry.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 capacity.py",
+     "o": " batch  ITL (ms)  tokens/s  $/1M tokens  meets 30 ms SLO?\n     1       4.9       204        4.083  yes\n     8       5.6     1,429        0.583  yes\n    32       8.0     4,000        0.208  yes\n    64      11.2     5,714        0.146  yes\n   252      30.0     8,400        0.099  yes\n   400      44.8     8,929        0.093  NO\n\nLargest batch that still meets the SLO: 252 concurrent requests per replica.\nThe SLO, not the GPU's raw capability, sets how many users one replica can carry.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > queue.py <<'EOF'\n> import random, heapq\n> random.seed(4)\n> \n> def simulate(utilisation, servers=4, mean_service=1.0, n=40000):\n>     \"\"\"M/M/c queue: Poisson arrivals, exponential service times, `servers` identical servers.\"\"\"\n>     rate = utilisation * servers / mean_service\n>     t, free, busy_until, waits = 0.0, servers, [], []\n>     for _ in range(n):\n>         t += random.expovariate(rate)\n>         while busy_until and busy_until[0] <= t:\n>             heapq.heappop(busy_until); free += 1\n>         if free:\n>             start = t; free -= 1\n>         else:\n>             start = heapq.heappop(busy_until)                # wait for the first server to free up\n>         waits.append(start - t)\n>         heapq.heappush(busy_until, start + random.expovariate(1 / mean_service))\n>     waits.sort()\n>     return sum(waits) / n, waits[int(0.95 * n)]\n> \n> print(f\"{'utilisation':>12} {'mean wait':>10} {'p95 wait':>10}   (in units of the mean service time)\")\n> for u in (0.5, 0.7, 0.8, 0.9, 0.95, 0.98):\n>     mean, p95 = simulate(u)\n>     print(f\"{u:12.0%} {mean:10.2f} {p95:10.2f}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 queue.py",
+     "o": " utilisation  mean wait   p95 wait   (in units of the mean service time)\n         50%       0.08       0.58\n         70%       0.33       1.71\n         80%       0.66       2.75\n         90%       1.91       6.45\n         95%       5.53      20.20\n         98%      18.11      41.56",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> def cold_start(weights_gb, image_gb, net_gbps, disk_gbps, node_ready_s=0, init_s=45):\n>     pull  = image_gb / net_gbps                 # image comes over the network (skipped if cached on the node)\n>     load  = weights_gb / disk_gbps              # weights from storage into GPU\n>     return node_ready_s + pull + load + init_s, pull, load\n> \n> cases = {\n>     \"cold node, weights from network storage\": dict(weights_gb=140, image_gb=20, net_gbps=1.2, disk_gbps=1.0, node_ready_s=240),\n>     \"warm node, image cached, weights on NVMe\": dict(weights_gb=140, image_gb=0,  net_gbps=1.2, disk_gbps=5.0),\n> }\n> for name, kw in cases.items():\n>     total, pull, load = cold_start(**kw)\n>     print(f\"{name:42} image {pull:5.0f}s + weights {load:5.0f}s + startup => {total / 60:4.1f} minutes\")\n> EOF",
+     "o": "cold node, weights from network storage    image    17s + weights   140s + startup =>  7.4 minutes\nwarm node, image cached, weights on NVMe   image     0s + weights    28s + startup =>  1.2 minutes",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'EOF'\n> gpu_hr, peak_tps = 3.00, 4200          # assumed price and sustained tokens/s per GPU at the SLO batch size\n> print(f\"{'average GPU utilisation':>24} {'$ per 1M tokens':>16}\")\n> for util in (1.0, 0.6, 0.3, 0.1):\n>     cost = gpu_hr / (peak_tps * util * 3600) * 1e6\n>     print(f\"{util:24.0%} {cost:16.3f}\")\n> print(\"\\nA self-hosted GPU at 10% utilisation costs ten times more per token than at 100%.\")\n> print(\"This is the break-even question: steady high load favours owning GPUs; spiky or low load favours paying per token to a hosted API.\")\n> EOF",
+     "o": " average GPU utilisation  $ per 1M tokens\n                    100%            0.198\n                     60%            0.331\n                     30%            0.661\n                     10%            1.984\n\nA self-hosted GPU at 10% utilisation costs ten times more per token than at 100%.\nThis is the break-even question: steady high load favours owning GPUs; spiky or low load favours paying per token to a hosted API.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiinfra",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > gateway.py <<'EOF'\n> import random, time\n> random.seed(8)\n> \n> class TokenBucket:\n>     \"\"\"Rate limit in tokens per minute per tenant.\"\"\"\n>     def __init__(self, per_minute):\n>         self.capacity, self.tokens, self.last = per_minute, per_minute, 0.0\n>     def allow(self, cost, now):\n>         self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.capacity / 60)\n>         self.last = now\n>         if self.tokens >= cost:\n>             self.tokens -= cost; return True\n>         return False\n> \n> BACKENDS = {            # name: (failure probability, kind) - stand-ins for a self-hosted engine and a hosted provider\n>     \"self-hosted-8b\": 0.30,\n>     \"hosted-provider\": 0.02,\n> }\n> def call(backend):\n>     if random.random() < BACKENDS[backend]: raise TimeoutError(f\"{backend} timed out\")\n>     return f\"answer from {backend}\"\n> \n> def route(task):  return \"self-hosted-8b\" if task == \"easy\" else \"hosted-provider\"\n> \n> def handle(tenant, task, tokens, now, buckets):\n>     if not buckets[tenant].allow(tokens, now):\n>         return \"429 rate limit exceeded for \" + tenant\n>     primary = route(task)\n>     for backend in (primary, \"hosted-provider\"):                # fallback chain\n>         for attempt in range(2):                                # one retry per backend\n>             try:\n>                 return f\"200 {call(backend)} (attempt {attempt + 1})\"\n>             except TimeoutError as e:\n>                 last = str(e)\n>     return \"503 all backends failed: \" + last\n> \n> buckets = {\"search-team\": TokenBucket(2000), \"hr-bot\": TokenBucket(500)}\n> tests = [(\"search-team\", \"easy\", 300, 1), (\"search-team\", \"hard\", 800, 2), (\"hr-bot\", \"easy\", 400, 3),\n>          (\"hr-bot\", \"easy\", 400, 4), (\"search-team\", \"easy\", 300, 5), (\"search-team\", \"easy\", 300, 6)]\n> for tenant, task, tokens, now in tests:\n>     print(f\"t={now}s {tenant:12} {task:5} {tokens:4} tokens -> {handle(tenant, task, tokens, now, buckets)}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 gateway.py",
+     "o": "t=1s search-team  easy   300 tokens -> 200 answer from self-hosted-8b (attempt 2)\nt=2s search-team  hard   800 tokens -> 200 answer from hosted-provider (attempt 1)\nt=3s hr-bot       easy   400 tokens -> 200 answer from self-hosted-8b (attempt 1)\nt=4s hr-bot       easy   400 tokens -> 429 rate limit exceeded for hr-bot\nt=5s search-team  easy   300 tokens -> 200 answer from hosted-provider (attempt 1)\nt=6s search-team  easy   300 tokens -> 200 answer from self-hosted-8b (attempt 2)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9f55a44afb8fc640"
+ },
+ "aiinfra-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/gitops && cd ~/lab/gitops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf repo && mkdir -p repo/apps/web && cd repo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init -q -b main && git config user.email \"ops@example.com\" && git config user.name \"Ops\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > apps/web/deployment.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata:\n>   name: web\n>   labels: {app: web, managed-by: mini-gitops}\n> spec:\n>   replicas: 2\n>   selector: {matchLabels: {app: web}}\n>   template:\n>     metadata: {labels: {app: web}}\n>     spec:\n>       containers:\n>       - name: web\n>         image: busybox:1.37\n>         command: [\"sh\", \"-c\", \"mkdir -p /www && echo 'hello v1' > /www/index.html && httpd -f -p 8080 -h /www\"]\n>         ports: [{containerPort: 8080}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > apps/web/config.yaml <<'EOF'\n> apiVersion: v1\n> kind: ConfigMap\n> metadata:\n>   name: web-settings\n>   labels: {managed-by: mini-gitops}\n> data:\n>   feature_x: \"off\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add -A && git commit -q -m \"web: initial deployment and settings\" && git log --oneline",
+     "o": "416cbd6 web: initial deployment and settings",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > reconcile.py <<'EOF'\n> import subprocess, sys, tempfile, os, json\n> \n> REPO, NS = os.path.expanduser(\"~/lab/gitops/repo\"), os.environ.get(\"LABNS\", \"labgitops\")\n> LABEL = \"managed-by=mini-gitops\"\n> \n> def sh(*args, input=None):\n>     return subprocess.run(args, capture_output=True, text=True, input=input)\n> \n> def git_manifests():\n>     \"\"\"Read every manifest from the committed state (HEAD), not from the working directory.\"\"\"\n>     files = sh(\"git\", \"-C\", REPO, \"ls-tree\", \"-r\", \"--name-only\", \"HEAD\").stdout.split()\n>     docs = []\n>     for f in files:\n>         if f.endswith(\".yaml\"):\n>             docs.append(sh(\"git\", \"-C\", REPO, \"show\", f\"HEAD:{f}\").stdout)\n>     return \"\\n---\\n\".join(docs)\n> \n> def reconcile():\n>     desired = git_manifests()\n>     commit = sh(\"git\", \"-C\", REPO, \"rev-parse\", \"--short\", \"HEAD\").stdout.strip()\n>     print(f\"[reconcile] desired state = Git commit {commit}\")\n>     # 1. DIFF: kubectl diff exits 1 when the cluster differs from the manifests\n>     diff = sh(\"kubectl\", \"-n\", NS, \"diff\", \"-f\", \"-\", input=desired)\n>     changed = sorted({l.split()[0].lstrip(\"+-\") for l in diff.stdout.splitlines() if l.startswith((\"+++\", \"---\"))} - {\"+++\", \"---\"})\n>     if diff.returncode == 1:\n>         print(\"[reconcile] OUT OF SYNC: the cluster differs from Git ->\", \"apply\")\n>         out = sh(\"kubectl\", \"-n\", NS, \"apply\", \"-f\", \"-\", input=desired).stdout\n>         for line in out.strip().splitlines(): print(\"   \", line)\n>     else:\n>         print(\"[reconcile] in sync, nothing to do\")\n>     # 2. PRUNE: delete labelled objects that Git no longer contains\n>     wanted = set(sh(\"kubectl\", \"-n\", NS, \"apply\", \"--dry-run=client\", \"-o\", \"name\", \"-f\", \"-\", input=desired).stdout.split())\n>     live = set(sh(\"kubectl\", \"-n\", NS, \"get\", \"deploy,cm,svc\", \"-l\", LABEL, \"-o\", \"name\").stdout.split())\n>     for obj in sorted(live - wanted):\n>         print(f\"[reconcile] PRUNE {obj}: no longer in Git\")\n>         sh(\"kubectl\", \"-n\", NS, \"delete\", obj)\n>     # 3. HEALTH: wait for the rollout like Argo CD's health assessment\n>     r = sh(\"kubectl\", \"-n\", NS, \"rollout\", \"status\", \"deploy/web\", \"--timeout=90s\")\n>     print(\"[reconcile] health:\", \"Healthy\" if r.returncode == 0 else \"Degraded - \" + r.stdout.strip()[-60:])\n> \n> if __name__ == \"__main__\":\n>     reconcile()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- first reconcile: the cluster is empty, so everything is created\"",
+     "o": "--- first reconcile: the cluster is empty, so everything is created",
+     "x": 0
+    },
+    {
+     "c": "$ python3 reconcile.py",
+     "o": "[reconcile] desired state = Git commit 416cbd6\n[reconcile] OUT OF SYNC: the cluster differs from Git -> apply\n    configmap/web-settings created\n    deployment.apps/web created\n[reconcile] health: Healthy",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deploy,cm -l managed-by=mini-gitops --no-headers | awk '{print \"   cluster has:\", $1}'",
+     "o": "   cluster has: deployment.apps/web\n   cluster has: configmap/web-settings",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- an engineer scales the deployment by hand, outside Git\"",
+     "o": "--- an engineer scales the deployment by hand, outside Git",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl scale deploy/web --replicas=5 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deploy web -o jsonpath='replicas in the cluster now: {.spec.replicas}{\"\\n\"}'",
+     "o": "replicas in the cluster now: 5",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the reconciler runs\"",
+     "o": "--- the reconciler runs",
+     "x": 0
+    },
+    {
+     "c": "$ python3 reconcile.py",
+     "o": "[reconcile] desired state = Git commit 416cbd6\n[reconcile] OUT OF SYNC: the cluster differs from Git -> apply\n    configmap/web-settings unchanged\n    deployment.apps/web configured\n[reconcile] health: Healthy",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deploy web -o jsonpath='replicas in the cluster after self-heal: {.spec.replicas} (Git says 2){\"\\n\"}'",
+     "o": "replicas in the cluster after self-heal: 2 (Git says 2)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops/repo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/replicas: 2/replicas: 3/; s/hello v1/hello v2/' apps/web/deployment.yaml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/feature_x: \"off\"/feature_x: \"on\"/' apps/web/config.yaml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git commit -qam \"web: scale to 3, release v2, enable feature_x\" && git log --oneline | head -3",
+     "o": "52d3b21 web: scale to 3, release v2, enable feature_x\n416cbd6 web: initial deployment and settings",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/gitops && python3 reconcile.py",
+     "o": "[reconcile] desired state = Git commit 52d3b21\n[reconcile] OUT OF SYNC: the cluster differs from Git -> apply\n    configmap/web-settings configured\n    deployment.apps/web configured\n[reconcile] health: Healthy",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get cm web-settings -o jsonpath='feature_x in the cluster: {.data.feature_x}{\"\\n\"}'",
+     "o": "feature_x in the cluster: on",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops/repo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git rm -q apps/web/config.yaml && git commit -qm \"web: remove settings (no longer needed)\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/gitops && python3 reconcile.py",
+     "o": "[reconcile] desired state = Git commit edcfe37\n[reconcile] in sync, nothing to do\n[reconcile] PRUNE configmap/web-settings: no longer in Git\n[reconcile] health: Healthy",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get cm -l managed-by=mini-gitops --no-headers | wc -l | awk '{print \"managed ConfigMaps left in the cluster:\", $1}'",
+     "o": "No resources found in labgitops namespace.\nmanaged ConfigMaps left in the cluster: 0",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops/repo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git revert --no-edit HEAD > /dev/null && git log --oneline | head -5",
+     "o": "cea9800 Revert \"web: remove settings (no longer needed)\"\nedcfe37 web: remove settings (no longer needed)\n52d3b21 web: scale to 3, release v2, enable feature_x\n416cbd6 web: initial deployment and settings",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/gitops && python3 reconcile.py",
+     "o": "[reconcile] desired state = Git commit cea9800\n[reconcile] OUT OF SYNC: the cluster differs from Git -> apply\n    configmap/web-settings created\n    deployment.apps/web unchanged\n[reconcile] health: Healthy",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get cm web-settings -o jsonpath='feature_x after the rollback: {.data.feature_x}{\"\\n\"}'",
+     "o": "feature_x after the rollback: on",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/gitops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > keda_sim.py <<'EOF'\n> import math\n> THRESHOLD, MIN, MAX, COOLDOWN = 8, 0, 6, 3       # target waiting requests per replica; cooldown measured in ticks\n> \n> # waiting-request count at each tick: idle, a burst, then quiet again\n> queue = [0, 0, 5, 30, 55, 60, 40, 20, 6, 0, 0, 0, 0, 0, 0]\n> \n> replicas, idle_ticks = 0, 0\n> print(f\"{'tick':>4} {'queue':>6} {'replicas':>9}  decision\")\n> for t, q in enumerate(queue):\n>     desired = min(MAX, max(MIN, math.ceil(q / THRESHOLD)))       # HPA-style: ceil(metric / target)\n>     note = \"\"\n>     if q > 0:\n>         idle_ticks = 0\n>         if desired > replicas:                                    # scale up immediately\n>             note = \"activate from zero (cold start begins)\" if replicas == 0 else \"scale up\"\n>             replicas = desired\n>         elif desired < replicas:                                  # real autoscalers add a stabilisation window here\n>             replicas, note = desired, \"scale down\"\n>     elif replicas > 0:\n>         idle_ticks += 1\n>         note = f\"idle {idle_ticks}/{COOLDOWN}\"\n>         if idle_ticks >= COOLDOWN:\n>             replicas, note = 0, \"cooldown elapsed: scale to zero\"\n>     print(f\"{t:4d} {q:6d} {replicas:9d}  {note}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 keda_sim.py",
+     "o": "tick  queue  replicas  decision\n   0      0         0  \n   1      0         0  \n   2      5         1  activate from zero (cold start begins)\n   3     30         4  scale up\n   4     55         6  scale up\n   5     60         6  \n   6     40         5  scale down\n   7     20         3  scale down\n   8      6         1  scale down\n   9      0         1  idle 1/3\n  10      0         1  idle 2/3\n  11      0         0  cooldown elapsed: scale to zero\n  12      0         0  \n  13      0         0  \n  14      0         0  ",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8e39d837dba62be1"
+ },
+ "aiinfra-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mlops && cd ~/lab/mlops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > track.py <<'EOF'\n> import logging, warnings\n> warnings.filterwarnings(\"ignore\"); logging.getLogger(\"mlflow\").setLevel(logging.ERROR)\n> import mlflow\n> from mlflow import MlflowClient\n> import numpy as np\n> from sklearn.linear_model import LogisticRegression\n> \n> mlflow.set_tracking_uri(\"sqlite:///mlflow.db\")            # a local database; in production a shared server\n> mlflow.set_experiment(\"ev-ticket-routing\")\n> \n> rng = np.random.default_rng(7)\n> X = rng.normal(size=(300, 4))\n> y = (X[:, 0] + 0.5 * X[:, 1] + rng.normal(scale=1.2, size=300) > 0).astype(int)\n> Xtr, ytr, Xte, yte = X[:60], y[:60], X[60:], y[60:]\n> \n> uris = {}\n> for C in (0.001, 0.1, 10.0):                                # try three regularisation strengths\n>     with mlflow.start_run(run_name=f\"logreg C={C}\") as run:\n>         model = LogisticRegression(C=C).fit(Xtr, ytr)\n>         mlflow.log_param(\"C\", C)\n>         mlflow.log_param(\"train_rows\", len(Xtr))\n>         mlflow.log_metric(\"accuracy\", round(model.score(Xte, yte), 3))\n>         uris[run.info.run_id] = mlflow.sklearn.log_model(model, name=\"model\").model_uri\n> \n> runs = mlflow.search_runs(order_by=[\"metrics.accuracy DESC\"])\n> print(runs[[\"tags.mlflow.runName\", \"params.train_rows\", \"metrics.accuracy\"]].to_string(index=False))\n> \n> best = runs.iloc[0]\n> version = mlflow.register_model(uris[best[\"run_id\"]], \"ev-ticket-router\")      # the registry gives it a version number\n> MlflowClient().set_registered_model_alias(\"ev-ticket-router\", \"champion\", version.version)\n> print(\"\\nregistered ev-ticket-router version\", version.version, \"from\", best[\"tags.mlflow.runName\"], \"and set alias 'champion'\")\n> \n> served = mlflow.pyfunc.load_model(\"models:/ev-ticket-router@champion\")      # consumers load by alias, never by file path\n> print(\"champion predictions for 5 tickets:\", [int(p) for p in served.predict(Xte[:5])])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 track.py 2>/dev/null",
+     "o": "tags.mlflow.runName params.train_rows  metrics.accuracy\n      logreg C=10.0                60             0.738\n       logreg C=0.1                60             0.696\n     logreg C=0.001                60             0.508\n\nregistered ev-ticket-router version 1 from logreg C=10.0 and set alias 'champion'\nchampion predictions for 5 tickets: [1, 1, 0, 1, 1]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mlops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > trace.py <<'EOF'\n> import logging, warnings\n> warnings.filterwarnings(\"ignore\"); logging.getLogger(\"mlflow\").setLevel(logging.ERROR)\n> import mlflow\n> mlflow.set_tracking_uri(\"sqlite:///mlflow.db\")\n> mlflow.set_experiment(\"ev-search-assistant\")\n> \n> @mlflow.trace\n> def retrieve(question):\n>     return [\"runbook-search\", \"faq-indexing\"]               # stand-in for a vector search\n> \n> @mlflow.trace\n> def generate(question, docs):\n>     return f\"Answer built from {len(docs)} documents\"       # stand-in for a model call\n> \n> @mlflow.trace\n> def answer(question):\n>     return generate(question, retrieve(question))\n> \n> print(answer(\"why is search slow\"))\n> mlflow.flush_trace_async_logging()\n> traces = mlflow.search_traces(return_type=\"list\")\n> spans = traces[0].data.spans\n> print(\"trace recorded with\", len(spans), \"spans:\")\n> for s in sorted(spans, key=lambda s: s.start_time_ns):\n>     print(\"   \", s.name)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 trace.py 2>/dev/null",
+     "o": "Answer built from 2 documents\ntrace recorded with 3 spans:\n    answer\n    retrieve\n    generate",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/mlops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pipeline.py <<'EOF'\n> import warnings; warnings.filterwarnings(\"ignore\")\n> from kfp import dsl, compiler\n> import yaml\n> \n> @dsl.component(base_image=\"python:3.11\")\n> def prepare(rows: int) -> int:\n>     return rows * 2                                          # stand-in for data preparation\n> \n> @dsl.component(base_image=\"python:3.11\")\n> def train(rows: int) -> float:\n>     return 0.9                                               # stand-in for training: returns an accuracy\n> \n> @dsl.component(base_image=\"python:3.11\")\n> def deploy(accuracy: float) -> str:\n>     return \"deployed\" if accuracy >= 0.85 else \"rejected\"    # a quality gate\n> \n> @dsl.pipeline(name=\"ev-ticket-router\")\n> def pipeline(rows: int = 1000):\n>     data = prepare(rows=rows)\n>     model = train(rows=data.output)\n>     deploy(accuracy=model.output)\n> \n> compiler.Compiler().compile(pipeline, \"pipeline.yaml\")\n> spec = next(yaml.safe_load_all(open(\"pipeline.yaml\")))\n> print(\"compiled pipeline:\", spec[\"pipelineInfo\"][\"name\"])\n> for name, task in spec[\"root\"][\"dag\"][\"tasks\"].items():\n>     after = task.get(\"dependentTasks\", [])\n>     print(f\"  step {name:8} runs after {after or 'nothing'}\")\n> print(\"components compiled to container specs:\", sorted(spec[\"deploymentSpec\"][\"executors\"]))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pipeline.py 2>/dev/null",
+     "o": "compiled pipeline: ev-ticket-router\n  step deploy   runs after ['train']\n  step prepare  runs after nothing\n  step train    runs after ['prepare']\ncomponents compiled to container specs: ['exec-deploy', 'exec-prepare', 'exec-train']",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8a4a8aab100b028c"
+ },
+ "aiinfra-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aiobs && cd ~/lab/aiobs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > exporter.py <<'EOF'\n> import os, random, threading, time\n> from prometheus_client import Counter, Gauge, Histogram, start_http_server\n> \n> REQS    = Counter(\"llm_requests_total\", \"Requests by outcome\", [\"status\"])\n> PROMPT  = Counter(\"llm_prompt_tokens_total\", \"Prompt tokens processed\")\n> GEN     = Counter(\"llm_generation_tokens_total\", \"Output tokens generated\")\n> TTFT    = Histogram(\"llm_time_to_first_token_seconds\", \"Time to first token\", buckets=[0.1, 0.25, 0.3, 0.4, 0.5, 0.75, 1, 2.5, 5])\n> ITL     = Histogram(\"llm_inter_token_latency_seconds\", \"Gap between output tokens\", buckets=[0.01, 0.02, 0.05, 0.1, 0.25, 0.5])\n> RUNNING = Gauge(\"llm_requests_running\", \"Requests being decoded\")\n> WAITING = Gauge(\"llm_requests_waiting\", \"Requests queued\")\n> KV      = Gauge(\"llm_kv_cache_usage_ratio\", \"Fraction of KV cache blocks in use\")\n> GPU     = Gauge(\"gpu_utilization_percent\", \"GPU utilisation (a DCGM exporter would give DCGM_FI_DEV_GPU_UTIL)\")\n> \n> def step():\n>     pressure = os.path.exists(\"pressure.flag\")\n>     ttft = random.uniform(1.0, 3.0) if pressure else random.uniform(0.15, 0.4)\n>     itl = random.uniform(0.08, 0.2) if pressure else random.uniform(0.018, 0.03)\n>     TTFT.observe(ttft); ITL.observe(itl)\n>     REQS.labels(\"504\" if (pressure and random.random() < 0.08) else \"200\").inc()\n>     PROMPT.inc(random.randint(200, 2000)); GEN.inc(random.randint(50, 300))\n>     RUNNING.set(random.randint(60, 64) if pressure else random.randint(20, 40))\n>     WAITING.set(random.randint(25, 60) if pressure else random.randint(0, 3))\n>     KV.set(random.uniform(0.93, 0.99) if pressure else random.uniform(0.4, 0.6))\n>     GPU.set(random.uniform(97, 100) if pressure else random.uniform(60, 80))\n> \n> def loop():\n>     while True:\n>         for _ in range(5): step()\n>         time.sleep(0.2)\n> \n> threading.Thread(target=loop, daemon=True).start()\n> start_http_server(9103, addr=\"127.0.0.1\")\n> time.sleep(10**6)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f pressure.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 exporter.py > /dev/null 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo $! > exporter.pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ curl -s http://127.0.0.1:9103/metrics | grep -E '^(llm_requests_total|llm_requests_waiting|llm_kv_cache_usage_ratio|gpu_utilization_percent)'",
+     "o": "llm_requests_total{status=\"200\"} 75.0\nllm_requests_waiting 3.0\nllm_kv_cache_usage_ratio 0.45082056702472145\ngpu_utilization_percent 67.9734275806025",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiobs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rules.yml <<'EOF'\n> groups:\n>   - name: inference\n>     interval: 2s\n>     rules:\n>       - record: llm:ttft_p95:10s\n>         expr: histogram_quantile(0.95, sum by (le) (rate(llm_time_to_first_token_seconds_bucket[10s])))\n>       - record: llm:itl_p95:10s\n>         expr: histogram_quantile(0.95, sum by (le) (rate(llm_inter_token_latency_seconds_bucket[10s])))\n>       - record: llm:tokens_per_second:10s\n>         expr: rate(llm_generation_tokens_total[10s])\n>       - record: llm:error_ratio:10s\n>         expr: sum(rate(llm_requests_total{status!=\"200\"}[10s])) / sum(rate(llm_requests_total[10s]))\n>       # the SLO symptom: users wait too long for the first token\n>       - alert: TTFTSloBreach\n>         expr: llm:ttft_p95:10s > 0.5\n>         for: 6s\n>         labels: {severity: page}\n>         annotations: {summary: \"p95 time to first token above the 0.5 s SLO\"}\n>       # leading indicators: they fire before the SLO is badly broken\n>       - alert: RequestQueueBuilding\n>         expr: llm_requests_waiting > 20\n>         for: 6s\n>         labels: {severity: ticket}\n>         annotations: {summary: \"More than 20 requests waiting: add replicas or shed load\"}\n>       - alert: KVCacheNearlyFull\n>         expr: llm_kv_cache_usage_ratio > 0.9\n>         for: 6s\n>         labels: {severity: ticket}\n>         annotations: {summary: \"KV cache above 90%: expect preemptions and rising latency\"}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > prometheus.yml <<'EOF'\n> global:\n>   scrape_interval: 2s\n> rule_files: [\"/cfg/rules.yml\"]\n> scrape_configs:\n>   - job_name: llm\n>     static_configs:\n>       - targets: [\"127.0.0.1:9103\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name prometheus --network host -v ~/lab/aiobs:/cfg prom/prometheus --config.file=/cfg/prometheus.yml --web.listen-address=127.0.0.1:9090 --storage.tsdb.path=/prometheus > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 20",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- healthy traffic\"",
+     "o": "--- healthy traffic",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:ttft_p95:10s'",
+     "o": "(no labels)  0.39",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:itl_p95:10s'",
+     "o": "(no labels)  0.05",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:tokens_per_second:10s'",
+     "o": "(no labels)  4352.12",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm_requests_waiting'",
+     "o": "(no labels)  1.0",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm_kv_cache_usage_ratio'",
+     "o": "(no labels)  0.46",
+     "x": 0
+    },
+    {
+     "c": "$ cat > alerts.py <<'EOF'\n> import json, sys, urllib.request\n> alerts = json.load(urllib.request.urlopen(\"http://127.0.0.1:9090/api/v1/alerts\"))[\"data\"][\"alerts\"]\n> if not alerts:\n>     print(\"alerts firing or pending: none\")\n> for a in sorted(alerts, key=lambda a: a[\"labels\"][\"alertname\"]):\n>     name, sev, summary = a[\"labels\"][\"alertname\"], a[\"labels\"][\"severity\"], a[\"annotations\"][\"summary\"]\n>     print(f\"  {a['state']:8} {name:20} severity={sev}  {summary}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 alerts.py",
+     "o": "alerts firing or pending: none",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiobs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ touch pressure.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 28",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- under pressure\"",
+     "o": "--- under pressure",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:ttft_p95:10s'",
+     "o": "(no labels)  4.44",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm_requests_waiting'",
+     "o": "(no labels)  35.0",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm_kv_cache_usage_ratio'",
+     "o": "(no labels)  0.95",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:error_ratio:10s'",
+     "o": "(no labels)  0.07",
+     "x": 0
+    },
+    {
+     "c": "$ python3 alerts.py",
+     "o": "  firing   KVCacheNearlyFull    severity=ticket  KV cache above 90%: expect preemptions and rising latency\n  firing   RequestQueueBuilding severity=ticket  More than 20 requests waiting: add replicas or shed load\n  firing   TTFTSloBreach        severity=page  p95 time to first token above the 0.5 s SLO",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiobs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f pressure.flag",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 22",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- pressure removed\"",
+     "o": "--- pressure removed",
+     "x": 0
+    },
+    {
+     "c": "$ promq 'llm:ttft_p95:10s'",
+     "o": "(no labels)  0.39",
+     "x": 0
+    },
+    {
+     "c": "$ python3 alerts.py",
+     "o": "alerts firing or pending: none",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f prometheus > /dev/null; kill $(cat exporter.pid)",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/aiobs",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > otel.py <<'EOF'\n> import time\n> from opentelemetry import trace\n> from opentelemetry.sdk.trace import TracerProvider\n> from opentelemetry.sdk.trace.export import SimpleSpanProcessor\n> from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter\n> \n> exporter = InMemorySpanExporter()\n> provider = TracerProvider()\n> provider.add_span_processor(SimpleSpanProcessor(exporter))\n> tracer = trace.get_tracer(\"ev-search-assistant\", tracer_provider=provider)\n> \n> with tracer.start_as_current_span(\"POST /v1/answer\") as root:\n>     root.set_attribute(\"tenant\", \"search-team\")\n>     with tracer.start_as_current_span(\"retrieve\"):\n>         time.sleep(0.04)\n>         trace.get_current_span().set_attribute(\"documents\", 5)\n>     with tracer.start_as_current_span(\"llm.generate\") as llm:\n>         time.sleep(0.15)\n>         llm.set_attribute(\"gen_ai.request.model\", \"llama-3.1-8b-instruct\")\n>         llm.set_attribute(\"gen_ai.usage.input_tokens\", 1840)\n>         llm.set_attribute(\"gen_ai.usage.output_tokens\", 212)\n>     with tracer.start_as_current_span(\"tool.search_tickets\"):\n>         time.sleep(0.02)\n> \n> spans = exporter.get_finished_spans()\n> by_id = {s.context.span_id: s for s in spans}\n> root_span = next(s for s in spans if s.parent is None)\n> print(f\"trace {root_span.context.trace_id:032x}\"[:22] + \"...\")\n> for s in sorted(spans, key=lambda s: s.start_time):\n>     depth = 0 if s.parent is None else 1\n>     ms = (s.end_time - s.start_time) / 1e6\n>     extra = {k: v for k, v in s.attributes.items() if k.startswith((\"gen_ai\", \"documents\"))}\n>     print(f\"{'  ' * depth}{s.name:22} {ms:6.0f} ms  {extra if extra else ''}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 otel.py",
+     "o": "trace a2845ec223897d3a...\nPOST /v1/answer           211 ms  \n  retrieve                   40 ms  {'documents': 5}\n  llm.generate              150 ms  {'gen_ai.request.model': 'llama-3.1-8b-instruct', 'gen_ai.usage.input_tokens': 1840, 'gen_ai.usage.output_tokens': 212}\n  tool.search_tickets        20 ms  ",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "73ca0307f90d9897"
+ },
  "ansible-1": {
   "blocks": [
    [
@@ -4318,6 +5153,265 @@
    ]
   ],
   "key": "0e026d490e0d1ff1"
+ },
+ "docker-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/dn && cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"host kernel:      $(uname -r)\"",
+     "o": "host kernel:      6.18.44-fc-v77",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"container kernel: $(docker run --rm busybox uname -r)\"",
+     "o": "container kernel: 6.18.44-fc-v77",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f life > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ state() { s=$(docker inspect -f '{{.State.Status}}  (running={{.State.Running}} paused={{.State.Paused}})' life 2>/dev/null) && echo \"$s\" || echo \"gone: the container no longer exists\"; }",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker create --name life busybox sleep 300 > /dev/null;  echo \"docker create   -> $(state)\"",
+     "o": "docker create   -> created  (running=false paused=false)",
+     "x": 0
+    },
+    {
+     "c": "$ docker start life > /dev/null;                            echo \"docker start    -> $(state)\"",
+     "o": "docker start    -> running  (running=true paused=false)",
+     "x": 0
+    },
+    {
+     "c": "$ docker pause life > /dev/null;                            echo \"docker pause    -> $(state)\"",
+     "o": "docker pause    -> paused  (running=true paused=true)",
+     "x": 0
+    },
+    {
+     "c": "$ docker unpause life > /dev/null;                          echo \"docker unpause  -> $(state)\"",
+     "o": "docker unpause  -> running  (running=true paused=false)",
+     "x": 0
+    },
+    {
+     "c": "$ docker stop -t 1 life > /dev/null;                        echo \"docker stop     -> $(state)\"",
+     "o": "docker stop     -> exited  (running=false paused=false)",
+     "x": 0
+    },
+    {
+     "c": "$ docker start life > /dev/null;                            echo \"docker start    -> $(state)   (a stopped container can start again)\"",
+     "o": "docker start    -> running  (running=true paused=false)   (a stopped container can start again)",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f life > /dev/null;                            echo \"docker rm -f    -> $(state)\"",
+     "o": "docker rm -f    -> gone: the container no longer exists",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox\n> ENTRYPOINT [\"echo\", \"Hello,\"]\n> CMD [\"world\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t greeter . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"default (CMD supplies the argument):  $(docker run --rm greeter)\"",
+     "o": "default (CMD supplies the argument):  Hello, world",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"with arguments after the image name:  $(docker run --rm greeter Priya)\"",
+     "o": "with arguments after the image name:  Hello, Priya",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"with --entrypoint replaced:           $(docker run --rm --entrypoint echo greeter 'now a different program')\"",
+     "o": "with --entrypoint replaced:           now a different program",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p app && echo \"version=1\" > app/settings.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ tar -C app -czf app.tar.gz settings.conf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile.add <<'EOF'\n> FROM busybox\n> COPY app.tar.gz /via-copy/\n> ADD  app.tar.gz /via-add/\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t copyadd -f Dockerfile.add . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"COPY keeps the archive as a file:\"; docker run --rm copyadd ls /via-copy",
+     "o": "COPY keeps the archive as a file:\napp.tar.gz",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"ADD unpacks the archive for you:\";  docker run --rm copyadd ls /via-add",
+     "o": "ADD unpacks the archive for you:\nsettings.conf",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- bridge (default):\"",
+     "o": "--- bridge (default):",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm busybox ip addr | grep -E 'inet ' | sed -E 's/172\\.17\\.[0-9]+\\.[0-9]+/172.17.x.x/'",
+     "o": "    inet 127.0.0.1/8 scope host lo\n    inet 172.17.x.x/16 brd 172.17.255.255 scope global eth0",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- none:\"",
+     "o": "--- none:",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --network none busybox ip addr | grep -E 'inet '",
+     "o": "    inet 127.0.0.1/8 scope host lo",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- none: a request to the outside fails:\"",
+     "o": "--- none: a request to the outside fails:",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --network none busybox wget -T 3 -q -O- http://example.com 2>&1 | head -1",
+     "o": "wget: bad address 'example.com'",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f sz > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker run -d --name sz busybox sh -c 'head -c 10000000 /dev/zero > /big.bin; sleep 300' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker ps -s --filter name=sz --format 'writable layer (SIZE): {{.Size}}'",
+     "o": "writable layer (SIZE): 10MB (virtual 14.6MB)",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f sz > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dn",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker rm -f cpdemo > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker create --name cpdemo busybox > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"from the host\" > hello.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker cp hello.txt cpdemo:/tmp/hello.txt                 # host -> container",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker cp cpdemo:/etc/passwd ./container-passwd.txt        # container -> host",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker start cpdemo > /dev/null 2>&1; docker rm -f cpdemo > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"copied out of the container: $(head -1 container-passwd.txt)\"",
+     "o": "copied out of the container: root:x:0:0:root:/root:/bin/sh",
+     "x": 0
+    },
+    {
+     "c": "$ docker system df",
+     "o": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          26        1         1.908GB   1.109GB (58%)\nContainers      1         0         4.973MB   4.973MB (100%)\nLocal Volumes   23        1         451.3MB   343MB (76%)\nBuild Cache     35        0         7.77MB    185.3kB",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "5a978f82ad284613"
  },
  "git-1": {
   "blocks": [
