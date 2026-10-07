@@ -12059,6 +12059,969 @@
   ],
   "key": "d35ec0da3a880676"
  },
+ "lectures-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l1 && cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bpe.py <<'PY'\n> from collections import Counter\n> \n> corpus = \"bear bears bearing teddy teddy bears reading read reader reads\".split() * 5\n> \n> def bpe(corpus, merges):\n>     words = [list(w) + [\"_\"] for w in corpus]            # \"_\" marks the end of a word\n>     learned = []\n>     for _ in range(merges):\n>         pairs = Counter()\n>         for w in words:\n>             for a, b in zip(w, w[1:]):\n>                 pairs[(a, b)] += 1\n>         if not pairs: break\n>         (a, b), count = pairs.most_common(1)[0]\n>         learned.append((a + b, count))\n>         for w in words:\n>             i = 0\n>             while i < len(w) - 1:\n>                 if w[i] == a and w[i + 1] == b:\n>                     w[i:i + 2] = [a + b]\n>                 else:\n>                     i += 1\n>     return words, learned\n> \n> for merges in (0, 4, 12):\n>     words, learned = bpe(corpus, merges)\n>     seq_len = sum(len(w) for w in words)\n>     base = {c for w in corpus for c in w} | {\"_\"}\n>     vocab_size = len(base) + merges                          # the characters plus one new token per merge\n>     print(f\"{merges:2} merges: vocabulary size {vocab_size:3}, total tokens {seq_len:3}   e.g. 'bearing' -> {words[2]}\")\n> print(\"\\nmerge order (token, times seen):\", [f\"{t}({c})\" for t, c in bpe(corpus, 8)[1]])\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bpe.py",
+     "o": " 0 merges: vocabulary size  12, total tokens 315   e.g. 'bearing' -> ['b', 'e', 'a', 'r', 'i', 'n', 'g', '_']\n 4 merges: vocabulary size  16, total tokens 215   e.g. 'bearing' -> ['bear', 'i', 'n', 'g', '_']\n12 merges: vocabulary size  24, total tokens 120   e.g. 'bearing' -> ['bear', 'ing_']\n\nmerge order (token, times seen): ['ea(40)', 'bea(20)', 'bear(20)', 'rea(20)', 'read(20)', 's_(15)', 'bears_(10)', 'in(10)']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > w2v.py <<'PY'\n> import math, random\n> random.seed(1)\n> \n> sentences = [\n>     \"teddy bear is soft\", \"plush bear is soft\", \"teddy toy is soft\", \"plush toy is soft\",\n>     \"airplane flies fast\", \"jet flies fast\", \"airplane flies high\", \"jet flies high\",\n> ] * 20\n> vocab = sorted({w for s in sentences for w in s.split()})\n> ix = {w: i for i, w in enumerate(vocab)}\n> V, D, LR = len(vocab), 6, 0.05\n> W1 = [[random.uniform(-.5, .5) for _ in range(D)] for _ in range(V)]     # word -> hidden (the embeddings)\n> W2 = [[random.uniform(-.5, .5) for _ in range(V)] for _ in range(D)]     # hidden -> scores\n> \n> def softmax(v):\n>     m = max(v); e = [math.exp(x - m) for x in v]; s = sum(e)\n>     return [x / s for x in e]\n> \n> pairs = []\n> for s in sentences:\n>     ws = s.split()\n>     for i, w in enumerate(ws):\n>         for j in (i - 1, i + 1):\n>             if 0 <= j < len(ws): pairs.append((ix[w], ix[ws[j]]))\n> \n> for epoch in range(40):\n>     random.shuffle(pairs); loss = 0\n>     for c, t in pairs:                                  # centre word -> predict neighbour\n>         h = W1[c]\n>         scores = [sum(h[d] * W2[d][v] for d in range(D)) for v in range(V)]\n>         p = softmax(scores)\n>         loss -= math.log(p[t])\n>         grad = p[:]; grad[t] -= 1                       # d loss / d scores\n>         gh = [sum(grad[v] * W2[d][v] for v in range(V)) for d in range(D)]\n>         for d in range(D):\n>             for v in range(V):\n>                 W2[d][v] -= LR * grad[v] * h[d]\n>             W1[c][d] -= LR * gh[d]\n>     if epoch in (0, 39): print(f\"epoch {epoch:2}: average loss {loss / len(pairs):.3f}\")\n> \n> def cos(a, b):\n>     na = math.sqrt(sum(x * x for x in a)); nb = math.sqrt(sum(x * x for x in b))\n>     return sum(x * y for x, y in zip(a, b)) / (na * nb)\n> \n> print(\"\\nsimilarity of learned embeddings:\")\n> for a, b in [(\"teddy\", \"plush\"), (\"bear\", \"toy\"), (\"airplane\", \"jet\"), (\"teddy\", \"airplane\"), (\"bear\", \"fast\")]:\n>     print(f\"  {a:9} vs {b:9}: {cos(W1[ix[a]], W1[ix[b]]):6.2f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 w2v.py",
+     "o": "epoch  0: average loss 1.562\nepoch 39: average loss 0.788\n\nsimilarity of learned embeddings:\n  teddy     vs plush    :   1.00\n  bear      vs toy      :   0.98\n  airplane  vs jet      :   0.93\n  teddy     vs airplane :   0.06\n  bear      vs fast     :  -0.37",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > vanish.py <<'PY'\n> import math\n> \n> # A scalar \"RNN\": h_t = tanh(w * h_(t-1) + x_t). The gradient of h_T with respect to h_0 is a product of factors w * (1 - tanh^2).\n> def grad_through(steps, w):\n>     h, g = 0.5, 1.0\n>     for t in range(steps):\n>         h = math.tanh(w * h + 0.1)\n>         g *= w * (1 - h * h)\n>     return g\n> \n> print(f\"{'steps back':>10} {'w=0.9':>14} {'w=0.5':>14}\")\n> for steps in (1, 5, 10, 20, 50, 100):\n>     print(f\"{steps:10} {grad_through(steps, 0.9):14.3e} {grad_through(steps, 0.5):14.3e}\")\n> print(\"\\nAfter 50 steps the signal from the first token is vanishingly small: the model cannot learn that it mattered.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 vanish.py",
+     "o": "steps back          w=0.9          w=0.5\n         1      6.745e-01      4.434e-01\n         5      1.392e-01      2.244e-02\n        10      1.930e-02      5.763e-04\n        20      3.711e-04      3.820e-07\n        50      2.635e-09      1.113e-16\n       100      6.912e-18      1.424e-32\n\nAfter 50 steps the signal from the first token is vanishingly small: the model cannot learn that it mattered.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > attention.py <<'PY'\n> import math\n> \n> def softmax(v):\n>     m = max(v); e = [math.exp(x - m) for x in v]; s = sum(e)\n>     return [x / s for x in e]\n> \n> def matmul(a, b): return [[sum(x * y for x, y in zip(r, c)) for c in zip(*b)] for r in a]\n> def transpose(a): return [list(r) for r in zip(*a)]\n> \n> tokens = [\"a\", \"cute\", \"teddy\", \"bear\"]\n> # toy 3-dim queries, keys, values (normally these come from learned projections of the embeddings)\n> Q = [[1, 0, 0], [0, 1, 0], [0, 1, 1], [1, 1, 0]]\n> K = [[1, 0, 0], [0, 1, 0], [0, 1, 1], [1, 0, 1]]\n> V = [[1, 0], [0, 1], [1, 1], [2, 0]]\n> d_k = len(K[0])\n> \n> def attend(mask):\n>     scores = matmul(Q, transpose(K))\n>     out_w = []\n>     for i, row in enumerate(scores):\n>         row = [s / math.sqrt(d_k) for s in row]\n>         if mask:\n>             row = [s if j <= i else float(\"-inf\") for j, s in enumerate(row)]\n>         out_w.append(softmax(row))\n>     return out_w, matmul(out_w, V)\n> \n> for mask in (False, True):\n>     w, out = attend(mask)\n>     print(\"causal mask\" if mask else \"no mask (encoder-style)\")\n>     for t, row, o in zip(tokens, w, out):\n>         print(f\"  {t:6} weights {[round(x, 2) for x in row]}  rows sum to {sum(row):.2f}  output {[round(x, 2) for x in o]}\")\n>     print()\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 attention.py",
+     "o": "no mask (encoder-style)\n  a      weights [0.32, 0.18, 0.18, 0.32]  rows sum to 1.00  output [1.14, 0.36]\n  cute   weights [0.18, 0.32, 0.32, 0.18]  rows sum to 1.00  output [0.86, 0.64]\n  teddy  weights [0.13, 0.23, 0.41, 0.23]  rows sum to 1.00  output [1.0, 0.64]\n  bear   weights [0.25, 0.25, 0.25, 0.25]  rows sum to 1.00  output [1.0, 0.5]\n\ncausal mask\n  a      weights [1.0, 0.0, 0.0, 0.0]  rows sum to 1.00  output [1.0, 0.0]\n  cute   weights [0.36, 0.64, 0.0, 0.0]  rows sum to 1.00  output [0.36, 0.64]\n  teddy  weights [0.17, 0.3, 0.53, 0.0]  rows sum to 1.00  output [0.7, 0.83]\n  bear   weights [0.25, 0.25, 0.25, 0.25]  rows sum to 1.00  output [1.0, 0.5]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > params.py <<'PY'\n> d_model, heads, d_ff, layers, vocab = 512, 8, 2048, 6, 32000      # sizes of the original \"base\" model\n> d_k = d_model // heads\n> \n> attn = 4 * d_model * d_model                  # Wq, Wk, Wv, Wo (all heads together)\n> ffn = 2 * d_model * d_ff\n> print(f\"per layer: attention {attn:,} parameters, feed-forward {ffn:,} parameters ({ffn / (attn + ffn):.0%} of the layer)\")\n> embed = vocab * d_model\n> enc = layers * (attn + ffn)\n> dec = layers * (2 * attn + ffn)               # masked self-attention + cross-attention + ffn\n> print(f\"embeddings {embed:,}   encoder {enc:,}   decoder {dec:,}   total about {embed + enc + dec:,}\")\n> print(f\"head size d_k = {d_model}/{heads} = {d_k}; the attention score table is n x n, so memory for scores grows with n squared\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 params.py",
+     "o": "per layer: attention 1,048,576 parameters, feed-forward 2,097,152 parameters (67% of the layer)\nembeddings 16,384,000   encoder 18,874,368   decoder 25,165,824   total about 60,424,192\nhead size d_k = 512/8 = 64; the attention score table is n x n, so memory for scores grows with n squared",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tricks.py <<'PY'\n> import math, random\n> random.seed(5)\n> \n> # 1. Residual connections: a 60-layer stack of random layers f(x) = tanh(Wx) with small weights\n> def layer(x, W): return [math.tanh(sum(w * v for w, v in zip(row, x))) for row in W]\n> D = 8\n> Ws = [[[random.gauss(0, 0.2) for _ in range(D)] for _ in range(D)] for _ in range(60)]\n> norm = lambda v: math.sqrt(sum(a * a for a in v))\n> \n> def run(x, residual):\n>     for W in Ws:\n>         x = [a + b for a, b in zip(x, layer(x, W))] if residual else layer(x, W)\n>     return x\n> \n> x0 = [random.gauss(0, 1) for _ in range(D)]\n> x1 = [v + 0.01 for v in x0]                     # nudge the input a little\n> print(\"after 60 layers, how much does a small change at the input still change the output?\")\n> for name, res in ((\"plain stack\", False), (\"with residual links\", True)):\n>     a, b = run(x0, res), run(x1, res)\n>     print(f\"  {name:19}: output size {norm(a):9.4f}   output change / input change = {norm([p - q for p, q in zip(a, b)]) / norm([p - q for p, q in zip(x0, x1)]):.4f}\")\n> \n> # 2. Label smoothing\n> vocab = [\"day\", \"class\", \"evening\", \"night\", \"morning\"]\n> eps = 0.1\n> smooth = {w: (1 - eps) if w == \"day\" else eps / (len(vocab) - 1) for w in vocab}\n> print(\"\\nlabel smoothing target for 'what a nice ___':\", {k: round(v, 3) for k, v in smooth.items()}, \" sum =\", round(sum(smooth.values()), 3))\n> \n> # 3. Dropout (inverted): scale kept units so the expected value is unchanged\n> x = [1.0] * 10000\n> p = 0.2\n> dropped = [0 if random.random() < p else v / (1 - p) for v in x]\n> print(f\"\\ndropout p=0.2: {sum(1 for v in dropped if v == 0) / len(x):.1%} of units zeroed, mean after scaling {sum(dropped) / len(x):.3f} (expected 1.000)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 tricks.py",
+     "o": "after 60 layers, how much does a small change at the input still change the output?\n  plain stack        : output size    0.0000   output change / input change = 0.0000\n  with residual links: output size   11.6533   output change / input change = 8.7864\n\nlabel smoothing target for 'what a nice ___': {'day': 0.9, 'class': 0.025, 'evening': 0.025, 'night': 0.025, 'morning': 0.025}  sum = 1.0\n\ndropout p=0.2: 19.6% of units zeroed, mean after scaling 1.005 (expected 1.000)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2f225cca3602dc09"
+ },
+ "lectures-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l2 && cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > sinus.py <<'PY'\n> import math\n> \n> def pe(pos, d=16):\n>     v = []\n>     for i in range(d // 2):\n>         w = 10000 ** (-2 * i / d)\n>         v += [math.sin(w * pos), math.cos(w * pos)]\n>     return v\n> \n> def dot(a, b): return sum(x * y for x, y in zip(a, b))\n> \n> print(\"same distance, different absolute positions (distance = 3):\")\n> for m in (0, 10, 50, 200):\n>     print(f\"  positions {m:3} and {m + 3:3}: dot = {dot(pe(m), pe(m + 3)):.6f}\")\n> \n> print(\"\\ndot product against position 100, as the distance grows:\")\n> for dist in (0, 1, 2, 5, 10, 30, 100):\n>     print(f\"  distance {dist:3}: dot = {dot(pe(100), pe(100 + dist)):6.3f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 sinus.py",
+     "o": "same distance, different absolute positions (distance = 3):\n  positions   0 and   3: dot = 5.543101\n  positions  10 and  13: dot = 5.543101\n  positions  50 and  53: dot = 5.543101\n  positions 200 and 203: dot = 5.543101\n\ndot product against position 100, as the distance grows:\n  distance   0: dot =  8.000\n  distance   1: dot =  7.485\n  distance   2: dot =  6.368\n  distance   5: dot =  6.137\n  distance  10: dot =  3.646\n  distance  30: dot =  2.699\n  distance 100: dot =  3.487",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rope.py <<'PY'\n> import math\n> \n> def rotate(vec, pos, base=10000):\n>     \"\"\"Rotate consecutive pairs of dimensions by an angle that grows with position.\"\"\"\n>     out = []\n>     for i in range(0, len(vec), 2):\n>         theta = base ** (-i / len(vec))\n>         a = pos * theta\n>         x, y = vec[i], vec[i + 1]\n>         out += [x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)]\n>     return out\n> \n> def dot(a, b): return sum(x * y for x, y in zip(a, b))\n> \n> q = [0.3, -1.2, 0.8, 0.5, -0.7, 0.2, 1.1, -0.4]      # one query vector (8 dims)\n> k = [1.0,  0.4, -0.6, 0.9,  0.3, -0.8, 0.5, 0.7]      # one key vector\n> \n> print(\"score(query at m, key at n) for the SAME vectors, different absolute positions:\")\n> for m, n in [(0, 3), (10, 13), (100, 103), (1000, 1003)]:\n>     print(f\"  m={m:5} n={n:5} (n-m=3): {dot(rotate(q, m), rotate(k, n)):.6f}\")\n> \n> print(\"\\nthe same vectors with growing relative distance n-m:\")\n> for dist in (0, 1, 2, 4, 8, 16, 64, 256):\n>     print(f\"  n-m={dist:4}: {dot(rotate(q, 0), rotate(k, dist)):7.3f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rope.py",
+     "o": "score(query at m, key at n) for the SAME vectors, different absolute positions:\n  m=    0 n=    3 (n-m=3): -0.455913\n  m=   10 n=   13 (n-m=3): -0.455913\n  m=  100 n=  103 (n-m=3): -0.455913\n  m= 1000 n= 1003 (n-m=3): -0.455913\n\nthe same vectors with growing relative distance n-m:\n  n-m=   0:  -0.310\n  n-m=   1:  -1.446\n  n-m=   2:  -1.469\n  n-m=   4:   0.568\n  n-m=   8:  -2.179\n  n-m=  16:  -0.657\n  n-m=  64:  -1.822\n  n-m= 256:   0.890",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > norm.py <<'PY'\n> import math\n> \n> def layernorm(x, eps=1e-5):\n>     mu = sum(x) / len(x)\n>     var = sum((v - mu) ** 2 for v in x) / len(x)\n>     return [(v - mu) / math.sqrt(var + eps) for v in x]\n> \n> def rmsnorm(x, eps=1e-5):\n>     rms = math.sqrt(sum(v * v for v in x) / len(x) + eps)\n>     return [v / rms for v in x]\n> \n> x = [120.0, -3.0, 0.5, 7.0, -80.0, 2.0]       # components on very different scales\n> print(\"input      :\", x)\n> ln, rn = layernorm(x), rmsnorm(x)\n> print(\"LayerNorm  :\", [round(v, 3) for v in ln], \" mean=%.3f\" % (sum(ln) / len(ln)))\n> print(\"RMSNorm    :\", [round(v, 3) for v in rn], \" rms =%.3f\" % math.sqrt(sum(v * v for v in rn) / len(rn)))\n> print(\"\\nLayerNorm centres the vector (mean 0); RMSNorm only rescales it (the mean is not forced to 0).\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 norm.py",
+     "o": "input      : [120.0, -3.0, 0.5, 7.0, -80.0, 2.0]\nLayerNorm  : [1.92, -0.184, -0.124, -0.013, -1.501, -0.098]  mean=-0.000\nRMSNorm    : [2.035, -0.051, 0.008, 0.119, -1.357, 0.034]  rms =1.000\n\nLayerNorm centres the vector (mean 0); RMSNorm only rescales it (the mean is not forced to 0).",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > window.py <<'PY'\n> def mask(n, window=None):\n>     \"\"\"1 = may attend (causal; optionally restricted to the last `window` tokens).\"\"\"\n>     rows = []\n>     for i in range(n):\n>         rows.append(\"\".join(\"1\" if (j <= i and (window is None or i - j < window)) else \".\" for j in range(n)))\n>     return rows\n> \n> print(\"full causal attention, 10 tokens:\")\n> print(\"\\n\".join(mask(10)))\n> print(\"\\nsliding window of 3:\")\n> print(\"\\n\".join(mask(10, 3)))\n> full = sum(r.count(\"1\") for r in mask(1000))\n> win = sum(r.count(\"1\") for r in mask(1000, 128))\n> print(f\"\\nscores to compute for 1000 tokens: full={full:,}  window(128)={win:,}  ratio={full / win:.1f}x\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 window.py",
+     "o": "full causal attention, 10 tokens:\n1.........\n11........\n111.......\n1111......\n11111.....\n111111....\n1111111...\n11111111..\n111111111.\n1111111111\n\nsliding window of 3:\n1.........\n11........\n111.......\n.111......\n..111.....\n...111....\n....111...\n.....111..\n......111.\n.......111\n\nscores to compute for 1000 tokens: full=500,500  window(128)=119,872  ratio=4.2x",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kvcache.py <<'PY'\n> layers, heads, head_dim, seq, bytes_per = 32, 32, 128, 8192, 2      # a 7B-class shape, fp16\n> \n> def kv_gib(kv_heads):\n>     per_token = 2 * layers * kv_heads * head_dim * bytes_per       # 2 = keys and values\n>     return per_token, per_token * seq / 2**30\n> \n> print(f\"model shape: {layers} layers, {heads} heads, head_dim {head_dim}, fp16, context {seq} tokens\\n\")\n> print(f\"{'variant':10} {'kv heads':>8} {'KB / token':>11} {'GiB / sequence':>15}\")\n> for name, kvh in [(\"MHA\", 32), (\"GQA (8)\", 8), (\"GQA (4)\", 4), (\"MQA\", 1)]:\n>     pt, gib = kv_gib(kvh)\n>     print(f\"{name:10} {kvh:8} {pt / 1024:11.0f} {gib:15.2f}\")\n> print(\"\\nAt 64 concurrent requests, MHA needs\", f\"{64 * kv_gib(32)[1]:.0f} GiB\", \"of cache; GQA(8) needs\", f\"{64 * kv_gib(8)[1]:.0f} GiB.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kvcache.py",
+     "o": "model shape: 32 layers, 32 heads, head_dim 128, fp16, context 8192 tokens\n\nvariant    kv heads  KB / token  GiB / sequence\nMHA              32         512            4.00\nGQA (8)           8         128            1.00\nGQA (4)           4          64            0.50\nMQA               1          16            0.12\n\nAt 64 concurrent requests, MHA needs 256 GiB of cache; GQA(8) needs 64 GiB.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > mlm.py <<'PY'\n> import random\n> random.seed(7)\n> tokens = \"my teddy bear is cute and i love reading stories to it every single night\".split() * 40\n> chosen = [i for i in range(len(tokens)) if random.random() < 0.15]\n> kinds = {\"[MASK]\": 0, \"random word\": 0, \"unchanged\": 0}\n> vocab = sorted(set(tokens))\n> for i in chosen:\n>     r = random.random()\n>     if r < 0.8:   kinds[\"[MASK]\"] += 1\n>     elif r < 0.9: kinds[\"random word\"] += 1\n>     else:         kinds[\"unchanged\"] += 1\n> n = len(chosen)\n> print(f\"{len(tokens)} tokens, {n} chosen as MLM targets ({n / len(tokens):.0%})\")\n> for k, v in kinds.items():\n>     print(f\"  {k:12} {v:4}  ({v / n:.0%})\")\n> print(\"\\nWhy the 10% random / 10% unchanged? At fine-tuning time the input never contains [MASK],\")\n> print(\"so the model must not learn 'only masked positions matter'. The mixture keeps every token's representation useful.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 mlm.py",
+     "o": "600 tokens, 105 chosen as MLM targets (18%)\n  [MASK]         85  (81%)\n  random word     8  (8%)\n  unchanged      12  (11%)\n\nWhy the 10% random / 10% unchanged? At fine-tuning time the input never contains [MASK],\nso the model must not learn 'only masked positions matter'. The mixture keeps every token's representation useful.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > span.py <<'PY'\n> import random\n> random.seed(3)\n> text = \"my teddy bear is cute and loves reading bedtime stories every night\".split()\n> \n> def corrupt(words, spans=((1, 3), (7, 9))):\n>     enc, dec, last, s = [], [], 0, 0\n>     for a, b in spans:\n>         enc += words[last:a] + [f\"<X{s}>\"]\n>         dec += [f\"<X{s}>\"] + words[a:b]\n>         last, s = b, s + 1\n>     enc += words[last:]\n>     dec += [f\"<X{s}>\"]\n>     return enc, dec\n> \n> enc, dec = corrupt(text)\n> print(\"original       :\", \" \".join(text))\n> print(\"encoder input  :\", \" \".join(enc))\n> print(\"decoder target :\", \" \".join(dec))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 span.py",
+     "o": "original       : my teddy bear is cute and loves reading bedtime stories every night\nencoder input  : my <X0> is cute and loves <X1> stories every night\ndecoder target : <X0> teddy bear <X1> reading bedtime <X2>",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "3ba38f6a67fdc7f0"
+ },
+ "lectures-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l3 && cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > moe.py <<'PY'\n> import math, random\n> random.seed(2)\n> \n> N, K, D = 8, 2, 6                                       # 8 experts, top-2 routing, token vectors of size 6\n> def softmax(v):\n>     m = max(v); e = [math.exp(x - m) for x in v]; s = sum(e); return [x / s for x in e]\n> \n> router = [[random.gauss(0, 1) for _ in range(D)] for _ in range(N)]   # one weight vector per expert\n> tokens = [[random.gauss(0, 1) for _ in range(D)] for _ in range(2000)]\n> \n> def route(token, W):\n>     probs = softmax([sum(w * x for w, x in zip(row, token)) for row in W])\n>     top = sorted(range(N), key=lambda i: -probs[i])[:K]\n>     z = sum(probs[i] for i in top)\n>     return probs, {i: probs[i] / z for i in top}        # keep top-k and renormalise\n> \n> def balance_loss(W):\n>     f, P = [0] * N, [0.0] * N\n>     for t in tokens:\n>         probs, chosen = route(t, W)\n>         for i in chosen: f[i] += 1 / (len(tokens) * K)\n>         for i in range(N): P[i] += probs[i] / len(tokens)\n>     return N * sum(fi * pi for fi, pi in zip(f, P)), f\n> \n> loss, f = balance_loss(router)\n> print(f\"random router : load per expert {[round(x, 2) for x in f]}  balance term {loss:.3f} (1.0 = perfectly balanced)\")\n> \n> collapsed = [row[:] for row in router]\n> collapsed[3] = [w * 40 for w in collapsed[3]]            # make expert 3 dominate\n> collapsed[5] = [w * 25 for w in collapsed[5]]\n> loss, f = balance_loss(collapsed)\n> print(f\"collapsed     : load per expert {[round(x, 2) for x in f]}  balance term {loss:.3f}\")\n> \n> active = K / N\n> print(f\"\\nwith {N} experts and top-{K}, the FFN does {active:.0%} of its dense work per token;\")\n> print(\"a model with 8 experts of 7B FFN parameters each holds 56B FFN parameters but uses about 14B per token.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 moe.py",
+     "o": "random router : load per expert [0.16, 0.06, 0.13, 0.09, 0.11, 0.15, 0.16, 0.15]  balance term 1.087 (1.0 = perfectly balanced)\ncollapsed     : load per expert [0.14, 0.03, 0.09, 0.24, 0.05, 0.24, 0.12, 0.1]  balance term 1.666\n\nwith 8 experts and top-2, the FFN does 25% of its dense work per token;\na model with 8 experts of 7B FFN parameters each holds 56B FFN parameters but uses about 14B per token.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > decode.py <<'PY'\n> import math, random\n> random.seed(11)\n> \n> # P(next | prefix) for a toy model. Greedy's best first token (A) leads to poor continuations.\n> MODEL = {\n>     ():        {\"A\": 0.6, \"B\": 0.4},\n>     (\"A\",):    {\"x\": 0.4, \"y\": 0.3, \"z\": 0.3},       # flat: no strong continuation after A\n>     (\"B\",):    {\"x\": 0.9, \"y\": 0.05, \"z\": 0.05},     # sharp: B is followed by x very confidently\n> }\n> def seq_prob(seq): return MODEL[()][seq[0]] * MODEL[(seq[0],)][seq[1]]\n> \n> # 1. greedy\n> g1 = max(MODEL[()], key=MODEL[()].get)\n> g2 = max(MODEL[(g1,)], key=MODEL[(g1,)].get)\n> print(f\"greedy       : {g1}{g2}  probability {seq_prob((g1, g2)):.3f}\")\n> \n> # 2. beam search with width 2, then pick the best full sequence\n> beams = sorted(MODEL[()].items(), key=lambda kv: -kv[1])[:2]\n> cands = []\n> for tok, p in beams:\n>     for nxt, q in MODEL[(tok,)].items():\n>         cands.append((tok + nxt, p * q))\n> best = max(cands, key=lambda kv: kv[1])\n> print(f\"beam (k=2)   : {best[0]}  probability {best[1]:.3f}\")\n> \n> # 3. exhaustive best, for comparison\n> allseq = [(a + b, seq_prob((a, b))) for a in MODEL[()] for b in MODEL[(a,)]]\n> print(f\"true best    : {max(allseq, key=lambda kv: kv[1])[0]}  probability {max(allseq, key=lambda kv: kv[1])[1]:.3f}\")\n> \n> # temperature, top-k, top-p on a single distribution\n> logits = {\"fluffy\": 3.0, \"soft\": 2.6, \"cute\": 2.2, \"gentle\": 1.5, \"airplane\": -1.0}\n> def probs(T):\n>     e = {k: math.exp(v / T) for k, v in logits.items()}; s = sum(e.values()); return {k: v / s for k, v in e.items()}\n> print(\"\\ntemperature effect on P(token):\")\n> for T in (0.2, 1.0, 5.0):\n>     print(f\"  T={T:<4}\", {k: round(v, 3) for k, v in probs(T).items()})\n> \n> def top_p(p_map, p):\n>     out, cum = {}, 0\n>     for k, v in sorted(p_map.items(), key=lambda kv: -kv[1]):\n>         out[k] = v; cum += v\n>         if cum >= p: break\n>     s = sum(out.values()); return {k: v / s for k, v in out.items()}\n> print(\"\\ntop-p 0.9 at T=1:\", {k: round(v, 3) for k, v in top_p(probs(1.0), 0.9).items()})\n> draws = [random.choices(list(probs(1.0)), weights=list(probs(1.0).values()))[0] for _ in range(5000)]\n> print(\"sampling 5000 draws at T=1:\", {k: draws.count(k) for k in logits})\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 decode.py",
+     "o": "greedy       : Ax  probability 0.240\nbeam (k=2)   : Bx  probability 0.360\ntrue best    : Bx  probability 0.360\n\ntemperature effect on P(token):\n  T=0.2  {'fluffy': 0.866, 'soft': 0.117, 'cute': 0.016, 'gentle': 0.0, 'airplane': 0.0}\n  T=1.0  {'fluffy': 0.424, 'soft': 0.284, 'cute': 0.19, 'gentle': 0.095, 'airplane': 0.008}\n  T=5.0  {'fluffy': 0.252, 'soft': 0.233, 'cute': 0.215, 'gentle': 0.187, 'airplane': 0.113}\n\ntop-p 0.9 at T=1: {'fluffy': 0.427, 'soft': 0.286, 'cute': 0.192, 'gentle': 0.095}\nsampling 5000 draws at T=1: {'fluffy': 2141, 'soft': 1436, 'cute': 908, 'gentle': 478, 'airplane': 37}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > guided.py <<'PY'\n> import random, json\n> random.seed(4)\n> \n> # A tiny grammar for {\"rating\": <digit>} written as a state machine: state -> allowed next tokens\n> GRAMMAR = {\n>     0: ['{\"rating\":'],\n>     1: list(\"0123456789\"),\n>     2: [\"}\"],\n> }\n> def model_probs(allowed):\n>     # pretend the model prefers junk: it gives probability to illegal tokens too\n>     vocab = allowed + [\"hello\", \"!!\", \"}\", \"{\"]\n>     w = [random.random() for _ in vocab]\n>     return dict(zip(vocab, w))\n> \n> def generate(guided):\n>     out, state = \"\", 0\n>     while state <= 2:\n>         probs = model_probs(GRAMMAR[state])\n>         if guided:                                          # mask out tokens the grammar forbids\n>             probs = {t: p for t, p in probs.items() if t in GRAMMAR[state]}\n>         tok = max(probs, key=probs.get)\n>         out += tok; state += 1\n>     return out\n> \n> def valid(s):\n>     try: json.loads(s); return True\n>     except Exception: return False\n> \n> for guided in (False, True):\n>     ok = sum(valid(generate(guided)) for _ in range(500))\n>     print(f\"{'with grammar mask' if guided else 'unconstrained     '}: {ok}/500 outputs are valid JSON\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 guided.py",
+     "o": "unconstrained     : 18/500 outputs are valid JSON\nwith grammar mask: 500/500 outputs are valid JSON",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > selfcons.py <<'PY'\n> import math, random\n> random.seed(8)\n> \n> def vote_accuracy(p_correct, k, wrong_options=4, trials=20000):\n>     wins = 0\n>     for _ in range(trials):\n>         answers = []\n>         for _ in range(k):\n>             answers.append(\"right\" if random.random() < p_correct else f\"wrong{random.randrange(wrong_options)}\")\n>         counts = {a: answers.count(a) for a in set(answers)}\n>         top = max(counts.values())\n>         winners = [a for a, c in counts.items() if c == top]\n>         wins += random.choice(winners) == \"right\"\n>     return wins / trials\n> \n> print(f\"single sample accuracy 0.50. Majority vote over k samples (4 possible wrong answers):\")\n> for k in (1, 3, 5, 11, 21):\n>     print(f\"  k={k:2}: {vote_accuracy(0.5, k):.3f}\")\n> print(\"\\nIf wrong answers all agree (one wrong option), voting cannot help:\")\n> for k in (1, 5, 21):\n>     print(f\"  k={k:2}: {vote_accuracy(0.4, k, wrong_options=1):.3f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 selfcons.py",
+     "o": "single sample accuracy 0.50. Majority vote over k samples (4 possible wrong answers):\n  k= 1: 0.505\n  k= 3: 0.596\n  k= 5: 0.714\n  k=11: 0.881\n  k=21: 0.969\n\nIf wrong answers all agree (one wrong option), voting cannot help:\n  k= 1: 0.400\n  k= 5: 0.319\n  k=21: 0.174",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kvtime.py <<'PY'\n> import time, random\n> random.seed(1)\n> D = 64\n> def vec(): return [random.random() for _ in range(D)]\n> def proj(x): return [sum(a * b for a, b in zip(x, row)) for row in WK]\n> WK = [vec() for _ in range(D)]                     # stand-in for the K (and V) projection\n> \n> def decode(n, cache):\n>     xs, keys, ops = [], [], 0\n>     for t in range(n):\n>         xs.append(vec())\n>         if cache:\n>             keys.append(proj(xs[-1])); ops += 1       # project only the new token\n>         else:\n>             keys = [proj(x) for x in xs]; ops += len(xs)   # re-project every token every step\n>     return ops\n> \n> for n in (50, 100, 200):\n>     t0 = time.time(); a = decode(n, False); t1 = time.time(); b = decode(n, True); t2 = time.time()\n>     print(f\"{n:4} tokens: projections without cache {a:6}, with cache {b:4}   time {t1 - t0:.2f}s vs {t2 - t1:.3f}s\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kvtime.py",
+     "o": "  50 tokens: projections without cache   1275, with cache   50   time 0.27s vs 0.010s\n 100 tokens: projections without cache   5050, with cache  100   time 0.71s vs 0.017s\n 200 tokens: projections without cache  20100, with cache  200   time 2.84s vs 0.039s",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > paged.py <<'PY'\n> import random\n> random.seed(6)\n> MAX_LEN, BLOCK = 2048, 16\n> lengths = [random.randint(50, 900) for _ in range(40)]          # actual tokens produced by 40 requests\n> \n> naive = len(lengths) * MAX_LEN                                  # reserve the maximum for everyone\n> paged = sum(-(-n // BLOCK) * BLOCK for n in lengths)            # round each request up to whole blocks\n> used = sum(lengths)\n> print(f\"tokens actually stored      : {used:7,}\")\n> print(f\"naive reservation (max len) : {naive:7,}  -> {used / naive:.0%} of the memory is useful\")\n> print(f\"paged blocks of {BLOCK:2}          : {paged:7,}  -> {used / paged:.0%} of the memory is useful\")\n> print(f\"same GPU memory serves about {naive / paged:.1f}x more concurrent requests with paging\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 paged.py",
+     "o": "tokens actually stored      :  22,449\nnaive reservation (max len) :  81,920  -> 27% of the memory is useful\npaged blocks of 16          :  22,752  -> 99% of the memory is useful\nsame GPU memory serves about 3.6x more concurrent requests with paging",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > spec.py <<'PY'\n> import random\n> random.seed(3)\n> tokens = [\"a\", \"b\", \"c\", \"d\"]\n> p = [0.50, 0.30, 0.15, 0.05]        # target (large) model\n> q = [0.25, 0.25, 0.25, 0.25]        # draft (small) model: a rough guess\n> \n> def sample(dist): return random.choices(range(4), weights=dist)[0]\n> \n> def speculative_step():\n>     x = sample(q)                                          # draft proposes\n>     if random.random() < min(1.0, p[x] / q[x]):            # accept with prob min(1, p/q)\n>         return x, True\n>     resid = [max(0.0, pi - qi) for pi, qi in zip(p, q)]    # otherwise resample from the leftover mass\n>     return sample(resid), False\n> \n> N = 200000\n> counts, accepted = [0] * 4, 0\n> for _ in range(N):\n>     x, ok = speculative_step(); counts[x] += 1; accepted += ok\n> print(\"target distribution      :\", p)\n> print(\"speculative decoding out :\", [round(c / N, 3) for c in counts])\n> alpha = accepted / N\n> print(f\"\\nacceptance rate alpha = {alpha:.2f}\")\n> for k in (1, 3, 5):\n>     expected = (1 - alpha ** (k + 1)) / (1 - alpha)\n>     print(f\"  drafting k={k} tokens -> about {expected:.2f} tokens per big-model pass\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 spec.py",
+     "o": "target distribution      : [0.5, 0.3, 0.15, 0.05]\nspeculative decoding out : [0.499, 0.302, 0.15, 0.049]\n\nacceptance rate alpha = 0.70\n  drafting k=1 tokens -> about 1.70 tokens per big-model pass\n  drafting k=3 tokens -> about 2.53 tokens per big-model pass\n  drafting k=5 tokens -> about 2.94 tokens per big-model pass",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "da6d377d561c45a2"
+ },
+ "lectures-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l4 && cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > scaling.py <<'PY'\n> def train_flops(params, tokens): return 6 * params * tokens\n> \n> models = [(\"GPT-3 (as published)\", 175e9, 300e9), (\"Chinchilla-optimal 175B\", 175e9, 20 * 175e9), (\"Llama-3-class 70B, 15T tokens\", 70e9, 15e12)]\n> THROUGHPUT = 4e14          # ASSUMPTION: 400 TFLOP/s sustained per GPU (about 40% of a modern accelerator's peak)\n> print(f\"{'model':32} {'tokens/param':>12} {'FLOPs':>10} {'GPU-days (assumed 4e14 FLOP/s)':>32}\")\n> for name, n, d in models:\n>     f = train_flops(n, d)\n>     print(f\"{name:32} {d / n:12.1f} {f:10.2e} {f / THROUGHPUT / 86400:32,.0f}\")\n> print(\"\\nFor a fixed budget C = 6*N*D with D = 20*N:  N = sqrt(C / 120)\")\n> for C in (1e21, 1e23, 1e25):\n>     N = (C / 120) ** 0.5\n>     print(f\"  budget {C:.0e} FLOPs -> about {N / 1e9:7.1f} B parameters trained on {20 * N / 1e9:8.0f} B tokens\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 scaling.py",
+     "o": "model                            tokens/param      FLOPs   GPU-days (assumed 4e14 FLOP/s)\nGPT-3 (as published)                      1.7   3.15e+23                            9,115\nChinchilla-optimal 175B                  20.0   3.67e+24                          106,337\nLlama-3-class 70B, 15T tokens           214.3   6.30e+24                          182,292\n\nFor a fixed budget C = 6*N*D with D = 20*N:  N = sqrt(C / 120)\n  budget 1e+21 FLOPs -> about     2.9 B parameters trained on       58 B tokens\n  budget 1e+23 FLOPs -> about    28.9 B parameters trained on      577 B tokens\n  budget 1e+25 FLOPs -> about   288.7 B parameters trained on     5774 B tokens",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > memory.py <<'PY'\n> GB = 1e9\n> def state_gb(params): return params * 16 / GB\n> \n> print(\"training state per model (16 bytes/parameter, before activations):\")\n> for name, p in [(\"1B\", 1e9), (\"7B\", 7e9), (\"70B\", 70e9)]:\n>     print(f\"  {name:4}: {state_gb(p):8.0f} GB   (one 80 GB GPU: {'fits' if state_gb(p) < 80 else 'does NOT fit'})\")\n> \n> print(\"\\nZeRO sharding of a 7B model across N GPUs (GB per GPU for model state):\")\n> p = 7e9\n> weights, grads, opt = p * 2 / GB, p * 2 / GB, p * 12 / GB          # 12 = fp32 master + 2 moments\n> print(f\"{'GPUs':>5} {'plain DP':>9} {'ZeRO-1':>8} {'ZeRO-2':>8} {'ZeRO-3':>8}\")\n> for n in (1, 4, 8, 64):\n>     print(f\"{n:5} {weights + grads + opt:9.1f} {weights + grads + opt / n:8.1f} {weights + (grads + opt) / n:8.1f} {(weights + grads + opt) / n:8.1f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 memory.py",
+     "o": "training state per model (16 bytes/parameter, before activations):\n  1B  :       16 GB   (one 80 GB GPU: fits)\n  7B  :      112 GB   (one 80 GB GPU: does NOT fit)\n  70B :     1120 GB   (one 80 GB GPU: does NOT fit)\n\nZeRO sharding of a 7B model across N GPUs (GB per GPU for model state):\n GPUs  plain DP   ZeRO-1   ZeRO-2   ZeRO-3\n    1     112.0    112.0    112.0    112.0\n    4     112.0     49.0     38.5     28.0\n    8     112.0     38.5     26.2     14.0\n   64     112.0     29.3     15.5      1.8",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > dp.py <<'PY'\n> import random\n> random.seed(9)\n> # linear model y = w*x + b, squared-error loss, one gradient step\n> data = [(x, 3 * x + 1 + random.gauss(0, 0.1)) for x in [random.uniform(-2, 2) for _ in range(64)]]\n> w, b = 0.5, 0.0\n> \n> def grad(batch):\n>     gw = sum(2 * (w * x + b - y) * x for x, y in batch) / len(batch)\n>     gb = sum(2 * (w * x + b - y) for x, y in batch) / len(batch)\n>     return gw, gb\n> \n> full = grad(data)\n> shards = [data[i::4] for i in range(4)]                       # 4 GPUs, 16 examples each\n> parts = [grad(s) for s in shards]\n> avg = (sum(p[0] for p in parts) / 4, sum(p[1] for p in parts) / 4)\n> print(\"gradient on the full batch      :\", tuple(round(v, 6) for v in full))\n> print(\"average of 4 per-GPU gradients  :\", tuple(round(v, 6) for v in avg))\n> print(\"identical:\", all(abs(a - b) < 1e-9 for a, b in zip(full, avg)), \"(the communication step is the all-reduce that does this average)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 dp.py",
+     "o": "gradient on the full batch      : (-6.641866, -0.751249)\naverage of 4 per-GPU gradients  : (-6.641866, -0.751249)\nidentical: True (the communication step is the all-reduce that does this average)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > flash.py <<'PY'\n> import math, random\n> random.seed(5)\n> n, d, TILE = 40, 8, 8\n> q = [random.gauss(0, 1) for _ in range(d)]\n> K = [[random.gauss(0, 1) for _ in range(d)] for _ in range(n)]\n> V = [[random.gauss(0, 1) for _ in range(d)] for _ in range(n)]\n> scale = 1 / math.sqrt(d)\n> scores = [sum(a * b for a, b in zip(q, k)) * scale for k in K]\n> \n> # standard: full softmax over all n scores, then weighted sum of V\n> m = max(scores); e = [math.exp(s - m) for s in scores]; z = sum(e)\n> standard = [sum(e[j] * V[j][c] for j in range(n)) / z for c in range(d)]\n> \n> # tiled online softmax: process TILE keys at a time, keep running max, sum and output\n> run_m, run_s, acc = float(\"-inf\"), 0.0, [0.0] * d\n> for start in range(0, n, TILE):\n>     tile = range(start, min(start + TILE, n))\n>     new_m = max(run_m, max(scores[j] for j in tile))\n>     rescale = math.exp(run_m - new_m) if run_m != float(\"-inf\") else 0.0       # shrink what we had accumulated\n>     run_s *= rescale\n>     acc = [a * rescale for a in acc]\n>     for j in tile:\n>         w = math.exp(scores[j] - new_m)\n>         run_s += w\n>         acc = [a + w * v for a, v in zip(acc, V[j])]\n>     run_m = new_m\n> tiled = [a / run_s for a in acc]\n> \n> print(\"standard :\", [round(x, 6) for x in standard])\n> print(\"tiled    :\", [round(x, 6) for x in tiled])\n> print(\"max difference:\", max(abs(a - b) for a, b in zip(standard, tiled)))\n> \n> # traffic estimate for n tokens (counting number reads/writes of the n x n score matrix)\n> for N in (1024, 8192):\n>     naive = 4 * N * N                      # write S, read S, write P, read P (floats)\n>     tiled_traffic = 4 * N * 64             # Q, K, V, O only (head size 64)\n>     print(f\"N={N:5}: score-matrix traffic {naive:,} values vs tiled about {tiled_traffic:,} ({naive / tiled_traffic:.0f}x less)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 flash.py",
+     "o": "standard : [-0.132859, -0.062319, 0.262499, -0.45738, -0.417611, 0.089056, -0.049395, 0.012571]\ntiled    : [-0.132859, -0.062319, 0.262499, -0.45738, -0.417611, 0.089056, -0.049395, 0.012571]\nmax difference: 1.6653345369377348e-16\nN= 1024: score-matrix traffic 4,194,304 values vs tiled about 262,144 (16x less)\nN= 8192: score-matrix traffic 268,435,456 values vs tiled about 2,097,152 (128x less)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > precision.py <<'PY'\n> import struct\n> \n> def to_fp16(x): return struct.unpack(\"e\", struct.pack(\"e\", x))[0]\n> \n> w = 1.0\n> print(\"a weight of 1.0 plus a tiny update of 0.0001, repeated 10,000 times (true result 2.0):\")\n> w32 = 1.0\n> w16 = 1.0\n> for _ in range(10000):\n>     w32 += 0.0001                      # 32-bit-style accumulation (Python float is 64-bit; plays the master copy)\n>     w16 = to_fp16(w16 + 0.0001)        # accumulate in fp16: each step rounds\n> print(f\"  accumulate in high precision: {w32:.4f}\")\n> print(f\"  accumulate in fp16          : {w16:.4f}   (updates smaller than half the spacing of fp16 numbers near 1.0 are lost)\")\n> print(f\"\\nfp16 spacing near 1.0 is about {to_fp16(1.0 + 2 ** -10) - 1.0:.6f}; largest fp16 number is {to_fp16(65504.0)}\")\n> print(\"fp16 of 70000 ->\", end=\" \")\n> try: print(to_fp16(70000.0))\n> except OverflowError as e: print(\"overflow (BF16 avoids this by keeping fp32's exponent range)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 precision.py",
+     "o": "a weight of 1.0 plus a tiny update of 0.0001, repeated 10,000 times (true result 2.0):\n  accumulate in high precision: 2.0000\n  accumulate in fp16          : 1.0000   (updates smaller than half the spacing of fp16 numbers near 1.0 are lost)\n\nfp16 spacing near 1.0 is about 0.000977; largest fp16 number is 65504.0\nfp16 of 70000 -> overflow (BF16 avoids this by keeping fp32's exponent range)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > quant.py <<'PY'\n> import random, statistics\n> random.seed(4)\n> weights = [random.gauss(0, 0.02) for _ in range(20000)]            # weights look roughly normal\n> \n> def absmax_uniform(ws, bits):\n>     levels = 2 ** (bits - 1) - 1\n>     scale = max(abs(w) for w in ws) / levels\n>     return [round(w / scale) * scale for w in ws]\n> \n> def quantile_levels(ws, bits):\n>     s = sorted(ws); n = 2 ** bits\n>     return [s[int((i + 0.5) * len(s) / n)] for i in range(n)]       # levels at data quantiles (NF4-like idea)\n> def snap(ws, levels): return [min(levels, key=lambda l: abs(l - w)) for w in ws]\n> \n> def mse(a, b): return statistics.fmean((x - y) ** 2 for x, y in zip(a, b))\n> print(\"mean squared error when storing 20,000 normal-ish weights:\")\n> for bits in (8, 4):\n>     print(f\"  {bits}-bit absmax uniform levels: {mse(weights, absmax_uniform(weights, bits)):.3e}\")\n> sample = weights[:3000]\n> lv = quantile_levels(weights, 4)\n> print(f\"  4-bit quantile levels (NF4 idea) on 3000 weights: {mse(sample, snap(sample, lv)):.3e}\")\n> print(\"\\n4-bit weights take 8x less memory than fp32, 4x less than fp16.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 quant.py",
+     "o": "mean squared error when storing 20,000 normal-ish weights:\n  8-bit absmax uniform levels: 4.956e-08\n  4-bit absmax uniform levels: 1.597e-05\n  4-bit quantile levels (NF4 idea) on 3000 weights: 7.760e-06\n\n4-bit weights take 8x less memory than fp32, 4x less than fp16.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > sft.py <<'PY'\n> import math\n> # probabilities a model assigned to each target token (toy numbers)\n> prompt   = [\"Can\", \"I\", \"wash\", \"my\", \"teddy\", \"bear\", \"?\"]\n> response = [\"No\", \",\", \"hand\", \"wash\", \"it\", \".\"]\n> p_prompt   = [0.02, 0.10, 0.05, 0.30, 0.04, 0.20, 0.35]\n> p_response = [0.20, 0.60, 0.15, 0.50, 0.40, 0.70]\n> \n> def nll(ps): return -sum(math.log(p) for p in ps) / len(ps)\n> print(f\"pre-training style loss (every token)      : {nll(p_prompt + p_response):.3f}  over {len(prompt + response)} tokens\")\n> print(f\"SFT loss (response tokens only)            : {nll(p_response):.3f}  over {len(response)} tokens\")\n> print(\"\\nThe prompt tokens are context: gradients flow only from the answer, so the model learns what to say GIVEN the question.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 sft.py",
+     "o": "pre-training style loss (every token)      : 1.714  over 13 tokens\nSFT loss (response tokens only)            : 0.997  over 6 tokens\n\nThe prompt tokens are context: gradients flow only from the answer, so the model learns what to say GIVEN the question.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lora.py <<'PY'\n> import random\n> random.seed(12)\n> d, k, r = 12, 10, 1\n> \n> W0 = [[random.gauss(0, 1) for _ in range(k)] for _ in range(d)]                  # frozen pre-trained matrix\n> u = [random.gauss(0, 1) for _ in range(d)]; v = [random.gauss(0, 1) for _ in range(k)]\n> W_target = [[W0[i][j] + 0.5 * u[i] * v[j] for j in range(k)] for i in range(d)]   # the task needs a RANK-1 change\n> \n> B = [[random.gauss(0, 0.01) for _ in range(r)] for _ in range(d)]               # trainable\n> A = [[random.gauss(0, 0.01) for _ in range(k)] for _ in range(r)]               # trainable\n> inputs = [[random.gauss(0, 1) for _ in range(k)] for _ in range(200)]\n> \n> def forward(W, x): return [sum(w * xi for w, xi in zip(row, x)) for row in W]\n> def effective():\n>     return [[W0[i][j] + sum(B[i][c] * A[c][j] for c in range(r)) for j in range(k)] for i in range(d)]\n> def loss():\n>     We = effective(); t = 0\n>     for x in inputs[:50]:\n>         for a, b in zip(forward(We, x), forward(W_target, x)): t += (a - b) ** 2\n>     return t / (50 * d)\n> \n> print(f\"trainable parameters: LoRA {r * (d + k)}  vs full fine-tuning {d * k}\")\n> print(f\"step    0: loss {loss():.4f}\")\n> LR = 0.005\n> for step in range(1, 1501):\n>     x = random.choice(inputs)\n>     We = effective()\n>     err = [a - b for a, b in zip(forward(We, x), forward(W_target, x))]         # d outputs\n>     Ax = [sum(A[c][j] * x[j] for j in range(k)) for c in range(r)]               # r values\n>     gB = [[err[i] * Ax[c] for c in range(r)] for i in range(d)]\n>     BtErr = [sum(B[i][c] * err[i] for i in range(d)) for c in range(r)]\n>     gA = [[BtErr[c] * x[j] for j in range(k)] for c in range(r)]\n>     for i in range(d):\n>         for c in range(r): B[i][c] -= LR * gB[i][c]\n>     for c in range(r):\n>         for j in range(k): A[c][j] -= LR * gA[c][j]\n>     if step in (100, 500, 1500): print(f\"step {step:4}: loss {loss():.4f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lora.py",
+     "o": "trainable parameters: LoRA 22  vs full fine-tuning 120\nstep    0: loss 4.9352\nstep  100: loss 4.9303\nstep  500: loss 0.0000\nstep 1500: loss 0.0000",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d921f6384379e078"
+ },
+ "lectures-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l5 && cd ~/l5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > reward.py <<'PY'\n> import math, random\n> random.seed(7)\n> \n> # Each response has 3 hidden features: [helpfulness, friendliness, length_in_hundreds_of_words]\n> # Raters (noisy) prefer helpful and friendly answers; length itself is NOT valued.\n> def rater_score(f): return 1.5 * f[0] + 1.0 * f[1] + random.gauss(0, 0.8)     # noise = inconsistent humans\n> def make_response(): return [random.gauss(0, 1), random.gauss(0, 1), random.gauss(0, 1)]\n> \n> pairs = []\n> for _ in range(2000):\n>     a, b = make_response(), make_response()\n>     pairs.append((a, b) if rater_score(a) > rater_score(b) else (b, a))      # (winner, loser)\n> \n> w = [0.0, 0.0, 0.0]                                       # reward model: r = w . features\n> sigmoid = lambda z: 1 / (1 + math.exp(-z))\n> print(f\"before training: Bradley-Terry loss {math.log(2):.3f} (= ln 2, a coin flip)\")\n> for epoch in range(60):\n>     random.shuffle(pairs); total = 0\n>     for win, lose in pairs:\n>         diff = sum(wi * (a - b) for wi, a, b in zip(w, win, lose))\n>         total -= math.log(sigmoid(diff))\n>         g = sigmoid(diff) - 1                              # d loss / d diff\n>         for i in range(3): w[i] -= 0.01 * g * (win[i] - lose[i])\n>     if epoch in (0, 59): print(f\"epoch {epoch:2}: average Bradley-Terry loss during the epoch {total / len(pairs):.3f}\")\n> \n> print(\"learned reward weights [helpful, friendly, length]:\", [round(x, 2) for x in w])\n> test = [(make_response(), make_response()) for _ in range(2000)]\n> acc = sum((sum(wi * a for wi, a in zip(w, x)) > sum(wi * b for wi, b in zip(w, y))) == (rater_score(x) > rater_score(y)) for x, y in test) / len(test)\n> print(f\"agreement with fresh (noisy) rater judgements: {acc:.1%}  (noise caps what is achievable)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 reward.py",
+     "o": "before training: Bradley-Terry loss 0.693 (= ln 2, a coin flip)\nepoch  0: average Bradley-Terry loss during the epoch 0.351\nepoch 59: average Bradley-Terry loss during the epoch 0.288\nlearned reward weights [helpful, friendly, length]: [2.41, 1.54, -0.08]\nagreement with fresh (noisy) rater judgements: 86.0%  (noise caps what is achievable)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > hacking.py <<'PY'\n> import random, statistics\n> random.seed(21)\n> \n> def candidate():\n>     quality = random.gauss(0, 1)           # what we truly care about\n>     length = random.gauss(0, 1)            # verbosity (standardised)\n>     proxy = quality + 0.8 * length         # imperfect reward model: it likes long answers\n>     true = quality - 0.5 * max(length, 0) ** 2     # reality: very long answers are worse\n>     return proxy, true\n> \n> print(f\"{'N':>5} {'proxy reward':>13} {'true quality':>13}\")\n> for N in (1, 2, 4, 16, 64, 256, 1024):\n>     res = [max((candidate() for _ in range(N)), key=lambda c: c[0]) for _ in range(1500)]\n>     print(f\"{N:5} {statistics.fmean(p for p, _ in res):13.2f} {statistics.fmean(t for _, t in res):13.2f}\")\n> print(\"\\nThe proxy keeps rising as we search harder; the true quality stops improving and then falls. That is reward hacking (Goodhart's law).\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 hacking.py",
+     "o": "    N  proxy reward  true quality\n    1         -0.06         -0.24\n    2          0.76          0.05\n    4          1.36          0.28\n   16          2.27          0.47\n   64          3.03          0.39\n  256          3.62          0.33\n 1024          4.16          0.22\n\nThe proxy keeps rising as we search harder; the true quality stops improving and then falls. That is reward hacking (Goodhart's law).",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ppo.py <<'PY'\n> EPS = 0.2\n> def clip(x, lo, hi): return max(lo, min(hi, x))\n> def ppo_clip(ratio, adv): return min(ratio * adv, clip(ratio, 1 - EPS, 1 + EPS) * adv)\n> \n> print(\"PPO-clip objective (we MAXIMISE it). epsilon = 0.2\")\n> print(f\"{'ratio':>6} {'A=+1':>7} {'A=-1':>7}\")\n> for r in (0.5, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.6, 2.0):\n>     print(f\"{r:6.1f} {ppo_clip(r, 1.0):7.2f} {ppo_clip(r, -1.0):7.2f}\")\n> print(\"\\nA > 0: the gain grows with the ratio up to 1.2, then is flat -> no reason to push the probability up further.\")\n> print(\"A < 0: the objective stops improving once the ratio drops below 0.8 -> no reason to push it down further.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ppo.py",
+     "o": "PPO-clip objective (we MAXIMISE it). epsilon = 0.2\n ratio    A=+1    A=-1\n   0.5    0.50   -0.80\n   0.7    0.70   -0.80\n   0.8    0.80   -0.80\n   0.9    0.90   -0.90\n   1.0    1.00   -1.00\n   1.1    1.10   -1.10\n   1.2    1.20   -1.20\n   1.3    1.20   -1.30\n   1.6    1.20   -1.60\n   2.0    1.20   -2.00\n\nA > 0: the gain grows with the ratio up to 1.2, then is flat -> no reason to push the probability up further.\nA < 0: the objective stops improving once the ratio drops below 0.8 -> no reason to push it down further.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kl.py <<'PY'\n> import math\n> def kl(p, q): return sum(a * math.log(a / b) for a, b in zip(p, q) if a > 0)\n> ref = [0.5, 0.3, 0.2]\n> for name, pol in [(\"same as reference\", [0.5, 0.3, 0.2]), (\"slightly shifted\", [0.55, 0.28, 0.17]), (\"much more confident\", [0.9, 0.07, 0.03])]:\n>     print(f\"{name:20} KL(policy || reference) = {kl(pol, ref):.4f}\")\n> print(\"KL is not symmetric: KL(ref || confident) =\", round(kl(ref, [0.9, 0.07, 0.03]), 4))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kl.py",
+     "o": "same as reference    KL(policy || reference) = 0.0000\nslightly shifted     KL(policy || reference) = 0.0055\nmuch more confident  KL(policy || reference) = 0.3702\nKL is not symmetric: KL(ref || confident) = 0.5221",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > dpo.py <<'PY'\n> import math\n> \n> responses = [\"curt but correct\", \"gentle and correct\", \"wrong\"]\n> ref_logits = [1.2, 0.4, -0.8]                     # the SFT (reference) policy: prefers the curt answer\n> pairs = [(1, 0), (1, 2), (0, 2)]                  # (winner, loser): gentle > curt > wrong\n> \n> def softmax(v):\n>     m = max(v); e = [math.exp(x - m) for x in v]; s = sum(e); return [x / s for x in e]\n> def logp(logits): \n>     p = softmax(logits); return [math.log(x) for x in p]\n> def kl(p, q): return sum(a * math.log(a / b) for a, b in zip(p, q))\n> \n> ref_lp = logp(ref_logits)\n> def dpo_loss(theta, beta):\n>     lp = logp(theta); total = 0\n>     for w, l in pairs:\n>         margin = beta * ((lp[w] - ref_lp[w]) - (lp[l] - ref_lp[l]))\n>         total += math.log(1 + math.exp(-margin))          # -log sigmoid(margin)\n>     return total / len(pairs)\n> \n> def train(beta, steps=3000, lr=0.5):\n>     theta = ref_logits[:]\n>     for _ in range(steps):\n>         grad = []\n>         for i in range(3):                                  # finite-difference gradient (clear and short)\n>             up = theta[:]; up[i] += 1e-5; dn = theta[:]; dn[i] -= 1e-5\n>             grad.append((dpo_loss(up, beta) - dpo_loss(dn, beta)) / 2e-5)\n>         theta = [t - lr * g for t, g in zip(theta, grad)]\n>     return theta\n> \n> print(\"reference policy:\", {r: round(p, 3) for r, p in zip(responses, softmax(ref_logits))})\n> for beta in (0.1, 1.0, 5.0):\n>     th = train(beta)\n>     pol = softmax(th)\n>     print(f\"beta={beta:<4} policy: \" + \", \".join(f\"{r}={p:.3f}\" for r, p in zip(responses, pol)) + f\"   KL from reference {kl(pol, softmax(ref_logits)):.3f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 dpo.py",
+     "o": "reference policy: {'curt but correct': 0.631, 'gentle and correct': 0.284, 'wrong': 0.085}\nbeta=0.1  policy: curt but correct=0.000, gentle and correct=1.000, wrong=0.000   KL from reference 1.260\nbeta=1.0  policy: curt but correct=0.004, gentle and correct=0.996, wrong=0.000   KL from reference 1.228\nbeta=5.0  policy: curt but correct=0.251, gentle and correct=0.744, wrong=0.005   KL from reference 0.472",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0f825905449e8c97"
+ },
+ "lectures-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l6 && cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > passk.py <<'PY'\n> import random\n> from math import comb\n> random.seed(10)\n> \n> def pass_at_k(n, c, k):\n>     if n - c < k: return 1.0\n>     return 1.0 - comb(n - c, k) / comb(n, k)\n> \n> # a problem the model solves with true probability 0.3 per attempt\n> p, n, k = 0.3, 20, 5\n> truth = 1 - (1 - p) ** k\n> print(f\"true pass@{k} for p=0.3 per attempt: {truth:.4f}\")\n> \n> estimates, naive = [], []\n> for _ in range(4000):\n>     results = [random.random() < p for _ in range(n)]\n>     c = sum(results)\n>     estimates.append(pass_at_k(n, c, k))\n>     first_k = results[:k]\n>     naive.append(1.0 if any(first_k) else 0.0)           # only generate k samples and see if any passed\n> mean = lambda xs: sum(xs) / len(xs)\n> sd = lambda xs: (sum((x - mean(xs)) ** 2 for x in xs) / len(xs)) ** 0.5\n> print(f\"unbiased estimator from n=20 samples : mean {mean(estimates):.4f}, spread (std) {sd(estimates):.3f}\")\n> print(f\"naive (just k=5 samples, any pass?)  : mean {mean(naive):.4f}, spread (std) {sd(naive):.3f}\")\n> print(f\"\\npass@1 estimate = c/n: {pass_at_k(20, 6, 1):.3f} for c=6 of n=20\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 passk.py",
+     "o": "true pass@5 for p=0.3 per attempt: 0.8319\nunbiased estimator from n=20 samples : mean 0.8372, spread (std) 0.129\nnaive (just k=5 samples, any pass?)  : mean 0.8373, spread (std) 0.369\n\npass@1 estimate = c/n: 0.300 for c=6 of n=20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tempk.py <<'PY'\n> import math, random\n> random.seed(33)\n> \n> # 300 synthetic problems. Each has 200 candidate answers (index 0 is the correct one).\n> # The model is imperfect: the correct answer usually, but not always, has the highest score.\n> problems = []\n> for _ in range(300):\n>     logits = [random.gauss(3.2, 1.2)] + [random.gauss(0, 1.0) for _ in range(199)]\n>     problems.append(logits)\n> \n> def p_correct(logits, T):\n>     m = max(l / T for l in logits)\n>     e = [math.exp(l / T - m) for l in logits]\n>     return e[0] / sum(e)\n> \n> print(f\"{'T':>5} {'pass@1':>8} {'pass@4':>8} {'pass@16':>8}\")\n> for T in (0.05, 0.3, 0.6, 1.0, 1.5, 3.0, 10.0):\n>     ps = [p_correct(l, T) for l in problems]\n>     row = [sum(1 - (1 - p) ** k for p in ps) / len(ps) for k in (1, 4, 16)]\n>     print(f\"{T:5.2f} {row[0]:8.3f} {row[1]:8.3f} {row[2]:8.3f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 tempk.py",
+     "o": "    T   pass@1   pass@4  pass@16\n 0.05    0.636    0.670    0.705\n 0.30    0.557    0.723    0.825\n 0.60    0.315    0.585    0.808\n 1.00    0.113    0.325    0.655\n 1.50    0.044    0.159    0.451\n 3.00    0.015    0.058    0.210\n10.00    0.007    0.027    0.105",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rewards.py <<'PY'\n> import re\n> \n> def format_reward(text):\n>     ok = re.fullmatch(r\"\\s*<think>.+?</think>\\s*<answer>.+?</answer>\\s*\", text, re.S)\n>     return 1.0 if ok else 0.0\n> \n> def accuracy_reward(text, truth):\n>     m = re.search(r\"<answer>(.*?)</answer>\", text, re.S)\n>     return 1.0 if m and m.group(1).strip() == truth else 0.0\n> \n> def reward(text, truth):\n>     return format_reward(text) * 0.2 + accuracy_reward(text, truth) * 1.0\n> \n> samples = [\n>     \"<think>2025 - 2020 = 5</think><answer>5</answer>\",\n>     \"<think>Born in 2020, so it is 4 now</think><answer>4</answer>\",\n>     \"The bear is 5 years old.\",\n>     \"<think>5 years</think> 5\",\n> ]\n> for s in samples:\n>     print(f\"format {format_reward(s):.0f}  accuracy {accuracy_reward(s, '5'):.0f}  reward {reward(s, '5'):.1f}   {s}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rewards.py",
+     "o": "format 1  accuracy 1  reward 1.2   <think>2025 - 2020 = 5</think><answer>5</answer>\nformat 1  accuracy 0  reward 0.2   <think>Born in 2020, so it is 4 now</think><answer>4</answer>\nformat 0  accuracy 0  reward 0.0   The bear is 5 years old.\nformat 0  accuracy 0  reward 0.0   <think>5 years</think> 5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > grpo_adv.py <<'PY'\n> import statistics\n> \n> def advantages(rewards):\n>     mu = statistics.fmean(rewards)\n>     sd = statistics.pstdev(rewards)\n>     return [0.0 if sd == 0 else (r - mu) / sd for r in rewards]\n> \n> print(\"easy problem (7 of 8 correct):\", [round(a, 2) for a in advantages([1, 1, 1, 1, 1, 1, 1, 0])])\n> print(\"hard problem (1 of 8 correct):\", [round(a, 2) for a in advantages([0, 0, 0, 0, 0, 0, 0, 1])])\n> print(\"all correct (nothing to learn):\", [round(a, 2) for a in advantages([1] * 8)])\n> print(\"all wrong   (nothing to learn):\", [round(a, 2) for a in advantages([0] * 8)])\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 grpo_adv.py",
+     "o": "easy problem (7 of 8 correct): [0.38, 0.38, 0.38, 0.38, 0.38, 0.38, 0.38, -2.65]\nhard problem (1 of 8 correct): [-0.38, -0.38, -0.38, -0.38, -0.38, -0.38, -0.38, 2.65]\nall correct (nothing to learn): [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]\nall wrong   (nothing to learn): [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > grpo_loop.py <<'PY'\n> import math, random, statistics\n> random.seed(5)\n> \n> strategies = [\"guess\", \"brute force\", \"careful steps\", \"careful steps + check\"]\n> success = [0.10, 0.35, 0.60, 0.85]             # hidden probability each strategy solves the problem\n> logits = [0.0, 0.0, 0.0, 0.0]                   # the policy: softmax over strategies\n> G, LR = 8, 0.3\n> \n> def probs():\n>     m = max(logits); e = [math.exp(l - m) for l in logits]; s = sum(e); return [x / s for x in e]\n> \n> def expected_reward(): return sum(p * q for p, q in zip(probs(), success))\n> print(f\"step   0: expected reward {expected_reward():.3f}  policy {[round(p, 2) for p in probs()]}\")\n> for step in range(1, 201):\n>     p = probs()\n>     group = random.choices(range(4), weights=p, k=G)                    # sample G completions for the same prompt\n>     rewards = [1.0 if random.random() < success[a] else 0.0 for a in group]\n>     mu, sd = statistics.fmean(rewards), statistics.pstdev(rewards)\n>     if sd == 0: continue                                                 # identical rewards: no learning signal\n>     adv = [(r - mu) / sd for r in rewards]\n>     grad = [0.0] * 4\n>     for a, A in zip(group, adv):                                         # policy gradient: A * d log pi(a)\n>         for i in range(4):\n>             grad[i] += A * ((1.0 if i == a else 0.0) - p[i])\n>     logits = [l + LR * g / G for l, g in zip(logits, grad)]\n>     if step in (20, 60, 200): print(f\"step {step:3}: expected reward {expected_reward():.3f}  policy {[round(q, 2) for q in probs()]}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 grpo_loop.py",
+     "o": "step   0: expected reward 0.475  policy [0.25, 0.25, 0.25, 0.25]\nstep  20: expected reward 0.685  policy [0.07, 0.14, 0.17, 0.62]\nstep  60: expected reward 0.816  policy [0.02, 0.03, 0.03, 0.92]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lenbias.py <<'PY'\n> # Per-token weight of a wrong answer's (negative) advantage under three normalisations\n> advantage = -1.0\n> print(f\"{'completion length':>18} {'GRPO 1/|o|':>12} {'no length term':>15}\")\n> for L in (20, 100, 1000):\n>     grpo = advantage / L              # each token carries advantage / length\n>     fixed = advantage                 # Dr. GRPO style: same weight for every token\n>     print(f\"{L:18} {grpo:12.4f} {fixed:15.4f}\")\n> print(\"\\nTotal penalty for the whole wrong answer = per-token weight x tokens:\")\n> for L in (20, 100, 1000):\n>     print(f\"  length {L:4}: GRPO {advantage / L * L:6.2f}   (constant)   |   per-token weight is {abs(advantage / L):.4f}\")\n> print(\"\\nPer token, a short wrong answer is punished 50x more than a 1000-token wrong answer: a bias toward long wrong answers.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lenbias.py",
+     "o": " completion length   GRPO 1/|o|  no length term\n                20      -0.0500         -1.0000\n               100      -0.0100         -1.0000\n              1000      -0.0010         -1.0000\n\nTotal penalty for the whole wrong answer = per-token weight x tokens:\n  length   20: GRPO  -1.00   (constant)   |   per-token weight is 0.0500\n  length  100: GRPO  -1.00   (constant)   |   per-token weight is 0.0100\n  length 1000: GRPO  -1.00   (constant)   |   per-token weight is 0.0010\n\nPer token, a short wrong answer is punished 50x more than a 1000-token wrong answer: a bias toward long wrong answers.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9ea0322b179ad586"
+ },
+ "lectures-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l7 && cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > chunk.py <<'PY'\n> def chunk(words, size=12, overlap=4):\n>     step = size - overlap\n>     return [\" \".join(words[i:i + size]) for i in range(0, max(len(words) - overlap, 1), step)]\n> \n> doc = (\"Teddy bears were first made in the early 1900s and named after a president. \"\n>        \"A plush teddy bear should be washed gently by hand with cold water and mild soap. \"\n>        \"Never put a bear with glass eyes in a hot dryer because the eyes can crack.\").split()\n> for i, c in enumerate(chunk(doc)):\n>     print(f\"chunk {i}: {c}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 chunk.py",
+     "o": "chunk 0: Teddy bears were first made in the early 1900s and named after\nchunk 1: 1900s and named after a president. A plush teddy bear should be\nchunk 2: teddy bear should be washed gently by hand with cold water and\nchunk 3: with cold water and mild soap. Never put a bear with glass\nchunk 4: a bear with glass eyes in a hot dryer because the eyes\nchunk 5: dryer because the eyes can crack.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > retrieve.py <<'PY'\n> import math, re\n> from collections import Counter\n> \n> docs = {\n>     \"d1\": \"Cuddly is a brown teddy bear with a red ribbon and one button eye\",\n>     \"d2\": \"Huggy is a soft plush toy that sleeps in the bedroom near the window\",\n>     \"d3\": \"Washing instructions for plush toys: hand wash gently with cold water\",\n>     \"d4\": \"Airplane tickets for the summer are cheaper if you book early\",\n>     \"d5\": \"Where to find stuffed animals in the toy shop on the second floor\",\n> }\n> tok = lambda s: re.findall(r\"[a-z]+\", s.lower())\n> \n> # ---- BM25 (keyword)\n> N = len(docs); avgdl = sum(len(tok(d)) for d in docs.values()) / N\n> df = Counter(w for d in docs.values() for w in set(tok(d)))\n> def bm25(query, doc, k1=1.5, b=0.75):\n>     tf = Counter(tok(doc)); score = 0\n>     for w in tok(query):\n>         if w not in tf: continue\n>         idf = math.log((N - df[w] + 0.5) / (df[w] + 0.5) + 1)\n>         score += idf * tf[w] * (k1 + 1) / (tf[w] + k1 * (1 - b + b * len(tok(doc)) / avgdl))\n>     return score\n> \n> # ---- \"semantic\" stand-in: a hand-made concept map (a real system uses a trained embedding model)\n> CONCEPTS = {\"cuddly\": \"toy\", \"huggy\": \"toy\", \"teddy\": \"toy\", \"bear\": \"toy\", \"plush\": \"toy\", \"stuffed\": \"toy\", \"animals\": \"toy\",\n>             \"toys\": \"toy\", \"toy\": \"toy\", \"soft\": \"soft\", \"where\": \"location\", \"lives\": \"location\", \"find\": \"location\",\n>             \"shelf\": \"location\", \"nursery\": \"location\", \"bedroom\": \"location\", \"floor\": \"location\", \"shop\": \"location\", \"sleeps\": \"location\",\n>             \"wash\": \"clean\", \"washing\": \"clean\", \"water\": \"clean\", \"airplane\": \"travel\", \"tickets\": \"travel\", \"summer\": \"travel\"}\n> def embed(text):\n>     return Counter(CONCEPTS[w] for w in tok(text) if w in CONCEPTS)\n> def cosine(a, b):\n>     num = sum(a[k] * b[k] for k in a); den = math.sqrt(sum(v * v for v in a.values())) * math.sqrt(sum(v * v for v in b.values()))\n>     return num / den if den else 0.0\n> \n> query = \"where is Cuddly\"\n> kw = sorted(docs, key=lambda d: -bm25(query, docs[d]))\n> sem = sorted(docs, key=lambda d: -cosine(embed(query), embed(docs[d])))\n> def rrf(*rankings, k=60):\n>     s = Counter()\n>     for r in rankings:\n>         for i, d in enumerate(r): s[d] += 1 / (k + i + 1)\n>     return [d for d, _ in s.most_common()]\n> hybrid = rrf(kw, sem)\n> print(\"query:\", query)\n> print(\"BM25 (keyword) ranking      :\", kw[:3], \"  <- d1 literally contains 'Cuddly'\")\n> print(\"semantic (concept) ranking  :\", sem[:3], \"  <- about toys and WHERE they are, no 'Cuddly' needed\")\n> print(\"hybrid (RRF) ranking        :\", hybrid[:3])\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 retrieve.py",
+     "o": "query: where is Cuddly\nBM25 (keyword) ranking      : ['d1', 'd5', 'd2']   <- d1 literally contains 'Cuddly'\nsemantic (concept) ranking  : ['d5', 'd2', 'd1']   <- about toys and WHERE they are, no 'Cuddly' needed\nhybrid (RRF) ranking        : ['d5', 'd1', 'd2']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > cache.py <<'PY'\n> doc_tokens, chunks, chunk_tokens, out_tokens = 20000, 200, 500, 100\n> price_in, price_cached, price_out = 1.00, 0.10, 8.00          # ASSUMED dollars per million tokens (illustrative)\n> no_cache = chunks * ((doc_tokens + chunk_tokens) * price_in + out_tokens * price_out) / 1e6\n> with_cache = (doc_tokens * price_in + (chunks - 1) * doc_tokens * price_cached + chunks * chunk_tokens * price_in + chunks * out_tokens * price_out) / 1e6\n> print(f\"contextualising {chunks} chunks of one {doc_tokens:,}-token document:\")\n> print(f\"  without prompt caching: ${no_cache:.2f}\")\n> print(f\"  with caching (document prefix cached at 10% price): ${with_cache:.2f}   ({no_cache / with_cache:.1f}x cheaper)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 cache.py",
+     "o": "contextualising 200 chunks of one 20,000-token document:\n  without prompt caching: $4.26\n  with caching (document prefix cached at 10% price): $0.68   (6.3x cheaper)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > metrics.py <<'PY'\n> import math\n> \n> def precision_at_k(rels, k): return sum(rels[:k]) / k\n> def recall_at_k(rels, k, total_relevant): return sum(rels[:k]) / total_relevant\n> def mrr(rels):\n>     for i, r in enumerate(rels, 1):\n>         if r: return 1 / i\n>     return 0.0\n> def dcg(rels, k): return sum(r / math.log2(i + 1) for i, r in enumerate(rels[:k], 1))\n> def ndcg(rels, k):\n>     ideal = sorted(rels, reverse=True)\n>     return dcg(rels, k) / dcg(ideal, k) if dcg(ideal, k) else 0.0\n> \n> # 1 = relevant, 0 = not, in the order the system returned them; 3 relevant documents exist in total\n> good = [1, 1, 0, 1, 0]\n> bad  = [0, 0, 1, 1, 1]\n> for name, rels in [(\"relevant ranked high\", good), (\"relevant ranked low\", bad)]:\n>     print(f\"{name:22} P@5 {precision_at_k(rels, 5):.2f}  R@5 {recall_at_k(rels, 5, 3):.2f}  MRR {mrr(rels):.2f}  NDCG@5 {ndcg(rels, 5):.2f}\")\n> print(\"\\nSame precision and recall at 5, very different MRR and NDCG: only the rank-aware metrics see the ordering.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 metrics.py",
+     "o": "relevant ranked high   P@5 0.60  R@5 1.00  MRR 1.00  NDCG@5 0.97\nrelevant ranked low    P@5 0.60  R@5 1.00  MRR 0.33  NDCG@5 0.62\n\nSame precision and recall at 5, very different MRR and NDCG: only the rank-aware metrics see the ordering.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > react.py <<'PY'\n> import json\n> \n> # ---- the world and the tools (these are YOUR code, not the model)\n> room = {\"temp_f\": 65}\n> def get_room_temperature(): return {\"temp_f\": room[\"temp_f\"]}\n> def set_thermostat(delta_f):\n>     room[\"temp_f\"] += delta_f\n>     return {\"status\": \"ok\", \"new_target_f\": room[\"temp_f\"]}\n> TOOLS = {\"get_room_temperature\": get_room_temperature, \"set_thermostat\": set_thermostat}\n> \n> # ---- a rule-based stand-in for the LLM: sees the history, returns observe / plan / action\n> def fake_llm(history):\n>     last = history[-1]\n>     if last[\"role\"] == \"user\":\n>         return {\"observe\": \"The teddy bear is cold; room temperature unknown.\", \"plan\": \"Find the room temperature.\",\n>                 \"action\": {\"tool\": \"get_room_temperature\", \"args\": {}}}\n>     result = last[\"content\"]\n>     if \"temp_f\" in result and result[\"temp_f\"] < 68:\n>         return {\"observe\": f\"Room is {result['temp_f']}F, colder than comfortable.\", \"plan\": \"Raise the temperature by 5 degrees.\",\n>                 \"action\": {\"tool\": \"set_thermostat\", \"args\": {\"delta_f\": 5}}}\n>     return {\"observe\": f\"Done: {json.dumps(result)}\", \"plan\": \"Goal reached.\", \"final\": \"I raised the room to a comfortable temperature for your teddy bear.\"}\n> \n> history = [{\"role\": \"user\", \"content\": \"My teddy bear is cold. Please do something.\"}]\n> for step in range(1, 6):                                     # budget: at most 5 loops\n>     out = fake_llm(history)\n>     print(f\"step {step}: observe -> {out['observe']}\")\n>     print(f\"        plan    -> {out['plan']}\")\n>     if \"final\" in out:\n>         print(f\"        answer  -> {out['final']}\"); break\n>     act = out[\"action\"]\n>     result = TOOLS[act[\"tool\"]](**act[\"args\"])                # step 2 of tool calling: execute\n>     print(f\"        act     -> {act['tool']}({act['args']})  returned {result}\")\n>     history.append({\"role\": \"tool\", \"content\": result})\n> else:\n>     print(\"stopped: loop budget exhausted\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 react.py",
+     "o": "step 1: observe -> The teddy bear is cold; room temperature unknown.\n        plan    -> Find the room temperature.\n        act     -> get_room_temperature({})  returned {'temp_f': 65}\nstep 2: observe -> Room is 65F, colder than comfortable.\n        plan    -> Raise the temperature by 5 degrees.\n        act     -> set_thermostat({'delta_f': 5})  returned {'status': 'ok', 'new_target_f': 70}\nstep 3: observe -> Done: {\"status\": \"ok\", \"new_target_f\": 70}\n        plan    -> Goal reached.\n        answer  -> I raised the room to a comfortable temperature for your teddy bear.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > toolresults.py <<'PY'\n> import json\n> \n> def find_teddy_bear_bad(found):\n>     if found: return {\"name\": \"Teddy\", \"distance_miles\": 1.0}\n>     return None                                    # model cannot tell \"nothing found\" from \"tool broke\"\n> \n> def find_teddy_bear_good(found):\n>     if found: return {\"status\": \"ok\", \"bears\": [{\"name\": \"Teddy\", \"distance_miles\": 1.0}]}\n>     return {\"status\": \"ok\", \"bears\": []}           # an EMPTY, structured result means \"searched, found none\"\n> \n> def set_thermostat_bad(target): pass               # no output: the model may claim success it cannot verify\n> def set_thermostat_good(target): return {\"status\": \"ok\", \"new_target_f\": target}\n> \n> print(\"no bears, bad tool :\", json.dumps(find_teddy_bear_bad(False)))\n> print(\"no bears, good tool:\", json.dumps(find_teddy_bear_good(False)))\n> print(\"action tool, bad   :\", json.dumps(set_thermostat_bad(72)))\n> print(\"action tool, good  :\", json.dumps(set_thermostat_good(72)))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 toolresults.py",
+     "o": "no bears, bad tool : null\nno bears, good tool: {\"status\": \"ok\", \"bears\": []}\naction tool, bad   : null\naction tool, good  : {\"status\": \"ok\", \"new_target_f\": 72}",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9c3b994dbd6a74cd"
+ },
+ "lectures-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l8 && cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > kappa.py <<'PY'\n> import random\n> random.seed(14)\n> \n> def cohen_kappa(a, b):\n>     n = len(a)\n>     po = sum(x == y for x, y in zip(a, b)) / n\n>     pa1, pb1 = sum(a) / n, sum(b) / n\n>     pe = pa1 * pb1 + (1 - pa1) * (1 - pb1)\n>     return po, pe, (po - pe) / (1 - pe) if pe < 1 else 0.0\n> \n> def raters(p_a, p_b, n=20000):\n>     return [int(random.random() < p_a) for _ in range(n)], [int(random.random() < p_b) for _ in range(n)]\n> \n> for pa, pb, label in [(0.5, 0.5, \"two coin-flippers\"), (0.9, 0.9, \"both say 'good' 90% of the time, independently\")]:\n>     a, b = raters(pa, pb)\n>     po, pe, k = cohen_kappa(a, b)\n>     print(f\"{label:48} agreement {po:.2f}  chance {pe:.2f}  kappa {k:+.2f}\")\n> \n> # raters who truly look at the same quality signal (90% reliable each)\n> truth = [int(random.random() < 0.6) for _ in range(20000)]\n> a = [t if random.random() < 0.9 else 1 - t for t in truth]\n> b = [t if random.random() < 0.9 else 1 - t for t in truth]\n> po, pe, k = cohen_kappa(a, b)\n> print(f\"{'two careful raters (each right 90% of the time)':48} agreement {po:.2f}  chance {pe:.2f}  kappa {k:+.2f}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 kappa.py",
+     "o": "two coin-flippers                                agreement 0.49  chance 0.50  kappa -0.01\nboth say 'good' 90% of the time, independently   agreement 0.82  chance 0.82  kappa +0.00\ntwo careful raters (each right 90% of the time)  agreement 0.82  chance 0.51  kappa +0.64",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bleu.py <<'PY'\n> import math\n> from collections import Counter\n> \n> def ngrams(toks, n): return Counter(tuple(toks[i:i + n]) for i in range(len(toks) - n + 1))\n> def clipped_precision(cand, ref, n):\n>     c, r = ngrams(cand, n), ngrams(ref, n)\n>     overlap = sum(min(v, r[k]) for k, v in c.items())\n>     return overlap / max(sum(c.values()), 1)\n> def bleu(cand, ref, max_n=2):\n>     ps = [clipped_precision(cand, ref, n) for n in range(1, max_n + 1)]\n>     if min(ps) == 0: return 0.0\n>     bp = 1.0 if len(cand) >= len(ref) else math.exp(1 - len(ref) / len(cand))      # brevity penalty\n>     return bp * math.exp(sum(math.log(p) for p in ps) / max_n)\n> def rouge1_recall(cand, ref):\n>     c, r = Counter(cand), Counter(ref)\n>     return sum(min(v, c[k]) for k, v in r.items()) / sum(r.values())\n> \n> ref = \"a plush teddy bear can comfort a child during bedtime\".split()\n> cands = {\n>     \"near copy\": \"a plush teddy bear can comfort a child at bedtime\".split(),\n>     \"good paraphrase\": \"soft stuffed bears often help kids feel safe as they fall asleep\".split(),\n>     \"scrambled words\": \"bedtime during child a comfort can bear teddy plush a\".split(),\n>     \"too short\": \"teddy bear\".split(),\n> }\n> print(f\"{'candidate':18} {'BLEU-2':>7} {'ROUGE-1 recall':>15}\")\n> for name, c in cands.items():\n>     print(f\"{name:18} {bleu(c, ref):7.2f} {rouge1_recall(c, ref):15.2f}\")\n> print(\"\\nThe good paraphrase scores about zero; the scrambled nonsense gets ROUGE-1 credit for sharing words.\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bleu.py",
+     "o": "candidate           BLEU-2  ROUGE-1 recall\nnear copy             0.84            0.90\ngood paraphrase       0.00            0.00\nscrambled words       0.00            1.00\ntoo short             0.02            0.20\n\nThe good paraphrase scores about zero; the scrambled nonsense gets ROUGE-1 credit for sharing words.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > judge.py <<'PY'\n> import random\n> random.seed(31)\n> \n> def mock_judge(a, b, pos_bias=0.15, len_bias=0.02):\n>     \"\"\"Return 'A' or 'B'. True quality matters, but the judge adds a bonus for position A and for length.\"\"\"\n>     score_a = a[\"quality\"] + pos_bias + len_bias * a[\"words\"] + random.gauss(0, 0.3)\n>     score_b = b[\"quality\"] + len_bias * b[\"words\"] + random.gauss(0, 0.3)\n>     return \"A\" if score_a > score_b else \"B\"\n> \n> def make(quality, words): return {\"quality\": quality, \"words\": words}\n> trials = 6000\n> \n> # 1. Position bias: two responses of IDENTICAL quality and length\n> same = [(make(0, 50), make(0, 50)) for _ in range(trials)]\n> picks_a = sum(mock_judge(a, b) == \"A\" for a, b in same) / trials\n> print(f\"identical answers: judge picks the one shown first {picks_a:.0%} of the time (fair = 50%)\")\n> \n> # 2. Mitigation: ask twice with the order swapped, keep only consistent verdicts\n> def swapped_verdict(a, b):\n>     v1 = mock_judge(a, b)                          # A first\n>     v2 = mock_judge(b, a)                          # B first\n>     r1 = \"first\" if v1 == \"A\" else \"second\"\n>     r2 = \"second\" if v2 == \"A\" else \"first\"        # translate back: 'first' means original a\n>     return r1 if r1 == r2 else \"tie\"\n> res = [swapped_verdict(a, b) for a, b in same]\n> print(f\"with order swapping: first {res.count('first') / trials:.0%}, second {res.count('second') / trials:.0%}, tie {res.count('tie') / trials:.0%} (balanced)\")\n> \n> # 3. Verbosity bias: the long answer is WORSE (quality -0.3) but 50 words longer\n> def long_wins(len_bias):\n>     wins = 0\n>     for _ in range(trials):\n>         short, long_ = make(0.0, 40), make(-0.3, 90)\n>         wins += mock_judge(long_, short, pos_bias=0, len_bias=len_bias) == \"A\"\n>     return wins / trials\n> print(f\"worse-but-longer answer wins {long_wins(0.02):.0%} of the time with the judge's natural length bias\")\n> print(f\"after cancelling the length bonus with a length penalty it wins {long_wins(0.0):.0%}  (the remainder is plain judge noise)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 judge.py",
+     "o": "identical answers: judge picks the one shown first 64% of the time (fair = 50%)\nwith order swapping: first 23%, second 23%, tie 54% (balanced)\nworse-but-longer answer wins 95% of the time with the judge's natural length bias\nafter cancelling the length bonus with a length penalty it wins 25%  (the remainder is plain judge noise)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > facts.py <<'PY'\n> facts = [\n>     # (atomic fact, correct?, importance weight)\n>     (\"Teddy bears were first created in the 1920s\", False, 1.0),\n>     (\"Teddy bears are named after President Theodore Roosevelt\", True, 3.0),\n>     (\"Roosevelt was on a hunting trip\", True, 1.0),\n>     (\"Roosevelt proudly wanted to shoot a captured bear\", False, 1.0),\n> ]\n> def score(facts, weighted):\n>     w = [(f[2] if weighted else 1.0) for f in facts]\n>     return sum(wi for wi, f in zip(w, facts) if f[1]) / sum(w)\n> print(f\"unweighted factuality: {score(facts, False):.2f}  (2 of 4 facts correct)\")\n> print(f\"weighted factuality  : {score(facts, True):.2f}  (the namesake fact counts three times)\")\n> for f in facts:\n>     print(f\"  {'OK ' if f[1] else 'ERR'} weight {f[2]}  {f[0]}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 facts.py",
+     "o": "unweighted factuality: 0.50  (2 of 4 facts correct)\nweighted factuality  : 0.67  (the namesake fact counts three times)\n  ERR weight 1.0  Teddy bears were first created in the 1920s\n  OK  weight 3.0  Teddy bears are named after President Theodore Roosevelt\n  OK  weight 1.0  Roosevelt was on a hunting trip\n  ERR weight 1.0  Roosevelt proudly wanted to shoot a captured bear",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > passhat.py <<'PY'\n> from math import comb\n> p = 0.8\n> print(f\"single-attempt success p = {p}\")\n> print(f\"{'k':>3} {'pass@k (at least one)':>22} {'pass^k (all succeed)':>22}\")\n> for k in (1, 2, 4, 8):\n>     print(f\"{k:3} {1 - (1 - p) ** k:22.3f} {p ** k:22.3f}\")\n> n, c = 20, 16\n> print(f\"\\nfrom {c} successes in {n} trials: pass^4 estimate = C({c},4)/C({n},4) = {comb(c, 4) / comb(n, 4):.3f}  (true 0.8^4 = {0.8 ** 4:.3f})\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 passhat.py",
+     "o": "single-attempt success p = 0.8\n  k  pass@k (at least one)   pass^k (all succeed)\n  1                  0.800                  0.800\n  2                  0.960                  0.640\n  4                  0.998                  0.410\n  8                  1.000                  0.168\n\nfrom 16 successes in 20 trials: pass^4 estimate = C(16,4)/C(20,4) = 0.376  (true 0.8^4 = 0.410)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pareto.py <<'PY'\n> # (name, score on my task, cost in dollars per million tokens): MADE-UP numbers for illustration\n> models = [(\"big-reasoner\", 92, 15.0), (\"big-chat\", 88, 10.0), (\"mid-chat\", 84, 2.0), (\"mid-old\", 80, 2.5),\n>           (\"small-fast\", 76, 0.3), (\"tiny\", 60, 0.1), (\"overpriced-ok\", 78, 12.0)]\n> def dominated(m): return any(o[1] >= m[1] and o[2] <= m[2] and (o[1] > m[1] or o[2] < m[2]) for o in models)\n> print(f\"{'model':16} {'score':>6} {'cost':>7}  on the Pareto frontier?\")\n> for m in sorted(models, key=lambda x: x[2]):\n>     print(f\"{m[0]:16} {m[1]:6} {m[2]:7.2f}  {'YES' if not dominated(m) else 'no (beaten on both axes)'}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pareto.py",
+     "o": "model             score    cost  on the Pareto frontier?\ntiny                 60    0.10  YES\nsmall-fast           76    0.30  YES\nmid-chat             84    2.00  YES\nmid-old              80    2.50  no (beaten on both axes)\nbig-chat             88   10.00  YES\noverpriced-ok        78   12.00  no (beaten on both axes)\nbig-reasoner         92   15.00  YES",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d34c8e1505f1d953"
+ },
+ "lectures-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/l9 && cd ~/l9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > vit.py <<'PY'\n> import random\n> random.seed(2)\n> \n> H = W = 224; P = 16; C = 3; D_MODEL = 768\n> patches = (H // P) * (W // P)\n> tokens = patches + 1                                      # plus the CLS token\n> patch_values = P * P * C\n> proj_params = patch_values * D_MODEL\n> print(f\"{H}x{W} image, {P}x{P} patches -> {patches} patch tokens (+1 CLS = {tokens})\")\n> print(f\"each patch has {patch_values} numbers, projected to {D_MODEL}: {proj_params:,} parameters in the patch embedding\")\n> print(f\"attention score table is {tokens} x {tokens} = {tokens * tokens:,} entries per head (a text prompt of the same length would cost the same)\")\n> \n> # a tiny 6x6 \"image\" split into 3x3 patches: show exactly how pixels become tokens\n> img = [[random.randint(0, 9) for _ in range(6)] for _ in range(6)]\n> print(\"\\n6x6 image:\")\n> for r in img: print(\"  \", \" \".join(map(str, r)))\n> tokens_demo = []\n> for pr in range(0, 6, 3):\n>     for pc in range(0, 6, 3):\n>         tokens_demo.append([img[r][c] for r in range(pr, pr + 3) for c in range(pc, pc + 3)])\n> print(\"\\n4 patch tokens (each flattened, row by row):\")\n> for i, t in enumerate(tokens_demo): print(f\"  patch {i}: {t}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 vit.py",
+     "o": "224x224 image, 16x16 patches -> 196 patch tokens (+1 CLS = 197)\neach patch has 768 numbers, projected to 768: 589,824 parameters in the patch embedding\nattention score table is 197 x 197 = 38,809 entries per head (a text prompt of the same length would cost the same)\n\n6x6 image:\n   0 1 1 5 2 4\n   4 9 3 9 0 9\n   2 6 6 8 5 8\n   7 8 4 0 0 5\n   7 5 6 6 8 2\n   8 2 3 3 0 2\n\n4 patch tokens (each flattened, row by row):\n  patch 0: [0, 1, 1, 4, 9, 3, 2, 6, 6]\n  patch 1: [5, 2, 4, 9, 0, 9, 8, 5, 8]\n  patch 2: [7, 8, 4, 7, 5, 6, 8, 2, 3]\n  patch 3: [0, 0, 5, 6, 8, 2, 3, 0, 2]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > mdm.py <<'PY'\n> import random\n> \n> target = \"a cute teddy bear is reading a long bedtime story to a sleepy child tonight\".split()\n> L = len(target)\n> \n> def denoiser(seq):\n>     revealed = sum(1 for x in seq if x != \"[MASK]\") / L\n>     out = {}\n>     for i, t in enumerate(seq):\n>         if t == \"[MASK]\":\n>             conf = min(0.99, 0.35 + 0.5 * revealed + random.random() * 0.15)\n>             out[i] = (target[i] if random.random() < conf else \"<wrong>\", conf)\n>     return out\n> \n> def decode(steps, verbose=False):\n>     seq = [\"[MASK]\"] * L\n>     per_step = -(-L // steps)\n>     for s in range(steps):\n>         masked = [i for i, t in enumerate(seq) if t == \"[MASK]\"]\n>         if not masked: break\n>         preds = denoiser(seq)\n>         for i in sorted(masked, key=lambda i: -preds[i][1])[:per_step]:\n>             seq[i] = preds[i][0]\n>         if verbose: print(f\"  pass {s + 1}: {' '.join(seq)}\")\n>     return seq\n> \n> random.seed(12)\n> print(f\"{L}-token answer; an auto-regressive model needs {L} sequential passes.\\n\")\n> print(\"masked diffusion, 4 passes (each unmasks the most confident positions):\")\n> decode(4, verbose=True)\n> print(f\"\\n{'passes':>7} {'tokens correct (avg of 300 runs)':>34}\")\n> for steps in (1, 2, 4, 8, 15):\n>     random.seed(1)\n>     runs = [sum(a == b for a, b in zip(decode(steps), target)) / L for _ in range(300)]\n>     print(f\"{steps:7} {sum(runs) / len(runs):34.0%}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 mdm.py",
+     "o": "15-token answer; an auto-regressive model needs 15 sequential passes.\n\nmasked diffusion, 4 passes (each unmasks the most confident positions):\n  pass 1: [MASK] cute [MASK] [MASK] <wrong> [MASK] [MASK] [MASK] [MASK] [MASK] [MASK] a [MASK] [MASK] <wrong>\n  pass 2: [MASK] cute [MASK] bear <wrong> reading [MASK] [MASK] [MASK] [MASK] <wrong> a <wrong> [MASK] <wrong>\n  pass 3: a cute [MASK] bear <wrong> reading a long [MASK] story <wrong> a <wrong> [MASK] <wrong>\n  pass 4: a cute teddy bear <wrong> reading a long bedtime story <wrong> a <wrong> child <wrong>\n\n passes   tokens correct (avg of 300 runs)\n      1                                43%\n      2                                57%\n      4                                64%\n      8                                70%\n     15                                72%",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/l9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > collapse.py <<'PY'\n> import random\n> from collections import Counter\n> random.seed(8)\n> \n> # generation 0: a \"human\" distribution with a few common words and a long tail of rare ones\n> vocab = [f\"w{i}\" for i in range(50)]\n> weights = [1 / (i + 1) for i in range(50)]                     # Zipf-like\n> total = sum(weights); dist = {w: x / total for w, x in zip(vocab, weights)}\n> \n> def entropy(d):\n>     import math\n>     return -sum(p * math.log2(p) for p in d.values() if p > 0)\n> \n> print(f\"{'generation':>10} {'distinct words':>15} {'entropy (bits)':>15} {'prob. of the top 3 words':>26}\")\n> for gen in range(0, 41):\n>     if gen % 8 == 0:\n>         top3 = sum(sorted(dist.values(), reverse=True)[:3])\n>         print(f\"{gen:10} {sum(1 for p in dist.values() if p > 0):15} {entropy(dist):15.2f} {top3:26.2f}\")\n>     sample = random.choices(list(dist), weights=list(dist.values()), k=150)     # the next model trains on 150 samples of the last\n>     counts = Counter(sample); n = len(sample)\n>     dist = {w: counts.get(w, 0) / n for w in dist}\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 collapse.py",
+     "o": "generation  distinct words  entropy (bits)   prob. of the top 3 words\n         0              50            4.61                       0.41\n         8              15            3.45                       0.45\n        16               9            2.87                       0.61\n        24               9            2.57                       0.69\n        32               7            2.43                       0.74\n        40               7            2.11                       0.83",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c635951c8b8d6054"
+ },
  "linux-1": {
   "blocks": [
    [
@@ -16301,6 +17264,1521 @@
    ]
   ],
   "key": "8e90090777addb30"
+ },
+ "scenarios-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl delete namespace tools shop --ignore-not-found --wait=true > /dev/null 2>&1      # clean slate",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create namespace tools > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create namespace shop > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# a small web server in namespace \"shop\", exposed by a Service",
+     "o": ""
+    },
+    {
+     "c": "$ kubectl create deployment api -n shop --image=busybox:1.36 --port=8080 -- sh -c 'mkdir -p /www && echo \"hello from shop/api\" > /www/index.html && httpd -f -p 8080 -h /www' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl expose deployment api -n shop --port=80 --target-port=8080 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=available deployment/api -n shop --timeout=90s",
+     "o": "deployment.apps/api condition met",
+     "x": 0
+    },
+    {
+     "c": "# a client pod in a DIFFERENT namespace",
+     "o": ""
+    },
+    {
+     "c": "$ kubectl run client -n tools --image=busybox:1.36 --restart=Never -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/client -n tools --timeout=60s",
+     "o": "pod/client condition met",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get svc,endpoints -n shop",
+     "o": "Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nNAME          TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE\nservice/api   ClusterIP   10.97.81.196   <none>        80/TCP    1s\n\nNAME            ENDPOINTS           AGE\nendpoints/api   10.244.0.247:8080   1s",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- short name (resolved in the client's own namespace 'tools'):\"",
+     "o": "--- short name (resolved in the client's own namespace 'tools'):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api/ 2>&1 | head -2",
+     "o": "wget: bad address 'api'\ncommand terminated with exit code 1",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- service.namespace:\"",
+     "o": "--- service.namespace:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop/",
+     "o": "hello from shop/api",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- fully qualified:\"",
+     "o": "--- fully qualified:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop.svc.cluster.local/",
+     "o": "hello from shop/api",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- why: the search path in the client's resolv.conf\"",
+     "o": "--- why: the search path in the client's resolv.conf",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- cat /etc/resolv.conf | head -3",
+     "o": "search tools.svc.cluster.local svc.cluster.local cluster.local\nnameserver 10.96.0.10\noptions ndots:5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch svc api -n shop -p '{\"spec\":{\"selector\":{\"app\":\"apii\"}}}' > /dev/null    # a typo in the selector",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the Service still exists, but:\"",
+     "o": "--- the Service still exists, but:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpoints api -n shop",
+     "o": "Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nNAME   ENDPOINTS   AGE\napi    <none>      7s",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the client now:\"",
+     "o": "--- the client now:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop/ 2>&1 | head -2",
+     "o": "wget: can't connect to remote host (10.97.81.196): Connection refused\ncommand terminated with exit code 1",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- compare selector with pod labels:\"",
+     "o": "--- compare selector with pod labels:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get svc api -n shop -o jsonpath='selector: {.spec.selector}{\"\\n\"}'",
+     "o": "selector: {\"app\":\"apii\"}",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -n shop --show-labels",
+     "o": "NAME                  READY   STATUS    RESTARTS   AGE   LABELS\napi-dd59f9596-x22ng   1/1     Running   0          9s    app=api,pod-template-hash=dd59f9596",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch svc api -n shop -p '{\"spec\":{\"selector\":{\"app\":\"api\"}}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpoints api -n shop",
+     "o": "Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nNAME   ENDPOINTS           AGE\napi    10.244.0.247:8080   11s",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop/",
+     "o": "hello from shop/api",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl patch svc api -n shop --type=json -p '[{\"op\":\"replace\",\"path\":\"/spec/ports/0/targetPort\",\"value\":9999}]' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- endpoints exist, but they point at port 9999:\"",
+     "o": "--- endpoints exist, but they point at port 9999:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get endpoints api -n shop",
+     "o": "Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nNAME   ENDPOINTS           AGE\napi    10.244.0.247:9999   13s",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the client:\"",
+     "o": "--- the client:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop/ 2>&1 | head -2",
+     "o": "wget: can't connect to remote host (10.97.81.196): Connection refused\ncommand terminated with exit code 1",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- bypass the Service: call the pod IP on the real port\"",
+     "o": "--- bypass the Service: call the pod IP on the real port",
+     "x": 0
+    },
+    {
+     "c": "$ POD_IP=$(kubectl get pod -n shop -l app=api -o jsonpath='{.items[0].status.podIP}')",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://$POD_IP:8080/",
+     "o": "hello from shop/api",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch svc api -n shop --type=json -p '[{\"op\":\"replace\",\"path\":\"/spec/ports/0/targetPort\",\"value\":8080}]' > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl apply -f - <<'EOF' > /dev/null\n> apiVersion: networking.k8s.io/v1\n> kind: NetworkPolicy\n> metadata:\n>   name: allow-same-namespace-only\n>   namespace: shop\n> spec:\n>   podSelector: {}\n>   policyTypes: [Ingress]\n>   ingress:\n>   - from:\n>     - podSelector: {}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the policy object exists:\"",
+     "o": "--- the policy object exists:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get networkpolicy -n shop",
+     "o": "NAME                        POD-SELECTOR   AGE\nallow-same-namespace-only   <none>         0s",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the client in another namespace is STILL allowed here (this lab does not enforce policies):\"",
+     "o": "--- the client in another namespace is STILL allowed here (this lab does not enforce policies):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl exec -n tools client -- wget -qO- -T 3 http://api.shop/",
+     "o": "hello from shop/api",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ~/ladder.sh <<'SH'\n> #!/bin/bash\n> # usage: ladder.sh <client-ns> <client-pod> <svc> <svc-ns> <port>\n> cns=$1; cpod=$2; svc=$3; sns=$4; port=$5\n> fqdn=\"$svc.$sns.svc.cluster.local\"\n> step() { printf '%-34s' \"$1\"; }\n> fail() { echo \"FAIL  -> $1\"; exit 1; }\n> \n> step \"1 service exists\"\n> kubectl get svc \"$svc\" -n \"$sns\" >/dev/null 2>&1 && echo ok || fail \"wrong name or namespace\"\n> \n> step \"2 DNS resolves from the client\"\n> ip=$(kubectl exec -n \"$cns\" \"$cpod\" -- nslookup \"$fqdn\" 2>/dev/null | awk '/^Address/ && !/#/ {print $2}' | tail -1)\n> [ -n \"$ip\" ] && echo \"ok ($ip)\" || fail \"CoreDNS problem, or egress policy blocks DNS\"\n> \n> step \"3 service has ready endpoints\"\n> eps=$(kubectl get endpoints \"$svc\" -n \"$sns\" -o jsonpath='{.subsets[*].addresses[*].ip}')\n> [ -n \"$eps\" ] && echo \"ok ($eps)\" || fail \"selector mismatch or pods not Ready\"\n> \n> step \"4 pod answers directly (bypass)\"\n> tp=$(kubectl get endpoints \"$svc\" -n \"$sns\" -o jsonpath='{.subsets[0].ports[0].port}')\n> kubectl exec -n \"$cns\" \"$cpod\" -- wget -qO- -T 3 \"http://${eps%% *}:$tp/\" >/dev/null 2>&1 && echo \"ok (port $tp)\" || fail \"app not listening on targetPort, or a policy blocks pod traffic\"\n> \n> step \"5 through the service\"\n> kubectl exec -n \"$cns\" \"$cpod\" -- wget -qO- -T 3 \"http://$fqdn:$port/\" >/dev/null 2>&1 && echo ok || fail \"Service port or kube-proxy problem\"\n> echo \"all layers healthy\"\n> SH",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x ~/ladder.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== healthy:\"; ~/ladder.sh tools client api shop 80",
+     "o": "=== healthy:\n1 service exists                  ok\n2 DNS resolves from the client    ok (10.97.81.196)\n3 service has ready endpoints     Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nok (10.244.0.247)\n4 pod answers directly (bypass)   Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nok (port 8080)\n5 through the service             ok\nall layers healthy",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== broken selector:\"",
+     "o": "=== broken selector:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch svc api -n shop -p '{\"spec\":{\"selector\":{\"app\":\"nope\"}}}' > /dev/null; sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ~/ladder.sh tools client api shop 80",
+     "o": "1 service exists                  ok\n2 DNS resolves from the client    ok (10.97.81.196)\n3 service has ready endpoints     Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice\nFAIL  -> selector mismatch or pods not Ready",
+     "x": 1
+    },
+    {
+     "c": "$ kubectl patch svc api -n shop -p '{\"spec\":{\"selector\":{\"app\":\"api\"}}}' > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8bfa70746b1ffa24"
+ },
+ "scenarios-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s3 && cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > build.sh <<'SH'\n> #!/bin/bash\n> # usage: build.sh <version-text> <tag>\n> set -e\n> v=$1; tag=$2\n> mkdir -p ctx && cd ctx\n> echo \"$v\" > index.html\n> printf 'FROM busybox:latest\\nCOPY index.html /www/index.html\\nCMD [\"httpd\",\"-f\",\"-p\",\"8080\",\"-h\",\"/www\"]\\n' > Dockerfile\n> docker build -q -t localhost:5000/demo/app:$tag . > /dev/null || { echo BUILD FAILED; exit 1; }\n> docker push localhost:5000/demo/app:$tag 2>&1 | tail -1 | awk '{print \"pushed\", $1, $2, $3}'\n> SH",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x build.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./build.sh \"this is version 1\" stable",
+     "o": "pushed stable: digest: sha256:96ab3dbac4ace8246d04ea126a2c5028ebb8270a1e757b595f26ead6519a23c2",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: app}\n> spec:\n>   replicas: 1\n>   selector: {matchLabels: {app: app}}\n>   template:\n>     metadata: {labels: {app: app}}\n>     spec:\n>       containers:\n>       - name: app\n>         image: localhost:5000/demo/app:stable\n>         ports: [{containerPort: 8080}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f app.yaml",
+     "o": "deployment.apps/app created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=90s",
+     "o": "Waiting for deployment \"app\" rollout to finish: 0 of 1 updated replicas are available...\ndeployment \"app\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ask.sh <<'SH'\n> #!/bin/bash\n> # ask every running pod of the app which version it serves\n> sleep 2\n> for p in $(kubectl get pods -l app=app --no-headers | awk '$3==\"Running\"{print $1}'); do\n>   ip=$(kubectl get pod $p -o jsonpath='{.status.podIP}')\n>   printf '%-22s %s\\n' \"$p\" \"$(wget -qO- -T 3 http://$ip:8080/)\"\n> done\n> SH",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x ask.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-85bfc7c588-z7xzw   this is version 2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./build.sh \"this is version 2\" stable            # the registry now serves different content for :stable",
+     "o": "pushed stable: digest: sha256:ac4a2190c744b3c91e977e278601bbbffec8819d54670ff2d23827afe7797927",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f app.yaml                         # the pipeline's deploy step",
+     "o": "deployment.apps/app unchanged",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- is anything rolling out?\"",
+     "o": "--- is anything rolling out?",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=20s",
+     "o": "deployment \"app\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-85bfc7c588-z7xzw   this is version 2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete pod -l app=app > /dev/null          # simulate a crash, eviction or scale-out",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=60s",
+     "o": "deployment \"app\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-85bfc7c588-wqnsf   this is version 2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- what the kubelet did:\"",
+     "o": "--- what the kubelet did:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod -l app=app -o jsonpath='{.items[0].spec.containers[0].imagePullPolicy}{\"\\n\"}'",
+     "o": "IfNotPresent",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl describe pod -l app=app | grep -E \"Pulled|already present\" | cut -c1-140",
+     "o": "  Normal  Pulled     33s   kubelet            spec.containers{app}: Container image \"localhost:5000/demo/app:stable\" already present on mach",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl patch deployment app -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"app\",\"imagePullPolicy\":\"Always\"}]}}}}' > /dev/null    # changes the template, so it also rolls out",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=60s",
+     "o": "Waiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nWaiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\ndeployment \"app\" successfully rolled out",
+     "x": 0
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-dc6fcf77d-hc6wq    this is version 2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ./build.sh \"this is version 3\" \"3-$(date +%s)\"",
+     "o": "pushed 3-1791372522: digest: sha256:6e4bbc87b5da9975d5cc53269b54e4734c3d21bf8ce92a51bd75faf70d8d1aea",
+     "x": 0
+    },
+    {
+     "c": "$ TAG=$(docker images localhost:5000/demo/app --format '{{.Tag}}' | grep '^3-' | head -1)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' localhost:5000/demo/app:$TAG)",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"unique tag : $TAG\"",
+     "o": "unique tag : 3-1791369681",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"digest     : $DIGEST\"",
+     "o": "digest     : localhost:5000/demo/app@sha256:1925559ba95e8c79b538a6f7f70351e0eafd2ede719db9eea93ac92954b3eb46",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl set image deployment/app app=$DIGEST",
+     "o": "deployment.apps/app image updated",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=60s",
+     "o": "Waiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nWaiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nerror: timed out waiting for the condition",
+     "x": 1
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-dc6fcf77d-hc6wq    this is version 2",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the rollout history now records exactly what ran:\"",
+     "o": "--- the rollout history now records exactly what ran:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout history deployment/app --revision=3 | grep -i image",
+     "o": "    Image:\tlocalhost:5000/demo/app@sha256:1925559ba95e8c79b538a6f7f70351e0eafd2ede719db9eea93ac92954b3eb46",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get deployment app -o jsonpath='{.spec.template.spec.containers[0].image}{\"\\n\"}'",
+     "o": "localhost:5000/demo/app@sha256:1925559ba95e8c79b538a6f7f70351e0eafd2ede719db9eea93ac92954b3eb46",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl set image deployment/app app=localhost:5000/demo/app:does-not-exist",
+     "o": "deployment.apps/app image updated",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods -l app=app",
+     "o": "NAME                   READY   STATUS         RESTARTS   AGE\napp-6f6db4d9bb-f4k9c   0/1     ErrImagePull   0          8s\napp-dc6fcf77d-hc6wq    1/1     Running        0          74s",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=10s 2>&1 | tail -2",
+     "o": "Waiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nerror: timed out waiting for the condition",
+     "x": 0
+    },
+    {
+     "c": "$ ./ask.sh",
+     "o": "app-dc6fcf77d-hc6wq    this is version 2",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl describe pod -l app=app | grep -E \"Failed|ErrImage|BackOff\" | head -3 | cut -c1-150",
+     "o": "      Reason:       ImagePullBackOff",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout undo deployment/app > /dev/null",
+     "o": "Warning: resource deployments/app was previously managed with 'kubectl apply'. Rolling back will not update the kubectl.kubernetes.io/last-applied-configuration annotation, which may cause unexpected behavior on future 'kubectl apply' operations. Consider using 'kubectl apply' with your previous configuration file instead.",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deployment/app --timeout=60s",
+     "o": "Waiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nWaiting for deployment \"app\" rollout to finish: 1 old replicas are pending termination...\nerror: timed out waiting for the condition",
+     "x": 1
+    }
+   ]
+  ],
+  "key": "b0edcace7c22bd5e"
+ },
+ "scenarios-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl create deployment web --image=busybox:1.36 -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl autoscale deployment web --cpu=50% --min=1 --max=5 2>&1 | tail -1",
+     "o": "horizontalpodautoscaler.autoscaling/web autoscaled",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 30",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the first thing to look at:\"",
+     "o": "--- the first thing to look at:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get hpa",
+     "o": "NAME   REFERENCE        TARGETS              MINPODS   MAXPODS   REPLICAS   AGE\nweb    Deployment/web   cpu: <unknown>/50%   1         5         1          30s",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- why (conditions):\"",
+     "o": "--- why (conditions):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl describe hpa web | sed -n '/Conditions:/,/Events:/p' | cut -c1-210",
+     "o": "Conditions:\n  Type           Status  Reason                   Message\n  ----           ------  ------                   -------\n  AbleToScale    True    SucceededGetScale        the HPA controller was able to get the target's current scale\n  ScalingActive  False   FailedGetResourceMetric  the HPA was unable to compute the replica count: failed to get cpu utilization: unable to get metrics for resource cpu: unable to fetch metrics from resource me\nEvents:",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- is a metrics API registered?\"",
+     "o": "--- is a metrics API registered?",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get apiservices | grep -i metrics || echo \"no metrics.k8s.io APIService is registered\"",
+     "o": "no metrics.k8s.io APIService is registered",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- does kubectl top work? (it uses the same API)\"",
+     "o": "--- does kubectl top work? (it uses the same API)",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl top pods 2>&1 | head -2",
+     "o": "error: Metrics API not available",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/s4 && cd ~/s4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > hpa_sim.py <<'PY'\n> import math\n> \n> TOLERANCE = 0.10\n> \n> def desired(current, usage_per_pod_m, request_m, target_pct, min_r, max_r, not_ready=0, missing=0):\n>     \"\"\"One HPA evaluation. usage in millicores per pod, request in millicores per pod.\"\"\"\n>     ready = current - not_ready - missing\n>     if ready <= 0:\n>         return current, \"no usable metrics\"\n>     util = 100.0 * usage_per_pod_m / request_m                   # utilisation is relative to the REQUEST\n>     # pods missing metrics are assumed 0% when scaling up (conservative): dilute the average\n>     avg = util * ready / (ready + missing) if missing else util\n>     ratio = avg / target_pct\n>     if abs(ratio - 1.0) <= TOLERANCE:\n>         return current, f\"within tolerance (utilisation {avg:.0f}% vs target {target_pct}%)\"\n>     want = math.ceil(ready * ratio) if not missing else math.ceil((ready + missing) * ratio)\n>     clamped = max(min_r, min(max_r, want))\n>     note = f\"utilisation {avg:.0f}% vs target {target_pct}% -> wants {want}\"\n>     if clamped != want: note += f\", clamped to {clamped} by min/max\"\n>     return clamped, note\n> \n> cases = [\n>     (\"1. works as designed\",                          dict(current=4, usage_per_pod_m=900, request_m=1000, target_pct=50, min_r=2, max_r=20)),\n>     (\"2. within the 10% tolerance\",                   dict(current=4, usage_per_pod_m=530, request_m=1000, target_pct=50, min_r=2, max_r=20)),\n>     (\"3. big request: 'busy' is only 8% of request\",  dict(current=4, usage_per_pod_m=80,  request_m=1000, target_pct=50, min_r=4, max_r=20)),\n>     (\"4. already at maxReplicas\",                     dict(current=10, usage_per_pod_m=900, request_m=1000, target_pct=50, min_r=2, max_r=10)),\n>     (\"5. some pods missing metrics (dilutes)\",        dict(current=4, usage_per_pod_m=900, request_m=1000, target_pct=50, min_r=2, max_r=20, missing=2)),\n>     (\"6. every pod not ready / no metrics\",           dict(current=4, usage_per_pod_m=900, request_m=1000, target_pct=50, min_r=2, max_r=20, not_ready=4)),\n> ]\n> print(f\"{'case':48} {'replicas now':>12} -> {'next':>4}   reason\")\n> for name, kw in cases:\n>     nxt, why = desired(**kw)\n>     print(f\"{name:48} {kw['current']:12} -> {nxt:4}   {why}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 hpa_sim.py",
+     "o": "case                                             replicas now -> next   reason\n1. works as designed                                        4 ->    8   utilisation 90% vs target 50% -> wants 8\n2. within the 10% tolerance                                 4 ->    4   within tolerance (utilisation 53% vs target 50%)\n3. big request: 'busy' is only 8% of request                4 ->    4   utilisation 8% vs target 50% -> wants 1, clamped to 4 by min/max\n4. already at maxReplicas                                  10 ->   10   utilisation 90% vs target 50% -> wants 18, clamped to 10 by min/max\n5. some pods missing metrics (dilutes)                      4 ->    4   within tolerance (utilisation 45% vs target 50%)\n6. every pod not ready / no metrics                         4 ->    4   no usable metrics",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > timeline.py <<'PY'\n> import math\n> \n> TARGET, REQUEST, MIN_R, MAX_R = 50, 1000, 2, 12\n> WINDOW_DOWN = 300                  # seconds: scale-down stabilisation (default 5 minutes)\n> TICK = 15                          # HPA sync period\n> load_total_m = lambda t: 1600 if t < 60 else (5200 if t < 360 else 900)      # total CPU demand in millicores over time\n> \n> replicas, history, last_note = 3, [], None\n> print(f\"{'t(s)':>5} {'demand(m)':>10} {'replicas':>9} {'utilisation':>12} {'recommended':>12}  note\")\n> for t in range(0, 720, TICK):\n>     util = 100 * load_total_m(t) / (replicas * REQUEST)\n>     rec = max(MIN_R, min(MAX_R, math.ceil(replicas * util / TARGET)))\n>     if abs(util / TARGET - 1) <= 0.10: rec = replicas\n>     history.append((t, rec))\n>     window = [r for (tt, r) in history if tt > t - WINDOW_DOWN]            # recommendations in the last 5 minutes\n>     if rec > replicas:  new, note = min(rec, max(replicas * 2, replicas + 4)), \"scale up (limited to +100% or +4 per period)\"\n>     elif rec < replicas:\n>         new = max(rec, max(window)) if max(window) < replicas else replicas  # hold at the highest recent recommendation\n>         note = \"scale down only if EVERY recommendation in the window agrees\" if new < replicas else \"scale-down blocked by stabilisation window\"\n>     else: new, note = replicas, \"\"\n>     if replicas != new or t in (0, 360) or (note and note != last_note):\n>         print(f\"{t:5} {load_total_m(t):10} {replicas:9} {util:11.0f}% {rec:12}  {note}\")\n>     last_note = note\n>     replicas = new\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 timeline.py",
+     "o": " t(s)  demand(m)  replicas  utilisation  recommended  note\n    0       1600         3          53%            3  \n   60       5200         3         173%           11  scale up (limited to +100% or +4 per period)\n   75       5200         7          74%           11  scale up (limited to +100% or +4 per period)\n  360        900        11           8%            2  scale-down blocked by stabilisation window\n  645        900        11           8%            2  scale down only if EVERY recommendation in the window agrees",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "20ab9f704d659685"
+ },
+ "scenarios-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s5/network ~/s5/app ~/s5/state && cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > network/main.tf <<'EOF'\n> terraform {\n>   backend \"local\" {\n>     path = \"../state/network.tfstate\"\n>   }\n> }\n> resource \"terraform_data\" \"vpc\" {\n>   input = \"vpc-0123\"\n> }\n> output \"vpc_id\" {\n>   value = terraform_data.vpc.output\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app/main.tf <<'EOF'\n> data \"terraform_remote_state\" \"network\" {\n>   backend = \"local\"\n>   config = {\n>     path = \"../state/network.tfstate\"\n>   }\n> }\n> resource \"terraform_data\" \"svc\" {\n>   input = data.terraform_remote_state.network.outputs.vpc_id\n> }\n> output \"deployed_in\" {\n>   value = terraform_data.svc.output\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== 1. apply the APP stack first (the network does not exist yet)\"",
+     "o": "=== 1. apply the APP stack first (the network does not exist yet)",
+     "x": 0
+    },
+    {
+     "c": "$ (cd app && terraform init -input=false -no-color > /dev/null && terraform apply -auto-approve -input=false -no-color 2>&1 | grep -E \"^Error|No stored\" | head -2)",
+     "o": "Error: Unable to find remote state\nNo stored state was found for the given workspace in the given backend.",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== 2. apply NETWORK, then APP (correct order)\"",
+     "o": "=== 2. apply NETWORK, then APP (correct order)",
+     "x": 0
+    },
+    {
+     "c": "$ (cd network && terraform init -input=false -no-color > /dev/null && terraform apply -auto-approve -input=false -no-color 2>&1 | grep -E \"vpc_id|Apply complete\")",
+     "o": "  + vpc_id = (known after apply)\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.\nvpc_id = \"vpc-0123\"",
+     "x": 0
+    },
+    {
+     "c": "$ (cd app && terraform apply -auto-approve -input=false -no-color 2>&1 | grep -E \"deployed_in|Apply complete\")",
+     "o": "  + deployed_in = (known after apply)\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.\ndeployed_in = \"vpc-0123\"",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/output \"vpc_id\"/output \"network_id\"/' network/main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ (cd network && terraform apply -auto-approve -input=false -no-color 2>&1 | grep -E \"network_id|Apply complete\")",
+     "o": "  + network_id = \"vpc-0123\"\nApply complete! Resources: 0 added, 0 changed, 0 destroyed.\nnetwork_id = \"vpc-0123\"",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== the app stack, unchanged, now fails to plan:\"",
+     "o": "=== the app stack, unchanged, now fails to plan:",
+     "x": 0
+    },
+    {
+     "c": "$ (cd app && terraform plan -input=false -no-color 2>&1 | grep -E \"^Error|Unsupported attribute|vpc_id\" | head -3)",
+     "o": "Error: Unsupported attribute\n   8:   input = data.terraform_remote_state.network.outputs.vpc_id\nThis object does not have an attribute named \"vpc_id\".",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > contract.py <<'PY'\n> import json, subprocess, sys\n> \n> # the interface the network stack promises to consumers (kept in the producer's repo, reviewed like an API)\n> CONTRACT = {\"vpc_id\": \"string\"}\n> \n> out = json.loads(subprocess.check_output([\"terraform\", \"output\", \"-json\"], cwd=\"network\"))\n> problems = []\n> for name, typ in CONTRACT.items():\n>     if name not in out:\n>         problems.append(f\"required output '{name}' is missing (a consumer depends on it)\")\n>     elif typ == \"string\" and not isinstance(out[name][\"value\"], str):\n>         problems.append(f\"output '{name}' should be a string\")\n> print(\"contract check:\", \"OK\" if not problems else \"FAILED\")\n> for p in problems: print(\"  -\", p)\n> sys.exit(1 if problems else 0)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 contract.py; echo \"exit code: $?\"",
+     "o": "contract check: FAILED\n  - required output 'vpc_id' is missing (a consumer depends on it)\nexit code: 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/output \"network_id\"/output \"vpc_id\"/' network/main.tf",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ (cd network && terraform apply -auto-approve -input=false -no-color 2>&1 | grep -E \"Apply complete\")",
+     "o": "Apply complete! Resources: 0 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ python3 contract.py",
+     "o": "contract check: OK",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/s5/versions/legacy_module && cd ~/s5/versions",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > legacy_module/main.tf <<'EOF'\n> terraform {\n>   required_version = \"< 1.0\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> module \"legacy\" {\n>   source = \"./legacy_module\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init -input=false -no-color 2>&1 | grep -v \"^$\" | sed -n '2,9p'",
+     "o": "Initializing modules...\n- legacy in legacy_module\nError: Unsupported Terraform Core version\n  on legacy_module/main.tf line 2, in terraform:\n   2:   required_version = \"< 1.0\"\nModule module.legacy (from ./legacy_module) does not support Terraform\nversion 1.16.5. To proceed, either choose another supported Terraform version\nor update this version constraint. Version constraints are normally set for",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform version | head -1",
+     "o": "Terraform v1.16.5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > resolve.py <<'PY'\n> # each module pins the versions of the shared modules it was built against\n> REQUIRES = {\n>     \"stack/app\":        {\"module-a\": \"1.2.0\", \"module-b\": \"2.0.0\"},\n>     \"module-a@1.2.0\":   {\"module-network\": \"1.x\"},\n>     \"module-b@2.0.0\":   {\"module-network\": \"2.x\"},\n>     \"module-b@1.9.0\":   {\"module-network\": \"1.x\"},\n> }\n> def major(v): return v.split(\".\")[0]\n> \n> # gather every requirement on every shared module, then look for incompatible majors\n> wants = {}\n> def walk(node):\n>     for dep, ver in REQUIRES.get(node, {}).items():\n>         wants.setdefault(dep, set()).add((major(ver), node))\n>         walk(f\"{dep}@{ver}\")\n> walk(\"stack/app\")\n> conflict = False\n> for dep, reqs in wants.items():\n>     majors = {m for m, _ in reqs}\n>     if len(majors) > 1:\n>         conflict = True\n>         print(f\"CONFLICT on {dep}: needs majors {sorted(majors)}\")\n>         for m, who in sorted(reqs): print(f\"    {who} wants {dep} v{m}\")\n> print(\"\\nresolution: upgrade module-a to a release built against network v2, or pin module-b@1.9.0 (network v1) until a is ready\" if conflict else \"no conflicts\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 resolve.py",
+     "o": "CONFLICT on module-network: needs majors ['1', '2']\n    module-a@1.2.0 wants module-network v1\n    module-b@2.0.0 wants module-network v2\n\nresolution: upgrade module-a to a release built against network v2, or pin module-b@1.9.0 (network v1) until a is ready",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > stacks.py <<'PY'\n> import sys\n> from collections import defaultdict\n> \n> # stack -> stacks it consumes outputs from\n> DEPENDS = {\n>     \"foundation\": [],\n>     \"network\": [\"foundation\"],\n>     \"dns\": [\"network\"],\n>     \"shared-db\": [\"network\"],\n>     \"k8s-cluster\": [\"network\"],\n>     \"observability\": [\"k8s-cluster\"],\n>     \"app-payments\": [\"k8s-cluster\", \"shared-db\", \"dns\"],\n>     \"app-search\": [\"k8s-cluster\", \"observability\"],\n> }\n> if len(sys.argv) > 2 and sys.argv[1] == \"--add-cycle\":\n>     DEPENDS[\"network\"].append(\"app-payments\")                      # a bad change: network now needs an app\n> \n> def waves(depends):\n>     remaining = {s: set(d) for s, d in depends.items()}\n>     done, out = set(), []\n>     while remaining:\n>         ready = sorted(s for s, d in remaining.items() if d <= done)\n>         if not ready:\n>             cyc = sorted(remaining)\n>             raise SystemExit(f\"CYCLE detected among: {', '.join(cyc)}  (a layer must never depend on a layer above it)\")\n>         out.append(ready)\n>         done |= set(ready)\n>         for s in ready: del remaining[s]\n>     return out\n> \n> def downstream(changed, depends):\n>     users = defaultdict(set)\n>     for s, ds in depends.items():\n>         for d in ds: users[d].add(s)\n>     seen, stack = set(), [changed]\n>     while stack:\n>         for u in users[stack.pop()]:\n>             if u not in seen: seen.add(u); stack.append(u)\n>     return seen\n> \n> print(\"apply order (stacks in the same wave can run in parallel):\")\n> for i, w in enumerate(waves(DEPENDS), 1): print(f\"  wave {i}: {', '.join(w)}\")\n> for changed in (\"network\", \"app-search\"):\n>     aff = downstream(changed, DEPENDS)\n>     print(f\"\\nchange in '{changed}' -> plan/test these downstream stacks too: {', '.join(sorted(aff)) or '(none)'}\")\n> print(\"\\ndestroy order is the reverse of apply order:\", \" -> \".join(s for w in reversed(waves(DEPENDS)) for s in w))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 stacks.py",
+     "o": "apply order (stacks in the same wave can run in parallel):\n  wave 1: foundation\n  wave 2: network\n  wave 3: dns, k8s-cluster, shared-db\n  wave 4: app-payments, observability\n  wave 5: app-search\n\nchange in 'network' -> plan/test these downstream stacks too: app-payments, app-search, dns, k8s-cluster, observability, shared-db\n\nchange in 'app-search' -> plan/test these downstream stacks too: (none)\n\ndestroy order is the reverse of apply order: app-search -> app-payments -> observability -> dns -> k8s-cluster -> shared-db -> network -> foundation",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"---- now a bad change introduces a cycle:\"",
+     "o": "---- now a bad change introduces a cycle:",
+     "x": 0
+    },
+    {
+     "c": "$ python3 stacks.py --add-cycle x; echo \"exit code: $?\"",
+     "o": "apply order (stacks in the same wave can run in parallel):\nCYCLE detected among: app-payments, app-search, dns, k8s-cluster, network, observability, shared-db  (a layer must never depend on a layer above it)\nexit code: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "5bdcee5c407552f5"
+ },
+ "scenarios-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ kubectl apply -f - > /dev/null <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: toobig}\n> spec:\n>   containers: [{name: c, image: busybox:1.36, command: [sleep, \"3600\"], resources: {requests: {cpu: \"64\", memory: 1Ti}}}]\n> ---\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: selector}\n> spec:\n>   nodeSelector: {disktype: ssd}\n>   containers: [{name: c, image: busybox:1.36, command: [sleep, \"3600\"]}]\n> ---\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: zone}\n> spec:\n>   affinity:\n>     nodeAffinity:\n>       requiredDuringSchedulingIgnoredDuringExecution:\n>         nodeSelectorTerms:\n>         - matchExpressions: [{key: topology.kubernetes.io/zone, operator: In, values: [eu-west-1c]}]\n>   containers: [{name: c, image: busybox:1.36, command: [sleep, \"3600\"]}]\n> ---\n> apiVersion: v1\n> kind: PersistentVolumeClaim\n> metadata: {name: data}\n> spec:\n>   accessModes: [ReadWriteOnce]\n>   storageClassName: fast\n>   resources: {requests: {storage: 1Gi}}\n> ---\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: volume}\n> spec:\n>   containers: [{name: c, image: busybox:1.36, command: [sleep, \"3600\"], volumeMounts: [{name: d, mountPath: /d}]}]\n>   volumes: [{name: d, persistentVolumeClaim: {claimName: data}}]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# a taint on the node, then a pod without a toleration",
+     "o": ""
+    },
+    {
+     "c": "$ kubectl taint nodes lab-node dedicated=gpu:NoSchedule > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run tainted --image=busybox:1.36 -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods",
+     "o": "NAME       READY   STATUS    RESTARTS   AGE\nselector   1/1     Running   0          8s\ntainted    0/1     Pending   0          8s\ntoobig     0/1     Pending   0          8s\nvolume     0/1     Pending   0          8s\nzone       0/1     Pending   0          8s",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ for p in toobig selector zone volume tainted; do\n>   printf '%-9s ' \"$p\"\n>   kubectl get events --field-selector involvedObject.name=$p,reason=FailedScheduling -o jsonpath='{.items[-1].message}' | sed 's/ preemption:.*//'\n>   echo\n> done",
+     "o": "toobig    0/1 nodes are available: 1 Insufficient cpu, 1 Insufficient memory.\nselector  error: error executing jsonpath \"{.items[-1].message}\": Error executing template: array index out of bounds: index -1, length 0. Printing more information for debugging the template:\n\ttemplate was:\n\t\t{.items[-1].message}\n\tobject given to jsonpath engine was:\n\t\tmap[string]interface {}{\"apiVersion\":\"v1\", \"items\":[]interface {}{}, \"kind\":\"List\", \"metadata\":map[string]interface {}{\"resourceVersion\":\"\"}}\n\n\n\nzone      0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector.\nvolume    0/1 nodes are available: pod has unbound immediate PersistentVolumeClaims. not found\ntainted   0/1 nodes are available: 1 node(s) had untolerated taint(s).",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- the PVC:\"",
+     "o": "--- the PVC:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pvc data",
+     "o": "NAME   STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\ndata   Pending                                      fast           <unset>                 9s",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get storageclass 2>&1 | head -3",
+     "o": "No resources found",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- node labels the selectors had to match (a few):\"",
+     "o": "--- node labels the selectors had to match (a few):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get node lab-node --show-labels | tr ',' '\\n' | grep -E \"zone|arch|os=|hostname\" | head -5",
+     "o": "lab-node   Ready    <none>   2d1h   v1.37.1   beta.kubernetes.io/arch=amd64\nbeta.kubernetes.io/os=linux\nkubernetes.io/arch=amd64\nkubernetes.io/hostname=lab-node\nkubernetes.io/os=linux",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- node taints:\"",
+     "o": "--- node taints:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get node lab-node -o jsonpath='{.spec.taints}{\"\\n\"}'",
+     "o": "[{\"effect\":\"NoSchedule\",\"key\":\"dedicated\",\"value\":\"gpu\"}]",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- allocatable (what the scheduler can hand out):\"",
+     "o": "--- allocatable (what the scheduler can hand out):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get node lab-node -o jsonpath='cpu={.status.allocatable.cpu} memory={.status.allocatable.memory} pods={.status.allocatable.pods}{\"\\n\"}'",
+     "o": "cpu=4 memory=16479944Ki pods=110",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "# 1. tolerate the taint (a new pod with a toleration), 2. remove the bad selector by relabelling the node",
+     "o": ""
+    },
+    {
+     "c": "$ kubectl run tolerant --image=busybox:1.36 --overrides='{\"spec\":{\"tolerations\":[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"gpu\",\"effect\":\"NoSchedule\"}],\"containers\":[{\"name\":\"tolerant\",\"image\":\"busybox:1.36\",\"command\":[\"sleep\",\"3600\"]}]}}' > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl label node lab-node disktype=ssd > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pods",
+     "o": "NAME       READY   STATUS    RESTARTS   AGE\nselector   1/1     Running   0          17s\ntainted    0/1     Pending   0          17s\ntolerant   1/1     Running   0          8s\ntoobig     0/1     Pending   0          17s\nvolume     0/1     Pending   0          17s\nzone       0/1     Pending   0          17s",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"the 'selector' pod became schedulable as soon as a node carried disktype=ssd; the taint is still on, so 'tainted' stays Pending while 'tolerant' runs.\"",
+     "o": "the 'selector' pod became schedulable as soon as a node carried disktype=ssd; the taint is still on, so 'tainted' stays Pending while 'tolerant' runs.",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl taint nodes lab-node dedicated=gpu:NoSchedule- > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl cordon lab-node > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run after-cordon --image=busybox:1.36 -- sleep 3600 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 12",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod after-cordon",
+     "o": "NAME           READY   STATUS    RESTARTS   AGE\nafter-cordon   0/1     Pending   0          12s",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get events --field-selector involvedObject.name=after-cordon,reason=FailedScheduling -o jsonpath='{.items[-1].message}' | sed 's/ preemption:.*//'; echo",
+     "o": "0/1 nodes are available: 1 node(s) were unschedulable.",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get nodes",
+     "o": "NAME       STATUS                     ROLES    AGE    VERSION\nlab-node   Ready,SchedulingDisabled   <none>   2d1h   v1.37.1",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl uncordon lab-node > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pod after-cordon",
+     "o": "NAME           READY   STATUS    RESTARTS   AGE\nafter-cordon   1/1     Running   0          17s",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat > ~/pending_triage.py <<'PY'\n> import json, subprocess, collections\n> \n> # current namespace only; add \"-A\" to both commands to triage the whole cluster\n> pods = json.loads(subprocess.check_output([\"kubectl\", \"get\", \"pods\", \"-o\", \"json\"]))[\"items\"]\n> events = json.loads(subprocess.check_output([\"kubectl\", \"get\", \"events\", \"-o\", \"json\"]))[\"items\"]\n> \n> last_msg = {}\n> for e in events:\n>     if e.get(\"reason\") == \"FailedScheduling\":\n>         last_msg[(e[\"involvedObject\"][\"namespace\"], e[\"involvedObject\"][\"name\"])] = e[\"message\"]\n> \n> RULES = [\n>     (\"Insufficient\",                        \"resources: requests do not fit any node\"),\n>     (\"untolerated taint\",                   \"taints: add a toleration or fix the node pool\"),\n>     (\"node affinity/selector\",              \"labels/affinity: selector matches no node\"),\n>     (\"unbound immediate PersistentVolume\",  \"storage: PVC not bound (StorageClass/provisioner)\"),\n>     (\"volume node affinity\",                \"storage: volume lives in a different zone than the nodes\"),\n>     (\"unschedulable\",                       \"node cordoned or not ready\"),\n>     (\"Too many pods\",                       \"pod slots: node reached its max pods\"),\n>     (\"topology spread\",                     \"topology spread constraint cannot be satisfied\"),\n>     (\"anti-affinity\",                       \"pod anti-affinity rules cannot be satisfied\"),\n> ]\n> groups = collections.defaultdict(list)\n> for p in pods:\n>     if p[\"status\"][\"phase\"] != \"Pending\" or p[\"spec\"].get(\"nodeName\"):\n>         continue\n>     key = (p[\"metadata\"][\"namespace\"], p[\"metadata\"][\"name\"])\n>     msg = last_msg.get(key, \"\")\n>     cause = next((c for needle, c in RULES if needle in msg), \"unknown: read 'kubectl describe pod'\" if msg else \"no scheduling event yet\")\n>     groups[cause].append(f\"{key[0]}/{key[1]}\")\n> print(f\"{sum(len(v) for v in groups.values())} unscheduled Pending pods\")\n> for cause, items in sorted(groups.items(), key=lambda kv: -len(kv[1])):\n>     print(f\"\\n[{len(items)}] {cause}\")\n>     for i in items: print(\"   \", i)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ~/pending_triage.py",
+     "o": "3 unscheduled Pending pods\n\n[1] resources: requests do not fit any node\n    labpend/toobig\n\n[1] storage: PVC not bound (StorageClass/provisioner)\n    labpend/volume\n\n[1] labels/affinity: selector matches no node\n    labpend/zone",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4add20132c035f6c"
+ },
+ "scenarios-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s7 && cd ~/s7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > naive.yaml <<'EOF'\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata: {name: shop}\n> spec:\n>   replicas: 3\n>   selector: {matchLabels: {app: shop}}\n>   strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 1, maxSurge: 1}}\n>   template:\n>     metadata: {labels: {app: shop}}\n>     spec:\n>       containers:\n>       - name: app\n>         image: busybox:1.36\n>         env: [{name: VERSION, value: v1}]\n>         command: [\"sh\",\"-c\",\"sleep 8; mkdir -p /www; echo $VERSION > /www/index.html; exec httpd -f -p 8080 -h /www\"]\n>         ports: [{containerPort: 8080}]\n> ---\n> apiVersion: v1\n> kind: Service\n> metadata: {name: shop}\n> spec: {selector: {app: shop}, ports: [{port: 80, targetPort: 8080}]}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > experiment.sh <<'SH'\n> #!/bin/bash\n> # usage: experiment.sh <manifest>   (rolls shop from v1 to v2 while a client hammers the Service)\n> kubectl delete pod load --ignore-not-found --wait=true > /dev/null 2>&1\n> kubectl delete deploy shop --ignore-not-found --wait=true > /dev/null 2>&1\n> kubectl apply -f \"$1\" > /dev/null\n> kubectl rollout status deploy/shop --timeout=180s > /dev/null\n> kubectl run load --image=busybox:1.36 -- sh -c 'ok=0; fail=0; while true; do if wget -q -T1 -O /tmp/o http://shop/ 2>/dev/null; then ok=$((ok+1)); else fail=$((fail+1)); fi; echo \"$ok $fail\" > /tmp/count; sleep 0.1; done' > /dev/null\n> kubectl wait --for=condition=Ready pod/load --timeout=60s > /dev/null\n> sleep 30                                                # let everything warm up before measuring\n> read ok0 fail0 < <(kubectl exec load -- cat /tmp/count)\n> kubectl set env deploy/shop VERSION=v2 > /dev/null    # change the pod template -> rolling update\n> kubectl rollout status deploy/shop --timeout=240s | tail -1\n> sleep 4\n> read ok1 fail1 < <(kubectl exec load -- cat /tmp/count)\n> ok=$((ok1 - ok0)); fail=$((fail1 - fail0)); total=$((ok + fail))\n> echo \"during the rollout: $total requests, $fail failed ($((100 * fail / total))%)\"\n> SH",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ chmod +x experiment.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== A: default rolling update, no readiness probe, no graceful shutdown\"",
+     "o": "=== A: default rolling update, no readiness probe, no graceful shutdown",
+     "x": 0
+    },
+    {
+     "c": "$ ./experiment.sh naive.yaml",
+     "o": "deployment \"shop\" successfully rolled out\nduring the rollout: 52 requests, 40 failed (76%)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -e 's/maxUnavailable: 1/maxUnavailable: 0/' naive.yaml > lossless.yaml",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> s = open(\"lossless.yaml\").read()\n> s = s.replace(\"    spec:\\n      containers:\", \"    spec:\\n      terminationGracePeriodSeconds: 30\\n      containers:\")\n> s = s.replace(\"        ports: [{containerPort: 8080}]\\n\",\n>               \"        ports: [{containerPort: 8080}]\\n\"\n>               \"        readinessProbe: {httpGet: {path: /, port: 8080}, periodSeconds: 2, failureThreshold: 2}\\n\"\n>               \"        lifecycle: {preStop: {exec: {command: [\\\"sleep\\\",\\\"5\\\"]}}}\\n\")\n> open(\"lossless.yaml\", \"w\").write(s)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== B: maxUnavailable 0 + readiness probe + preStop + grace period\"",
+     "o": "=== B: maxUnavailable 0 + readiness probe + preStop + grace period",
+     "x": 0
+    },
+    {
+     "c": "$ ./experiment.sh lossless.yaml",
+     "o": "deployment \"shop\" successfully rolled out\nduring the rollout: 303 requests, 0 failed (0%)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> s = open(\"lossless.yaml\").read()\n> s = s.replace(\"strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}\", \"strategy: {type: Recreate}\")\n> open(\"recreate.yaml\", \"w\").write(s)\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"=== C: Recreate strategy (same probes)\"",
+     "o": "=== C: Recreate strategy (same probes)",
+     "x": 0
+    },
+    {
+     "c": "$ ./experiment.sh recreate.yaml",
+     "o": "deployment \"shop\" successfully rolled out\nduring the rollout: 331 requests, 10 failed (3%)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete deploy shop --ignore-not-found > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl apply -f lossless.yaml > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deploy/shop --timeout=120s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create poddisruptionbudget shop-pdb --selector=app=shop --min-available=2 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get pdb shop-pdb",
+     "o": "NAME       MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE\nshop-pdb   2               N/A               1                     0s",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e677962d0b6ee932"
+ },
+ "scenarios-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s8/images/web ~/s8/images/worker ~/s8/images/batch && cd ~/s8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# the \"SBOM\" baked into each image (normally generated by a tool such as Syft)",
+     "o": ""
+    },
+    {
+     "c": "$ cat > images/web/sbom.txt <<'EOF'\n> libparse==2.3.0\n> httpkit==5.1.2\n> imgtool==1.8.0\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > images/worker/sbom.txt <<'EOF'\n> libparse==2.4.1\n> queuelib==3.0.0\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > images/batch/sbom.txt <<'EOF'\n> libparse==2.2.9\n> reportgen==0.9.0\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# INVENTED advisories (not real CVEs)",
+     "o": ""
+    },
+    {
+     "c": "$ cat > advisories.json <<'EOF'\n> [\n>  {\"id\": \"ADV-2026-001\", \"package\": \"libparse\", \"fixed_in\": \"2.4.1\", \"severity\": \"critical\", \"exploited_in_wild\": true,  \"needs_feature\": \"xml-import\"},\n>  {\"id\": \"ADV-2026-002\", \"package\": \"imgtool\",  \"fixed_in\": \"1.9.0\", \"severity\": \"high\",     \"exploited_in_wild\": false, \"needs_feature\": null},\n>  {\"id\": \"ADV-2026-003\", \"package\": \"httpkit\",  \"fixed_in\": null,    \"severity\": \"medium\",   \"exploited_in_wild\": false, \"needs_feature\": null}\n> ]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > match.py <<'PY'\n> import json, glob, os\n> \n> def ver(s): return tuple(int(x) for x in s.split(\".\"))\n> advisories = json.load(open(\"advisories.json\"))\n> SEVERITY = {\"critical\": 4, \"high\": 3, \"medium\": 2, \"low\": 1}\n> \n> for sbom in sorted(glob.glob(\"images/*/sbom.txt\")):\n>     image = os.path.basename(os.path.dirname(sbom))\n>     print(f\"\\nimage {image}:\")\n>     found = False\n>     for line in open(sbom).read().split():\n>         pkg, v = line.split(\"==\")\n>         for a in advisories:\n>             if a[\"package\"] == pkg and (a[\"fixed_in\"] is None or ver(v) < ver(a[\"fixed_in\"])):\n>                 found = True\n>                 fix = f\"upgrade to {a['fixed_in']}\" if a[\"fixed_in\"] else \"NO FIX AVAILABLE: mitigate\"\n>                 print(f\"  {a['id']}  {pkg} {v}  [{a['severity']}{', EXPLOITED IN THE WILD' if a['exploited_in_wild'] else ''}]  {fix}\")\n>     if not found: print(\"  no known vulnerabilities\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 match.py",
+     "o": "\nimage batch:\n  ADV-2026-001  libparse 2.2.9  [critical, EXPLOITED IN THE WILD]  upgrade to 2.4.1\n\nimage web:\n  ADV-2026-001  libparse 2.3.0  [critical, EXPLOITED IN THE WILD]  upgrade to 2.4.1\n  ADV-2026-003  httpkit 5.1.2  [medium]  NO FIX AVAILABLE: mitigate\n  ADV-2026-002  imgtool 1.8.0  [high]  upgrade to 1.9.0\n\nimage worker:\n  no known vulnerabilities",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for img in web worker batch; do\n> kubectl apply -f - > /dev/null <<EOF\n> apiVersion: apps/v1\n> kind: Deployment\n> metadata:\n>   name: $img\n>   labels: {app: $img, exposure: $( [ $img = web ] && echo internet || echo internal )}\n> spec:\n>   replicas: 2\n>   selector: {matchLabels: {app: $img}}\n>   template:\n>     metadata:\n>       labels: {app: $img, exposure: $( [ $img = web ] && echo internet || echo internal )}\n>       annotations:\n>         sbom/components: \"$(tr '\\n' ',' < images/$img/sbom.txt)\"\n>     spec:\n>       containers: [{name: c, image: busybox:1.36, command: [sleep, \"3600\"]}]\n> EOF\n> done",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl rollout status deploy/web --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inventory.py <<'PY'\n> import json, subprocess\n> def ver(s): return tuple(int(x) for x in s.split(\".\"))\n> adv = json.load(open(\"advisories.json\"))\n> pods = json.loads(subprocess.check_output([\"kubectl\", \"get\", \"pods\", \"-o\", \"json\"]))[\"items\"]\n> by_app = {}\n> for p in pods:\n>     app = p[\"metadata\"][\"labels\"].get(\"app\")\n>     if not app or \"sbom/components\" not in p[\"metadata\"].get(\"annotations\", {}): continue\n>     by_app.setdefault(app, {\"pods\": 0, \"components\": p[\"metadata\"][\"annotations\"][\"sbom/components\"], \"exposure\": p[\"metadata\"][\"labels\"][\"exposure\"]})\n>     by_app[app][\"pods\"] += 1\n> print(f\"{'workload':10} {'pods':>4} {'exposure':>9}  affected by\")\n> for app, info in sorted(by_app.items()):\n>     hits = []\n>     for comp in filter(None, info[\"components\"].split(\",\")):\n>         pkg, v = comp.split(\"==\")\n>         for a in adv:\n>             if a[\"package\"] == pkg and (a[\"fixed_in\"] is None or ver(v) < ver(a[\"fixed_in\"])): hits.append(a[\"id\"])\n>     print(f\"{app:10} {info['pods']:4} {info['exposure']:>9}  {', '.join(hits) or '-'}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 inventory.py",
+     "o": "workload   pods  exposure  affected by\nbatch         2  internal  ADV-2026-001\nweb           2  internet  ADV-2026-001, ADV-2026-003, ADV-2026-002\nworker        2  internal  -",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > risk.py <<'PY'\n> workloads = [\n>     # name, severity(1-4), exploited, exposure(internet=3, partner=2, internal=1), feature_enabled, holds_secrets\n>     (\"web (ADV-2026-001)\",    4, True,  3, True,  True),\n>     (\"batch (ADV-2026-001)\",  4, True,  1, False, False),\n>     (\"web (ADV-2026-003)\",    2, False, 3, True,  True),\n> ]\n> def risk(sev, exploited, exposure, feature, secrets):\n>     score = sev * (3 if exploited else 1) * exposure * (1 if feature else 0.2) * (1.5 if secrets else 1)\n>     return score\n> print(f\"{'workload':24} {'risk score':>10}  action\")\n> for w in sorted(workloads, key=lambda w: -risk(*w[1:])):\n>     r = risk(*w[1:])\n>     action = \"PATCH NOW + contain\" if r >= 30 else (\"patch this sprint\" if r >= 8 else \"track, patch with next release\")\n>     print(f\"{w[0]:24} {r:10.1f}  {action}\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 risk.py",
+     "o": "workload                 risk score  action\nweb (ADV-2026-001)             54.0  PATCH NOW + contain\nweb (ADV-2026-003)              9.0  patch this sprint\nbatch (ADV-2026-001)            2.4  track, patch with next release",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl genrsa -out signer.key 2048 2> /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl rsa -in signer.key -pubout -out signer.pub 2> /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ DIGEST=\"sha256:$(printf 'web-image-build-1042' | sha256sum | cut -d' ' -f1)\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"image digest to sign: $DIGEST\"",
+     "o": "image digest to sign: sha256:a69df11db723b911db02b1b71ddd072527d2d7d1923a1ee89de478d9327fd783",
+     "x": 0
+    },
+    {
+     "c": "$ printf '%s' \"$DIGEST\" | openssl dgst -sha256 -sign signer.key -out digest.sig",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- verify the genuine digest:\"",
+     "o": "--- verify the genuine digest:",
+     "x": 0
+    },
+    {
+     "c": "$ printf '%s' \"$DIGEST\" | openssl dgst -sha256 -verify signer.pub -signature digest.sig",
+     "o": "Verified OK",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- verify a tampered digest (someone swapped the image):\"",
+     "o": "--- verify a tampered digest (someone swapped the image):",
+     "x": 0
+    },
+    {
+     "c": "$ printf \"%s\" \"sha256:deadbeef\" | openssl dgst -sha256 -verify signer.pub -signature digest.sig 2> /dev/null || true",
+     "o": "Verification failure",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p hardened && cd hardened",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'EOF'\n> FROM busybox:latest\n> COPY app.sh /app/app.sh\n> RUN chmod 555 /app/app.sh && adduser -D -u 10001 appuser\n> USER 10001\n> ENTRYPOINT [\"/app/app.sh\"]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf '#!/bin/sh\\necho \"running as uid $(id -u); trying to write to /etc:\"; touch /etc/x 2>&1 | head -1\\n' > app.sh",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ docker build -q -t s8-hardened:1 . > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- default run:\"",
+     "o": "--- default run:",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm s8-hardened:1",
+     "o": "running as uid 10001; trying to write to /etc:\ntouch: /etc/x: Permission denied",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- hardened run (read-only filesystem, no capabilities, no new privileges):\"",
+     "o": "--- hardened run (read-only filesystem, no capabilities, no new privileges):",
+     "x": 0
+    },
+    {
+     "c": "$ docker run --rm --read-only --cap-drop=ALL --security-opt no-new-privileges s8-hardened:1",
+     "o": "running as uid 10001; trying to write to /etc:\ntouch: /etc/x: Read-only file system",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "94595fd6c278992b"
+ },
+ "scenarios-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s9 && cd ~/s9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > services.py <<'PY'\n> import json, random, sys, threading, time, urllib.request\n> from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer\n> random.seed(4)\n> LOGS = {n: open(f\"{n}.log\", \"a\", buffering=1) for n in (\"edge\", \"orders\", \"inventory\")}\n> def log(svc, **kw):\n>     kw.update(svc=svc, t=round(time.time(), 3)); LOGS[svc].write(json.dumps(kw) + \"\\n\")\n> def serve(port, handler):\n>     srv = ThreadingHTTPServer((\"127.0.0.1\", port), handler); srv.daemon_threads = True\n>     threading.Thread(target=srv.serve_forever, daemon=True).start()\n> def call(url, trace, timeout):\n>     req = urllib.request.Request(url, headers={\"X-Trace-Id\": trace})        # propagate the trace ID downstream\n>     t0 = time.time()\n>     try:\n>         with urllib.request.urlopen(req, timeout=timeout) as r:\n>             r.read(); return r.status, (time.time() - t0) * 1000\n>     except Exception as e:\n>         return (\"timeout\" if \"timed out\" in str(e) else \"error\"), (time.time() - t0) * 1000\n> class Quiet(BaseHTTPRequestHandler):\n>     def log_message(self, *a): pass\n>     def reply(self, code, body=b\"ok\"):\n>         try:\n>             self.send_response(code); self.send_header(\"Content-Length\", str(len(body))); self.end_headers(); self.wfile.write(body)\n>         except Exception: pass                                              # the caller already gave up\n> class Inventory(Quiet):\n>     def do_GET(self):\n>         t0 = time.time(); slow = random.random() < 0.15\n>         time.sleep(2.0 if slow else 0.02)                                   # the injected slow tail\n>         self.reply(200)\n>         log(\"inventory\", trace=self.headers.get(\"X-Trace-Id\"), status=200, ms=round((time.time() - t0) * 1000))\n> class Orders(Quiet):\n>     def do_GET(self):\n>         trace, t0 = self.headers.get(\"X-Trace-Id\"), time.time()\n>         for attempt in (1, 2):                                              # one retry\n>             status, ms = call(\"http://127.0.0.1:8103/\", trace, 1.0)        # 1 second timeout\n>             log(\"orders\", trace=trace, event=\"call_inventory\", attempt=attempt, result=status, ms=round(ms))\n>             if status == 200: break\n>         final = 200 if status == 200 else 502\n>         self.reply(final); log(\"orders\", trace=trace, status=final, ms=round((time.time() - t0) * 1000))\n> class Edge(Quiet):\n>     def do_GET(self):\n>         trace, t0 = self.headers.get(\"X-Trace-Id\"), time.time()\n>         status, ms = call(\"http://127.0.0.1:8102/\", trace, 1.5)            # 1.5 second timeout\n>         final = 200 if status == 200 else 504\n>         self.reply(final); log(\"edge\", trace=trace, status=final, ms=round((time.time() - t0) * 1000))\n> serve(8103, Inventory); serve(8102, Orders); serve(8101, Edge)\n> time.sleep(float(sys.argv[1]))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > load.py <<'PY'\n> import threading, urllib.request\n> def one(i):\n>     req = urllib.request.Request(\"http://127.0.0.1:8101/\", headers={\"X-Trace-Id\": f\"req-{i:04d}\"})\n>     try: urllib.request.urlopen(req, timeout=5).read()\n>     except Exception: pass\n> batch = []\n> for i in range(200):                                    # 200 user requests, 8 at a time\n>     t = threading.Thread(target=one, args=(i,)); t.start(); batch.append(t)\n>     if len(batch) == 8:\n>         for x in batch: x.join()\n>         batch = []\n> for x in batch: x.join()\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -f edge.log orders.log inventory.log",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 services.py 40 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ SERVICES=$!",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 load.py",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kill $SERVICES 2> /dev/null; wait $SERVICES 2> /dev/null",
+     "o": "",
+     "x": 143
+    },
+    {
+     "c": "$ wc -l edge.log orders.log inventory.log",
+     "o": "  200 edge.log\n  435 orders.log\n  235 inventory.log\n  870 total",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > per_service.py <<'PY'\n> import json, collections\n> def load(name): return [json.loads(l) for l in open(f\"{name}.log\")]\n> def pct(xs, p): xs = sorted(xs); return xs[min(len(xs) - 1, int(p / 100 * len(xs)))]\n> \n> inv = load(\"inventory\"); orders = [r for r in load(\"orders\") if \"event\" not in r]; edge = load(\"edge\")\n> print(\"what an engineer sees by reading ONE service's log:\\n\")\n> codes = collections.Counter(r[\"status\"] for r in inv)\n> print(f\"inventory: {len(inv)} requests, status codes {dict(codes)}  <- 100% success. 'Looks normal.'\")\n> print(f\"           median latency {pct([r['ms'] for r in inv], 50)} ms   (the median hides the slow tail)\")\n> codes = collections.Counter(r[\"status\"] for r in orders)\n> print(f\"orders   : {len(orders)} requests, status codes {dict(codes)}  <- some 502s\")\n> codes = collections.Counter(r[\"status\"] for r in edge)\n> print(f\"edge     : {len(edge)} requests, status codes {dict(codes)}  <- what users actually see\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 per_service.py",
+     "o": "what an engineer sees by reading ONE service's log:\n\ninventory: 235 requests, status codes {200: 235}  <- 100% success. 'Looks normal.'\n           median latency 20 ms   (the median hides the slow tail)\norders   : 200 requests, status codes {200: 194, 502: 6}  <- some 502s\nedge     : 200 requests, status codes {200: 194, 504: 6}  <- what users actually see",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > trace_one.py <<'PY'\n> import json, glob, sys\n> def load(name): return [json.loads(l) for l in open(f\"{name}.log\")]\n> edge = load(\"edge\")\n> failed = [r for r in edge if r[\"status\"] != 200]\n> if not failed:\n>     print(\"no failures in this run (random); re-run the load\"); sys.exit()\n> trace = failed[0][\"trace\"]\n> rows = []\n> for svc in (\"edge\", \"orders\", \"inventory\"):\n>     for r in load(svc):\n>         if r[\"trace\"] == trace: rows.append(r)\n> rows.sort(key=lambda r: r[\"t\"])\n> t0 = rows[0][\"t\"] - rows[0][\"ms\"] / 1000\n> print(f\"timeline of one failed request: {trace}\\n\")\n> for r in rows:\n>     what = r.get(\"event\", \"handled\")\n>     extra = f\" attempt {r['attempt']} -> {r['result']}\" if \"attempt\" in r else f\" status {r['status']}\"\n>     print(f\"  +{(r['t'] - t0) * 1000:6.0f} ms  {r['svc']:9} {what}{extra}  (took {r['ms']} ms)\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 trace_one.py",
+     "o": "timeline of one failed request: req-0086\n\n  +  1002 ms  orders    call_inventory attempt 1 -> timeout  (took 1002 ms)\n  +  1498 ms  edge      handled status 504  (took 1504 ms)\n  +  2003 ms  inventory handled status 200  (took 2000 ms)\n  +  2004 ms  orders    call_inventory attempt 2 -> timeout  (took 1002 ms)\n  +  2004 ms  orders    handled status 502  (took 2005 ms)\n  +  3004 ms  inventory handled status 200  (took 2000 ms)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s9",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > attribute.py <<'PY'\n> import json, collections\n> def load(name): return [json.loads(l) for l in open(f\"{name}.log\")]\n> def pct(xs, p): xs = sorted(xs); return xs[min(len(xs) - 1, int(p / 100 * len(xs)))]\n> \n> edge, orders_all, inv = load(\"edge\"), load(\"orders\"), load(\"inventory\")\n> orders_calls = [r for r in orders_all if \"event\" in r]\n> fails = {r[\"trace\"] for r in edge if r[\"status\"] != 200}\n> slow_inv = {r[\"trace\"] for r in inv if r[\"ms\"] > 1000}\n> timeouts_by_trace = collections.defaultdict(int)\n> for r in orders_calls:\n>     if r[\"result\"] == \"timeout\": timeouts_by_trace[r[\"trace\"]] += 1\n> \n> print(f\"user requests: {len(edge)}   failed at the edge: {len(fails)} ({100 * len(fails) / len(edge):.1f}%)\")\n> print(f\"failed requests whose trace contains a slow (>1s) inventory response: {len(fails & slow_inv)} of {len(fails)}\")\n> print(f\"requests that hit an inventory timeout but were SAVED by the retry: {sum(1 for t, n in timeouts_by_trace.items() if t not in fails)}\")\n> \n> print(\"\\nlatency percentiles per hop (ms):\")\n> print(f\"{'hop':22} {'p50':>6} {'p95':>6} {'p99':>6} {'max':>7}\")\n> for name, rows in ((\"edge (user view)\", edge), (\"orders handler\", [r for r in orders_all if 'event' not in r]), (\"inventory handler\", inv)):\n>     xs = [r[\"ms\"] for r in rows]\n>     print(f\"{name:22} {pct(xs, 50):6} {pct(xs, 95):6} {pct(xs, 99):6} {max(xs):7}\")\n> \n> print(f\"\\nretry amplification: {len(edge)} user requests produced {len(inv)} inventory requests ({len(inv) / len(edge):.2f}x)\")\n> print(\"timeout budget: edge waits 1.5 s, but orders may spend up to 1.0 s x 2 attempts = 2.0 s -> orders keeps working after edge gave up\")\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 attribute.py",
+     "o": "user requests: 200   failed at the edge: 6 (3.0%)\nfailed requests whose trace contains a slow (>1s) inventory response: 6 of 6\nrequests that hit an inventory timeout but were SAVED by the retry: 29\n\nlatency percentiles per hop (ms):\nhop                       p50    p95    p99     max\nedge (user view)           30   1033   1505    1506\norders handler             25   1028   2005    2009\ninventory handler          20   2000   2001    2001\n\nretry amplification: 200 user requests produced 235 inventory requests (1.18x)\ntimeout budget: edge waits 1.5 s, but orders may spend up to 1.0 s x 2 attempts = 2.0 s -> orders keeps working after edge gave up",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0aa18b598af6d4f5"
  },
  "terraform-1": {
   "blocks": [
