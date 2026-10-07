@@ -126,5 +126,13 @@
   "level": "Intermediate to expert",
   "blurb": "The same 14 topics again, one level deeper: the maths worked step by step, small real programs you can run, how practitioners do it, common mistakes, and practice questions with answers.",
   "why": "Chapters 1 to 14 give you the map. The deep dive gives you the working knowledge to build, test and defend a design."
+ },
+ {
+  "id": "aifield",
+  "name": "AI field guide: papers, coding agents and resources",
+  "group": "AI",
+  "level": "Intermediate to expert",
+  "blurb": "Seven research papers made runnable (reasoning, ReAct, Reflexion, generative agents, RAG), Anthropic's Claude Code and tool-design guidance, agent guides compared, memory, crews and browser agents, and a study map of every resource on your list.",
+  "why": "You collected videos, repositories, guides, books, papers and courses. This track turns them into lessons you can run and a plan you can follow."
  }
 ]
