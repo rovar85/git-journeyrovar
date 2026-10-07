@@ -268,13 +268,23 @@ function pad(canvas, key, root){
   H.$$(".swatch", root).forEach(function(b){ b.addEventListener("click", function(){ color = b.dataset.c; }); });
   H.$("#p-undo", root).addEventListener("click", function(){ strokes.pop(); redraw(); jset("sketch-" + key, strokes); });
   H.$("#p-clear", root).addEventListener("click", function(){ strokes = []; redraw(); jset("sketch-" + key, strokes); });
-  H.$("#p-save", root).addEventListener("click", function(){ var a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = "map-" + key + ".png"; a.click(); });
+  H.$("#p-save", root).addEventListener("click", function(){ canvas.toBlob(function(b){ if(b) download("map-" + key + ".png", b, "image/png"); }, "image/png"); });
 }
 
 /* ----- notebook ----- */
-function download(name, text, type){
-  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: type || "text/plain"})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+function download(name, data, type){
+  /* In the published viewer, files go through the "downloads" capability (the viewer confirms). Elsewhere, a normal download link. */
+  function fallback(){
+    var a = document.createElement("a"), blob = data instanceof Blob ? data : new Blob([data], {type: type || "text/plain"});
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  var cl = window.claude;
+  if(cl && cl.use){
+    cl.use("downloads").then(function(d){ if(!d){ fallback(); return; } return d.save({filename: name, data: data}); }).catch(function(e){ if(e && e.code === "declined") return; if(e && /unavailable|not_granted|capability/.test(e.code || "")) fallback(); });
+  } else fallback();
 }
+function csvLine(a, b){ function q(x){ return '"' + String(x).replace(/[\r\n\t]+/g, " ").replace(/"/g, '""') + '"'; } return q(a) + "," + q(b); }
 function notebookTab(body){
   var notes = STUDY.chapters.map(function(c){ return {c: c, t: H.store(KEY + "notes-" + c.id)}; }).filter(function(x){ return x.t && x.t.trim(); });
   var tries = [];
@@ -283,8 +293,8 @@ function notebookTab(body){
   });
   var cs = counts();
   body.innerHTML = '<h3>My notes</h3>' + (notes.length ? notes.map(function(x){ return '<div class="notecard"><b>' + lessonLink(x.c.id) + H.esc(trackName(x.c.track) + ' · ' + x.c.title) + '</a></b><pre>' + H.esc(x.t) + '</pre></div>'; }).join("") : '<p class="muted">No notes yet. Open any lesson and use "My notes for this lesson" while you gather.</p>') +
-    '<p><button class="btn" type="button" id="n-notes"' + (notes.length ? "" : " disabled") + '>Export notes (Markdown)</button> <button class="btn ghost" type="button" id="n-cards">Export all flashcards (TSV for Anki)</button></p>' +
-    '<p class="muted">The TSV has two columns, front and back. In Anki use File, Import and choose "Tab" as the separator. ' + cs.total + ' cards.</p>' +
+    '<p><button class="btn" type="button" id="n-notes"' + (notes.length ? "" : " disabled") + '>Export notes (Markdown)</button> <button class="btn ghost" type="button" id="n-cards">Export all flashcards (CSV for Anki)</button></p>' +
+    '<p class="muted">The CSV has two columns, front and back (comma-separated, quoted). In Anki use File, Import and choose "Comma" as the separator. ' + cs.total + ' cards.</p>' +
     '<h3>Practice log: "Your turn" tasks</h3><p class="muted">Tick what you have actually done on a real machine. Second pass: redo the ones that were not boring.</p>' +
     '<div id="n-tries">' + (tries.length ? "" : '<p class="muted">No practice tasks found.</p>') + '</div>';
   var box = H.$("#n-tries", body), lastTrack = null;
@@ -300,8 +310,8 @@ function notebookTab(body){
     download("agent-school-notes.md", "# My notes\n\n" + notes.map(function(x){ return "## " + trackName(x.c.track) + " · " + x.c.title + "\n\n" + x.t.trim() + "\n"; }).join("\n"), "text/markdown");
   });
   H.$("#n-cards", body).addEventListener("click", function(){
-    var rows = collect().filter(function(c){ return c.type !== "explain"; }).map(function(c){ return c.front.replace(/[\t\n]+/g, " ") + "\t" + c.back.replace(/[\t\n]+/g, " "); });
-    download("agent-school-flashcards.tsv", rows.join("\n"), "text/tab-separated-values");
+    var rows = collect().filter(function(c){ return c.type !== "explain"; }).map(function(c){ return csvLine(c.front, c.back); });
+    download("agent-school-flashcards.csv", rows.join("\n"), "text/csv");
   });
 }
 
