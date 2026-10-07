@@ -180,7 +180,7 @@ echo "--- the Pod's logs:";                kubectl logs $pod --tail=2
 echo "--- by Deployment name:";            kubectl logs deployment/bravo --tail=1
 echo "--- by label, all containers:";      kubectl logs -l app=bravo --tail=1 --all-containers
 echo "--- the crashed run (needs a restart to exist):"; kubectl logs $pod --previous --tail=1 2>&1 | cut -c1-90
-echo "--- where the node keeps them:";     ls /var/log/pods | sed -E 's/_[0-9a-f-]{36}$//' | head -3
+echo "--- where the node keeps them:";     sudo ls /var/log/pods | sed -E 's/_[0-9a-f-]{36}$//' | head -3
 ```
 
 The flags worth knowing: `-c NAME` (a specific container in a multi-container Pod), `--previous` (the **crashed** container's last output), `-f` (follow), `--since=10m`, `--tail=N`, `-l selector` (many Pods at once), `--all-containers`. Kubernetes keeps **no log history for deleted Pods** (use a log collector such as Fluent Bit or Loki, Monitoring track). On a node the kubelet writes container logs under **`/var/log/pods`** and **`/var/log/containers`**; the kubelet's own logs go to the service manager (`journalctl -u kubelet` on systemd machines). Control plane components on kubeadm clusters log through their containers (`kubectl logs -n kube-system kube-apiserver-NODE`, or `crictl logs` when the API server is down).

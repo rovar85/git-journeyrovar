@@ -22,6 +22,11 @@ export LABNS=labexam
 
 @setup k8s
 
+```setup
+kubectl delete namespace exam-a --ignore-not-found --wait=true > /dev/null 2>&1
+kubectl label node lab-node tier- > /dev/null 2>&1 || true
+```
+
 ## 1. The exam in one page (verify the current details)
 
 | | |
@@ -95,7 +100,7 @@ Do each task **yourself first, with a stopwatch**, then compare with the solutio
 | 6 | Create a CronJob `tick` that runs every 5 minutes and prints the date. |
 | 7 | Create a ServiceAccount `auditor`, a Role allowing `get` and `list` on Pods, bind them, and prove it with `can-i`. |
 | 8 | Create a Pod `limits-pod` with CPU request 100m, limit 200m, memory request 64Mi, limit 128Mi, and an HTTP readiness probe on `/`, port 8080. |
-| 9 | Write to `/tmp/images.txt` the unique container images used by all Pods in all namespaces, sorted. |
+| 9 | Write to `~/images.txt` the unique container images used by all Pods in all namespaces, sorted. |
 | 10 | Label the node `tier=backend`, and create a Pod `on-backend` that runs only on nodes with that label. |
 
 ```run
@@ -197,9 +202,9 @@ kubectl wait --for=condition=Ready pod/limits-pod --timeout=60s > /dev/null
 kubectl get pod limits-pod -o jsonpath='{.status.qosClass} QoS, requests {.spec.containers[0].resources.requests}{"\n"}'
 
 echo "### Task 9"
-kubectl get pods -A -o jsonpath='{range .items[*]}{range .spec.containers[*]}{.image}{"\n"}{end}{end}' | sort -u > /tmp/images.txt
-wc -l < /tmp/images.txt | awk '{print "unique images written:", $1}'
-head -2 /tmp/images.txt
+kubectl get pods -A -o jsonpath='{range .items[*]}{range .spec.containers[*]}{.image}{"\n"}{end}{end}' | sort -u > ~/images.txt
+wc -l < ~/images.txt | awk '{print "unique images written:", $1}'
+head -2 ~/images.txt
 
 echo "### Task 10"
 kubectl label node lab-node tier=backend > /dev/null

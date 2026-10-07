@@ -54,6 +54,7 @@ kubectl label node lab-node disk=ssd
 kubectl wait --for=condition=Ready pod/wants-ssd --timeout=60s
 kubectl get pod wants-ssd -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName
 kubectl delete pod wants-ssd --wait=false > /dev/null
+kubectl label node lab-node disk-                   # a trailing minus removes a label: tidy up
 ```
 
 `nodeSelector` is the simple form. **Node affinity** is the expressive form: **required** rules (`requiredDuringSchedulingIgnoredDuringExecution`) behave like the selector, **preferred** rules (`preferredDuringSchedulingIgnoredDuringExecution` with a weight) are hints, and operators such as `In`, `NotIn` and `Exists` let you write "any of these zones". **Pod affinity and anti-affinity** place Pods **relative to other Pods** (together for low latency, apart for resilience), and **topology spread constraints** distribute replicas evenly across zones or nodes (Lesson 7).
@@ -119,7 +120,7 @@ kubectl run after-cordon --image=busybox:1.37 -- sleep 3600 > /dev/null
 sleep 3
 kubectl get pod after-cordon -o jsonpath='{.status.conditions[?(@.type=="PodScheduled")].message}{"\n"}' | cut -c1-110
 echo "--- a drain dry run (server side, nothing is touched):"
-kubectl drain lab-node --ignore-daemonsets --delete-emptydir-data --dry-run=server 2>&1 | grep -E "cordoned|cannot delete" | sed -E 's/, continuing command...//' | cut -c1-170
+kubectl drain lab-node --ignore-daemonsets --delete-emptydir-data --dry-run=server 2>&1 | grep -E "cordoned|cannot delete" | sed -E 's/, continuing command...//; s/(\(use --force to override\):).*/\1 (list of bare Pods)/' | cut -c1-170
 kubectl uncordon lab-node
 kubectl wait --for=condition=Ready pod/after-cordon --timeout=60s > /dev/null
 kubectl get pod after-cordon --no-headers | awk '{print $1, $3}'

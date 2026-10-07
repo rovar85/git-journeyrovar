@@ -17,9 +17,11 @@ bash "$(dirname "$0")/k8s-lab/start.sh" > /tmp/k8sstart.out 2>&1   # etcd, apise
 pgrep -f "^/opt/k8s/bin/kubelet --config" > /dev/null || (cd /tmp && setsid nohup /opt/k8s/bin/kubelet --config /opt/k8s/kubelet-config.yaml --kubeconfig /opt/k8s/pki/admin.kubeconfig --hostname-override lab-node --node-ip 192.0.2.2 --root-dir /opt/k8s/kubelet > /opt/k8s/log/kubelet.log 2>&1 < /dev/null &)
 pgrep -x dockerd > /dev/null || (setsid nohup dockerd > /tmp/dockerd.log 2>&1 < /dev/null &)
 # Docker sets the FORWARD policy to DROP; allow pod traffic across the CNI bridge (pod-to-pod, DNS) explicitly.
+# The ACCEPT rules go AFTER kube-proxy's jumps, so its REJECT for Services without endpoints still applies.
 sleep 5
-iptables -C FORWARD -i cni0 -j ACCEPT 2>/dev/null || iptables -I FORWARD 1 -i cni0 -j ACCEPT
-iptables -C FORWARD -o cni0 -j ACCEPT 2>/dev/null || iptables -I FORWARD 1 -o cni0 -j ACCEPT
+N=$(iptables -L FORWARD --line-numbers -n | awk '/KUBE-EXTERNAL-SERVICES/ {print $1}' | head -1)
+if ! iptables -C FORWARD -i cni0 -j ACCEPT 2>/dev/null; then iptables -I FORWARD $(( ${N:-0} + 1 )) -i cni0 -j ACCEPT; fi
+if ! iptables -C FORWARD -o cni0 -j ACCEPT 2>/dev/null; then iptables -I FORWARD $(( ${N:-0} + 1 )) -o cni0 -j ACCEPT; fi
 for i in $(seq 1 90); do
   if pgrep -f "^/opt/k8s/bin/kubelet --config" > /dev/null && kubectl get nodes 2>/dev/null | grep -q " Ready" && docker ps > /dev/null 2>&1; then
     echo "lab is up"; exit 0
