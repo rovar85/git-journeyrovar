@@ -136,6 +136,14 @@
     "why": "Chapters 1 to 14 give you the map. The deep dive gives you the working knowledge to build, test and defend a design."
   },
   {
+    "id": "lectures",
+    "name": "LLM lectures notebook (CME 295, lectures 1 to 9)",
+    "group": "AI",
+    "level": "Beginner to expert",
+    "blurb": "Nine lessons built from the Stanford CME 295 lecture transcripts: Transformer, variants, LLMs and decoding, training, preference tuning, reasoning (GRPO), RAG and agents, evaluation, and trends, each with runnable code.",
+    "why": "The transcripts you supplied, turned into practice: every concept has a small script you can run and change."
+  },
+  {
     "id": "aifield",
     "name": "AI field guide: papers, coding agents and resources",
     "group": "AI",
