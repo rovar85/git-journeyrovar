@@ -228,3 +228,39 @@ when: The image has no shell and you need to look inside.
 ## kubectl | Kubernetes
 what: The Kubernetes command-line client. It talks to the API server using your kubeconfig.
 when: Everything you do with a cluster.
+
+## docker create | Docker
+what: Creates a container from an image without starting it (state: created).
+when: Preparing a container to copy files into or inspect before it runs; docker run is create plus start.
+
+## docker pause | Docker
+what: Freezes all processes in a container without stopping it; docker unpause resumes it.
+when: Briefly freezing a container (for example for a consistent snapshot) while keeping its memory and state.
+
+## docker unpause | Docker
+what: Resumes a paused container.
+when: After docker pause.
+
+## docker search | Docker
+what: Searches Docker Hub for images.
+when: Finding an image name; check the publisher and use official images.
+
+## nvidia-smi | AI infrastructure
+what: NVIDIA System Management Interface: shows GPUs, memory use, utilisation, power, temperature and the processes using each GPU.
+when: First check on any GPU machine: is the GPU visible, how full is its memory, what is running on it.
+flags: -l 1: refresh every second; -L: list GPUs; --query-gpu=... --format=csv: choose columns for scripts; topo -m: how GPUs and network cards are connected; dmon: rolling per-second statistics
+
+## nsys | AI infrastructure
+what: NVIDIA Nsight Systems command-line profiler: records a timeline of GPU kernels, memory copies and CPU activity.
+when: Finding out where time goes in a GPU workload (gaps, communication, overlap).
+flags: profile -o NAME ...: record a run; stats FILE: summary tables
+
+## vllm | AI infrastructure
+what: The command of the vLLM inference engine; vllm serve starts an OpenAI-compatible server for a model.
+when: Serving an LLM on GPUs with continuous batching and PagedAttention.
+flags: --max-model-len N: longest context; --gpu-memory-utilization F: share of VRAM to claim; --tensor-parallel-size N: GPUs to split the model across; --max-num-seqs N: sequences decoded together; --enable-prefix-caching: reuse shared prompt prefixes
+
+## lspci | Linux
+what: Lists devices on the PCI bus, including GPUs and network cards.
+when: Checking that the operating system sees a GPU or a high-speed network card at all.
+flags: -v: more detail; -nn: show vendor and device IDs

@@ -134,5 +134,13 @@
   "level": "Intermediate to expert",
   "blurb": "Seven research papers made runnable (reasoning, ReAct, Reflexion, generative agents, RAG), Anthropic's Claude Code and tool-design guidance, agent guides compared, memory, crews and browser agents, and a study map of every resource on your list.",
   "why": "You collected videos, repositories, guides, books, papers and courses. This track turns them into lessons you can run and a plan you can follow."
+ },
+ {
+  "id": "aiinfra",
+  "name": "AI infrastructure: GPUs, inference serving and platform engineering",
+  "group": "AI",
+  "level": "Intermediate to expert",
+  "blurb": "GPUs and memory, prefill and decode, the KV cache, measuring TTFT and ITL, vLLM and Triton and Dynamo, parallelism, SLOs and autoscaling, GitOps with Argo CD, KEDA, MLflow and Kubeflow, and AI observability with Prometheus, Grafana and OpenTelemetry.",
+  "why": "Serving models is where DevOps meets AI: the stack from your roadmap and your tool list, with runnable calculators, simulators and a real GitOps loop."
  }
 ]
