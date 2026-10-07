@@ -94,7 +94,9 @@ EOF
 python3 memory.py
 ```
 
-Read the two lists. Relevance alone returns the memories that **share words** with the question, and the cause (the full SQL01 disk) has **no word in common** with it, so it is missed. The combined score lifts it because it is **important** and its other signals add up. With real embeddings the cause would also score higher on relevance; the point stands that **no single signal is enough**.
+Read the two lists. Relevance alone returns only memories that **share words** with the question, and after those it is just noise (the zero-score lunch memory appears because nothing else is left). The combined score re-orders things: "The SQL01 backup job was moved to 02:00" has **no word in common** with the question, yet it makes the top 3 because it is **recent**. That is the value of mixing signals.
+
+Notice what is **still missing** from both lists: the real cause, "SQL01 ran out of disk space during the nightly backup". It is old (hour 2), shares no words with the question, and its importance alone cannot lift it into the top 3. With real embeddings it would score better on relevance, but a retrieval score cannot connect **facts spread over several memories**. That gap is exactly what **reflection** fills.
 
 ## 3. Reflection: turning events into insight
 
