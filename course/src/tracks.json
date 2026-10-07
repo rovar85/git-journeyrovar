@@ -68,7 +68,7 @@
   "name": "Kubernetes",
   "group": "Run at scale",
   "level": "Beginner to advanced",
-  "blurb": "Run containers across many machines. Pods, Deployments, Services, storage, security and troubleshooting.",
+  "blurb": "Run containers across many machines. Pods, Deployments, Services, storage, security and troubleshooting, then CKA preparation: kubeadm and etcd backup, CRDs and operators, scheduling and networking drills, cluster troubleshooting and a timed practice set.",
   "why": "The standard platform for running container workloads."
  },
  {
@@ -108,7 +108,7 @@
   "name": "Command reference",
   "group": "Reference",
   "level": "Look things up",
-  "blurb": "Every command used in this course: what it does, when to use it, and the flags that matter. Searchable.",
+  "blurb": "Every command used in this course (searchable), plus a practice bank of self-test questions, scenario exercises and a guide to the devops-exercises repository.",
   "why": "You do not have to memorise commands. You have to know what exists and when to reach for it."
  },
  {

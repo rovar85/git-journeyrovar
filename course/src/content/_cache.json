@@ -7501,6 +7501,136 @@
   ],
   "key": "b12560e087273040"
  },
+ "kubernetes-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cka && cd ~/lab/cka",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create configmap precious --from-literal=answer=42 > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ export ETCDCTL_API=3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl --endpoints=http://127.0.0.1:2379 snapshot save snap.db 2>&1 | grep -E \"Snapshot saved\"",
+     "o": "Snapshot saved at snap.db",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl snapshot status snap.db -w table 2>/dev/null",
+     "o": "+----------+----------+------------+------------+\n|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |\n+----------+----------+------------+------------+\n| 5bd8bb9e |    33300 |       3099 |     6.0 MB |\n+----------+----------+------------+------------+",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cka",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete configmap precious",
+     "o": "configmap \"precious\" deleted from labcka namespace",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl get configmap precious 2>&1 | head -1",
+     "o": "Error from server (NotFound): configmaps \"precious\" not found",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/cka",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ export ETCDCTL_API=3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ rm -rf restored",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl snapshot restore snap.db --data-dir restored > /dev/null 2>&1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ etcd --data-dir restored --listen-client-urls http://127.0.0.1:22379 --advertise-client-urls http://127.0.0.1:22379 \\\n>      --listen-peer-urls http://127.0.0.1:22380 --initial-advertise-peer-urls http://127.0.0.1:22380 \\\n>      --initial-cluster default=http://127.0.0.1:22380 > etcd-restored.log 2>&1 &",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo $! > etcd-restored.pid",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- in the RESTORED etcd:\"",
+     "o": "--- in the RESTORED etcd:",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl --endpoints=http://127.0.0.1:22379 get /registry/configmaps/$LABNS/precious --print-value-only | strings | grep -E \"answer|42\" | head -3",
+     "o": "!{\"f:data\":{\".\":{},\"f:answer\":{}}}B\nanswer",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- in the LIVE etcd (the object was deleted):\"",
+     "o": "--- in the LIVE etcd (the object was deleted):",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl --endpoints=http://127.0.0.1:2379 get /registry/configmaps/$LABNS/precious --print-value-only | strings | grep -cE \"answer|42\" | sed 's/^/matching lines: /'",
+     "o": "matching lines: 0",
+     "x": 0
+    },
+    {
+     "c": "$ kill $(cat etcd-restored.pid)",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ openssl x509 -in /opt/k8s/pki/apiserver.crt -noout -subject -enddate 2>/dev/null | sed 's/^/   /'",
+     "o": "   subject=CN = 127.0.0.1@1791195308\n   notAfter=Oct  5 09:15:08 2027 GMT",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"(subtract today's date from notAfter to get the days remaining; the lab certificate lasts a year, like kubeadm's)\"",
+     "o": "(subtract today's date from notAfter to get the days remaining; the lab certificate lasts a year, like kubeadm's)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ python3 - <<'EOF'\n> print(f\"{'members':>8} {'quorum':>7} {'failures tolerated':>19}\")\n> for n in range(1, 8):\n>     quorum = n // 2 + 1\n>     print(f\"{n:8d} {quorum:7d} {n - quorum:19d}\")\n> EOF",
+     "o": " members  quorum  failures tolerated\n       1       1                   0\n       2       2                   0\n       3       2                   1\n       4       3                   1\n       5       3                   2\n       6       4                   2\n       7       4                   3",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "908ceee3ee167ed3"
+ },
  "kubernetes-2": {
   "blocks": [
    [
