@@ -16148,6 +16148,160 @@
   ],
   "key": "0b31adb9d9bda9ac"
  },
+ "scenarios-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/s1 && cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"zone\" { default = \"eu-west-1a\" }\n> \n> resource \"terraform_data\" \"db\" {\n>   triggers_replace = [var.zone]            # stands in for an immutable attribute such as the availability zone\n>   provisioner \"local-exec\" {\n>     command = \"echo \\\"$(date +%T) CREATE db in ${var.zone}\\\" >> events.log\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform init -input=false > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -input=false -no-color | grep -E \"Apply complete|Creation complete\"",
+     "o": "terraform_data.db: Creation complete after 0s [id=31253ccc-af85-985f-a65f-fec89421658d]\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ cat events.log",
+     "o": "11:26:13 CREATE db in eu-west-1a",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cp terraform.tfstate before.tfstate",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"eu-west-1a\"/\"eu-west-1b\"/' terraform.tfstate       # reality now differs from the code",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color | sed -n '/Terraform will perform/,$p' | head -24",
+     "o": "Terraform will perform the following actions:\n\n  # terraform_data.db must be replaced\n-/+ resource \"terraform_data\" \"db\" {\n      ~ id               = \"31253ccc-af85-985f-a65f-fec89421658d\" -> (known after apply)\n      ~ triggers_replace = [\n          ~ \"eu-west-1b\" -> \"eu-west-1a\",\n        ]\n    }\n\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color -var zone=eu-west-1b | tail -4",
+     "o": "No changes. Your infrastructure matches the configuration.\n\nTerraform has compared your real infrastructure against your configuration\nand found no differences, so no changes are needed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cp before.tfstate terraform.tfstate",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color | tail -3",
+     "o": "\nTerraform has compared your real infrastructure against your configuration\nand found no differences, so no changes are needed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sed -i 's/\"eu-west-1a\"/\"eu-west-1b\"/' terraform.tfstate       # drift again",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"zone\" { default = \"eu-west-1a\" }\n> \n> resource \"terraform_data\" \"db\" {\n>   triggers_replace = [var.zone]\n>   lifecycle { ignore_changes = [triggers_replace] }       # accept that this attribute is owned elsewhere\n>   provisioner \"local-exec\" {\n>     command = \"echo \\\"$(date +%T) CREATE db in ${var.zone}\\\" >> events.log\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color | tail -3",
+     "o": "\nTerraform has compared your real infrastructure against your configuration\nand found no differences, so no changes are needed.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cp before.tfstate terraform.tfstate",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > main.tf <<'EOF'\n> variable \"zone\" { default = \"eu-west-1a\" }\n> \n> resource \"terraform_data\" \"db\" {\n>   triggers_replace = [var.zone]\n>   lifecycle { create_before_destroy = true }\n>   provisioner \"local-exec\" {\n>     command = \"echo \\\"$(date +%T) CREATE db in ${var.zone}\\\" >> events.log\"\n>   }\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color -var zone=eu-west-1c | grep -E \"create replacement|Plan:\"",
+     "o": "+/- create replacement and then destroy\nPlan: 1 to add, 0 to change, 1 to destroy.",
+     "x": 0
+    },
+    {
+     "c": "$ terraform apply -auto-approve -input=false -no-color -var zone=eu-west-1c | grep -E \"Apply complete\"",
+     "o": "Apply complete! Resources: 1 added, 0 changed, 1 destroyed.",
+     "x": 0
+    },
+    {
+     "c": "$ cat events.log",
+     "o": "11:26:13 CREATE db in eu-west-1a\n11:26:13 CREATE db in eu-west-1c",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/s1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > adopt.tf <<'EOF'\n> import {\n>   to = terraform_data.adopted\n>   id = \"legacy-thing\"\n> }\n> resource \"terraform_data\" \"adopted\" {\n>   input = \"managed now\"\n> }\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ terraform plan -input=false -no-color -var zone=eu-west-1c | grep -E \"will be imported|Plan:|import\"",
+     "o": "terraform_data.adopted: Preparing import... [id=legacy-thing]\n  # (imported from \"legacy-thing\")\nPlan: 1 to import, 0 to add, 1 to change, 0 to destroy.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8e90090777addb30"
+ },
  "terraform-1": {
   "blocks": [
    [
