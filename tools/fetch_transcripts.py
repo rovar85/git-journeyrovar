@@ -18,13 +18,13 @@ import urllib.request
 
 LECTURES = [  # (number, label, video id) resolved from the lnkd.in links
     (1, "transformers", "114i2Kz-LZA"),
-    (2, "large-language-models", "yT84Y5zCnaA"),
-    (3, "llm-training", "Q5baLehv5So"),
-    (4, "reinforcement-learning-with-llms", "VlA_jt_3Qc4"),
-    (5, "llm-systems", "PmW_TMQ3l0I"),
-    (6, "ai-agents", "k5Fh-UgTuCo"),
-    (7, "llm-evaluation", "h-7S6HNq0Vg"),
-    (8, "diffusion-llms", "8fNP4N46RRo"),
+    (2, "transformer-variants", "yT84Y5zCnaA"),
+    (3, "llms-and-decoding", "Q5baLehv5So"),
+    (4, "training-llms", "VlA_jt_3Qc4"),
+    (5, "preference-tuning", "PmW_TMQ3l0I"),
+    (6, "reasoning-models", "k5Fh-UgTuCo"),
+    (7, "rag-tools-agents", "h-7S6HNq0Vg"),
+    (8, "llm-evaluation", "8fNP4N46RRo"),
     (9, "trending-topics", "Q86qzJ1K1Ss"),
 ]
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "transcripts")
