@@ -104,6 +104,14 @@
     "why": "Senior cloud interviews test judgement and trade-offs; each lesson gives the structure of a strong answer, a demo you can run, and follow-up questions."
   },
   {
+    "id": "scenarios",
+    "name": "Interview scenarios: troubleshoot and design (9 questions)",
+    "group": "Platforms",
+    "level": "Intermediate to expert",
+    "blurb": "Terraform drift, cross-namespace networking, stale images, HPA not scaling, multi-repo Terraform dependencies, Pending pods on EKS, zero-downtime deploys, vulnerable dependencies and intermittent microservice failures: concepts, a live reproduction, and the answer an interviewer expects.",
+    "why": "Scenario questions test how you think. Each lesson explains the concepts, lets you reproduce the problem, and ends with a structured model answer."
+  },
+  {
     "id": "capstone",
     "name": "Capstone: lab as code",
     "group": "Put it together",
