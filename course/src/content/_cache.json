@@ -10322,6 +10322,235 @@
   ],
   "key": "6ac6d9bcbe8bca2a"
  },
+ "kubernetes-17": {
+  "blocks": [
+   [
+    {
+     "c": "$ echo \"--- who does the API server think I am?\"",
+     "o": "--- who does the API server think I am?",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl auth whoami",
+     "o": "ATTRIBUTE   VALUE\nUsername    admin\nUID         admin-uid\nGroups      [system:masters system:authenticated]",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- the cluster/user/context my kubectl is using (credentials hidden):\"",
+     "o": "--- the cluster/user/context my kubectl is using (credentials hidden):",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl config view --minify | sed 's/\\(token: \\).*/\\1<hidden>/'",
+     "o": "apiVersion: v1\nclusters:\n- cluster:\n    insecure-skip-tls-verify: true\n    server: https://10.255.255.1:6443\n  name: lab\ncontexts:\n- context:\n    cluster: lab\n    namespace: labsec2\n    user: admin\n  name: lab\ncurrent-context: lab\nkind: Config\nusers:\n- name: admin\n  user:\n    token: <hidden>",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create serviceaccount reader > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create role pod-reader --verb=get,list,watch --resource=pods > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl create rolebinding reader-binding --role=pod-reader --serviceaccount=$LABNS:reader > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ SA=system:serviceaccount:$LABNS:reader",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for check in \"list pods\" \"delete pods\" \"get secrets\" \"list pods -n kube-system\"; do\n>   printf '%-28s ' \"$check\"; kubectl auth can-i $check --as=$SA\n> done",
+     "o": "list pods                    yes\ndelete pods                  no\nget secrets                  no\nlist pods -n kube-system     no",
+     "x": 1
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- everything this service account can do in this namespace:\"",
+     "o": "--- everything this service account can do in this namespace:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl auth can-i --list --as=$SA | head -8",
+     "o": "Resources                                       Non-Resource URLs                      Resource Names   Verbs\nselfsubjectreviews.authentication.k8s.io        []                                     []               [create]\nselfsubjectaccessreviews.authorization.k8s.io   []                                     []               [create]\nselfsubjectrulesreviews.authorization.k8s.io    []                                     []               [create]\npods                                            []                                     []               [get list watch]\nclustertrustbundles.certificates.k8s.io         []                                     []               [get list watch]\n                                                [/.well-known/openid-configuration/]   []               [get]\n                                                [/.well-known/openid-configuration]    []               [get]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create namespace $LABNS-psa > /dev/null",
+     "o": "Error from server (AlreadyExists): namespaces \"labsec2-psa\" already exists",
+     "x": 1
+    },
+    {
+     "c": "$ kubectl label namespace $LABNS-psa pod-security.kubernetes.io/enforce=restricted > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a privileged pod in a 'restricted' namespace:\"",
+     "o": "--- a privileged pod in a 'restricted' namespace:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n $LABNS-psa run bad --image=busybox:1.36 --privileged -- sleep 60 2>&1 | sed 's/: privileged/:\\n  privileged/; s/), /),\\n  /g' | head -8",
+     "o": "Error from server (Forbidden): pods \"bad\" is forbidden: violates PodSecurity \"restricted:latest\":\n  privileged (container \"bad\" must not set securityContext.privileged=true),\n  allowPrivilegeEscalation != false (container \"bad\" must set securityContext.allowPrivilegeEscalation=false),\n  unrestricted capabilities (container \"bad\" must set securityContext.capabilities.drop=[\"ALL\"]),\n  runAsNonRoot != true (pod or container \"bad\" must set securityContext.runAsNonRoot=true),\n  seccompProfile (pod or container \"bad\" must set securityContext.seccompProfile.type to \"RuntimeDefault\" or \"Localhost\")",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- a compliant pod:\"",
+     "o": "--- a compliant pod:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl -n $LABNS-psa apply -f - <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: good}\n> spec:\n>   securityContext: {runAsNonRoot: true, runAsUser: 10001, seccompProfile: {type: RuntimeDefault}}\n>   containers:\n>   - name: c\n>     image: busybox:1.36\n>     command: [sh, -c, \"sleep 3600\"]\n>     securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}\n> EOF",
+     "o": "pod/good unchanged",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl apply -f - > /dev/null <<'EOF'\n> apiVersion: admissionregistration.k8s.io/v1\n> kind: ValidatingAdmissionPolicy\n> metadata: {name: no-latest-tag}\n> spec:\n>   failurePolicy: Fail\n>   matchConstraints:\n>     resourceRules:\n>     - apiGroups: [\"\"]\n>       apiVersions: [\"v1\"]\n>       operations: [\"CREATE\", \"UPDATE\"]\n>       resources: [\"pods\"]\n>   validations:\n>   - expression: \"object.spec.containers.all(c, c.image.contains(':') && !c.image.endsWith(':latest'))\"\n>     message: \"every image must have an explicit tag that is not :latest\"\n> ---\n> apiVersion: admissionregistration.k8s.io/v1\n> kind: ValidatingAdmissionPolicyBinding\n> metadata: {name: no-latest-tag-binding}\n> spec:\n>   policyName: no-latest-tag\n>   validationActions: [Deny]\n>   matchResources:\n>     namespaceSelector: {matchLabels: {policy: enforced}}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl label namespace $LABNS policy=enforced --overwrite > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ sleep 4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- untagged image:\"",
+     "o": "--- untagged image:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run a --image=busybox -- sleep 5 2>&1 | sed 's/.*denied request: /denied: /'",
+     "o": "denied: every image must have an explicit tag that is not :latest",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- :latest:\"",
+     "o": "--- :latest:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run b --image=busybox:latest -- sleep 5 2>&1 | sed 's/.*denied request: /denied: /'",
+     "o": "denied: every image must have an explicit tag that is not :latest",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- pinned tag:\"",
+     "o": "--- pinned tag:",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl run c --image=busybox:1.36 -- sleep 5 2>&1 | tail -1",
+     "o": "pod/c created",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete validatingadmissionpolicybinding no-latest-tag-binding > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl delete validatingadmissionpolicy no-latest-tag > /dev/null",
+     "o": "",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl create secret generic db --from-literal=password=S3cr3t-Value > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- what etcd stores for that Secret (this lab's etcd is plain HTTP, no encryption):\"",
+     "o": "--- what etcd stores for that Secret (this lab's etcd is plain HTTP, no encryption):",
+     "x": 0
+    },
+    {
+     "c": "$ etcdctl --endpoints=http://127.0.0.1:2379 get /registry/secrets/$LABNS/db 2>/dev/null | strings | grep -E \"S3cr3t|password\" | head -3",
+     "o": "/{\"f:data\":{\".\":{},\"f:password\":{}},\"f:type\":{}}B\npassword\nS3cr3t-Value",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"--- the lab kubelet's authentication and authorization settings:\"",
+     "o": "--- the lab kubelet's authentication and authorization settings:",
+     "x": 0
+    },
+    {
+     "c": "$ grep -A3 -E \"^authentication|^authorization\" /opt/k8s/kubelet-config.yaml",
+     "o": "authentication:\n  anonymous: {enabled: true}\n  webhook: {enabled: false}\nauthorization: {mode: AlwaysAllow}\ncgroupDriver: cgroupfs\ncgroupsPerQOS: false\nenforceNodeAllocatable: []",
+     "x": 0
+    },
+    {
+     "c": "$ echo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- an anonymous request to the kubelet API:\"",
+     "o": "--- an anonymous request to the kubelet API:",
+     "x": 0
+    },
+    {
+     "c": "$ curl -sk https://127.0.0.1:10250/pods | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d['kind'], 'returned with', len(d['items']), 'pods listed; no credentials were supplied')\"",
+     "o": "PodList returned with 66 pods listed; no credentials were supplied",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ kubectl apply -f - > /dev/null <<'EOF'\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: default-pod}\n> spec:\n>   containers:\n>   - name: c\n>     image: busybox:1.36\n>     command: [sh, -c, \"sleep 3600\"]\n> ---\n> apiVersion: v1\n> kind: Pod\n> metadata: {name: hardened-pod}\n> spec:\n>   securityContext: {runAsNonRoot: true, runAsUser: 10001, seccompProfile: {type: RuntimeDefault}}\n>   containers:\n>   - name: c\n>     image: busybox:1.36\n>     command: [sh, -c, \"sleep 3600\"]\n>     securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ kubectl wait --for=condition=Ready pod/default-pod pod/hardened-pod --timeout=90s > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ for p in default-pod hardened-pod; do\n>   echo \"=== $p\"\n>   kubectl exec $p -- sh -c 'echo \"user: $(id -u)\"; grep -E \"^(Seccomp|CapEff):\" /proc/1/status; touch /etc/x 2>&1 | head -1'\n> done",
+     "o": "=== default-pod\nuser: 0\nCapEff:\t00000000a80425fb\nSeccomp:\t0\n=== hardened-pod\nuser: 10001\nCapEff:\t0000000000000000\nSeccomp:\t2\ntouch: /etc/x: Read-only file system",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8fb2a3f316ebff3d"
+ },
  "kubernetes-2": {
   "blocks": [
    [

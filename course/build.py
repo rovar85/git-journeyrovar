@@ -8,10 +8,13 @@ import glob, html, json, os, re, subprocess, sys
 here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(here, "tools"))
 import mdconv
+import gen_roundups
 
 src = os.path.join(here, "src")
 rd = lambda p: open(os.path.join(src, p), encoding="utf-8").read()
 tracks = json.loads(rd("tracks.json"))
+studymaps = json.loads(rd("study/maps.json"))
+gen_roundups.generate(tracks, studymaps, os.path.join(src, "content"))
 track_by_id = {t["id"]: t for t in tracks}
 
 fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
@@ -60,6 +63,7 @@ out.append(rd("tail.html"))
 subprocess.run([sys.executable, os.path.join(here, "gen_traces.py")], check=True, stdout=subprocess.DEVNULL)
 import glossary
 out.append("<script>window.CMDREF=" + json.dumps(list(glossary.GLOSSARY.values()), ensure_ascii=False).replace("</", "<\\/") + ";</script>")
+out.append("<script>window.STUDYMAPS=" + json.dumps(studymaps, ensure_ascii=False).replace("</", "<\\/") + ";</script>")
 out.append("<script>window.TRACES=" + rd("traces.json") + ";window.TRACKS=" + json.dumps(tracks) + ";</script>")
 out.append("<script>\n" + rd("common.js") + "\n</script>")
 for j in sorted(glob.glob(os.path.join(src, "js", "ch[0-9][0-9].js"))) + sorted(glob.glob(os.path.join(src, "js", "w_*.js"))):

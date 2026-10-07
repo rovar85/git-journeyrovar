@@ -2,6 +2,7 @@
   <div class="strip-in">
     <a class="brand" href="#hub" style="text-decoration:none;color:inherit">Agent School</a>
     <select id="tracksel" aria-label="Choose a track"></select>
+    <a class="studylink" href="#study">Study</a>
     <nav class="chips" id="chips" aria-label="Lessons"></nav>
   </div>
 </div>
@@ -33,9 +34,16 @@
     <p style="margin-top:10px">Real practice matters. Most tracks give you commands to type. Use a free Linux environment (for example Ubuntu under WSL on Windows, or a virtual machine). Each track says what you need.</p>
   </div>
 
+  <div class="board ask" style="margin-top:22px">
+    <span class="tag">Study toolkit</span>
+    <p>Learn like a data pipeline: <b>gather</b> fast, <b>refine</b> into a map and flashcards, <b>drill</b> until it sticks, then <b>run it again</b> on the hard parts. Every lesson has a study loop and a notes box, every track ends with a <b>round-up lesson</b> (map, tips, the one to three pages worth reading, round-2 drills), and the Study page has spaced-repetition flashcards made from all the lessons, a sketch pad and an export for Anki.</p>
+    <p><a class="btn" href="#study">Open the study toolkit</a> <span id="study-due" class="muted"></span></p>
+  </div>
+
   <h2 style="margin-top:36px">Choose a track</h2>
   <p>Not sure where to begin? Follow the order below. The tracks build on each other, and the AI track can be done at any time.</p>
   <div id="tracks"></div>
 </section>
 
 <section id="trackhead" hidden></section>
+<section id="studyview" hidden></section>

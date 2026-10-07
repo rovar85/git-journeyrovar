@@ -25,6 +25,7 @@ def inline(s):
     s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
     s = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", s)
     s = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2" target="_blank" rel="noopener">\1</a>', s)
+    s = re.sub(r"\[([^\]]+)\]\((#[\w/-]+)\)", r'<a href="\2">\1</a>', s)
     s = re.sub(r"\x00(\d+)\x00", lambda m: "<code>" + html.escape(codes[int(m.group(1))], quote=False) + "</code>", s)
     return s
 
@@ -34,7 +35,9 @@ def parse_front(text):
     if m:
         for line in m.group(1).split("\n"):
             if ":" in line:
-                k, v = line.split(":", 1); meta[k.strip()] = v.strip()
+                k, v = line.split(":", 1); v = v.strip()
+                if len(v) >= 2 and v[0] == v[-1] == '"': v = v[1:-1]
+                meta[k.strip()] = v
         text = text[m.end():]
     return meta, text
 

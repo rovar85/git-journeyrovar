@@ -108,7 +108,7 @@ window.H = (function(){
     function inTrack(t){return chapters.filter(function(c){return c.dataset.track===t})}
     function quizId(c){var q=$(".quiz",c);return q?q.dataset.quiz:null}
     function isDone(c){var id=quizId(c);return id?H.store("agentschool-"+id)!==null&&H.store("agentschool-"+id)!==undefined:false}
-    var chips=$("#chips"), sel=$("#tracksel"), head=$("#trackhead"), hub=$("#hub"), current="hub";
+    var chips=$("#chips"), sel=$("#tracksel"), head=$("#trackhead"), hub=$("#hub"), studyEl=$("#studyview"), current="hub";
 
     /* ---- hub ---- */
     var total=chapters.length;
@@ -147,8 +147,14 @@ window.H = (function(){
     /* ---- show a track ---- */
     function showView(view,focusId){
       current=view;
-      sel.value=view;
+      sel.value=(view==="study"?"hub":view);
       document.body.dataset.view=view;
+      if(studyEl) studyEl.hidden=(view!=="study");
+      if(view==="study"){
+        chapters.forEach(function(c){c.hidden=true});
+        hub.hidden=true; head.hidden=true; chips.innerHTML="";
+        return;
+      }
       chapters.forEach(function(c){c.hidden=(c.dataset.track!==view)});
       hub.hidden=(view!=="hub");
       head.hidden=(view==="hub");
@@ -161,6 +167,11 @@ window.H = (function(){
     function route(){
       var h=location.hash.replace("#","");
       var view="hub",focus=null;
+      if(h==="study"||h.indexOf("study/")===0){
+        if(current!=="study")showView("study");
+        if(H.studyShow&&studyEl)H.studyShow(studyEl,h.replace(/^study\/?/,""));
+        onScroll();return;
+      }
       if(byId[h]&&inTrack(h).length){view=h}
       else if(h&&h!=="hub"&&h!=="top"){var el=document.getElementById(h);if(el&&el.classList.contains("chapter")){view=el.dataset.track;focus=el}}
       var changed=(view!==current)||(document.body.dataset.view===undefined);
@@ -185,6 +196,8 @@ window.H = (function(){
     }
     addEventListener("scroll",onScroll,{passive:true});
     addEventListener("hashchange",route);
+
+    if(H.studyDecorate)H.studyDecorate(chapters);
 
     /* ---- code players, widgets, terminals, copy buttons ---- */
     $$('.tracer[data-trace]').forEach(function(el){var T=window.TRACES&&window.TRACES[el.dataset.trace]; if(T)H.tracer(el,T)});
