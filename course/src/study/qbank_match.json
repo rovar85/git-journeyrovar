@@ -1,0 +1,4234 @@
+[
+{
+"topic": "01",
+"n": 4,
+"score": 0.504,
+"track": "linux",
+"lesson": 5,
+"head": "Users, groups and permissions"
+},
+{
+"topic": "04",
+"n": 15,
+"score": 0.473,
+"track": "git",
+"lesson": 3,
+"head": "Merge or rebase?"
+},
+{
+"topic": "03",
+"n": 16,
+"score": 0.435,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Probes: how Kubernetes knows an app is healthy"
+},
+{
+"topic": "01",
+"n": 5,
+"score": 0.428,
+"track": "linux",
+"lesson": 7,
+"head": "Packages and services"
+},
+{
+"topic": "04",
+"n": 6,
+"score": 0.425,
+"track": "jenkins",
+"lesson": 3,
+"head": "Multibranch pipelines and pull requests"
+},
+{
+"topic": "02",
+"n": 14,
+"score": 0.424,
+"track": "docker",
+"lesson": 3,
+"head": "Restart policies"
+},
+{
+"topic": "05",
+"n": 33,
+"score": 0.413,
+"track": "terraform",
+"lesson": 4,
+"head": "Refactoring without rebuilding: moved blocks"
+},
+{
+"topic": "04",
+"n": 35,
+"score": 0.371,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "05",
+"n": 32,
+"score": 0.368,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "2. RTO and RPO as design inputs"
+},
+{
+"topic": "03",
+"n": 10,
+"score": 0.358,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Services, DNS and networking"
+},
+{
+"topic": "03",
+"n": 22,
+"score": 0.355,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Service types"
+},
+{
+"topic": "05",
+"n": 7,
+"score": 0.347,
+"track": "terraform",
+"lesson": 5,
+"head": "Why modules"
+},
+{
+"topic": "05",
+"n": 23,
+"score": 0.347,
+"track": "terraform",
+"lesson": 6,
+"head": "Workspaces"
+},
+{
+"topic": "02",
+"n": 17,
+"score": 0.345,
+"track": "docker",
+"lesson": 5,
+"head": "Volumes and persistent data"
+},
+{
+"topic": "06",
+"n": 3,
+"score": 0.344,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "04",
+"n": 24,
+"score": 0.34,
+"track": "ansible",
+"lesson": 3,
+"head": "Handlers: act only on change"
+},
+{
+"topic": "10",
+"n": 5,
+"score": 0.331,
+"track": "linux",
+"lesson": 5,
+"head": "Who are you?"
+},
+{
+"topic": "06",
+"n": 40,
+"score": 0.329,
+"track": "cloudsenior",
+"lesson": 7,
+"head": "Q7: Explain your strategy for disaster recovery and business continuity in cloud environments"
+},
+{
+"topic": "06",
+"n": 6,
+"score": 0.325,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "02",
+"n": 5,
+"score": 0.322,
+"track": "docker",
+"lesson": 9,
+"head": "3. `CMD` versus `ENTRYPOINT`"
+},
+{
+"topic": "03",
+"n": 45,
+"score": 0.32,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "Q11: How do you manage secrets, keys and encryption across cloud services and regions?"
+},
+{
+"topic": "04",
+"n": 16,
+"score": 0.315,
+"track": "git",
+"lesson": 4,
+"head": "Stash: park unfinished work"
+},
+{
+"topic": "07",
+"n": 8,
+"score": 0.315,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "4. A Kubernetes Secret is not encrypted by default"
+},
+{
+"topic": "04",
+"n": 27,
+"score": 0.313,
+"track": "jenkins",
+"lesson": 3,
+"head": "Pipelines and the Jenkinsfile"
+},
+{
+"topic": "03",
+"n": 27,
+"score": 0.31,
+"track": "kubernetes",
+"lesson": 10,
+"head": "Helm: package manager for Kubernetes"
+},
+{
+"topic": "05",
+"n": 15,
+"score": 0.308,
+"track": "terraform",
+"lesson": 7,
+"head": "Immutable infrastructure"
+},
+{
+"topic": "04",
+"n": 20,
+"score": 0.302,
+"track": "ansible",
+"lesson": 2,
+"head": "Playbooks"
+},
+{
+"topic": "04",
+"n": 57,
+"score": 0.301,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "Q10: How do you design CI/CD for infrastructure and applications (pipelines, approvals, rollbacks, blue/green, canary)?"
+},
+{
+"topic": "06",
+"n": 49,
+"score": 0.301,
+"track": "cloudsenior",
+"lesson": 6,
+"head": "4. Private connectivity"
+},
+{
+"topic": "04",
+"n": 23,
+"score": 0.298,
+"track": "terraform",
+"lesson": 5,
+"head": "Modules"
+},
+{
+"topic": "01",
+"n": 14,
+"score": 0.296,
+"track": "networking",
+"lesson": 8,
+"head": "Troubleshooting, HTTP and TLS"
+},
+{
+"topic": "01",
+"n": 12,
+"score": 0.295,
+"track": "networking",
+"lesson": 6,
+"head": "Why DNS exists"
+},
+{
+"topic": "01",
+"n": 13,
+"score": 0.293,
+"track": "networking",
+"lesson": 5,
+"head": "Ports, TCP and sockets"
+},
+{
+"topic": "03",
+"n": 48,
+"score": 0.291,
+"track": "cloudsenior",
+"lesson": 7,
+"head": "Q7: Explain your strategy for disaster recovery and business continuity in cloud environments"
+},
+{
+"topic": "04",
+"n": 37,
+"score": 0.291,
+"track": "git",
+"lesson": 4,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "04",
+"n": 5,
+"score": 0.285,
+"track": "jenkins",
+"lesson": 3,
+"head": "What a Jenkinsfile is"
+},
+{
+"topic": "04",
+"n": 26,
+"score": 0.285,
+"track": "ansible",
+"lesson": 4,
+"head": "Roles and project structure"
+},
+{
+"topic": "04",
+"n": 58,
+"score": 0.285,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "4. Release strategies, compared"
+},
+{
+"topic": "03",
+"n": 6,
+"score": 0.284,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "04",
+"n": 14,
+"score": 0.279,
+"track": "git",
+"lesson": 5,
+"head": "Workflows"
+},
+{
+"topic": "08",
+"n": 32,
+"score": 0.278,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "Q9: Describe a major cloud incident you owned: detection, RCA, fix and long-term prevention"
+},
+{
+"topic": "08",
+"n": 2,
+"score": 0.276,
+"track": "cloudsenior",
+"lesson": 12,
+"head": "2. Monitoring versus observability"
+},
+{
+"topic": "04",
+"n": 22,
+"score": 0.274,
+"track": "ansible",
+"lesson": 1,
+"head": "What Ansible is, and your first commands"
+},
+{
+"topic": "04",
+"n": 64,
+"score": 0.273,
+"track": "jenkins",
+"lesson": 2,
+"head": "Parameters, triggers, artifacts and job chains"
+},
+{
+"topic": "04",
+"n": 36,
+"score": 0.27,
+"track": "git",
+"lesson": 3,
+"head": "Remotes and working with others"
+},
+{
+"topic": "06",
+"n": 44,
+"score": 0.27,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "08",
+"n": 5,
+"score": 0.269,
+"track": "monitoring",
+"lesson": 4,
+"head": "SLIs, SLOs and error budgets"
+},
+{
+"topic": "04",
+"n": 25,
+"score": 0.268,
+"track": "ansible",
+"lesson": 5,
+"head": "Secrets with Ansible Vault"
+},
+{
+"topic": "10",
+"n": 2,
+"score": 0.268,
+"track": "networking",
+"lesson": 2,
+"head": "An IPv4 address is a 32-bit number"
+},
+{
+"topic": "03",
+"n": 15,
+"score": 0.266,
+"track": "kubernetes",
+"lesson": 13,
+"head": "6. Autoscaling: what the HPA needs"
+},
+{
+"topic": "05",
+"n": 25,
+"score": 0.266,
+"track": "ansible",
+"lesson": 5,
+"head": "The rule"
+},
+{
+"topic": "06",
+"n": 23,
+"score": 0.266,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "06",
+"n": 2,
+"score": 0.265,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "01",
+"n": 25,
+"score": 0.264,
+"track": "networking",
+"lesson": 8,
+"head": "Troubleshooting, HTTP and TLS"
+},
+{
+"topic": "03",
+"n": 13,
+"score": 0.264,
+"track": "kubernetes",
+"lesson": 5,
+"head": "ConfigMaps and Secrets"
+},
+{
+"topic": "05",
+"n": 13,
+"score": 0.264,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "07",
+"n": 10,
+"score": 0.263,
+"track": "cloud",
+"lesson": 1,
+"head": "Cloud fundamentals"
+},
+{
+"topic": "03",
+"n": 23,
+"score": 0.262,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Services, DNS and networking"
+},
+{
+"topic": "01",
+"n": 6,
+"score": 0.26,
+"track": "linux",
+"lesson": 10,
+"head": "Scheduling with cron"
+},
+{
+"topic": "04",
+"n": 11,
+"score": 0.26,
+"track": "jenkins",
+"lesson": 2,
+"head": "Parameters, triggers, artifacts and job chains"
+},
+{
+"topic": "01",
+"n": 30,
+"score": 0.258,
+"track": "linux",
+"lesson": 8,
+"head": "One tree, many disks"
+},
+{
+"topic": "07",
+"n": 32,
+"score": 0.257,
+"track": "scenarios",
+"lesson": 8,
+"head": "1. Why this happens after you shipped"
+},
+{
+"topic": "04",
+"n": 2,
+"score": 0.255,
+"track": "jenkins",
+"lesson": 2,
+"head": "Triggers: how builds start"
+},
+{
+"topic": "01",
+"n": 55,
+"score": 0.253,
+"track": "linux",
+"lesson": 7,
+"head": "Packages and services"
+},
+{
+"topic": "01",
+"n": 63,
+"score": 0.253,
+"track": "linux",
+"lesson": 11,
+"head": "Disk space and speed"
+},
+{
+"topic": "04",
+"n": 17,
+"score": 0.253,
+"track": "jenkins",
+"lesson": 5,
+"head": "Credentials in practice"
+},
+{
+"topic": "04",
+"n": 34,
+"score": 0.253,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "03",
+"n": 8,
+"score": 0.252,
+"track": "scenarios",
+"lesson": 2,
+"head": "2. Build the situation"
+},
+{
+"topic": "06",
+"n": 39,
+"score": 0.252,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "Q1: Design a multi-region, highly available architecture with strict RTO and RPO"
+},
+{
+"topic": "02",
+"n": 24,
+"score": 0.251,
+"track": "docker",
+"lesson": 3,
+"head": "Running as a non-root user"
+},
+{
+"topic": "05",
+"n": 22,
+"score": 0.251,
+"track": "terraform",
+"lesson": 5,
+"head": "Modules"
+},
+{
+"topic": "08",
+"n": 9,
+"score": 0.251,
+"track": "cloud",
+"lesson": 3,
+"head": "Cost operations (FinOps)"
+},
+{
+"topic": "05",
+"n": 17,
+"score": 0.249,
+"track": "scenarios",
+"lesson": 1,
+"head": "6. Adopting what exists: import"
+},
+{
+"topic": "08",
+"n": 1,
+"score": 0.249,
+"track": "monitoring",
+"lesson": 1,
+"head": "Why monitor"
+},
+{
+"topic": "03",
+"n": 28,
+"score": 0.248,
+"track": "aiinfra",
+"lesson": 7,
+"head": "GitOps with Argo CD, and event-driven autoscaling with KEDA"
+},
+{
+"topic": "04",
+"n": 8,
+"score": 0.247,
+"track": "jenkins",
+"lesson": 3,
+"head": "Multibranch pipelines and pull requests"
+},
+{
+"topic": "03",
+"n": 11,
+"score": 0.246,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Ingress: HTTP routing"
+},
+{
+"topic": "03",
+"n": 66,
+"score": 0.245,
+"track": "scenarios",
+"lesson": 3,
+"head": "The new version **fails**, so the old ReplicaSet keeps serving"
+},
+{
+"topic": "05",
+"n": 4,
+"score": 0.244,
+"track": "terraform",
+"lesson": 3,
+"head": "Resources, loops and dependencies"
+},
+{
+"topic": "07",
+"n": 22,
+"score": 0.244,
+"track": "cloud",
+"lesson": 1,
+"head": "Regions and availability zones"
+},
+{
+"topic": "04",
+"n": 48,
+"score": 0.241,
+"track": "jenkins",
+"lesson": 3,
+"head": "Shared libraries"
+},
+{
+"topic": "04",
+"n": 68,
+"score": 0.241,
+"track": "docker",
+"lesson": 3,
+"head": "Restart policies"
+},
+{
+"topic": "04",
+"n": 9,
+"score": 0.24,
+"track": "jenkins",
+"lesson": 6,
+"head": "Answer and common mistakes"
+},
+{
+"topic": "01",
+"n": 18,
+"score": 0.239,
+"track": "linux",
+"lesson": 7,
+"head": "Packages and services"
+},
+{
+"topic": "03",
+"n": 52,
+"score": 0.238,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "Q10: How do you design CI/CD for infrastructure and applications (pipelines, approvals, rollbacks, blue/green, canary)?"
+},
+{
+"topic": "06",
+"n": 18,
+"score": 0.237,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "4. A Kubernetes Secret is not encrypted by default"
+},
+{
+"topic": "06",
+"n": 20,
+"score": 0.237,
+"track": "cloud",
+"lesson": 2,
+"head": "Identity and access management (IAM)"
+},
+{
+"topic": "05",
+"n": 2,
+"score": 0.236,
+"track": "terraform",
+"lesson": 4,
+"head": "State: what Terraform remembers"
+},
+{
+"topic": "01",
+"n": 86,
+"score": 0.235,
+"track": "networking",
+"lesson": 4,
+"head": "Static versus dynamic routing"
+},
+{
+"topic": "02",
+"n": 1,
+"score": 0.235,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "03",
+"n": 33,
+"score": 0.235,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "03",
+"n": 42,
+"score": 0.235,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Ingress: HTTP routing"
+},
+{
+"topic": "08",
+"n": 13,
+"score": 0.235,
+"track": "cloudsenior",
+"lesson": 12,
+"head": "7. Platform design across accounts and regions"
+},
+{
+"topic": "03",
+"n": 26,
+"score": 0.234,
+"track": "networking",
+"lesson": 6,
+"head": "DNS: names to addresses"
+},
+{
+"topic": "04",
+"n": 12,
+"score": 0.234,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "Q10: How do you design CI/CD for infrastructure and applications (pipelines, approvals, rollbacks, blue/green, canary)?"
+},
+{
+"topic": "02",
+"n": 26,
+"score": 0.233,
+"track": "scenarios",
+"lesson": 8,
+"head": "1. Why this happens after you shipped"
+},
+{
+"topic": "05",
+"n": 29,
+"score": 0.233,
+"track": "kubernetes",
+"lesson": 10,
+"head": "Helm: package manager for Kubernetes"
+},
+{
+"topic": "03",
+"n": 7,
+"score": 0.232,
+"track": "kubernetes",
+"lesson": 6,
+"head": "StatefulSets: stable identity plus storage"
+},
+{
+"topic": "07",
+"n": 21,
+"score": 0.232,
+"track": "kubernetes",
+"lesson": 10,
+"head": "Helm: package manager for Kubernetes"
+},
+{
+"topic": "02",
+"n": 30,
+"score": 0.231,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "06",
+"n": 50,
+"score": 0.231,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "03",
+"n": 14,
+"score": 0.23,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "05",
+"n": 3,
+"score": 0.23,
+"track": "terraform",
+"lesson": 2,
+"head": "The HCL language: variables, locals, outputs and functions"
+},
+{
+"topic": "05",
+"n": 16,
+"score": 0.23,
+"track": "terraform",
+"lesson": 4,
+"head": "Remote state and locking"
+},
+{
+"topic": "01",
+"n": 26,
+"score": 0.229,
+"track": "docker",
+"lesson": 8,
+"head": "Production practice and troubleshooting"
+},
+{
+"topic": "05",
+"n": 27,
+"score": 0.228,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "06",
+"n": 52,
+"score": 0.228,
+"track": "jenkins",
+"lesson": 2,
+"head": "Artifacts"
+},
+{
+"topic": "07",
+"n": 16,
+"score": 0.228,
+"track": "kubernetes",
+"lesson": 8,
+"head": "Pod Security Admission"
+},
+{
+"topic": "08",
+"n": 21,
+"score": 0.227,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Probes: how Kubernetes knows an app is healthy"
+},
+{
+"topic": "09",
+"n": 9,
+"score": 0.226,
+"track": "jenkins",
+"lesson": 1,
+"head": "CI/CD concepts and Jenkins basics"
+},
+{
+"topic": "04",
+"n": 43,
+"score": 0.225,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "01",
+"n": 1,
+"score": 0.223,
+"track": "linux",
+"lesson": 2,
+"head": "One tree, no drive letters"
+},
+{
+"topic": "01",
+"n": 11,
+"score": 0.223,
+"track": "linux",
+"lesson": 1,
+"head": "Meet the shell"
+},
+{
+"topic": "03",
+"n": 50,
+"score": 0.223,
+"track": "kubernetes",
+"lesson": 11,
+"head": "2. Upgrading a cluster"
+},
+{
+"topic": "05",
+"n": 24,
+"score": 0.223,
+"track": "terraform",
+"lesson": 1,
+"head": "The lab note"
+},
+{
+"topic": "05",
+"n": 28,
+"score": 0.223,
+"track": "cloud",
+"lesson": 2,
+"head": "Credentials for pipelines and workloads"
+},
+{
+"topic": "05",
+"n": 1,
+"score": 0.222,
+"track": "terraform",
+"lesson": 1,
+"head": "Infrastructure as code and your first Terraform run"
+},
+{
+"topic": "05",
+"n": 11,
+"score": 0.221,
+"track": "scenarios",
+"lesson": 1,
+"head": "1. The concept you need first: three things, not two"
+},
+{
+"topic": "01",
+"n": 3,
+"score": 0.218,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "01",
+"n": 8,
+"score": 0.218,
+"track": "linux",
+"lesson": 6,
+"head": "Processes, jobs and signals"
+},
+{
+"topic": "04",
+"n": 38,
+"score": 0.217,
+"track": "kubernetes",
+"lesson": 2,
+"head": "describe: the most useful debugging command"
+},
+{
+"topic": "04",
+"n": 42,
+"score": 0.217,
+"track": "jenkins",
+"lesson": 4,
+"head": "A real CI/CD pipeline, stage by stage"
+},
+{
+"topic": "06",
+"n": 4,
+"score": 0.217,
+"track": "networking",
+"lesson": 7,
+"head": "Firewalls and NAT"
+},
+{
+"topic": "01",
+"n": 24,
+"score": 0.216,
+"track": "linux",
+"lesson": 8,
+"head": "One tree, many disks"
+},
+{
+"topic": "06",
+"n": 24,
+"score": 0.216,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "02",
+"n": 3,
+"score": 0.215,
+"track": "docker",
+"lesson": 4,
+"head": "A Dockerfile is a recipe"
+},
+{
+"topic": "01",
+"n": 38,
+"score": 0.213,
+"track": "terraform",
+"lesson": 5,
+"head": "Module with for_each"
+},
+{
+"topic": "01",
+"n": 62,
+"score": 0.213,
+"track": "linux",
+"lesson": 2,
+"head": "Deleting (carefully)"
+},
+{
+"topic": "03",
+"n": 69,
+"score": 0.213,
+"track": "kubernetes",
+"lesson": 10,
+"head": "Helm: package manager for Kubernetes"
+},
+{
+"topic": "01",
+"n": 29,
+"score": 0.212,
+"track": "linux",
+"lesson": 8,
+"head": "One tree, many disks"
+},
+{
+"topic": "10",
+"n": 8,
+"score": 0.212,
+"track": "cloudsenior",
+"lesson": 7,
+"head": "4. Retention: what to keep"
+},
+{
+"topic": "03",
+"n": 41,
+"score": 0.211,
+"track": "scenarios",
+"lesson": 4,
+"head": "6. The answer an interviewer expects"
+},
+{
+"topic": "01",
+"n": 56,
+"score": 0.209,
+"track": "linux",
+"lesson": 5,
+"head": "sudo: borrowing root, briefly"
+},
+{
+"topic": "06",
+"n": 41,
+"score": 0.209,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "1. Vocabulary and principles"
+},
+{
+"topic": "01",
+"n": 7,
+"score": 0.208,
+"track": "linux",
+"lesson": 11,
+"head": "Disk space and speed"
+},
+{
+"topic": "01",
+"n": 79,
+"score": 0.208,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "03",
+"n": 53,
+"score": 0.208,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "04",
+"n": 3,
+"score": 0.208,
+"track": "jenkins",
+"lesson": 2,
+"head": "Answer and common mistakes"
+},
+{
+"topic": "05",
+"n": 26,
+"score": 0.208,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "01",
+"n": 10,
+"score": 0.207,
+"track": "networking",
+"lesson": 8,
+"head": "The checklist"
+},
+{
+"topic": "03",
+"n": 18,
+"score": 0.207,
+"track": "kubernetes",
+"lesson": 6,
+"head": "Reclaim policies"
+},
+{
+"topic": "01",
+"n": 34,
+"score": 0.206,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "05",
+"n": 21,
+"score": 0.206,
+"track": "terraform",
+"lesson": 3,
+"head": "Dependencies"
+},
+{
+"topic": "10",
+"n": 10,
+"score": 0.206,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "03",
+"n": 20,
+"score": 0.204,
+"track": "windows",
+"lesson": 4,
+"head": "Windows Server administration with PowerShell"
+},
+{
+"topic": "06",
+"n": 9,
+"score": 0.204,
+"track": "kubernetes",
+"lesson": 9,
+"head": "5. Service with no endpoints"
+},
+{
+"topic": "03",
+"n": 32,
+"score": 0.203,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "05",
+"n": 47,
+"score": 0.203,
+"track": "terraform",
+"lesson": 4,
+"head": "Drift"
+},
+{
+"topic": "10",
+"n": 15,
+"score": 0.203,
+"track": "jenkins",
+"lesson": 1,
+"head": "Build results and history"
+},
+{
+"topic": "01",
+"n": 83,
+"score": 0.202,
+"track": "networking",
+"lesson": 2,
+"head": "IP addressing and subnets"
+},
+{
+"topic": "05",
+"n": 10,
+"score": 0.202,
+"track": "terraform",
+"lesson": 4,
+"head": "Drift"
+},
+{
+"topic": "06",
+"n": 47,
+"score": 0.202,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "01",
+"n": 52,
+"score": 0.201,
+"track": "ansible",
+"lesson": 1,
+"head": "The lab"
+},
+{
+"topic": "07",
+"n": 15,
+"score": 0.201,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "01",
+"n": 42,
+"score": 0.2,
+"track": "linux",
+"lesson": 6,
+"head": "What is a process?"
+},
+{
+"topic": "02",
+"n": 7,
+"score": 0.2,
+"track": "networking",
+"lesson": 2,
+"head": "Private ranges and special addresses"
+},
+{
+"topic": "03",
+"n": 54,
+"score": 0.2,
+"track": "kubernetes",
+"lesson": 13,
+"head": "3. Node maintenance: cordon and drain"
+},
+{
+"topic": "03",
+"n": 60,
+"score": 0.199,
+"track": "scenarios",
+"lesson": 4,
+"head": "7. Follow-up questions to expect"
+},
+{
+"topic": "02",
+"n": 4,
+"score": 0.198,
+"track": "docker",
+"lesson": 4,
+"head": "A Dockerfile is a recipe"
+},
+{
+"topic": "01",
+"n": 69,
+"score": 0.197,
+"track": "linux",
+"lesson": 8,
+"head": "A full disk, safely"
+},
+{
+"topic": "02",
+"n": 10,
+"score": 0.197,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "04",
+"n": 40,
+"score": 0.197,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "Q10: How do you design CI/CD for infrastructure and applications (pipelines, approvals, rollbacks, blue/green, canary)?"
+},
+{
+"topic": "05",
+"n": 19,
+"score": 0.197,
+"track": "terraform",
+"lesson": 1,
+"head": "Click-ops versus code"
+},
+{
+"topic": "08",
+"n": 12,
+"score": 0.197,
+"track": "monitoring",
+"lesson": 4,
+"head": "Logs, traces, dashboards and SLOs"
+},
+{
+"topic": "09",
+"n": 10,
+"score": 0.197,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "1. What the interviewer is testing"
+},
+{
+"topic": "02",
+"n": 27,
+"score": 0.196,
+"track": "docker",
+"lesson": 5,
+"head": "tmpfs and shared volumes"
+},
+{
+"topic": "03",
+"n": 35,
+"score": 0.196,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "04",
+"n": 53,
+"score": 0.196,
+"track": "jenkins",
+"lesson": 2,
+"head": "Parameters, triggers, artifacts and job chains"
+},
+{
+"topic": "06",
+"n": 72,
+"score": 0.196,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Other update strategies"
+},
+{
+"topic": "07",
+"n": 9,
+"score": 0.196,
+"track": "scenarios",
+"lesson": 8,
+"head": "8. Follow-up questions to expect"
+},
+{
+"topic": "03",
+"n": 83,
+"score": 0.195,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "10",
+"n": 14,
+"score": 0.195,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "01",
+"n": 82,
+"score": 0.194,
+"track": "networking",
+"lesson": 4,
+"head": "Routing and gateways"
+},
+{
+"topic": "07",
+"n": 7,
+"score": 0.194,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "01",
+"n": 76,
+"score": 0.192,
+"track": "docker",
+"lesson": 6,
+"head": "Isolating tiers with separate networks"
+},
+{
+"topic": "08",
+"n": 7,
+"score": 0.19,
+"track": "aiinfra",
+"lesson": 9,
+"head": "Observability for AI systems: Prometheus, Grafana and OpenTelemetry"
+},
+{
+"topic": "09",
+"n": 8,
+"score": 0.19,
+"track": "linux",
+"lesson": 1,
+"head": "Meet the shell"
+},
+{
+"topic": "02",
+"n": 8,
+"score": 0.189,
+"track": "docker",
+"lesson": 4,
+"head": "Writing Dockerfiles"
+},
+{
+"topic": "03",
+"n": 30,
+"score": 0.189,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "04",
+"n": 60,
+"score": 0.189,
+"track": "kubernetes",
+"lesson": 10,
+"head": "GitOps"
+},
+{
+"topic": "01",
+"n": 28,
+"score": 0.188,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "02",
+"n": 28,
+"score": 0.188,
+"track": "docker",
+"lesson": 8,
+"head": "Logs"
+},
+{
+"topic": "03",
+"n": 19,
+"score": 0.188,
+"track": "kubernetes",
+"lesson": 8,
+"head": "Namespaces, RBAC and security"
+},
+{
+"topic": "03",
+"n": 64,
+"score": 0.188,
+"track": "kubernetes",
+"lesson": 9,
+"head": "The method"
+},
+{
+"topic": "04",
+"n": 29,
+"score": 0.187,
+"track": "jenkins",
+"lesson": 5,
+"head": "Agents, security and scaling"
+},
+{
+"topic": "05",
+"n": 42,
+"score": 0.187,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "02",
+"n": 34,
+"score": 0.186,
+"track": "jenkins",
+"lesson": 3,
+"head": "Docker agents"
+},
+{
+"topic": "04",
+"n": 18,
+"score": 0.186,
+"track": "git",
+"lesson": 5,
+"head": "Workflows"
+},
+{
+"topic": "06",
+"n": 19,
+"score": 0.186,
+"track": "cloud",
+"lesson": 1,
+"head": "Getting started safely"
+},
+{
+"topic": "03",
+"n": 47,
+"score": 0.185,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "7. Follow-up questions to expect"
+},
+{
+"topic": "04",
+"n": 30,
+"score": 0.185,
+"track": "git",
+"lesson": 4,
+"head": "Reset: moving the branch back (local only)"
+},
+{
+"topic": "04",
+"n": 50,
+"score": 0.185,
+"track": "git",
+"lesson": 5,
+"head": "Tags, hooks and team practices"
+},
+{
+"topic": "01",
+"n": 21,
+"score": 0.184,
+"track": "networking",
+"lesson": 5,
+"head": "Worked answer and common mistakes"
+},
+{
+"topic": "04",
+"n": 62,
+"score": 0.184,
+"track": "jenkins",
+"lesson": 5,
+"head": "Answer and common mistakes"
+},
+{
+"topic": "03",
+"n": 1,
+"score": 0.183,
+"track": "kubernetes",
+"lesson": 1,
+"head": "Why Kubernetes, and how a cluster is built"
+},
+{
+"topic": "04",
+"n": 49,
+"score": 0.183,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Other update strategies"
+},
+{
+"topic": "07",
+"n": 24,
+"score": 0.183,
+"track": "cloudsenior",
+"lesson": 4,
+"head": "Q4: How do you ensure security and compliance across cloud accounts?"
+},
+{
+"topic": "03",
+"n": 82,
+"score": 0.182,
+"track": "scenarios",
+"lesson": 4,
+"head": "1. How the HPA decides"
+},
+{
+"topic": "07",
+"n": 12,
+"score": 0.182,
+"track": "monitoring",
+"lesson": 1,
+"head": "Why monitor"
+},
+{
+"topic": "03",
+"n": 38,
+"score": 0.181,
+"track": "cloud",
+"lesson": 1,
+"head": "Regions and availability zones"
+},
+{
+"topic": "03",
+"n": 70,
+"score": 0.181,
+"track": "kubernetes",
+"lesson": 14,
+"head": "Networking drills: Services, DNS, NetworkPolicy, Ingress and the Gateway API"
+},
+{
+"topic": "04",
+"n": 72,
+"score": 0.181,
+"track": "scenarios",
+"lesson": 3,
+"head": "The new version **fails**, so the old ReplicaSet keeps serving"
+},
+{
+"topic": "06",
+"n": 46,
+"score": 0.181,
+"track": "git",
+"lesson": 5,
+"head": "Tags, hooks and team practices"
+},
+{
+"topic": "06",
+"n": 79,
+"score": 0.181,
+"track": "kubernetes",
+"lesson": 1,
+"head": "Why Kubernetes, and how a cluster is built"
+},
+{
+"topic": "08",
+"n": 15,
+"score": 0.181,
+"track": "monitoring",
+"lesson": 3,
+"head": "What makes a good alert"
+},
+{
+"topic": "08",
+"n": 25,
+"score": 0.181,
+"track": "docker",
+"lesson": 8,
+"head": "Production practice and troubleshooting"
+},
+{
+"topic": "01",
+"n": 54,
+"score": 0.18,
+"track": "linux",
+"lesson": 10,
+"head": "Scheduling, SSH and environment"
+},
+{
+"topic": "02",
+"n": 18,
+"score": 0.18,
+"track": "docker",
+"lesson": 4,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "03",
+"n": 56,
+"score": 0.18,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Resources, probes and scheduling"
+},
+{
+"topic": "05",
+"n": 46,
+"score": 0.18,
+"track": "scenarios",
+"lesson": 7,
+"head": "7. Rollback and verification"
+},
+{
+"topic": "06",
+"n": 25,
+"score": 0.18,
+"track": "cloud",
+"lesson": 2,
+"head": "DNS and load balancing in the cloud"
+},
+{
+"topic": "02",
+"n": 39,
+"score": 0.179,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Looking inside: exec and debug"
+},
+{
+"topic": "06",
+"n": 57,
+"score": 0.179,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "10",
+"n": 13,
+"score": 0.179,
+"track": "jenkins",
+"lesson": 3,
+"head": "Multibranch pipelines and pull requests"
+},
+{
+"topic": "03",
+"n": 89,
+"score": 0.177,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "Q9: Describe a major cloud incident you owned: detection, RCA, fix and long-term prevention"
+},
+{
+"topic": "04",
+"n": 44,
+"score": 0.177,
+"track": "jenkins",
+"lesson": 4,
+"head": "Promotion, versions and traceability"
+},
+{
+"topic": "03",
+"n": 67,
+"score": 0.176,
+"track": "scenarios",
+"lesson": 3,
+"head": "The new version **fails**, so the old ReplicaSet keeps serving"
+},
+{
+"topic": "04",
+"n": 39,
+"score": 0.176,
+"track": "jenkins",
+"lesson": 4,
+"head": "A real CI/CD pipeline, stage by stage"
+},
+{
+"topic": "05",
+"n": 43,
+"score": 0.176,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "06",
+"n": 74,
+"score": 0.176,
+"track": "networking",
+"lesson": 7,
+"head": "Firewalls and NAT"
+},
+{
+"topic": "10",
+"n": 12,
+"score": 0.176,
+"track": "windows",
+"lesson": 2,
+"head": "Files, text and data with PowerShell"
+},
+{
+"topic": "10",
+"n": 19,
+"score": 0.176,
+"track": "linux",
+"lesson": 6,
+"head": "Processes, jobs and signals"
+},
+{
+"topic": "03",
+"n": 40,
+"score": 0.175,
+"track": "scenarios",
+"lesson": 6,
+"head": "S6: New worker nodes join the EKS cluster successfully, but pods stay in Pending. What could be the reasons?"
+},
+{
+"topic": "03",
+"n": 46,
+"score": 0.175,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "Q11: How do you manage secrets, keys and encryption across cloud services and regions?"
+},
+{
+"topic": "05",
+"n": 30,
+"score": 0.175,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "05",
+"n": 37,
+"score": 0.175,
+"track": "scenarios",
+"lesson": 1,
+"head": "6. Adopting what exists: import"
+},
+{
+"topic": "06",
+"n": 70,
+"score": 0.175,
+"track": "cloud",
+"lesson": 1,
+"head": "Regions and availability zones"
+},
+{
+"topic": "02",
+"n": 9,
+"score": 0.174,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "03",
+"n": 5,
+"score": 0.174,
+"track": "kubernetes",
+"lesson": 2,
+"head": "Pods"
+},
+{
+"topic": "03",
+"n": 12,
+"score": 0.173,
+"track": "kubernetes",
+"lesson": 8,
+"head": "Namespaces, RBAC and security"
+},
+{
+"topic": "03",
+"n": 43,
+"score": 0.172,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "03",
+"n": 59,
+"score": 0.172,
+"track": "kubernetes",
+"lesson": 8,
+"head": "Pod Security Admission"
+},
+{
+"topic": "02",
+"n": 22,
+"score": 0.171,
+"track": "docker",
+"lesson": 2,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "04",
+"n": 4,
+"score": 0.171,
+"track": "jenkins",
+"lesson": 1,
+"head": "Jenkins architecture"
+},
+{
+"topic": "08",
+"n": 11,
+"score": 0.171,
+"track": "scenarios",
+"lesson": 9,
+"head": "S9: Users report intermittent failures across microservices, but the logs from individual services look normal. How do you identify the root cause?"
+},
+{
+"topic": "01",
+"n": 23,
+"score": 0.17,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "01",
+"n": 35,
+"score": 0.17,
+"track": "kubernetes",
+"lesson": 3,
+"head": "A bad release"
+},
+{
+"topic": "06",
+"n": 1,
+"score": 0.17,
+"track": "cloudsenior",
+"lesson": 5,
+"head": "1. What the interviewer is testing"
+},
+{
+"topic": "01",
+"n": 36,
+"score": 0.169,
+"track": "terraform",
+"lesson": 7,
+"head": "Immutable infrastructure"
+},
+{
+"topic": "02",
+"n": 36,
+"score": 0.169,
+"track": "docker",
+"lesson": 2,
+"head": "Housekeeping"
+},
+{
+"topic": "03",
+"n": 44,
+"score": 0.169,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "03",
+"n": 65,
+"score": 0.169,
+"track": "docker",
+"lesson": 8,
+"head": "CrashLoop and \"it works on my machine\""
+},
+{
+"topic": "04",
+"n": 32,
+"score": 0.169,
+"track": "networking",
+"lesson": 2,
+"head": "Private ranges and special addresses"
+},
+{
+"topic": "06",
+"n": 66,
+"score": 0.169,
+"track": "jenkins",
+"lesson": 2,
+"head": "Artifacts"
+},
+{
+"topic": "08",
+"n": 18,
+"score": 0.169,
+"track": "kubernetes",
+"lesson": 8,
+"head": "RBAC: roles and bindings"
+},
+{
+"topic": "09",
+"n": 19,
+"score": 0.169,
+"track": "docker",
+"lesson": 8,
+"head": "Production practice and troubleshooting"
+},
+{
+"topic": "02",
+"n": 32,
+"score": 0.168,
+"track": "docker",
+"lesson": 9,
+"head": "6. Image size versus container size"
+},
+{
+"topic": "03",
+"n": 36,
+"score": 0.168,
+"track": "kubernetes",
+"lesson": 2,
+"head": "The same Pod as YAML"
+},
+{
+"topic": "07",
+"n": 11,
+"score": 0.168,
+"track": "jenkins",
+"lesson": 5,
+"head": "Credentials in practice"
+},
+{
+"topic": "02",
+"n": 29,
+"score": 0.167,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Rolling update"
+},
+{
+"topic": "03",
+"n": 63,
+"score": 0.167,
+"track": "linux",
+"lesson": 11,
+"head": "A method, not a guess"
+},
+{
+"topic": "06",
+"n": 62,
+"score": 0.167,
+"track": "cloudsenior",
+"lesson": 7,
+"head": "7. Operating the programme"
+},
+{
+"topic": "09",
+"n": 5,
+"score": 0.167,
+"track": "cloud",
+"lesson": 1,
+"head": "Cloud fundamentals"
+},
+{
+"topic": "10",
+"n": 9,
+"score": 0.167,
+"track": "ansible",
+"lesson": 1,
+"head": "What Ansible is, and your first commands"
+},
+{
+"topic": "10",
+"n": 21,
+"score": 0.167,
+"track": "linux",
+"lesson": 6,
+"head": "Practice with worked answers"
+},
+{
+"topic": "01",
+"n": 49,
+"score": 0.166,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "04",
+"n": 69,
+"score": 0.166,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "06",
+"n": 51,
+"score": 0.166,
+"track": "ansible",
+"lesson": 5,
+"head": "The rule"
+},
+{
+"topic": "01",
+"n": 64,
+"score": 0.165,
+"track": "aiinfra",
+"lesson": 6,
+"head": "2. Queues: why 90% busy is already too busy"
+},
+{
+"topic": "02",
+"n": 21,
+"score": 0.165,
+"track": "docker",
+"lesson": 2,
+"head": "Choosing a base image"
+},
+{
+"topic": "02",
+"n": 25,
+"score": 0.165,
+"track": "jenkins",
+"lesson": 5,
+"head": "Credentials in practice"
+},
+{
+"topic": "03",
+"n": 34,
+"score": 0.164,
+"track": "cloud",
+"lesson": 2,
+"head": "Credentials for pipelines and workloads"
+},
+{
+"topic": "04",
+"n": 52,
+"score": 0.164,
+"track": "ansible",
+"lesson": 5,
+"head": "The rule"
+},
+{
+"topic": "07",
+"n": 14,
+"score": 0.164,
+"track": "cloud",
+"lesson": 2,
+"head": "Credentials for pipelines and workloads"
+},
+{
+"topic": "08",
+"n": 22,
+"score": 0.164,
+"track": "monitoring",
+"lesson": 1,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "03",
+"n": 3,
+"score": 0.163,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "06",
+"n": 58,
+"score": 0.163,
+"track": "monitoring",
+"lesson": 4,
+"head": "Traces"
+},
+{
+"topic": "07",
+"n": 26,
+"score": 0.163,
+"track": "networking",
+"lesson": 6,
+"head": "Why DNS exists"
+},
+{
+"topic": "04",
+"n": 7,
+"score": 0.162,
+"track": "jenkins",
+"lesson": 3,
+"head": "Pipelines and the Jenkinsfile"
+},
+{
+"topic": "06",
+"n": 80,
+"score": 0.162,
+"track": "cloud",
+"lesson": 1,
+"head": "Getting started safely"
+},
+{
+"topic": "01",
+"n": 70,
+"score": 0.161,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "06",
+"n": 37,
+"score": 0.161,
+"track": "terraform",
+"lesson": 6,
+"head": "Workspaces"
+},
+{
+"topic": "09",
+"n": 3,
+"score": 0.161,
+"track": "ansible",
+"lesson": 4,
+"head": "Roles and project structure"
+},
+{
+"topic": "06",
+"n": 42,
+"score": 0.16,
+"track": "scenarios",
+"lesson": 9,
+"head": "S9: Users report intermittent failures across microservices, but the logs from individual services look normal. How do you identify the root cause?"
+},
+{
+"topic": "06",
+"n": 53,
+"score": 0.16,
+"track": "cloudsenior",
+"lesson": 6,
+"head": "3. Topologies at scale"
+},
+{
+"topic": "08",
+"n": 30,
+"score": 0.16,
+"track": "scenarios",
+"lesson": 5,
+"head": "Defences for stack interfaces"
+},
+{
+"topic": "10",
+"n": 6,
+"score": 0.16,
+"track": "linux",
+"lesson": 2,
+"head": "Files and directories"
+},
+{
+"topic": "01",
+"n": 58,
+"score": 0.159,
+"track": "linux",
+"lesson": 6,
+"head": "Practice with worked answers"
+},
+{
+"topic": "03",
+"n": 25,
+"score": 0.159,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Probes: how Kubernetes knows an app is healthy"
+},
+{
+"topic": "05",
+"n": 5,
+"score": 0.159,
+"track": "terraform",
+"lesson": 2,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "05",
+"n": 18,
+"score": 0.159,
+"track": "cloud",
+"lesson": 2,
+"head": "The virtual network"
+},
+{
+"topic": "05",
+"n": 35,
+"score": 0.159,
+"track": "terraform",
+"lesson": 3,
+"head": "Resources, loops and dependencies"
+},
+{
+"topic": "06",
+"n": 38,
+"score": 0.159,
+"track": "aifield",
+"lesson": 6,
+"head": "Agentic coding: verification, context and workflow (Claude Code practices)"
+},
+{
+"topic": "08",
+"n": 14,
+"score": 0.159,
+"track": "scenarios",
+"lesson": 4,
+"head": "S4: The application is under heavy traffic and CPU is above the HPA threshold, but the Horizontal Pod Autoscaler does not scale. How do you debug it?"
+},
+{
+"topic": "01",
+"n": 20,
+"score": 0.158,
+"track": "linux",
+"lesson": 4,
+"head": "find: search by properties"
+},
+{
+"topic": "03",
+"n": 4,
+"score": 0.158,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "03",
+"n": 62,
+"score": 0.158,
+"track": "docker",
+"lesson": 9,
+"head": "2. The container lifecycle, state by state"
+},
+{
+"topic": "04",
+"n": 46,
+"score": 0.158,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "01",
+"n": 22,
+"score": 0.157,
+"track": "networking",
+"lesson": 1,
+"head": "Your machine talking to itself"
+},
+{
+"topic": "01",
+"n": 31,
+"score": 0.157,
+"track": "git",
+"lesson": 4,
+"head": "Stash: park unfinished work"
+},
+{
+"topic": "01",
+"n": 32,
+"score": 0.157,
+"track": "linux",
+"lesson": 4,
+"head": "Searching and processing text"
+},
+{
+"topic": "01",
+"n": 43,
+"score": 0.157,
+"track": "linux",
+"lesson": 2,
+"head": "Looking around"
+},
+{
+"topic": "03",
+"n": 21,
+"score": 0.157,
+"track": "monitoring",
+"lesson": 1,
+"head": "Monitoring concepts and metrics"
+},
+{
+"topic": "01",
+"n": 78,
+"score": 0.156,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "05",
+"n": 14,
+"score": 0.156,
+"track": "cloudsenior",
+"lesson": 15,
+"head": "Alternatives considered"
+},
+{
+"topic": "08",
+"n": 3,
+"score": 0.156,
+"track": "monitoring",
+"lesson": 4,
+"head": "Logs, traces, dashboards and SLOs"
+},
+{
+"topic": "01",
+"n": 50,
+"score": 0.155,
+"track": "scenarios",
+"lesson": 2,
+"head": "S2: Pods in one Kubernetes namespace talk fine, but pods in another namespace cannot reach them even though services exist. How do you troubleshoot?"
+},
+{
+"topic": "01",
+"n": 51,
+"score": 0.155,
+"track": "networking",
+"lesson": 8,
+"head": "Troubleshooting, HTTP and TLS"
+},
+{
+"topic": "01",
+"n": 81,
+"score": 0.155,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "06",
+"n": 26,
+"score": 0.155,
+"track": "scenarios",
+"lesson": 7,
+"head": "7. Rollback and verification"
+},
+{
+"topic": "06",
+"n": 76,
+"score": 0.155,
+"track": "monitoring",
+"lesson": 3,
+"head": "Break the service: pending, then firing"
+},
+{
+"topic": "01",
+"n": 41,
+"score": 0.154,
+"track": "networking",
+"lesson": 8,
+"head": "HTTP, line by line"
+},
+{
+"topic": "02",
+"n": 20,
+"score": 0.154,
+"track": "linux",
+"lesson": 7,
+"head": "Looking at a package"
+},
+{
+"topic": "04",
+"n": 73,
+"score": 0.154,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "05",
+"n": 36,
+"score": 0.154,
+"track": "terraform",
+"lesson": 4,
+"head": "Drift"
+},
+{
+"topic": "07",
+"n": 3,
+"score": 0.154,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "03",
+"n": 57,
+"score": 0.153,
+"track": "kubernetes",
+"lesson": 4,
+"head": "Services, DNS and networking"
+},
+{
+"topic": "01",
+"n": 45,
+"score": 0.152,
+"track": "scenarios",
+"lesson": 2,
+"head": "S2: Pods in one Kubernetes namespace talk fine, but pods in another namespace cannot reach them even though services exist. How do you troubleshoot?"
+},
+{
+"topic": "03",
+"n": 71,
+"score": 0.152,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "03",
+"n": 72,
+"score": 0.152,
+"track": "networking",
+"lesson": 8,
+"head": "Troubleshooting, HTTP and TLS"
+},
+{
+"topic": "07",
+"n": 5,
+"score": 0.152,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "10",
+"n": 11,
+"score": 0.152,
+"track": "kubernetes",
+"lesson": 11,
+"head": "4. Certificates expire"
+},
+{
+"topic": "01",
+"n": 53,
+"score": 0.151,
+"track": "linux",
+"lesson": 2,
+"head": "Wildcards: acting on many files"
+},
+{
+"topic": "04",
+"n": 10,
+"score": 0.151,
+"track": "jenkins",
+"lesson": 2,
+"head": "Artifacts"
+},
+{
+"topic": "07",
+"n": 17,
+"score": 0.151,
+"track": "kubernetes",
+"lesson": 17,
+"head": "Kubernetes security as one map: follow a request from kubectl to detection"
+},
+{
+"topic": "09",
+"n": 15,
+"score": 0.151,
+"track": "scenarios",
+"lesson": 1,
+"head": "6. Adopting what exists: import"
+},
+{
+"topic": "09",
+"n": 16,
+"score": 0.151,
+"track": "git",
+"lesson": 2,
+"head": "Branches, merging and conflicts"
+},
+{
+"topic": "01",
+"n": 85,
+"score": 0.15,
+"track": "docker",
+"lesson": 6,
+"head": "Default bridge versus user-defined bridge"
+},
+{
+"topic": "04",
+"n": 21,
+"score": 0.15,
+"track": "ansible",
+"lesson": 1,
+"head": "What Ansible is, and your first commands"
+},
+{
+"topic": "04",
+"n": 76,
+"score": 0.15,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "6. The RTO budget"
+},
+{
+"topic": "09",
+"n": 11,
+"score": 0.15,
+"track": "git",
+"lesson": 5,
+"head": "Git is the spine of DevOps"
+},
+{
+"topic": "02",
+"n": 19,
+"score": 0.149,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "03",
+"n": 2,
+"score": 0.149,
+"track": "kubernetes",
+"lesson": 12,
+"head": "1. The idea: Kubernetes as a platform for APIs"
+},
+{
+"topic": "03",
+"n": 75,
+"score": 0.149,
+"track": "networking",
+"lesson": 6,
+"head": "DNS: names to addresses"
+},
+{
+"topic": "03",
+"n": 77,
+"score": 0.149,
+"track": "scenarios",
+"lesson": 2,
+"head": "2. Build the situation"
+},
+{
+"topic": "03",
+"n": 78,
+"score": 0.149,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Pending: nothing fits"
+},
+{
+"topic": "04",
+"n": 1,
+"score": 0.149,
+"track": "aiinfra",
+"lesson": 7,
+"head": "1. What GitOps is"
+},
+{
+"topic": "04",
+"n": 13,
+"score": 0.149,
+"track": "aideep",
+"lesson": 11,
+"head": "Deep dive 11: build, test and observe an agent"
+},
+{
+"topic": "05",
+"n": 38,
+"score": 0.148,
+"track": "terraform",
+"lesson": 4,
+"head": "State: what Terraform remembers"
+},
+{
+"topic": "06",
+"n": 21,
+"score": 0.148,
+"track": "terraform",
+"lesson": 4,
+"head": "Remote state and locking"
+},
+{
+"topic": "10",
+"n": 24,
+"score": 0.148,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "01",
+"n": 44,
+"score": 0.147,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "01",
+"n": 57,
+"score": 0.147,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "02",
+"n": 12,
+"score": 0.147,
+"track": "docker",
+"lesson": 2,
+"head": "Images, layers and registries"
+},
+{
+"topic": "03",
+"n": 84,
+"score": 0.147,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "03",
+"n": 88,
+"score": 0.147,
+"track": "scenarios",
+"lesson": 2,
+"head": "2. Build the situation"
+},
+{
+"topic": "04",
+"n": 67,
+"score": 0.147,
+"track": "jenkins",
+"lesson": 5,
+"head": "Agents, security and scaling"
+},
+{
+"topic": "05",
+"n": 40,
+"score": 0.147,
+"track": "capstone",
+"lesson": 1,
+"head": "Tear down"
+},
+{
+"topic": "06",
+"n": 10,
+"score": 0.147,
+"track": "networking",
+"lesson": 6,
+"head": "Why DNS exists"
+},
+{
+"topic": "06",
+"n": 56,
+"score": 0.147,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "06",
+"n": 60,
+"score": 0.147,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "6. The RTO budget"
+},
+{
+"topic": "04",
+"n": 74,
+"score": 0.146,
+"track": "scenarios",
+"lesson": 3,
+"head": "The new version **fails**, so the old ReplicaSet keeps serving"
+},
+{
+"topic": "04",
+"n": 79,
+"score": 0.146,
+"track": "networking",
+"lesson": 1,
+"head": "The postal analogy"
+},
+{
+"topic": "09",
+"n": 12,
+"score": 0.146,
+"track": "scenarios",
+"lesson": 7,
+"head": "6. The hardest part: data and compatibility"
+},
+{
+"topic": "10",
+"n": 7,
+"score": 0.146,
+"track": "jenkins",
+"lesson": 4,
+"head": "A real CI/CD pipeline, stage by stage"
+},
+{
+"topic": "01",
+"n": 75,
+"score": 0.145,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "02",
+"n": 31,
+"score": 0.145,
+"track": "docker",
+"lesson": 1,
+"head": "Containers: first steps"
+},
+{
+"topic": "03",
+"n": 87,
+"score": 0.145,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Deployments, ReplicaSets and rolling updates"
+},
+{
+"topic": "06",
+"n": 34,
+"score": 0.145,
+"track": "networking",
+"lesson": 4,
+"head": "Routing and gateways"
+},
+{
+"topic": "07",
+"n": 1,
+"score": 0.145,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "09",
+"n": 4,
+"score": 0.145,
+"track": "git",
+"lesson": 5,
+"head": "Git is the spine of DevOps"
+},
+{
+"topic": "05",
+"n": 8,
+"score": 0.144,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "05",
+"n": 31,
+"score": 0.144,
+"track": "terraform",
+"lesson": 1,
+"head": "Infrastructure as code and your first Terraform run"
+},
+{
+"topic": "06",
+"n": 32,
+"score": 0.144,
+"track": "scenarios",
+"lesson": 6,
+"head": "S6: New worker nodes join the EKS cluster successfully, but pods stay in Pending. What could be the reasons?"
+},
+{
+"topic": "02",
+"n": 23,
+"score": 0.143,
+"track": "terraform",
+"lesson": 7,
+"head": "Costs and cleanup"
+},
+{
+"topic": "04",
+"n": 45,
+"score": 0.143,
+"track": "linux",
+"lesson": 10,
+"head": "Scheduling, SSH and environment"
+},
+{
+"topic": "04",
+"n": 47,
+"score": 0.143,
+"track": "terraform",
+"lesson": 7,
+"head": "Terraform and the other tools"
+},
+{
+"topic": "04",
+"n": 54,
+"score": 0.143,
+"track": "kubernetes",
+"lesson": 3,
+"head": "History and rollback"
+},
+{
+"topic": "05",
+"n": 12,
+"score": 0.143,
+"track": "git",
+"lesson": 5,
+"head": "Tags, hooks and team practices"
+},
+{
+"topic": "06",
+"n": 65,
+"score": 0.143,
+"track": "docker",
+"lesson": 8,
+"head": "CrashLoop and \"it works on my machine\""
+},
+{
+"topic": "07",
+"n": 23,
+"score": 0.143,
+"track": "cloud",
+"lesson": 1,
+"head": "Service models: who manages what"
+},
+{
+"topic": "01",
+"n": 15,
+"score": 0.142,
+"track": "cloud",
+"lesson": 2,
+"head": "DNS and load balancing in the cloud"
+},
+{
+"topic": "03",
+"n": 73,
+"score": 0.141,
+"track": "scenarios",
+"lesson": 2,
+"head": "9. The answer an interviewer expects"
+},
+{
+"topic": "04",
+"n": 61,
+"score": 0.141,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "8. Follow-up questions to expect"
+},
+{
+"topic": "05",
+"n": 20,
+"score": 0.141,
+"track": "terraform",
+"lesson": 4,
+"head": "Why state exists"
+},
+{
+"topic": "01",
+"n": 73,
+"score": 0.14,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "02",
+"n": 16,
+"score": 0.14,
+"track": "capstone",
+"lesson": 2,
+"head": "A 90-day plan"
+},
+{
+"topic": "04",
+"n": 59,
+"score": 0.14,
+"track": "scenarios",
+"lesson": 9,
+"head": "S9: Users report intermittent failures across microservices, but the logs from individual services look normal. How do you identify the root cause?"
+},
+{
+"topic": "04",
+"n": 66,
+"score": 0.14,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "06",
+"n": 43,
+"score": 0.14,
+"track": "terraform",
+"lesson": 7,
+"head": "Immutable infrastructure"
+},
+{
+"topic": "06",
+"n": 71,
+"score": 0.14,
+"track": "cloudsenior",
+"lesson": 2,
+"head": "1. What is being asked"
+},
+{
+"topic": "03",
+"n": 17,
+"score": 0.139,
+"track": "docker",
+"lesson": 9,
+"head": "2. The container lifecycle, state by state"
+},
+{
+"topic": "05",
+"n": 39,
+"score": 0.139,
+"track": "scenarios",
+"lesson": 1,
+"head": "2. Why a plan says \"must be replaced\""
+},
+{
+"topic": "01",
+"n": 80,
+"score": 0.138,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "02",
+"n": 15,
+"score": 0.138,
+"track": "docker",
+"lesson": 6,
+"head": "Networks Docker creates for you"
+},
+{
+"topic": "06",
+"n": 11,
+"score": 0.138,
+"track": "aideep",
+"lesson": 14,
+"head": "8. Defend it: the questions a review board asks"
+},
+{
+"topic": "01",
+"n": 37,
+"score": 0.137,
+"track": "linux",
+"lesson": 1,
+"head": "What is Linux, really?"
+},
+{
+"topic": "02",
+"n": 11,
+"score": 0.137,
+"track": "docker",
+"lesson": 4,
+"head": "A Dockerfile is a recipe"
+},
+{
+"topic": "01",
+"n": 77,
+"score": 0.136,
+"track": "cloudsenior",
+"lesson": 8,
+"head": "4. State: the part that breaks at scale"
+},
+{
+"topic": "02",
+"n": 35,
+"score": 0.136,
+"track": "scenarios",
+"lesson": 9,
+"head": "S9: Users report intermittent failures across microservices, but the logs from individual services look normal. How do you identify the root cause?"
+},
+{
+"topic": "03",
+"n": 51,
+"score": 0.136,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Rolling update"
+},
+{
+"topic": "03",
+"n": 81,
+"score": 0.136,
+"track": "cloudsenior",
+"lesson": 7,
+"head": "Q7: Explain your strategy for disaster recovery and business continuity in cloud environments"
+},
+{
+"topic": "04",
+"n": 19,
+"score": 0.136,
+"track": "ansible",
+"lesson": 3,
+"head": "Variables, templates, loops and handlers"
+},
+{
+"topic": "07",
+"n": 4,
+"score": 0.136,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "07",
+"n": 25,
+"score": 0.136,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "01",
+"n": 9,
+"score": 0.135,
+"track": "docker",
+"lesson": 2,
+"head": "Choosing a base image"
+},
+{
+"topic": "02",
+"n": 2,
+"score": 0.135,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "03",
+"n": 68,
+"score": 0.135,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "04",
+"n": 31,
+"score": 0.135,
+"track": "cloud",
+"lesson": 2,
+"head": "Identity and access management (IAM)"
+},
+{
+"topic": "04",
+"n": 51,
+"score": 0.135,
+"track": "terraform",
+"lesson": 6,
+"head": "Workflow, testing and teams"
+},
+{
+"topic": "07",
+"n": 2,
+"score": 0.135,
+"track": "cloudsenior",
+"lesson": 6,
+"head": "4. Private connectivity"
+},
+{
+"topic": "10",
+"n": 1,
+"score": 0.135,
+"track": "git",
+"lesson": 1,
+"head": "Three places a change can live"
+},
+{
+"topic": "06",
+"n": 36,
+"score": 0.134,
+"track": "aifield",
+"lesson": 6,
+"head": "Agentic coding: verification, context and workflow (Claude Code practices)"
+},
+{
+"topic": "08",
+"n": 10,
+"score": 0.134,
+"track": "scenarios",
+"lesson": 7,
+"head": "S7: You must deploy a new version of a critical microservice to production with no downtime. Which deployment strategies would you implement?"
+},
+{
+"topic": "01",
+"n": 33,
+"score": 0.133,
+"track": "linux",
+"lesson": 2,
+"head": "Files and directories"
+},
+{
+"topic": "06",
+"n": 16,
+"score": 0.133,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "06",
+"n": 55,
+"score": 0.133,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "10",
+"n": 23,
+"score": 0.133,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "01",
+"n": 65,
+"score": 0.132,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "03",
+"n": 80,
+"score": 0.132,
+"track": "kubernetes",
+"lesson": 15,
+"head": "3. Nodes: conditions, capacity and usage"
+},
+{
+"topic": "06",
+"n": 12,
+"score": 0.132,
+"track": "monitoring",
+"lesson": 2,
+"head": "Storage and retention"
+},
+{
+"topic": "06",
+"n": 73,
+"score": 0.132,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "7. A reference design, and the traps"
+},
+{
+"topic": "08",
+"n": 6,
+"score": 0.132,
+"track": "monitoring",
+"lesson": 2,
+"head": "Prometheus and PromQL"
+},
+{
+"topic": "09",
+"n": 14,
+"score": 0.132,
+"track": "aideep",
+"lesson": 14,
+"head": "1. Start with the problem, not the technology"
+},
+{
+"topic": "10",
+"n": 3,
+"score": 0.132,
+"track": "ansible",
+"lesson": 1,
+"head": "Idempotency: ad-hoc"
+},
+{
+"topic": "04",
+"n": 28,
+"score": 0.131,
+"track": "jenkins",
+"lesson": 5,
+"head": "Agents"
+},
+{
+"topic": "07",
+"n": 20,
+"score": 0.131,
+"track": "jenkins",
+"lesson": 5,
+"head": "Agents, security and scaling"
+},
+{
+"topic": "03",
+"n": 74,
+"score": 0.13,
+"track": "scenarios",
+"lesson": 2,
+"head": "9. The answer an interviewer expects"
+},
+{
+"topic": "05",
+"n": 41,
+"score": 0.13,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "8. Follow-up questions to expect"
+},
+{
+"topic": "06",
+"n": 59,
+"score": 0.13,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "07",
+"n": 18,
+"score": 0.13,
+"track": "cloud",
+"lesson": 2,
+"head": "Controlling traffic"
+},
+{
+"topic": "06",
+"n": 17,
+"score": 0.129,
+"track": "scenarios",
+"lesson": 7,
+"head": "4. The other settings that decide \"no downtime\""
+},
+{
+"topic": "06",
+"n": 29,
+"score": 0.129,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "9. Follow-up questions to expect"
+},
+{
+"topic": "06",
+"n": 54,
+"score": 0.129,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "6. The RTO budget"
+},
+{
+"topic": "06",
+"n": 78,
+"score": 0.129,
+"track": "cloud",
+"lesson": 2,
+"head": "Cloud networking and identity (IAM)"
+},
+{
+"topic": "07",
+"n": 13,
+"score": 0.129,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "08",
+"n": 4,
+"score": 0.129,
+"track": "monitoring",
+"lesson": 2,
+"head": "Prometheus and PromQL"
+},
+{
+"topic": "01",
+"n": 72,
+"score": 0.128,
+"track": "scenarios",
+"lesson": 9,
+"head": "S9: Users report intermittent failures across microservices, but the logs from individual services look normal. How do you identify the root cause?"
+},
+{
+"topic": "01",
+"n": 74,
+"score": 0.128,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "7. How to answer"
+},
+{
+"topic": "06",
+"n": 30,
+"score": 0.128,
+"track": "linux",
+"lesson": 10,
+"head": "Scheduling, SSH and environment"
+},
+{
+"topic": "04",
+"n": 77,
+"score": 0.127,
+"track": "monitoring",
+"lesson": 1,
+"head": "Pull versus push"
+},
+{
+"topic": "06",
+"n": 22,
+"score": 0.127,
+"track": "cloud",
+"lesson": 2,
+"head": "DNS and load balancing in the cloud"
+},
+{
+"topic": "01",
+"n": 48,
+"score": 0.126,
+"track": "docker",
+"lesson": 8,
+"head": "Production practice and troubleshooting"
+},
+{
+"topic": "04",
+"n": 41,
+"score": 0.126,
+"track": "terraform",
+"lesson": 2,
+"head": "Validation catches mistakes early"
+},
+{
+"topic": "05",
+"n": 6,
+"score": 0.126,
+"track": "terraform",
+"lesson": 7,
+"head": "Cloud patterns, providers and the bigger picture"
+},
+{
+"topic": "06",
+"n": 5,
+"score": 0.126,
+"track": "terraform",
+"lesson": 4,
+"head": "State: what Terraform remembers"
+},
+{
+"topic": "07",
+"n": 31,
+"score": 0.126,
+"track": "lectures",
+"lesson": 7,
+"head": "6. Agents: loops of reason and act"
+},
+{
+"topic": "05",
+"n": 34,
+"score": 0.125,
+"track": "scenarios",
+"lesson": 1,
+"head": "3. Reproduce it"
+},
+{
+"topic": "07",
+"n": 27,
+"score": 0.125,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "10",
+"n": 20,
+"score": 0.125,
+"track": "linux",
+"lesson": 3,
+"head": "Watching a log live"
+},
+{
+"topic": "05",
+"n": 48,
+"score": 0.124,
+"track": "terraform",
+"lesson": 4,
+"head": "State: what Terraform remembers"
+},
+{
+"topic": "01",
+"n": 40,
+"score": 0.123,
+"track": "ansible",
+"lesson": 6,
+"head": "Installing and starting software (the standard pattern)"
+},
+{
+"topic": "01",
+"n": 71,
+"score": 0.123,
+"track": "scenarios",
+"lesson": 3,
+"head": "The new version **fails**, so the old ReplicaSet keeps serving"
+},
+{
+"topic": "03",
+"n": 24,
+"score": 0.123,
+"track": "scenarios",
+"lesson": 2,
+"head": "2. Build the situation"
+},
+{
+"topic": "03",
+"n": 29,
+"score": 0.123,
+"track": "kubernetes",
+"lesson": 1,
+"head": "Why Kubernetes, and how a cluster is built"
+},
+{
+"topic": "03",
+"n": 37,
+"score": 0.123,
+"track": "kubernetes",
+"lesson": 7,
+"head": "Resources, probes and scheduling"
+},
+{
+"topic": "10",
+"n": 22,
+"score": 0.123,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "06",
+"n": 13,
+"score": 0.121,
+"track": "cloud",
+"lesson": 1,
+"head": "Core services map"
+},
+{
+"topic": "06",
+"n": 67,
+"score": 0.121,
+"track": "docker",
+"lesson": 6,
+"head": "Networks Docker creates for you"
+},
+{
+"topic": "01",
+"n": 60,
+"score": 0.12,
+"track": "linux",
+"lesson": 1,
+"head": "Reading a prompt"
+},
+{
+"topic": "08",
+"n": 8,
+"score": 0.12,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "5. The post-incident review"
+},
+{
+"topic": "08",
+"n": 16,
+"score": 0.12,
+"track": "cloud",
+"lesson": 1,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "08",
+"n": 24,
+"score": 0.12,
+"track": "cloudsenior",
+"lesson": 2,
+"head": "6. How to answer"
+},
+{
+"topic": "04",
+"n": 71,
+"score": 0.118,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "5. The post-incident review"
+},
+{
+"topic": "06",
+"n": 75,
+"score": 0.118,
+"track": "linux",
+"lesson": 10,
+"head": "Scheduling, SSH and environment"
+},
+{
+"topic": "09",
+"n": 7,
+"score": 0.118,
+"track": "aiinfra",
+"lesson": 6,
+"head": "1. From user experience to SLOs"
+},
+{
+"topic": "10",
+"n": 17,
+"score": 0.118,
+"track": "monitoring",
+"lesson": 3,
+"head": "Instrumenting an app, RED metrics and alert rules"
+},
+{
+"topic": "01",
+"n": 19,
+"score": 0.117,
+"track": "linux",
+"lesson": 1,
+"head": "Meet the shell"
+},
+{
+"topic": "01",
+"n": 39,
+"score": 0.117,
+"track": "aideep",
+"lesson": 13,
+"head": "3. Streaming over WebSockets"
+},
+{
+"topic": "09",
+"n": 18,
+"score": 0.117,
+"track": "linux",
+"lesson": 5,
+"head": "Ownership: chown and chgrp"
+},
+{
+"topic": "03",
+"n": 85,
+"score": 0.116,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "06",
+"n": 45,
+"score": 0.116,
+"track": "networking",
+"lesson": 7,
+"head": "Firewalls and NAT"
+},
+{
+"topic": "01",
+"n": 66,
+"score": 0.115,
+"track": "linux",
+"lesson": 1,
+"head": "Meet the shell"
+},
+{
+"topic": "06",
+"n": 31,
+"score": 0.115,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "6. The RTO budget"
+},
+{
+"topic": "06",
+"n": 63,
+"score": 0.115,
+"track": "scenarios",
+"lesson": 9,
+"head": "8. The suspects between and under the services"
+},
+{
+"topic": "07",
+"n": 6,
+"score": 0.115,
+"track": "ansible",
+"lesson": 6,
+"head": "Windows, network gear and the cloud"
+},
+{
+"topic": "01",
+"n": 67,
+"score": 0.114,
+"track": "capstone",
+"lesson": 1,
+"head": "Tear down"
+},
+{
+"topic": "03",
+"n": 31,
+"score": 0.114,
+"track": "docker",
+"lesson": 2,
+"head": "Housekeeping"
+},
+{
+"topic": "03",
+"n": 61,
+"score": 0.114,
+"track": "lectures",
+"lesson": 2,
+"head": "5. Model families: encoder-only, encoder-decoder, decoder-only"
+},
+{
+"topic": "04",
+"n": 63,
+"score": 0.114,
+"track": "jenkins",
+"lesson": 1,
+"head": "Jenkins architecture"
+},
+{
+"topic": "04",
+"n": 70,
+"score": 0.114,
+"track": "linux",
+"lesson": 7,
+"head": "Packages and services"
+},
+{
+"topic": "06",
+"n": 7,
+"score": 0.114,
+"track": "cloud",
+"lesson": 3,
+"head": "A case study: Enterprise Vault in the cloud"
+},
+{
+"topic": "08",
+"n": 26,
+"score": 0.114,
+"track": "capstone",
+"lesson": 2,
+"head": "A layered runbook"
+},
+{
+"topic": "02",
+"n": 6,
+"score": 0.113,
+"track": "docker",
+"lesson": 9,
+"head": "Docker notes: the full picture, verified"
+},
+{
+"topic": "06",
+"n": 8,
+"score": 0.113,
+"track": "scenarios",
+"lesson": 7,
+"head": "7. Rollback and verification"
+},
+{
+"topic": "06",
+"n": 35,
+"score": 0.113,
+"track": "networking",
+"lesson": 4,
+"head": "Routing and gateways"
+},
+{
+"topic": "08",
+"n": 19,
+"score": 0.113,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "9. Follow-up questions to expect"
+},
+{
+"topic": "09",
+"n": 13,
+"score": 0.113,
+"track": "networking",
+"lesson": 4,
+"head": "Reading the table, line by line"
+},
+{
+"topic": "01",
+"n": 2,
+"score": 0.112,
+"track": "windows",
+"lesson": 2,
+"head": "Searching text: Select-String"
+},
+{
+"topic": "04",
+"n": 56,
+"score": 0.112,
+"track": "jenkins",
+"lesson": 4,
+"head": "A real CI/CD pipeline, stage by stage"
+},
+{
+"topic": "04",
+"n": 75,
+"score": 0.112,
+"track": "cloudsenior",
+"lesson": 10,
+"head": "1. The principles"
+},
+{
+"topic": "10",
+"n": 4,
+"score": 0.112,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "10",
+"n": 18,
+"score": 0.112,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "02",
+"n": 13,
+"score": 0.111,
+"track": "docker",
+"lesson": 2,
+"head": "Images, layers and registries"
+},
+{
+"topic": "03",
+"n": 55,
+"score": 0.111,
+"track": "linux",
+"lesson": 4,
+"head": "A real analysis: what went wrong, and when?"
+},
+{
+"topic": "05",
+"n": 44,
+"score": 0.111,
+"track": "scenarios",
+"lesson": 1,
+"head": "S1: A manual change caused Terraform drift and apply wants to recreate the resource. How do you reconcile without downtime?"
+},
+{
+"topic": "07",
+"n": 30,
+"score": 0.111,
+"track": "cloudsenior",
+"lesson": 11,
+"head": "7. Follow-up questions to expect"
+},
+{
+"topic": "08",
+"n": 29,
+"score": 0.111,
+"track": "kubernetes",
+"lesson": 9,
+"head": "5. Service with no endpoints"
+},
+{
+"topic": "05",
+"n": 9,
+"score": 0.11,
+"track": "linux",
+"lesson": 11,
+"head": "DNS and reachability (a preview)"
+},
+{
+"topic": "06",
+"n": 48,
+"score": 0.11,
+"track": "aideep",
+"lesson": 9,
+"head": "3. Capability versus reliability: pass@k and pass^k"
+},
+{
+"topic": "01",
+"n": 16,
+"score": 0.109,
+"track": "cloudsenior",
+"lesson": 1,
+"head": "3. The disaster recovery ladder"
+},
+{
+"topic": "02",
+"n": 38,
+"score": 0.109,
+"track": "docker",
+"lesson": 8,
+"head": "CrashLoop and \"it works on my machine\""
+},
+{
+"topic": "06",
+"n": 77,
+"score": 0.109,
+"track": "linux",
+"lesson": 7,
+"head": "Worked answers and common mistakes"
+},
+{
+"topic": "06",
+"n": 81,
+"score": 0.109,
+"track": "networking",
+"lesson": 4,
+"head": "Routing and gateways"
+},
+{
+"topic": "09",
+"n": 2,
+"score": 0.109,
+"track": "cloudsenior",
+"lesson": 5,
+"head": "6. Tagging, allocation and anomalies"
+},
+{
+"topic": "01",
+"n": 17,
+"score": 0.108,
+"track": "scenarios",
+"lesson": 2,
+"head": "5. Cause 3: the wrong targetPort"
+},
+{
+"topic": "01",
+"n": 27,
+"score": 0.108,
+"track": "linux",
+"lesson": 9,
+"head": "Shell scripting"
+},
+{
+"topic": "02",
+"n": 37,
+"score": 0.108,
+"track": "docker",
+"lesson": 1,
+"head": "The \"works on my machine\" problem"
+},
+{
+"topic": "06",
+"n": 14,
+"score": 0.108,
+"track": "cloudsenior",
+"lesson": 6,
+"head": "7. How to answer"
+},
+{
+"topic": "06",
+"n": 15,
+"score": 0.108,
+"track": "networking",
+"lesson": 1,
+"head": "Three kinds of address"
+},
+{
+"topic": "02",
+"n": 33,
+"score": 0.106,
+"track": "jenkins",
+"lesson": 1,
+"head": "What CI/CD is"
+},
+{
+"topic": "09",
+"n": 17,
+"score": 0.106,
+"track": "cloudsenior",
+"lesson": 13,
+"head": "8. How to answer"
+},
+{
+"topic": "03",
+"n": 9,
+"score": 0.105,
+"track": "networking",
+"lesson": 4,
+"head": "The routing table"
+},
+{
+"topic": "04",
+"n": 55,
+"score": 0.105,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Rolling update"
+},
+{
+"topic": "04",
+"n": 78,
+"score": 0.105,
+"track": "capstone",
+"lesson": 2,
+"head": "Answer and common mistakes"
+},
+{
+"topic": "06",
+"n": 28,
+"score": 0.105,
+"track": "scenarios",
+"lesson": 1,
+"head": "5. When replacement is unavoidable: do it safely"
+},
+{
+"topic": "07",
+"n": 28,
+"score": 0.105,
+"track": "cloud",
+"lesson": 1,
+"head": "What the cloud is"
+},
+{
+"topic": "01",
+"n": 68,
+"score": 0.104,
+"track": "linux",
+"lesson": 8,
+"head": "Disks, links and archives"
+},
+{
+"topic": "08",
+"n": 17,
+"score": 0.104,
+"track": "cloud",
+"lesson": 1,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "03",
+"n": 39,
+"score": 0.103,
+"track": "aiinfra",
+"lesson": 4,
+"head": "3. PagedAttention: memory like an operating system"
+},
+{
+"topic": "08",
+"n": 20,
+"score": 0.103,
+"track": "scenarios",
+"lesson": 2,
+"head": "8. Other causes worth naming"
+},
+{
+"topic": "01",
+"n": 61,
+"score": 0.102,
+"track": "networking",
+"lesson": 8,
+"head": "Worked answer and common mistakes"
+},
+{
+"topic": "05",
+"n": 45,
+"score": 0.102,
+"track": "kubernetes",
+"lesson": 9,
+"head": "Troubleshooting Kubernetes"
+},
+{
+"topic": "06",
+"n": 68,
+"score": 0.102,
+"track": "linux",
+"lesson": 11,
+"head": "Troubleshooting and performance"
+},
+{
+"topic": "09",
+"n": 1,
+"score": 0.102,
+"track": "cloud",
+"lesson": 1,
+"head": "What the cloud is"
+},
+{
+"topic": "03",
+"n": 58,
+"score": 0.101,
+"track": "kubernetes",
+"lesson": 13,
+"head": "6. Autoscaling: what the HPA needs"
+},
+{
+"topic": "03",
+"n": 86,
+"score": 0.1,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "Q9: Describe a major cloud incident you owned: detection, RCA, fix and long-term prevention"
+},
+{
+"topic": "01",
+"n": 47,
+"score": 0.099,
+"track": "docker",
+"lesson": 9,
+"head": "1. VM versus container"
+},
+{
+"topic": "03",
+"n": 49,
+"score": 0.099,
+"track": "cloudsenior",
+"lesson": 14,
+"head": "8. Follow-up questions to expect"
+},
+{
+"topic": "03",
+"n": 76,
+"score": 0.099,
+"track": "networking",
+"lesson": 2,
+"head": "Private ranges and special addresses"
+},
+{
+"topic": "10",
+"n": 16,
+"score": 0.099,
+"track": "linux",
+"lesson": 11,
+"head": "Disk space and speed"
+},
+{
+"topic": "08",
+"n": 23,
+"score": 0.098,
+"track": "windows",
+"lesson": 3,
+"head": "Output streams and logging"
+},
+{
+"topic": "08",
+"n": 31,
+"score": 0.098,
+"track": "aideep",
+"lesson": 13,
+"head": "3. Streaming over WebSockets"
+},
+{
+"topic": "08",
+"n": 27,
+"score": 0.097,
+"track": "cloudsenior",
+"lesson": 9,
+"head": "1. What the interviewer is testing"
+},
+{
+"topic": "06",
+"n": 33,
+"score": 0.096,
+"track": "scenarios",
+"lesson": 1,
+"head": "3. Reproduce it"
+},
+{
+"topic": "01",
+"n": 59,
+"score": 0.095,
+"track": "linux",
+"lesson": 6,
+"head": "Process priority"
+},
+{
+"topic": "06",
+"n": 64,
+"score": 0.094,
+"track": "aiinfra",
+"lesson": 4,
+"head": "2. Static versus continuous batching"
+},
+{
+"topic": "01",
+"n": 84,
+"score": 0.092,
+"track": "networking",
+"lesson": 4,
+"head": "Reading the table, line by line"
+},
+{
+"topic": "06",
+"n": 61,
+"score": 0.092,
+"track": "cloudsenior",
+"lesson": 2,
+"head": "2. The three models"
+},
+{
+"topic": "01",
+"n": 46,
+"score": 0.091,
+"track": "scenarios",
+"lesson": 4,
+"head": "3. The second commonest cause: no CPU request"
+},
+{
+"topic": "04",
+"n": 33,
+"score": 0.091,
+"track": "ansible",
+"lesson": 5,
+"head": "A worked solution and common mistakes"
+},
+{
+"topic": "06",
+"n": 27,
+"score": 0.091,
+"track": "networking",
+"lesson": 4,
+"head": "The routing table"
+},
+{
+"topic": "07",
+"n": 29,
+"score": 0.091,
+"track": "kubernetes",
+"lesson": 1,
+"head": "The parts of a cluster"
+},
+{
+"topic": "08",
+"n": 28,
+"score": 0.089,
+"track": "monitoring",
+"lesson": 4,
+"head": "Dashboards (Grafana)"
+},
+{
+"topic": "03",
+"n": 79,
+"score": 0.086,
+"track": "scenarios",
+"lesson": 2,
+"head": "8. Other causes worth naming"
+},
+{
+"topic": "07",
+"n": 19,
+"score": 0.085,
+"track": "kubernetes",
+"lesson": 3,
+"head": "Other update strategies"
+},
+{
+"topic": "04",
+"n": 65,
+"score": 0.084,
+"track": "scenarios",
+"lesson": 3,
+"head": "5. When the old version is serving but the cause is different"
+},
+{
+"topic": "09",
+"n": 6,
+"score": 0.08,
+"track": "aiinfra",
+"lesson": 3,
+"head": "4. Profiling a GPU"
+},
+{
+"topic": "06",
+"n": 69,
+"score": 0.078,
+"track": "monitoring",
+"lesson": 3,
+"head": "Answer and common mistakes"
+}
+]

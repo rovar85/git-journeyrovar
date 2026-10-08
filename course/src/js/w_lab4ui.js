@@ -379,7 +379,27 @@ function runInLab(term, btn){
   });
   runLine(script);
 }
+function runCode(wrap){
+  var code = (wrap.querySelector("code") || {}).textContent || "";
+  toggle(true);
+  state.queue = state.queue.then(function(){ code.replace(/\n+$/, "").split("\n").forEach(function(l, i){ put((i === 0 ? prompt() : "> ") + l + "\n", "c"); }); });
+  runLine(code);
+}
+function decorateCode(){
+  document.querySelectorAll('.codewrap[data-lang="bash"], .codewrap[data-lang="sh"]').forEach(function(w){
+    if(w.dataset.lab) return; w.dataset.lab = "1";
+    var code = (w.querySelector("code") || {}).textContent || "";
+    var sec = w.closest("section.chapter");
+    var c = compat(code.replace(/^\$ /gm, ""), "");
+    var b = document.createElement("button"); b.type = "button"; b.className = "copy " + (c.ok ? "run" : "noRun");
+    b.style.right = "78px";
+    if(c.ok){ b.textContent = "Run in lab"; b.addEventListener("click", function(){ runCode(w); }); }
+    else { b.textContent = "Needs a real machine"; b.title = "The lab cannot run: " + Object.keys(c.bad).slice(0, 4).join(", ") + ". See the lab guide."; b.addEventListener("click", function(){ location.hash = "#linux-13"; }); b.style.right = "78px"; }
+    w.appendChild(b);
+  });
+}
 function decorate(){
+  decorateCode();
   document.querySelectorAll(".term").forEach(function(t){
     var bar = t.querySelector(".term-bar"); if(!bar || t.dataset.lab) return;
     if(!t.dataset.copy) return;

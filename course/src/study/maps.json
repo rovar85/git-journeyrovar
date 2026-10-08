@@ -1832,5 +1832,81 @@
    "Sketch the reference architecture and mark each failure mode.",
    "Design an autoscaling policy and its alerts."
   ]
+ },
+ "qbank": {
+  "title": "One answer shape for every interview question",
+  "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",
+  "hops": [
+   {
+    "label": "Say it simply",
+    "text": "One everyday picture so the interviewer hears you understand the idea, not just the words.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Name the parts",
+    "text": "List the components or steps in order. For scenario questions, list the request path or the triage order.",
+    "lessons": [
+     2,
+     3,
+     9
+    ]
+   },
+   {
+    "label": "Show the evidence",
+    "text": "Name the exact command or metric you would check first, and what a bad result looks like.",
+    "lessons": [
+     12,
+     13,
+     37
+    ]
+   },
+   {
+    "label": "Give the fix and the trade-off",
+    "text": "A fix without a trade-off sounds junior. Say what it costs and when you would not use it.",
+    "lessons": [
+     19,
+     20,
+     25,
+     28
+    ]
+   },
+   {
+    "label": "Close with the sentence",
+    "text": "Finish with the two or three sentences from 'What to say to the interviewer', in your own words.",
+    "lessons": [
+     34,
+     40,
+     42
+    ]
+   }
+  ],
+  "tips": [
+   "Cover the answer, say yours out loud, then compare. Reading is not remembering.",
+   "Do Basic first for your stack, then Scenario-based: most interviews are troubleshooting.",
+   "Prepare two real stories (an incident, a migration) from your own work; the behavioural lessons show the shape.",
+   "If you do not know, say how you would find out: the command, the doc page, who you would ask.",
+   "Run the examples in the Lab or a free real machine; hands-on answers sound different."
+  ],
+  "docs": [
+   {
+    "label": "Source repository (CC BY 4.0)",
+    "url": "https://github.com/priyankagupta7679/devops-interview-question-bank"
+   },
+   {
+    "label": "Kubernetes documentation: Tasks",
+    "url": "https://kubernetes.io/docs/tasks/"
+   },
+   {
+    "label": "Terraform documentation",
+    "url": "https://developer.hashicorp.com/terraform/docs"
+   }
+  ],
+  "round2": [
+   "Redo only the cards you missed, then answer the Scenario lessons for your stack without looking.",
+   "Pick five questions at random and answer each in 60 seconds, out loud, then compare.",
+   "Pair a scenario question with a real incident from your own history and tell them as one story."
+  ]
  }
 }

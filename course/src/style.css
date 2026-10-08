@@ -376,3 +376,8 @@ body.lab-open{padding-bottom:40vh}
 html{scroll-padding-top:4.5rem}
 html:has(body.lab-open){scroll-padding-bottom:44vh}
 @media (max-width:640px){html{scroll-padding-top:7rem}html:has(body.lab-open){scroll-padding-bottom:54vh}}
+.board.say{border-left-color:var(--accent);background:var(--accent-soft)}
+.board.say .tag{color:var(--accent)}
+.qa-meta{color:var(--muted);font-size:.85rem;margin:-6px 0 8px}
+.codewrap .copy.run{background:#16422d;color:#7ee2a8;border-color:#2c7a52}
+.codewrap .copy.noRun{opacity:.75}

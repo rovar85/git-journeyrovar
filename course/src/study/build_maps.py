@@ -506,5 +506,32 @@ M["aiinfra"] = dict(
  round2=["Compute KV-cache size for a model and context length and the concurrency that fits on a GPU.", "Explain prefill vs decode and why batching helps decode.", "Sketch the reference architecture and mark each failure mode.", "Design an autoscaling policy and its alerts."],
 )
 
+
+_ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
+def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
+M["qbank"] = dict(
+ title="One answer shape for every interview question",
+ intro="Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",
+ hops=[
+  H("Say it simply", "One everyday picture so the interviewer hears you understand the idea, not just the words.", 1),
+  H("Name the parts", "List the components or steps in order. For scenario questions, list the request path or the triage order.", *_q("01")[:2], *_q("02")[:1]),
+  H("Show the evidence", "Name the exact command or metric you would check first, and what a bad result looks like.", *_q("03")[:2], *_q("08")[:1]),
+  H("Give the fix and the trade-off", "A fix without a trade-off sounds junior. Say what it costs and when you would not use it.", *_q("04")[:2], *_q("05")[:1], *_q("06")[:1]),
+  H("Close with the sentence", "Finish with the two or three sentences from 'What to say to the interviewer', in your own words.", *_q("07")[:1], *_q("09")[:1], *_q("10")[:1]),
+ ],
+ tips=[
+  "Cover the answer, say yours out loud, then compare. Reading is not remembering.",
+  "Do Basic first for your stack, then Scenario-based: most interviews are troubleshooting.",
+  "Prepare two real stories (an incident, a migration) from your own work; the behavioural lessons show the shape.",
+  "If you do not know, say how you would find out: the command, the doc page, who you would ask.",
+  "Run the examples in the Lab or a free real machine; hands-on answers sound different.",
+ ],
+ docs=[D("Source repository (CC BY 4.0)", "https://github.com/priyankagupta7679/devops-interview-question-bank"), D("Kubernetes documentation: Tasks", "https://kubernetes.io/docs/tasks/"), D("Terraform documentation", "https://developer.hashicorp.com/terraform/docs")],
+ round2=[
+  "Redo only the cards you missed, then answer the Scenario lessons for your stack without looking.",
+  "Pick five questions at random and answer each in 60 seconds, out loud, then compare.",
+  "Pair a scenario question with a real incident from your own history and tell them as one story.",
+ ],
+)
 json.dump(M, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "maps.json"), "w"), indent=1, ensure_ascii=False)
 print("wrote", len(M), "tracks")

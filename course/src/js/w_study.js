@@ -6,8 +6,8 @@
 
 var KEY = "agentschool-";
 var STUDY = {cards: null, chapters: [], byId: {}};
-var TYPE_NAME = {quiz: "Quiz question", cloze: "Recap, fill the gap", cmd: "Command", explain: "Explain it"};
-var SCENARIO_TRACKS = {scenarios: 1, cloudsenior: 1};
+var TYPE_NAME = {interview: "Interview question", quiz: "Quiz question", cloze: "Recap, fill the gap", cmd: "Command", explain: "Explain it"};
+var SCENARIO_TRACKS = {scenarios: 1, cloudsenior: 1, qbank: 1};
 var BOX_DAYS = [0, 0, 1, 3, 7, 21, 60];
 
 function jget(k, d){ try{ var v = H.store(KEY + k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
@@ -44,6 +44,11 @@ function collect(){
       var front = full.replace(gap, "[ ... ]");
       if(front === full) return;
       cards.push({id: hash(c.id + "c" + full), lesson: c.id, track: c.track, type: "cloze", front: front, back: full});
+    });
+    H.$$(".board.say[data-q]", el).forEach(function(b){
+      var q = b.getAttribute("data-q"), t = txt(b).replace(/^What to say to the interviewer\s*/, "");
+      if(!q || t.length < 20) return;
+      cards.push({id: hash(c.id + "i" + q), lesson: c.id, track: c.track, type: "interview", front: "Interview question: " + q + "  (Answer out loud first.)", back: t});
     });
     H.$$(".goals li", el).forEach(function(li){
       var t = txt(li); if(t.length < 20 || t.length > 260) return;

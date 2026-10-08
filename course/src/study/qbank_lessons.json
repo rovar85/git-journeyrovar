@@ -1,0 +1,358 @@
+{
+ "lessons": [
+  {
+   "n": 1,
+   "topic": "",
+   "slug": "start",
+   "level": "",
+   "title": "Start here",
+   "count": 0
+  },
+  {
+   "n": 2,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Basic",
+   "title": "Linux, shell and networking: Basic questions",
+   "count": 13
+  },
+  {
+   "n": 3,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Advanced",
+   "title": "Linux, shell and networking: Advanced questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 4,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Advanced",
+   "title": "Linux, shell and networking: Advanced questions (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 5,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Scenario",
+   "title": "Linux, shell and networking: Scenario-based questions (part 1 of 4)",
+   "count": 12
+  },
+  {
+   "n": 6,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Scenario",
+   "title": "Linux, shell and networking: Scenario-based questions (part 2 of 4)",
+   "count": 12
+  },
+  {
+   "n": 7,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Scenario",
+   "title": "Linux, shell and networking: Scenario-based questions (part 3 of 4)",
+   "count": 12
+  },
+  {
+   "n": 8,
+   "topic": "01",
+   "slug": "linux",
+   "level": "Scenario",
+   "title": "Linux, shell and networking: Scenario-based questions (part 4 of 4)",
+   "count": 5
+  },
+  {
+   "n": 9,
+   "topic": "02",
+   "slug": "docker",
+   "level": "Basic",
+   "title": "Docker and containers: Basic questions",
+   "count": 10
+  },
+  {
+   "n": 10,
+   "topic": "02",
+   "slug": "docker",
+   "level": "Advanced",
+   "title": "Docker and containers: Advanced questions",
+   "count": 13
+  },
+  {
+   "n": 11,
+   "topic": "02",
+   "slug": "docker",
+   "level": "Scenario",
+   "title": "Docker and containers: Scenario-based questions",
+   "count": 9
+  },
+  {
+   "n": 12,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Basic",
+   "title": "Kubernetes: Basic questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 13,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Basic",
+   "title": "Kubernetes: Basic questions (part 2 of 2)",
+   "count": 7
+  },
+  {
+   "n": 14,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Advanced",
+   "title": "Kubernetes: Advanced questions (part 1 of 3)",
+   "count": 12
+  },
+  {
+   "n": 15,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Advanced",
+   "title": "Kubernetes: Advanced questions (part 2 of 3)",
+   "count": 12
+  },
+  {
+   "n": 16,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Advanced",
+   "title": "Kubernetes: Advanced questions (part 3 of 3)",
+   "count": 4
+  },
+  {
+   "n": 17,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Scenario",
+   "title": "Kubernetes: Scenario-based questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 18,
+   "topic": "03",
+   "slug": "kubernetes",
+   "level": "Scenario",
+   "title": "Kubernetes: Scenario-based questions (part 2 of 2)",
+   "count": 14
+  },
+  {
+   "n": 19,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Basic",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Basic questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 20,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Basic",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Basic questions (part 2 of 2)",
+   "count": 11
+  },
+  {
+   "n": 21,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Advanced",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Advanced questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 22,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Advanced",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Advanced questions (part 2 of 2)",
+   "count": 8
+  },
+  {
+   "n": 23,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Scenario",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Scenario-based questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 24,
+   "topic": "04",
+   "slug": "cicd",
+   "level": "Scenario",
+   "title": "CI/CD, Jenkins, Git, GitOps and Ansible: Scenario-based questions (part 2 of 2)",
+   "count": 6
+  },
+  {
+   "n": 25,
+   "topic": "05",
+   "slug": "terraform",
+   "level": "Basic",
+   "title": "Terraform and Infrastructure as Code: Basic questions",
+   "count": 9
+  },
+  {
+   "n": 26,
+   "topic": "05",
+   "slug": "terraform",
+   "level": "Advanced",
+   "title": "Terraform and Infrastructure as Code: Advanced questions",
+   "count": 15
+  },
+  {
+   "n": 27,
+   "topic": "05",
+   "slug": "terraform",
+   "level": "Scenario",
+   "title": "Terraform and Infrastructure as Code: Scenario-based questions",
+   "count": 12
+  },
+  {
+   "n": 28,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Basic",
+   "title": "AWS: Basic questions",
+   "count": 14
+  },
+  {
+   "n": 29,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Advanced",
+   "title": "AWS: Advanced questions (part 1 of 3)",
+   "count": 12
+  },
+  {
+   "n": 30,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Advanced",
+   "title": "AWS: Advanced questions (part 2 of 3)",
+   "count": 12
+  },
+  {
+   "n": 31,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Advanced",
+   "title": "AWS: Advanced questions (part 3 of 3)",
+   "count": 9
+  },
+  {
+   "n": 32,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Scenario",
+   "title": "AWS: Scenario-based questions (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 33,
+   "topic": "06",
+   "slug": "aws",
+   "level": "Scenario",
+   "title": "AWS: Scenario-based questions (part 2 of 2)",
+   "count": 15
+  },
+  {
+   "n": 34,
+   "topic": "07",
+   "slug": "gcpazure",
+   "level": "Basic",
+   "title": "GCP, Azure and DevSecOps: Basic questions",
+   "count": 10
+  },
+  {
+   "n": 35,
+   "topic": "07",
+   "slug": "gcpazure",
+   "level": "Advanced",
+   "title": "GCP, Azure and DevSecOps: Advanced questions",
+   "count": 12
+  },
+  {
+   "n": 36,
+   "topic": "07",
+   "slug": "gcpazure",
+   "level": "Scenario",
+   "title": "GCP, Azure and DevSecOps: Scenario-based questions",
+   "count": 8
+  },
+  {
+   "n": 37,
+   "topic": "08",
+   "slug": "sre",
+   "level": "Basic",
+   "title": "Monitoring, observability, SRE and scale design: Basic questions",
+   "count": 7
+  },
+  {
+   "n": 38,
+   "topic": "08",
+   "slug": "sre",
+   "level": "Advanced",
+   "title": "Monitoring, observability, SRE and scale design: Advanced questions",
+   "count": 15
+  },
+  {
+   "n": 39,
+   "topic": "08",
+   "slug": "sre",
+   "level": "Scenario",
+   "title": "Monitoring, observability, SRE and scale design: Scenario-based questions",
+   "count": 7
+  },
+  {
+   "n": 40,
+   "topic": "09",
+   "slug": "behavioral",
+   "level": "Basic",
+   "title": "Behavioral and project experience: Basic questions",
+   "count": 9
+  },
+  {
+   "n": 41,
+   "topic": "09",
+   "slug": "behavioral",
+   "level": "Scenario",
+   "title": "Behavioral and project experience: Scenario-based questions",
+   "count": 10
+  },
+  {
+   "n": 42,
+   "topic": "10",
+   "slug": "scripts",
+   "level": "Basic",
+   "title": "Shell scripting: 24 real interview scripts: Basic questions",
+   "count": 7
+  },
+  {
+   "n": 43,
+   "topic": "10",
+   "slug": "scripts",
+   "level": "Advanced",
+   "title": "Shell scripting: 24 real interview scripts: Advanced questions",
+   "count": 8
+  },
+  {
+   "n": 44,
+   "topic": "10",
+   "slug": "scripts",
+   "level": "Scenario",
+   "title": "Shell scripting: 24 real interview scripts: Scenario-based questions",
+   "count": 9
+  }
+ ],
+ "added": 453,
+ "skipped": 76
+}

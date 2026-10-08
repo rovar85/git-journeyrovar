@@ -75,6 +75,24 @@ def guide_html(first_lines, lesson_id):
     n = len(keys)
     return f'<details class="cmdguide"><summary>What {"does this command" if n == 1 else "do these " + str(n) + " commands"} do, and when would I use {"it" if n == 1 else "them"}?</summary><dl>' + "".join(items) + '</dl><p class="gref"><a href="#reference-1">Open the full command reference</a></p></details>'
 
+def render_nested(items):
+    """items: [indent, ordered, text] in document order; builds nested <ul>/<ol>."""
+    pos = [0]
+    def build(indent):
+        first = items[pos[0]]
+        tag = "ol" if first[1] else "ul"
+        html_ = f"<{tag}>"
+        while pos[0] < len(items) and items[pos[0]][0] >= indent:
+            it = items[pos[0]]
+            if it[0] > indent: break
+            pos[0] += 1
+            li = inline(it[2])
+            if pos[0] < len(items) and items[pos[0]][0] > indent:
+                li += build(items[pos[0]][0])
+            html_ += f"<li>{li}</li>"
+        return html_ + f"</{tag}>"
+    return build(items[0][0])
+
 def term_html(entries, kind, lesson_id=""):
     badge = ('<span class="badge real">Real output</span>' if kind == "real" else '<span class="badge ex">Example output (not run here)</span>')
     cmds = []
@@ -119,7 +137,8 @@ def parse_term(text):
 
 def code_html(code, lang, fname):
     title = f'<div class="code-title">{html.escape(fname)}</div>' if fname else ""
-    return f'<div class="codewrap">{title}<pre class="code"><code>{html.escape(code, quote=False)}</code></pre></div>'
+    dl = f' data-lang="{html.escape(lang, quote=True)}"' if lang else ""
+    return f'<div class="codewrap"{dl}>{title}<pre class="code"><code>{html.escape(code, quote=False)}</code></pre></div>'
 
 def render_quiz(text):
     qs, cur = [], None
@@ -137,8 +156,8 @@ def render_quiz(text):
         assert q["a"] is not None, "quiz question without a + answer: " + q["q"]
     return qs
 
-CALLOUT_CLASS = {"note": "board note", "tip": "board note", "warn": "board warn", "ask": "board ask"}
-CALLOUT_LABEL = {"note": "Note", "tip": "Tip", "warn": "Careful", "ask": "Student asks"}
+CALLOUT_CLASS = {"say": "board say", "note": "board note", "tip": "board note", "warn": "board warn", "ask": "board ask"}
+CALLOUT_LABEL = {"say": "What to say to the interviewer", "note": "Note", "tip": "Tip", "warn": "Careful", "ask": "Student asks"}
 
 def blocks(text, ctx):
     out = []
@@ -195,7 +214,8 @@ def blocks(text, ctx):
                 out.append(f'<div class="board ask"><span class="tag">{inline(title or "Your turn")}</span>' + "".join(blocks(inner, ctx)) + "</div>")
             else:
                 cls = CALLOUT_CLASS.get(kind, "board note")
-                out.append(f'<div class="{cls}"><span class="tag">{inline(title or CALLOUT_LABEL.get(kind, "Note"))}</span>' + "".join(blocks(inner, ctx)) + "</div>")
+                dq = f' data-q="{html.escape(getattr(ctx, "h3", ""), quote=True)}"' if kind == "say" else ""
+                out.append(f'<div class="{cls}"{dq}><span class="tag">{inline(title or CALLOUT_LABEL.get(kind, "Note"))}</span>' + "".join(blocks(inner, ctx)) + "</div>")
             continue
         if line.startswith("@setup "):
             flush(); name = line.split(None, 1)[1].strip()
@@ -205,7 +225,7 @@ def blocks(text, ctx):
             flush(); name = line.split(None, 1)[1].strip()
             out.append(f'<div class="lab" data-widget="{html.escape(name)}"></div>'); i += 1; continue
         if line.startswith("## "):
-            flush(); out.append("<h3>" + inline(line[3:]) + "</h3>"); i += 1; continue
+            flush(); ctx.h3 = re.sub(r"[`*]", "", line[3:]); out.append("<h3>" + inline(line[3:]) + "</h3>"); i += 1; continue
         if line.startswith("### "):
             flush(); out.append('<h3 style="font-size:1.1rem;margin-top:1.4rem">' + inline(line[4:]) + "</h3>"); i += 1; continue
         if line.startswith("|"):
@@ -216,21 +236,20 @@ def blocks(text, ctx):
             out.append('<div class="tblwrap"><table class="tbl"><thead><tr>' + "".join(f"<th>{inline(c)}</th>" for c in head) + "</tr></thead><tbody>" +
                        "".join("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in r) + "</tr>" for r in body) + "</tbody></table></div>")
             continue
-        m_ul = re.match(r"^(\s*)([-*]) (.*)$", line)
-        m_ol = re.match(r"^(\s*)(\d+)\. (.*)$", line)
+        m_ul = re.match(r"^([-*]) (.*)$", line)
+        m_ol = re.match(r"^(\d+)\. (.*)$", line)
         if m_ul or m_ol:
-            flush(); ordered = bool(m_ol); items = []
+            flush(); items = []                       # (indent, ordered, text)
             while i < len(lines):
                 a = re.match(r"^(\s*)([-*]) (.*)$", lines[i]); b = re.match(r"^(\s*)(\d+)\. (.*)$", lines[i])
-                mm = b if ordered else a
-                if mm and not mm.group(1):
-                    items.append(mm.group(3)); i += 1
+                mm = a or b
+                if mm and (len(mm.group(1)) == 0 or items):
+                    items.append([len(mm.group(1)), bool(b and not a), mm.group(3)]); i += 1
                 elif lines[i].startswith("  ") and items and lines[i].strip():
-                    items[-1] += " " + lines[i].strip(); i += 1
+                    items[-1][2] += " " + lines[i].strip(); i += 1
                 else:
                     break
-            tag = "ol" if ordered else "ul"
-            out.append(f"<{tag}>" + "".join(f"<li>{inline(x)}</li>" for x in items) + f"</{tag}>")
+            out.append(render_nested(items))
             continue
         if not line.strip():
             flush(); i += 1; continue
