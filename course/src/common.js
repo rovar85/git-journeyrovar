@@ -198,6 +198,7 @@ window.H = (function(){
     addEventListener("hashchange",route);
 
     if(H.studyDecorate)H.studyDecorate(chapters);
+    if(H.labDecorate)H.labDecorate();
 
     /* ---- code players, widgets, terminals, copy buttons ---- */
     $$('.tracer[data-trace]').forEach(function(el){var T=window.TRACES&&window.TRACES[el.dataset.trace]; if(T)H.tracer(el,T)});

@@ -238,6 +238,13 @@ def blocks(text, ctx):
     flush()
     return out
 
+LAB_REAL = re.compile(r"\b(kubectl|docker|helm|terraform|ansible|git|curl|wget|ssh|pwsh|promtool|jenkins|etcdctl|crictl|ctr)\b")
+def labsetup_html(lesson_id, setups):
+    """Hidden practice-file setup scripts, replayed by the in-browser lab (skipped when they need real tools)."""
+    ok = [s for s in setups if not LAB_REAL.search(s)]
+    if not ok: return ""
+    return f'<script type="application/json" class="labsetup" data-for="{lesson_id}">' + json.dumps(ok).replace("</", "<\\/") + "</script>"
+
 def convert(path, track_id, track_name, number):
     text = open(path, encoding="utf-8").read()
     meta, body = parse_front(text)
@@ -256,6 +263,7 @@ def convert(path, track_id, track_name, number):
            f'<header class="chapter-head"><span class="hand">{html.escape(track_name)} · Lesson {number}</span><h2>{inline(title)}</h2></header>'
            + "\n".join(final) +
            f'<div class="quiz" data-quiz="{lesson_id}"><h3>Check yourself</h3><div class="score" hidden></div></div>'
+           + labsetup_html(lesson_id, ctx.setup)
            + (f'<script type="application/json" class="quizdata" data-for="{lesson_id}">{json.dumps(ctx.quizzes)}</script>' if ctx.quizzes else "")
            + "</section>")
     return sec
