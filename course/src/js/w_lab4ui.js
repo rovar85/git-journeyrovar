@@ -7,41 +7,59 @@ var state = {sh: null, open: false, busy: false, hist: [], hi: 0, buf: "", setup
 
 /* ------------------------------------------------------------ which commands the lab can run */
 var REAL_ONLY = {kubectl: "Kubernetes", docker: "Docker", "docker-compose": "Docker", podman: "containers", terraform: "Terraform", helm: "Helm", ansible: "Ansible", "ansible-playbook": "Ansible", "ansible-vault": "Ansible", "ansible-inventory": "Ansible",
-  git: "Git", curl: "the network", wget: "the network", ssh: "SSH", scp: "SSH", "ssh-keygen": "SSH", openssl: "OpenSSL", pwsh: "PowerShell", powershell: "PowerShell", jenkins: "Jenkins", promtool: "Prometheus", prometheus: "Prometheus", etcdctl: "etcd", crictl: "containers", ctr: "containers", nerdctl: "containers",
+  git: "Git", curl: "the network", wget: "the network", ssh: "SSH", scp: "SSH", "ssh-keygen": "SSH", openssl: "OpenSSL", pwsh: "PowerShell", wsl: "Windows", powershell: "PowerShell", jenkins: "Jenkins", promtool: "Prometheus", prometheus: "Prometheus", etcdctl: "etcd", crictl: "containers", ctr: "containers", nerdctl: "containers",
   kind: "Kubernetes", minikube: "Kubernetes", kubeadm: "Kubernetes", aws: "AWS", az: "Azure", gcloud: "Google Cloud", nc: "the network", ping: "the network", dig: "DNS", nslookup: "DNS", traceroute: "the network", iptables: "the kernel firewall", nft: "the kernel firewall", tcpdump: "the network", strace: "the kernel",
   ldd: "the toolchain", gcc: "the toolchain", make: "the toolchain", node: "Node.js", npm: "Node.js", pip: "pip", pip3: "pip", java: "Java", mvn: "Maven", go: "Go", rustc: "Rust", cargo: "Rust", vim: "an editor", nano: "an editor", vi: "an editor", emacs: "an editor", "mkfs.ext4": "disks", mkfs: "disks", fdisk: "disks", losetup: "disks", lsblk: "disks", blkid: "disks", ip6tables: "the kernel firewall", ip: "the network", ss: "the network", netstat: "the network", lsof: "open files", systemctl: "systemd", journalctl: "systemd", apt: "packages", "apt-get": "packages", dpkg: "packages", unshare: "namespaces", mount: "disks", umount: "disks", findmnt: "disks", top: "a TUI", lscpu: "hardware", getent: "name services", sysctl: "the kernel", modprobe: "the kernel", lsmod: "the kernel", dmesg: "the kernel", chroot: "namespaces", nsenter: "namespaces", systemd: "systemd", crontab: "cron", at: "cron", ntpq: "the network", openvpn: "the network", jq: "jq", yq: "yq", rsync: "rsync", zip: "zip", unzip: "zip", bzip2: "compression", xz: "compression", cowsay: "cowsay", htop: "a TUI", vmstat: "the kernel", iostat: "the kernel", sar: "the kernel", mpstat: "the kernel", perf: "the kernel", ulimit: "the kernel", "kubectx": "Kubernetes", "ab": "load tools", "hey": "load tools", "wrk": "load tools"};
 var KEYWORDS = /^(if|then|else|elif|fi|for|while|until|do|done|case|esac|in|function|time|\{|\}|!|\[\[|\]\])$/;
 function wordsOf(script){
+  /* uses the lab's own parser, so quotes, heredocs and python -c "..." blocks are handled correctly */
   var out = [], defined = {};
-  var text = script.replace(/\\\n/g, " ");
-  var ls = text.split("\n"), heredoc = null;
-  ls.forEach(function(line){
-    if(heredoc){ if(line.trim() === heredoc) heredoc = null; else if(heredoc.py) {} return; }
-    var hm = /<<-?\s*['"]?(\w+)['"]?/.exec(line);
-    var stripped = line.replace(/'[^']*'|"[^"]*"/g, '""');
-    var fm = /^\s*(?:function\s+)?([A-Za-z_][\w-]*)\s*\(\s*\)/.exec(stripped); if(fm) defined[fm[1]] = 1;
-    stripped.split(/\||&&|;|\(|\)|`|\$\(|\|\|/).forEach(function(seg){
-      var w = seg.trim().split(/\s+/); var k = 0;
-      while(k < w.length && (/^[A-Za-z_]\w*(\[[^\]]*\])?\+?=/.test(w[k]) || /^\d*[<>]/.test(w[k]) || w[k] === "sudo" || /^-/.test(w[k]) && w[k - 1] === "sudo" || w[k] === "time" || w[k] === "nohup" || w[k] === "env" || w[k] === "!")) k++;
-      if(w[k - 1] === "sudo" && w[k] === "-u"){ k += 2; }
-      var first = w[k]; if(!first || KEYWORDS.test(first) || /^[#>}<]/.test(first) || /^\$/.test(first) || /^\d/.test(first) || first === "") return;
-      out.push(first.replace(/^\\/, ""));
-    });
-    if(hm){ heredoc = hm[1]; }
-  });
+  var PRE = {sudo: 1, nohup: 1, time: 1, command: 1, exec: 1, builtin: 1};
+  function inner(text){ var m, re = /\$\(([^()]*)\)|`([^`]*)`/g; while((m = re.exec(text)) !== null) walkText(m[1] || m[2] || ""); }
+  function walkText(t){ var ast; try{ ast = L.parse(t); }catch(e){ return; } walk(ast); }
+  function walk(n){
+    if(!n) return;
+    switch(n.type){
+      case "list": n.items.forEach(function(i){ walk(i.node); }); break;
+      case "andor": walk(n.first); n.rest.forEach(function(r){ walk(r.node); }); break;
+      case "pipeline": n.cmds.forEach(walk); break;
+      case "subshell": case "group": walk(n.body); break;
+      case "if": n.clauses.forEach(function(c){ walk(c.cond); walk(c.body); }); if(n.els) walk(n.els); break;
+      case "for": case "cfor": case "while": if(n.cond) walk(n.cond); walk(n.body); (n.words || []).forEach(inner); break;
+      case "case": n.clauses.forEach(function(c){ walk(c.body); }); break;
+      case "func": defined[n.name] = 1; walk(n.body); break;
+      case "simple": {
+        n.words.forEach(inner); n.assigns.forEach(function(a){ inner(a.value || ""); });
+        var w = n.words.slice(), k = 0;
+        for(;;){
+          var f = (w[k] || "").replace(/^['"]|['"]$/g, "");
+          if(PRE[f]){ k++; if(f === "sudo") while(/^-/.test(w[k] || "")){ k += /^-[ugCrph]$/.test(w[k]) ? 2 : 1; } continue; }
+          if(f === "nice" || f === "env"){ k++; while(/^-/.test(w[k] || "") || /^\w+=/.test(w[k] || "")){ k += f === "nice" && w[k] === "-n" ? 2 : 1; } continue; }
+          break;
+        }
+        var first = (w[k] || "").replace(/^['"]|['"]$/g, "");
+        if(first && !/[$`]/.test(first)) out.push(first);
+        break;
+      }
+    }
+  }
+  try{ walk(L.parse(script)); }catch(e){ return {words: [], defined: defined, parseFail: true}; }
   return {words: out, defined: defined};
 }
-var PY_UNSUPPORTED = /^\s*(?:import|from)\s+(torch|tensorflow|transformers|jax|openai|anthropic|mlflow|flask|fastapi|uvicorn|requests|boto3|kubernetes|docker|yaml|ray|vllm|langchain|datasets|peft|accelerate|bitsandbytes|onnxruntime|cv2|PIL)\b/m;
-function compat(script){
-  var info = wordsOf(script), bad = {}, py = false, extra = "";
+var PY_UNSUPPORTED = /^\s*(?:import|from)\s+(torch|tensorflow|transformers|jax|openai|anthropic|mlflow|flask|fastapi|uvicorn|requests|boto3|kubernetes|docker|yaml|ray|vllm|langchain|datasets|peft|accelerate|bitsandbytes|onnxruntime|cv2|PIL|threading|concurrent|subprocess|socket|multiprocessing|http|urllib|prometheus_client|opentelemetry|mcp|kfp)\b/m;
+function compat(script, lessonText){
+  var info = wordsOf(script), bad = {}, py = false;
+  if(info.parseFail){ Object.keys(REAL_ONLY).forEach(function(k){ if(new RegExp("(^|[\\s;|&(])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(\\s|$)").test(script)) bad[k] = REAL_ONLY[k]; }); if(/python3?\s/.test(script)) py = true; return {ok: !Object.keys(bad).length, bad: bad, py: py}; }
   info.words.forEach(function(w){
     var base = w.replace(/^.*\//, "");
-    if(info.defined[w] || /^\.\//.test(w) || /^~?\//.test(w)) { if(/^\.\//.test(w) || /^\//.test(w)) { if(!L.cmds[base] && !L.builtins[base]) return; } else return; }
-    if(w === "python3" || w === "python") { py = true; return; }
+    if(w === "python3" || w === "python"){ py = true; return; }
     if(REAL_ONLY[base]){ bad[base] = REAL_ONLY[base]; return; }
-    if(!L.cmds[base] && !L.builtins[base] && !info.defined[base] && !/^[A-Z]/.test(base) && !/[=:@]/.test(base) && !/^[.\d({\[]/.test(base) && !/^(true|false)$/.test(base)){ bad[base] = "a command the lab does not have"; }
+    if(info.defined[w] || L.cmds[base] || L.builtins[base]) return;
+    if(w.indexOf("/") >= 0) return;                                         // a script the lesson creates
+    if(lessonText){ var re = new RegExp("[^\\w-]" + base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b"); var cnt = 0, pos = 0, m; var all = new RegExp("(^|[^\\w./-])" + base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\w-])", "g"); while((m = all.exec(lessonText)) !== null) cnt++; if(cnt > 1 && /(>|cp |mv |ln |install |chmod |touch |PATH)/.test(lessonText)) return; }
+    bad[base] = "a command the lab does not have";
   });
-  if(py && PY_UNSUPPORTED.test(script)){ var m = PY_UNSUPPORTED.exec(script); bad["python:" + m[1]] = "the Python package " + m[1]; }
+  if(py && PY_UNSUPPORTED.test(script)){ var m2 = PY_UNSUPPORTED.exec(script); bad["python:" + m2[1]] = "the Python package " + m2[1]; }
   return {ok: !Object.keys(bad).length, bad: bad, py: py};
 }
 
@@ -231,7 +249,10 @@ L.python = async function(args, io){
       "sys.path.insert(0, os.getcwd())",
       "try:",
       "    if _lab_mode == 'm': runpy.run_module(_lab_script, run_name='__main__', alter_sys=True)",
-      "    else: exec(compile(_lab_code, _lab_script if _lab_mode == 'file' else '<string>', 'exec'), {'__name__': '__main__'})",
+      "    else:",
+      "        import types",
+      "        _mod = types.ModuleType('__main__'); sys.modules['__main__'] = _mod",
+      "        exec(compile(_lab_code, _lab_script if _lab_mode == 'file' else '<string>', 'exec'), _mod.__dict__)",
       "except SystemExit as e:",
       "    _rc = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)",
       "    if isinstance(e.code, str): print(e.code, file=sys.stderr)",
@@ -363,7 +384,8 @@ function decorate(){
     var bar = t.querySelector(".term-bar"); if(!bar || t.dataset.lab) return;
     if(!t.dataset.copy) return;
     t.dataset.lab = "1";
-    var c = compat(t.dataset.copy);
+    var sec0 = t.closest('section.chapter'); var lt = sec0 ? [].map.call(sec0.querySelectorAll('.term[data-copy]'), function(x){ return x.dataset.copy; }).join('\n') : '';
+    var c = compat(t.dataset.copy, lt);
     var b = document.createElement("button"); b.type = "button";
     if(c.ok){
       b.className = "copy run"; b.textContent = "Run in lab" + (c.py ? " (uses Python)" : "");

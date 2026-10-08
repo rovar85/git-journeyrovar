@@ -372,3 +372,7 @@ body.lab-open{padding-bottom:40vh}
 .term-bar .copy.noRun{opacity:.8}
 .sr{position:absolute;left:-9999px}
 @media (max-width:640px){.labdock{height:48vh}body.lab-open{padding-bottom:52vh}}
+@media (max-width:640px){.strip-in{flex-wrap:wrap;row-gap:6px}.strip-in .chips{flex-basis:100%;order:5}.strip-in .brand{font-size:1rem}.studylink{padding:3px 8px}}
+html{scroll-padding-top:4.5rem}
+html:has(body.lab-open){scroll-padding-bottom:44vh}
+@media (max-width:640px){html{scroll-padding-top:7rem}html:has(body.lab-open){scroll-padding-bottom:54vh}}

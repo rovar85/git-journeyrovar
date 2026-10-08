@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 12 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 13 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
