@@ -46,7 +46,7 @@ function wordsOf(script){
   try{ walk(L.parse(script)); }catch(e){ return {words: [], defined: defined, parseFail: true}; }
   return {words: out, defined: defined};
 }
-var PY_UNSUPPORTED = /^\s*(?:import|from)\s+(torch|tensorflow|transformers|jax|openai|anthropic|mlflow|flask|fastapi|uvicorn|requests|boto3|kubernetes|docker|yaml|ray|vllm|langchain|datasets|peft|accelerate|bitsandbytes|onnxruntime|cv2|PIL|threading|concurrent|subprocess|socket|multiprocessing|http|urllib|prometheus_client|opentelemetry|mcp|kfp)\b/m;
+var PY_UNSUPPORTED = /^\s*(?:import|from)\s+(torch|tensorflow|transformers|jax|openai|anthropic|mlflow|flask|fastapi|uvicorn|requests|boto3|kubernetes|docker|yaml|ray|vllm|langchain|datasets|peft|accelerate|bitsandbytes|onnxruntime|cv2|PIL|langchain_core|langgraph|langchain|threading|concurrent|subprocess|socket|multiprocessing|http|urllib|prometheus_client|opentelemetry|mcp|kfp)\b/m;
 function compat(script, lessonText){
   var info = wordsOf(script), bad = {}, py = false;
   if(info.parseFail){ Object.keys(REAL_ONLY).forEach(function(k){ if(new RegExp("(^|[\\s;|&(])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(\\s|$)").test(script)) bad[k] = REAL_ONLY[k]; }); if(/python3?\s/.test(script)) py = true; return {ok: !Object.keys(bad).length, bad: bad, py: py}; }

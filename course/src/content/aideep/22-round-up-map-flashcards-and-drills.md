@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 14 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 21 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -33,6 +33,11 @@ The deep-dive companions: each lesson opens one hop of the AI map with runnable 
 5. **Prompting and RAG**: Prompt anatomy, validation, retrieval metrics, tools. Lessons: [5](#aideep-5), [6](#aideep-6).
 6. **Agents**: Loop, state, patterns, evaluation harness, MCP. Lessons: [7](#aideep-7), [8](#aideep-8), [9](#aideep-9), [10](#aideep-10).
 7. **Engineering**: Build, test, trace, secure and operate an agent; design and defend. Lessons: [11](#aideep-11), [12](#aideep-12), [13](#aideep-13), [14](#aideep-14).
+8. **Roadmap**: The ten-topic GenAI engineer roadmap mapped to every lesson, with free videos. Lessons: [15](#aideep-15).
+9. **Vectors**: Dot product, cosine and Euclidean distance; IVF and HNSW indexes; filters; where vectors live. Lessons: [16](#aideep-16).
+10. **Frameworks**: LangChain chains, structured output and tools; LangGraph state, memory, human-in-the-loop, supervisors. Lessons: [17](#aideep-17), [18](#aideep-18).
+11. **Platforms and measurement**: Azure AI Foundry and AWS Bedrock concepts; RAG metrics and guardrails in code. Lessons: [19](#aideep-19), [20](#aideep-20).
+12. **Projects**: A post generator, a support bot and a multi-agent planner, with tests. Lessons: [21](#aideep-21).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/aideep), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 

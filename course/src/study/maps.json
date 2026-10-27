@@ -1536,6 +1536,43 @@
      13,
      14
     ]
+   },
+   {
+    "label": "Roadmap",
+    "text": "The ten-topic GenAI engineer roadmap mapped to every lesson, with free videos.",
+    "lessons": [
+     15
+    ]
+   },
+   {
+    "label": "Vectors",
+    "text": "Dot product, cosine and Euclidean distance; IVF and HNSW indexes; filters; where vectors live.",
+    "lessons": [
+     16
+    ]
+   },
+   {
+    "label": "Frameworks",
+    "text": "LangChain chains, structured output and tools; LangGraph state, memory, human-in-the-loop, supervisors.",
+    "lessons": [
+     17,
+     18
+    ]
+   },
+   {
+    "label": "Platforms and measurement",
+    "text": "Azure AI Foundry and AWS Bedrock concepts; RAG metrics and guardrails in code.",
+    "lessons": [
+     19,
+     20
+    ]
+   },
+   {
+    "label": "Projects",
+    "text": "A post generator, a support bot and a multi-agent planner, with tests.",
+    "lessons": [
+     21
+    ]
    }
   ],
   "tips": [
