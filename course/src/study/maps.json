@@ -1870,6 +1870,102 @@
    "Design an autoscaling policy and its alerts."
   ]
  },
+ "systems": {
+  "title": "One request, from the client to the disk and back, and everything that can go wrong",
+  "intro": "Follow a single write through the system. Each hop has one idea that decides whether it is fast, safe and correct.",
+  "hops": [
+   {
+    "label": "Client",
+    "text": "A timeout leaves the outcome unknown; retry with backoff and jitter, inside a budget and a deadline.",
+    "lessons": [
+     6
+    ]
+   },
+   {
+    "label": "Safe to repeat",
+    "text": "An idempotency key saved atomically with the work turns at-least-once into effectively-once.",
+    "lessons": [
+     7
+    ]
+   },
+   {
+    "label": "Fan-out",
+    "text": "Every extra service multiplies the chance of a slow call; hedge and set deadlines to protect p99.",
+    "lessons": [
+     5
+    ]
+   },
+   {
+    "label": "Placement",
+    "text": "Hash ring or logical shards decide which machine owns a key; hot shards and resharding are the costs.",
+    "lessons": [
+     8,
+     9
+    ]
+   },
+   {
+    "label": "Replication",
+    "text": "No shared clock; leader-follower lag; quorums R+W>N; consensus needs a majority.",
+    "lessons": [
+     4,
+     8
+    ]
+   },
+   {
+    "label": "The database",
+    "text": "Pages, B-trees and a buffer pool; indexes only help when the query can use them.",
+    "lessons": [
+     2,
+     3
+    ]
+   },
+   {
+    "label": "Correctness",
+    "text": "Name the consistency model; test for stale reads and write skew under failure.",
+    "lessons": [
+     10
+    ]
+   },
+   {
+    "label": "Write it down",
+    "text": "A design doc with testable goals, non-goals, real options and a rollback plan.",
+    "lessons": [
+     11
+    ]
+   }
+  ],
+  "tips": [
+   "For any slow query: read the plan first, then ask how many rows are read versus returned.",
+   "For any retry: ask what happens if the first attempt actually succeeded.",
+   "For any 'it is eventually consistent': ask what a reader sees in the meantime and who is hurt by it.",
+   "For any fan-out: compute 1 - (1 - p)^n before you build it.",
+   "Write the design doc's non-goals first; they stop most scope arguments."
+  ],
+  "docs": [
+   {
+    "label": "CMU 15-445 Database Systems",
+    "url": "https://15445.courses.cs.cmu.edu/"
+   },
+   {
+    "label": "Use The Index, Luke",
+    "url": "https://use-the-index-luke.com/"
+   },
+   {
+    "label": "Dynamo paper",
+    "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf"
+   },
+   {
+    "label": "Jepsen analyses",
+    "url": "https://jepsen.io/analyses"
+   }
+  ],
+  "round2": [
+   "Re-run the retry simulation with a different capacity and explain why jitter helped or did not.",
+   "Pick a table you know, list its queries, and say which index each one needs.",
+   "Explain R + W > N, vector clocks and Merkle trees in two sentences each.",
+   "Write a one-page design doc for a rate limiter and have someone answer the review questions."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

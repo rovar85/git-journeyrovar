@@ -19304,6 +19304,328 @@
   ],
   "key": "0aa18b598af6d4f5"
  },
+ "systems-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lin.py <<'EOF'\n> from itertools import permutations\n> # An operation: (client, kind, value, start, end). start/end = when the client sent the call and when it got the answer.\n> def linearizable(history):\n>     \"\"\"Is there ONE order of all operations, consistent with real time, in which a register behaves correctly?\n>     Real-time rule: if A finished before B started, A must be placed before B.\"\"\"\n>     for order in permutations(history):\n>         placed_ok = True\n>         for i, later in enumerate(order):\n>             for earlier in order[:i]:\n>                 if later[4] < earlier[3]: placed_ok = False        # 'later' ended before 'earlier' even started\n>         if not placed_ok: continue\n>         value = None                                                # the register starts empty\n>         for c, kind, v, s, e in order:\n>             if kind == \"write\": value = v\n>             elif v != value: placed_ok = False; break               # a read must return the latest written value\n>         if placed_ok: return True, [f\"{c}:{k}({v})\" for c, k, v, s, e in order]\n>     return False, None\n> \n> H = {\n>  \"sequential, every read is fresh\": [(\"A\", \"write\", 1, 0, 1), (\"B\", \"read\", 1, 2, 3), (\"A\", \"write\", 2, 4, 5), (\"B\", \"read\", 2, 6, 7)],\n>  \"a read overlaps a write: either result is allowed\": [(\"A\", \"write\", 1, 0, 10), (\"B\", \"read\", None, 2, 3), (\"B\", \"read\", 1, 11, 12)],\n>  \"STALE READ: write 2 finished, a later read still returns 1\": [(\"A\", \"write\", 1, 0, 1), (\"A\", \"write\", 2, 2, 3), (\"B\", \"read\", 1, 4, 5)],\n>  \"READS GO BACKWARDS: someone saw 2, then someone saw 1\": [(\"A\", \"write\", 1, 0, 1), (\"A\", \"write\", 2, 2, 20), (\"B\", \"read\", 2, 5, 6), (\"C\", \"read\", 1, 8, 9)],\n> }\n> for name, hist in H.items():\n>     ok, order = linearizable(hist)\n>     print(f\"{'LINEARIZABLE' if ok else 'NOT linearizable':17} {name}\")\n>     if ok: print(\"                  one valid order:\", \" -> \".join(order))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lin.py",
+     "o": "LINEARIZABLE      sequential, every read is fresh\n                  one valid order: A:write(1) -> B:read(1) -> A:write(2) -> B:read(2)\nLINEARIZABLE      a read overlaps a write: either result is allowed\n                  one valid order: B:read(None) -> A:write(1) -> B:read(1)\nNOT linearizable  STALE READ: write 2 finished, a later read still returns 1\nNOT linearizable  READS GO BACKWARDS: someone saw 2, then someone saw 1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > skew.py <<'EOF'\n> import copy\n> # Rule: at least ONE doctor must stay on call. Alice and Bob are both on call and both ask to leave at the same moment.\n> class DB:\n>     def __init__(self): self.rows = {\"alice\": True, \"bob\": True}\n> class Txn:\n>     def __init__(self, db): self.db, self.snapshot, self.writes = db, copy.deepcopy(db.rows), {}\n>     def commit(self, serializable):\n>         if serializable and self.db.rows != self.snapshot:         # what I read has changed since my snapshot: abort and retry\n>             return \"ABORTED, retry\"\n>         self.db.rows.update(self.writes); return \"committed\"\n> \n> for mode, ser in ((\"snapshot isolation\", False), (\"serializable\", True)):\n>     db = DB()\n>     t1, t2 = Txn(db), Txn(db)                                      # both start from the same snapshot\n>     for t, who in ((t1, \"alice\"), (t2, \"bob\")):\n>         if sum(t.snapshot.values()) >= 2: t.writes[who] = False    # \"someone else is still on call, so I can leave\"\n>     r1, r2 = t1.commit(ser), t2.commit(ser)\n>     print(f\"{mode:20} alice: {r1:15} bob: {r2:15} doctors on call afterwards: {sum(db.rows.values())}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 skew.py",
+     "o": "snapshot isolation   alice: committed       bob: committed       doctors on call afterwards: 0\nserializable         alice: committed       bob: ABORTED, retry  doctors on call afterwards: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "67d957da4b8e839a"
+ },
+ "systems-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > doclint.py <<'EOF'\n> import re\n> DOC = \"\"\"\n> # Design doc: make checkout payments safe to retry\n> ## Context and scope\n> Checkout calls the payments service; on timeouts the mobile app retries and some customers are charged twice (14 cases last quarter).\n> ## Goals\n> - No customer is charged twice for one order, even when the client retries up to 5 times.\n> - Added latency under 5 ms at p99.\n> ## Non-goals\n> - Refunds and chargebacks. Changing the payment provider.\n> ## Options considered\n> ### Option A: dedupe in the mobile app\n> Cheap, but cannot cover web, partner or server-side retries.\n> ### Option B: idempotency keys stored in the payments database\n> One transaction saves the charge and the key. Covers every client.\n> ### Option C: exactly-once message queue\n> Needs a new platform and still needs a key for the provider call.\n> ## Proposed design\n> Option B. Clients send an Idempotency-Key header; keys live for 24 hours.\n> ## Risks and open questions\n> - Key table growth: TBD\n> ## Rollout and rollback\n> Shadow mode for a week, then enforce for 5% of traffic, then all. Rollback is a feature flag.\n> \"\"\"\n> REQUIRED = [\"Context\", \"Goals\", \"Non-goals\", \"Options considered\", \"Proposed design\", \"Risks\", \"Rollout\"]\n> headings = re.findall(r\"^#{2,3} (.*)$\", DOC, re.M)\n> def has(name): return any(h.lower().startswith(name.lower()) for h in headings)\n> print(\"Sections\")\n> for r in REQUIRED: print(f\"  [{'x' if has(r) else ' '}] {r}\")\n> options = [h for h in headings if h.lower().startswith(\"option \")]\n> goals = re.search(r\"## Goals\\n(.*?)\\n## \", DOC, re.S).group(1)\n> measurable = [l for l in goals.splitlines() if re.search(r\"\\d\", l)]\n> print(\"\\nChecks\")\n> print(f\"  [{'x' if len(options) >= 2 else ' '}] at least two real options compared ({len(options)} found)\")\n> print(f\"  [{'x' if len(measurable) >= 1 else ' '}] at least one goal has a number you can test ({len(measurable)} of {len(goals.splitlines())})\")\n> print(f\"  [{'x' if 'rollback' in DOC.lower() else ' '}] says how to roll back\")\n> tbd = len(re.findall(r\"\\bTBD\\b\", DOC))\n> print(f\"  [{'x' if tbd == 0 else ' '}] no unresolved TBD ({tbd} left)\")\n> print(f\"\\nlength: {len(DOC.split())} words (a good design doc is usually 3 to 10 pages; short is fine for a small change)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 doclint.py",
+     "o": "Sections\n  [x] Context\n  [x] Goals\n  [x] Non-goals\n  [x] Options considered\n  [x] Proposed design\n  [x] Risks\n  [x] Rollout\n\nChecks\n  [x] at least two real options compared (3 found)\n  [x] at least one goal has a number you can test (2 of 2)\n  [x] says how to roll back\n  [ ] no unresolved TBD (1 left)\n\nlength: 179 words (a good design doc is usually 3 to 10 pages; short is fine for a small change)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "8c29034e6aa22196"
+ },
+ "systems-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > btree.py <<'EOF'\n> import math, random\n> # A bulk-loaded B+tree held in \"pages\". Every page touched during a lookup costs one disk read.\n> FANOUT = 64                                   # keys per page (real databases: ~100-500 for 8 KB pages)\n> def build(keys):\n>     keys = sorted(keys)\n>     leaves = [keys[i:i + FANOUT] for i in range(0, len(keys), FANOUT)]\n>     levels = [leaves]\n>     nodes = [(page[0], page) for page in leaves]               # (smallest key, page)\n>     while len(nodes) > 1:\n>         parents = []\n>         for i in range(0, len(nodes), FANOUT):\n>             group = nodes[i:i + FANOUT]\n>             parents.append((group[0][0], group))\n>         levels.append([g for _, g in parents]); nodes = parents\n>     return nodes[0][1], len(levels)\n> \n> def search(root, height, key):\n>     reads, page = 0, root\n>     for level in range(height - 1):                            # walk down the inner pages\n>         reads += 1\n>         child = page[0]\n>         for entry in page:\n>             if entry[0] <= key: child = entry\n>         page = child[1]\n>     reads += 1                                                 # the leaf page\n>     return key in page, reads\n> \n> N = 1_000_000\n> keys = list(range(0, N * 3, 3))\n> root, height = build(keys)\n> random.seed(1)\n> probe = [random.choice(keys) for _ in range(1000)]\n> reads = [search(root, height, k)[1] for k in probe]\n> print(f\"{N:,} keys, {FANOUT} keys per page -> tree height {height}; every lookup read {min(reads)}-{max(reads)} pages\")\n> print(f\"a full scan would read about {N // FANOUT:,} pages\\n\")\n> print(f\"{'rows':>14} {'height at fanout 64':>20} {'at fanout 300':>14}\")\n> for n in (1_000, 1_000_000, 1_000_000_000):\n>     print(f\"{n:14,} {math.ceil(math.log(n, 64)):20d} {math.ceil(math.log(n, 300)):14d}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 btree.py",
+     "o": "1,000,000 keys, 64 keys per page -> tree height 4; every lookup read 4-4 pages\na full scan would read about 15,625 pages\n\n          rows  height at fanout 64  at fanout 300\n         1,000                    2              2\n     1,000,000                    4              3\n 1,000,000,000                    5              4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bufpool.py <<'EOF'\n> import random\n> from collections import OrderedDict\n> random.seed(5)\n> PAGES = 10_000\n> # 80% of accesses go to the 10% \"hot\" pages, like a real workload\n> def access():\n>     return random.randrange(PAGES // 10) if random.random() < 0.8 else random.randrange(PAGES)\n> trace = [access() for _ in range(200_000)]\n> def hit_rate(size):\n>     pool, hits = OrderedDict(), 0\n>     for p in trace:\n>         if p in pool: hits += 1; pool.move_to_end(p)\n>         else:\n>             pool[p] = True\n>             if len(pool) > size: pool.popitem(last=False)          # evict the least recently used page\n>     return hits / len(trace)\n> print(f\"{'buffer pool':>12} {'share of data':>14} {'hit rate':>9} {'disk reads per 1000 requests':>30}\")\n> for size in (100, 500, 1000, 2000, 5000):\n>     h = hit_rate(size)\n>     print(f\"{size:12d} {size / PAGES:14.0%} {h:9.1%} {1000 * (1 - h):30.0f}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bufpool.py",
+     "o": " buffer pool  share of data  hit rate   disk reads per 1000 requests\n         100             1%      6.7%                            933\n         500             5%     32.5%                            675\n        1000            10%     59.9%                            401\n        2000            20%     83.0%                            170\n        5000            50%     89.0%                            110",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lostupdate.py <<'EOF'\n> import sqlite3, tempfile, os\n> path = os.path.join(tempfile.mkdtemp(), \"bank.db\")\n> setup = sqlite3.connect(path); setup.execute(\"create table acct(id integer primary key, balance int)\"); setup.execute(\"insert into acct values (1, 100)\"); setup.commit(); setup.close()\n> \n> def conn(): return sqlite3.connect(path, timeout=0, isolation_level=None)       # autocommit: we send BEGIN ourselves\n> \n> print(\"1) read, then write, with no transaction around the pair (two clients add 10 each)\")\n> a, b = conn(), conn()\n> ba = a.execute(\"select balance from acct where id=1\").fetchone()[0]\n> bb = b.execute(\"select balance from acct where id=1\").fetchone()[0]             # B reads the same old value\n> a.execute(\"update acct set balance=? where id=1\", (ba + 10,))\n> b.execute(\"update acct set balance=? where id=1\", (bb + 10,))\n> print(\"   final balance:\", a.execute(\"select balance from acct where id=1\").fetchone()[0], \"(expected 120: one update was lost)\")\n> \n> print(\"\\n2) the same two clients, but the read-modify-write is one atomic statement\")\n> a.execute(\"update acct set balance = 100 where id=1\")\n> a.execute(\"update acct set balance = balance + 10 where id=1\")\n> b.execute(\"update acct set balance = balance + 10 where id=1\")\n> print(\"   final balance:\", a.execute(\"select balance from acct where id=1\").fetchone()[0])\n> \n> print(\"\\n3) the same two clients, read-modify-write inside BEGIN IMMEDIATE (takes the write lock first)\")\n> a.execute(\"update acct set balance = 100 where id=1\")\n> a.execute(\"begin immediate\")\n> ba = a.execute(\"select balance from acct where id=1\").fetchone()[0]\n> try:\n>     b.execute(\"begin immediate\")\n>     print(\"   B got the lock (unexpected)\")\n> except sqlite3.OperationalError as e:\n>     print(\"   B must wait or retry:\", e)\n> a.execute(\"update acct set balance=? where id=1\", (ba + 10,)); a.execute(\"commit\")\n> b.execute(\"begin immediate\"); bb = b.execute(\"select balance from acct where id=1\").fetchone()[0]\n> b.execute(\"update acct set balance=? where id=1\", (bb + 10,)); b.execute(\"commit\")\n> print(\"   final balance:\", a.execute(\"select balance from acct where id=1\").fetchone()[0])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lostupdate.py",
+     "o": "1) read, then write, with no transaction around the pair (two clients add 10 each)\n   final balance: 110 (expected 120: one update was lost)\n\n2) the same two clients, but the read-modify-write is one atomic statement\n   final balance: 120\n\n3) the same two clients, read-modify-write inside BEGIN IMMEDIATE (takes the write lock first)\n   B must wait or retry: database is locked\n   final balance: 120",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "362e7556a597a4be"
+ },
+ "systems-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > index.py <<'EOF'\n> import sqlite3, time, random\n> random.seed(1)\n> db = sqlite3.connect(\":memory:\")\n> db.execute(\"create table orders(id integer primary key, customer_id int, status text, created text, total real)\")\n> rows = [(i, random.randint(1, 20000), random.choice([\"new\", \"paid\", \"shipped\", \"cancelled\"]),\n>          f\"2026-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}\", round(random.random() * 500, 2)) for i in range(1, 200_001)]\n> db.executemany(\"insert into orders values (?,?,?,?,?)\", rows)\n> \n> def plan(sql): return \" / \".join(r[3] for r in db.execute(\"explain query plan \" + sql))\n> def ms(sql, n=15):\n>     t = time.perf_counter()\n>     for _ in range(n): db.execute(sql).fetchall()\n>     return (time.perf_counter() - t) / n * 1000\n> def show(label, sql):\n>     print(f\"{label:46} {ms(sql):8.3f} ms   {plan(sql)}\")\n> \n> Q1 = \"select * from orders where customer_id = 777\"\n> show(\"1. no index on customer_id\", Q1)\n> db.execute(\"create index ix_customer on orders(customer_id)\")\n> show(\"2. after create index (customer_id)\", Q1)\n> print()\n> Q2 = \"select count(*) from orders where status = 'paid' and created >= '2026-11-01'\"\n> db.execute(\"create index ix_a on orders(created, status)\")\n> show(\"3. index (created, status)\", Q2)\n> db.execute(\"drop index ix_a\"); db.execute(\"create index ix_b on orders(status, created)\")\n> show(\"4. index (status, created): equality first\", Q2)\n> print()\n> db.execute(\"create index ix_created on orders(created)\")\n> show(\"5. where created = '2026-03-05'\", \"select * from orders where created = '2026-03-05'\")\n> show(\"6. where substr(created,1,7) = '2026-03'\", \"select * from orders where substr(created,1,7) = '2026-03'\")\n> show(\"7. where created >= '2026-03-01' and created < '2026-04-01'\", \"select * from orders where created >= '2026-03-01' and created < '2026-04-01'\")\n> show(\"7b. range of 3 days (about 0.7% of rows)\", \"select * from orders where created >= '2026-03-01' and created < '2026-03-04'\")\n> print()\n> show(\"8. covering: select customer_id (index has it)\", \"select customer_id from orders where customer_id between 100 and 200\")\n> show(\"9. not covering: select * (back to the table)\", \"select * from orders where customer_id between 100 and 200\")\n> print()\n> n = db.execute(\"select count(*) from orders where status = 'paid'\").fetchone()[0]\n> print(f\"selectivity: status='paid' matches {n:,} of 200,000 rows ({n / 200000:.0%}); customer_id=777 matches {db.execute(Q1).fetchall().__len__()} rows\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 index.py",
+     "o": "1. no index on customer_id                        9.181 ms   SCAN orders\n2. after create index (customer_id)               0.034 ms   SEARCH orders USING INDEX ix_customer (customer_id=?)\n\n3. index (created, status)                        1.918 ms   SEARCH orders USING COVERING INDEX ix_a (created>?)\n4. index (status, created): equality first        0.356 ms   SEARCH orders USING COVERING INDEX ix_b (status=? AND created>?)\n\n5. where created = '2026-03-05'                   0.892 ms   SEARCH orders USING INDEX ix_created (created=?)\n6. where substr(created,1,7) = '2026-03'         42.433 ms   SCAN orders\n7. where created >= '2026-03-01' and created < '2026-04-01'   34.248 ms   SEARCH orders USING INDEX ix_created (created>? AND created<?)\n7b. range of 3 days (about 0.7% of rows)          2.884 ms   SEARCH orders USING INDEX ix_created (created>? AND created<?)\n\n8. covering: select customer_id (index has it)    0.334 ms   SEARCH orders USING COVERING INDEX ix_customer (customer_id>? AND customer_id<?)\n9. not covering: select * (back to the table)     1.997 ms   SEARCH orders USING INDEX ix_customer (customer_id>? AND customer_id<?)\n\nselectivity: status='paid' matches 50,059 of 200,000 rows (25%); customer_id=777 matches 16 rows",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "66d610949467e4f2"
+ },
+ "systems-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lamport.py <<'EOF'\n> # Three processes with no shared clock. Each keeps a counter. Rule: on send, add 1 and attach it; on receive, take max(mine, received) + 1.\n> class P:\n>     def __init__(s, name): s.name, s.t, s.log = name, 0, []\n>     def event(s, what): s.t += 1; s.log.append((s.t, s.name, what)); return s.t\n>     def send(s, what): s.t += 1; s.log.append((s.t, s.name, what)); return s.t\n>     def recv(s, what, stamp): s.t = max(s.t, stamp) + 1; s.log.append((s.t, s.name, what))\n> a, b, c = P(\"A\"), P(\"B\"), P(\"C\")\n> a.event(\"A writes x=1\")\n> m1 = a.send(\"A sends 'x=1' to B\")\n> b.event(\"B does local work\"); b.event(\"B does more local work\")\n> b.recv(\"B receives from A\", m1)\n> m2 = b.send(\"B sends 'seen' to C\")\n> c.event(\"C unrelated event\")\n> c.recv(\"C receives from B\", m2)\n> for t, who, what in sorted(a.log + b.log + c.log): print(f\"  logical time {t}  {who}: {what}\")\n> print(\"\\nEvery cause has a smaller timestamp than its effect. But two events with no message path between them (such as 'C unrelated event')\\ncan get any order: a Lamport clock cannot tell you they were concurrent. Vector clocks can (see the Dynamo lesson).\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lamport.py",
+     "o": "  logical time 1  A: A writes x=1\n  logical time 1  B: B does local work\n  logical time 1  C: C unrelated event\n  logical time 2  A: A sends 'x=1' to B\n  logical time 2  B: B does more local work\n  logical time 3  B: B receives from A\n  logical time 4  B: B sends 'seen' to C\n  logical time 5  C: C receives from B\n\nEvery cause has a smaller timestamp than its effect. But two events with no message path between them (such as 'C unrelated event')\ncan get any order: a Lamport clock cannot tell you they were concurrent. Vector clocks can (see the Dynamo lesson).",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > commit.py <<'EOF'\n> # Majority commit, the core idea inside Raft/Paxos-style replication: a log entry is COMMITTED once a majority of nodes stored it.\n> def try_commit(n_nodes, alive):\n>     acks = 1 + (alive - 1)                       # the leader + the followers that are reachable\n>     need = n_nodes // 2 + 1\n>     return acks >= need, acks, need\n> print(f\"{'nodes':>5} {'reachable':>10} {'majority needed':>16} {'commit?':>8}   tolerates\")\n> for n in (3, 5, 7):\n>     for alive in range(n, 0, -1):\n>         ok, acks, need = try_commit(n, alive)\n>         if alive in (n, n - (n - 1) // 2, n - (n - 1) // 2 - 1):\n>             print(f\"{n:5d} {alive:10d} {need:16d} {'yes' if ok else 'NO':>8}   {(n - 1) // 2} failures\" if alive == n else f\"{n:5d} {alive:10d} {need:16d} {'yes' if ok else 'NO':>8}\")\n> print(\"\\nWhy an even number is a bad deal: 4 nodes need 3 for a majority and tolerate 1 failure, exactly like 3 nodes.\")\n> print(\"Why two halves cannot both commit during a partition: two majorities must share at least one node, so only one side can reach quorum.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 commit.py",
+     "o": "nodes  reachable  majority needed  commit?   tolerates\n    3          3                2      yes   1 failures\n    3          2                2      yes\n    3          1                2       NO\n    5          5                3      yes   2 failures\n    5          3                3      yes\n    5          2                3       NO\n    7          7                4      yes   3 failures\n    7          4                4      yes\n    7          3                4       NO\n\nWhy an even number is a bad deal: 4 nodes need 3 for a majority and tolerate 1 failure, exactly like 3 nodes.\nWhy two halves cannot both commit during a partition: two majorities must share at least one node, so only one side can reach quorum.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "efa1d5c2885a1e36"
+ },
+ "systems-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tail.py <<'EOF'\n> import random, math\n> random.seed(11)\n> def latency():                       # one backend call: usually ~10 ms, occasionally (0.5% of calls) a slow outlier (GC pause, queue, noisy neighbour)\n>     base = random.lognormvariate(math.log(10), 0.25)\n>     return base + (random.uniform(100, 400) if random.random() < 0.005 else 0)\n> def pct(xs, p): xs = sorted(xs); return xs[min(len(xs) - 1, int(p / 100 * len(xs)))]\n> R = 40000\n> single = [latency() for _ in range(R)]\n> print(f\"one backend:        p50 {pct(single, 50):6.1f} ms   p99 {pct(single, 99):6.1f} ms   p99.9 {pct(single, 99.9):6.1f} ms\\n\")\n> print(\"a request that must wait for ALL of n backends (fan-out):\")\n> print(f\"{'n':>4} {'p50':>8} {'p99':>8} {'P(at least one slow call)':>27} {'theory 1-0.995^n':>16}\")\n> for n in (1, 10, 50, 100):\n>     xs = [max(latency() for _ in range(n)) for _ in range(R // 4)]\n>     slow = sum(x > 100 for x in xs) / len(xs)\n>     print(f\"{n:4d} {pct(xs, 50):8.1f} {pct(xs, 99):8.1f} {slow:27.1%} {1 - 0.995 ** n:16.1%}\")\n> print(\"\\nhedged request: if the first call has not answered after 'delay' ms, send a second copy and take the first answer\")\n> def hedged(delay):\n>     a = latency()\n>     if a <= delay: return a, 1\n>     return min(a, delay + latency()), 2\n> print(f\"{'hedge after':>12} {'p50':>7} {'p99':>7} {'p99.9':>7} {'extra requests':>15}\")\n> print(f\"{'never':>12} {pct(single, 50):7.1f} {pct(single, 99):7.1f} {pct(single, 99.9):7.1f} {'0.0%':>15}\")\n> for delay in (30, 20, 14):\n>     res = [hedged(delay) for _ in range(R)]\n>     xs = [r[0] for r in res]; extra = sum(r[1] - 1 for r in res) / R\n>     print(f\"{delay:9d} ms {pct(xs, 50):7.1f} {pct(xs, 99):7.1f} {pct(xs, 99.9):7.1f} {extra:15.1%}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 tail.py",
+     "o": "one backend:        p50   10.0 ms   p99   19.2 ms   p99.9  342.4 ms\n\na request that must wait for ALL of n backends (fan-out):\n   n      p50      p99   P(at least one slow call) theory 1-0.995^n\n   1     10.0     19.1                        0.5%             0.5%\n  10     14.7    342.2                        4.8%             4.9%\n  50     18.1    398.3                       22.3%            22.2%\n 100     20.7    404.5                       39.5%            39.4%\n\nhedged request: if the first call has not answered after 'delay' ms, send a second copy and take the first answer\n hedge after     p50     p99   p99.9  extra requests\n       never    10.0    19.2   342.4            0.0%\n       30 ms    10.0    19.4    42.8            0.5%\n       20 ms    10.0    19.2    32.4            0.8%\n       14 ms    10.0    19.1    26.1            9.5%",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "6591634059421709"
+ },
+ "systems-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > retry.py <<'EOF'\n> import random\n> CAP = 130                                   # the server can serve 130 requests per tick\n> MAXTRY = 7\n> def run(policy, clients, arrivals_per_tick, ticks, outage=(), penalty=0.85, seed=2):\n>     \"\"\"Each tick the server serves up to CAP requests (fewer if overloaded). Unserved requests time out and may retry.\"\"\"\n>     random.seed(seed)\n>     pending, sent, done, gave_up, nid, tokens = {}, [], 0, 0, 0, 0.0\n>     first = clients                          # a herd: this many clients start at tick 0\n>     for t in range(ticks):\n>         batch = pending.pop(t, [])\n>         n_new = first if t == 0 else arrivals_per_tick\n>         batch += [(nid + i, 1) for i in range(n_new)]; nid += n_new\n>         sent.append(len(batch))\n>         cap = 0 if t in outage else (CAP if len(batch) <= CAP else int(CAP * penalty))\n>         random.shuffle(batch)\n>         served, failed = batch[:cap], batch[cap:]\n>         done += len(served)\n>         tokens = min(20, tokens + 0.1 * len(served))\n>         for rid, attempt in failed:\n>             if attempt >= MAXTRY: gave_up += 1; continue\n>             if policy == \"budget\":\n>                 if tokens < 1: gave_up += 1; continue\n>                 tokens -= 1\n>             wait = {\"immediate\": 1, \"budget\": 1, \"exp\": 2 ** (attempt - 1), \"jitter\": random.randint(1, 2 ** (attempt - 1))}[policy]\n>             if policy in (\"exp\", \"jitter\"): wait = min(wait, 32)         # a cap on the backoff\n>             pending.setdefault(t + wait, []).append((rid, attempt + 1))\n>     finish = max([t for t, s in enumerate(sent) if s], default=0)\n>     return sum(sent), max(sent), sum(1 for s in sent if s > CAP), done, nid, gave_up\n> \n> print(\"A. Thundering herd: 2000 clients start at the same moment against a server that handles 130 per tick\")\n> print(f\"{'policy':>10} {'requests sent':>14} {'peak per tick':>14} {'ticks above capacity':>21} {'succeeded':>10} {'gave up':>8}\")\n> for pol in (\"immediate\", \"exp\", \"jitter\"):\n>     total, peak, over, ok, n, gu = run(pol, 2000, 0, 200)\n>     print(f\"{pol:>10} {total:14d} {peak:14d} {over:21d} {ok:10d} {gu:8d}\")\n> print(\"\\nB. Normal load of 100 per tick, the server is down for ticks 10 to 15, then comes back\")\n> print(f\"{'policy':>10} {'requests sent':>14} {'peak per tick':>14} {'overloaded ticks':>17} {'succeeded':>10} {'gave up':>8}\")\n> for pol in (\"immediate\", \"exp\", \"jitter\", \"budget\"):\n>     total, peak, over, ok, n, gu = run(pol, 0, 100, 80, outage=range(10, 16))\n>     print(f\"{pol:>10} {total:14d} {peak:14d} {over:17d} {ok:10d} {gu:8d}   (of {n} requests)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 retry.py",
+     "o": "A. Thundering herd: 2000 clients start at the same moment against a server that handles 130 per tick\n    policy  requests sent  peak per tick  ticks above capacity  succeeded  gave up\n immediate          11690           2000                     7        770     1230\n       exp          11690           2000                     7        770     1230\n    jitter           8986           2000                    13       1999        1\n\nB. Normal load of 100 per tick, the server is down for ticks 10 to 15, then comes back\n    policy  requests sent  peak per tick  overloaded ticks  succeeded  gave up\n immediate          13913            700                28       7551      349   (of 7900 requests)\n       exp          13592            366                50       7888        0   (of 7900 requests)\n    jitter          14789            405                52       7836       64   (of 7900 requests)\n    budget           7920            120                 0       7300      600   (of 7900 requests)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "272d351211c614e5"
+ },
+ "systems-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > idem.py <<'EOF'\n> import sqlite3, json, hashlib\n> db = sqlite3.connect(\":memory:\", isolation_level=None)\n> db.executescript(\"\"\"\n> create table charges(id integer primary key autoincrement, customer text, amount int);\n> create table idem(key text primary key, fingerprint text, status int, response text);\n> \"\"\")\n> \n> def fingerprint(body): return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()[:12]\n> \n> def charge_naive(body):\n>     db.execute(\"insert into charges(customer, amount) values (?, ?)\", (body[\"customer\"], body[\"amount\"]))\n>     return 201, {\"charge_id\": db.execute(\"select max(id) from charges\").fetchone()[0]}\n> \n> def charge(key, body):\n>     \"\"\"At-least-once delivery from the client + a unique key on the server = effectively-once processing.\"\"\"\n>     fp = fingerprint(body)\n>     db.execute(\"begin immediate\")\n>     row = db.execute(\"select fingerprint, status, response from idem where key=?\", (key,)).fetchone()\n>     if row:\n>         db.execute(\"commit\")\n>         if row[0] != fp: return 422, {\"error\": \"idempotency key reused with a different request\"}\n>         return row[1], json.loads(row[2])                       # replay the saved answer; do NOT charge again\n>     db.execute(\"insert into charges(customer, amount) values (?, ?)\", (body[\"customer\"], body[\"amount\"]))\n>     resp = {\"charge_id\": db.execute(\"select max(id) from charges\").fetchone()[0]}\n>     db.execute(\"insert into idem values (?,?,?,?)\", (key, fp, 201, json.dumps(resp)))\n>     db.execute(\"commit\")                                         # charge and key are saved in ONE transaction\n>     return 201, resp\n> \n> def total(): return db.execute(\"select count(*), coalesce(sum(amount),0) from charges\").fetchone()\n> \n> print(\"1) no idempotency: the client times out and retries 3 times, the server did process every attempt\")\n> for _ in range(3): charge_naive({\"customer\": \"asha\", \"amount\": 500})\n> print(\"   charges stored (count, total):\", total(), \" <- the customer paid 1500 for one order\")\n> \n> db.execute(\"delete from charges\"); db.execute(\"delete from sqlite_sequence\")\n> print(\"\\n2) with an idempotency key: same retries\")\n> for attempt in range(1, 4):\n>     print(f\"   attempt {attempt}:\", charge(\"order-1001-pay\", {\"customer\": \"asha\", \"amount\": 500}))\n> print(\"   charges stored (count, total):\", total())\n> \n> print(\"\\n3) the same key reused for a DIFFERENT request is rejected, not silently accepted\")\n> print(\"  \", charge(\"order-1001-pay\", {\"customer\": \"asha\", \"amount\": 900}))\n> \n> print(\"\\n4) a new order uses a new key and is processed\")\n> print(\"  \", charge(\"order-1002-pay\", {\"customer\": \"ravi\", \"amount\": 250}))\n> print(\"   charges stored (count, total):\", total())\n> \n> print(\"\\n5) two copies of the same request racing: the primary key lets only one win\")\n> try:\n>     db.execute(\"insert into idem values ('race','x',201,'{}')\"); db.execute(\"insert into idem values ('race','x',201,'{}')\")\n> except sqlite3.IntegrityError as e:\n>     print(\"   second insert rejected:\", e)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 idem.py",
+     "o": "1) no idempotency: the client times out and retries 3 times, the server did process every attempt\n   charges stored (count, total): (3, 1500)  <- the customer paid 1500 for one order\n\n2) with an idempotency key: same retries\n   attempt 1: (201, {'charge_id': 1})\n   attempt 2: (201, {'charge_id': 1})\n   attempt 3: (201, {'charge_id': 1})\n   charges stored (count, total): (1, 500)\n\n3) the same key reused for a DIFFERENT request is rejected, not silently accepted\n   (422, {'error': 'idempotency key reused with a different request'})\n\n4) a new order uses a new key and is processed\n   (201, {'charge_id': 2})\n   charges stored (count, total): (2, 750)\n\n5) two copies of the same request racing: the primary key lets only one win\n   second insert rejected: UNIQUE constraint failed: idem.key",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "31dca6cb3d11adf3"
+ },
+ "systems-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ring.py <<'EOF'\n> import hashlib, bisect, statistics\n> def h(s): return int(hashlib.md5(s.encode()).hexdigest()[:8], 16)           # a position on a ring of 2^32 points\n> \n> class Ring:\n>     def __init__(self, nodes, vnodes=1):\n>         self.vnodes, self.points = vnodes, []\n>         for n in nodes: self.add(n)\n>     def add(self, node):\n>         for v in range(self.vnodes): bisect.insort(self.points, (h(f\"{node}#{v}\"), node))\n>     def owner(self, key):\n>         i = bisect.bisect(self.points, (h(key), \"\")) % len(self.points)       # first node clockwise from the key\n>         return self.points[i][1]\n> \n> keys = [f\"user:{i}\" for i in range(20000)]\n> nodes = [f\"node{i}\" for i in range(5)]\n> \n> print(\"Adding a 6th node: how many keys change owner?\")\n> before_mod = {k: h(k) % 5 for k in keys}; after_mod = {k: h(k) % 6 for k in keys}\n> moved_mod = sum(before_mod[k] != after_mod[k] for k in keys)\n> print(f\"  hash(key) mod N        : {moved_mod / len(keys):6.1%} of keys move   (ideal: {1 / 6:.1%})\")\n> for vn in (1, 16, 128):\n>     r = Ring(nodes, vn); b = {k: r.owner(k) for k in keys}; r.add(\"node5\"); a = {k: r.owner(k) for k in keys}\n>     print(f\"  ring, {vn:3d} virtual nodes : {sum(b[k] != a[k] for k in keys) / len(keys):6.1%} of keys move\")\n> \n> print(\"\\nHow even is the load across 5 nodes? (keys per node, ideal = 4000)\")\n> for vn in (1, 16, 128):\n>     r = Ring(nodes, vn); counts = {n: 0 for n in nodes}\n>     for k in keys: counts[r.owner(k)] += 1\n>     v = list(counts.values())\n>     print(f\"  {vn:3d} virtual nodes: min {min(v):5d}  max {max(v):5d}  max/ideal {max(v) / 4000:4.2f}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ring.py",
+     "o": "Adding a 6th node: how many keys change owner?\n  hash(key) mod N        :  83.0% of keys move   (ideal: 16.7%)\n  ring,   1 virtual nodes :   9.9% of keys move\n  ring,  16 virtual nodes :  10.2% of keys move\n  ring, 128 virtual nodes :  16.1% of keys move\n\nHow even is the load across 5 nodes? (keys per node, ideal = 4000)\n    1 virtual nodes: min   633  max  7857  max/ideal 1.96\n   16 virtual nodes: min  2745  max  5099  max/ideal 1.27\n  128 virtual nodes: min  3417  max  4787  max/ideal 1.20",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > quorum.py <<'EOF'\n> import random\n> random.seed(4)\n> N = 3\n> def trial(R, W, writes=2000):\n>     \"\"\"Replicas hold (version, value). A write reaches W random replicas (the rest are slow or down). A read asks R random replicas and takes the newest.\"\"\"\n>     replicas = [(0, \"v0\")] * N\n>     stale = 0\n>     for v in range(1, writes + 1):\n>         for i in random.sample(range(N), W): replicas[i] = (v, f\"v{v}\")\n>         got = max(replicas[i] for i in random.sample(range(N), R))\n>         stale += got[0] != v\n>     return stale / writes\n> print(f\"N = {N} replicas. A read right after a write is stale if the read set misses every replica that took the write.\")\n> print(f\"{'R':>2} {'W':>2} {'R+W>N?':>7} {'stale reads':>12}   meaning\")\n> for R, W, note in ((1, 1, \"fast, but can read old data\"), (2, 2, \"quorum: every read overlaps the last write\"), (1, 3, \"writes slow, reads fast\"), (3, 1, \"reads slow, writes fast\"), (2, 1, \"R+W = N: not enough\")):\n>     print(f\"{R:2d} {W:2d} {'yes' if R + W > N else 'no':>7} {trial(R, W):12.1%}   {note}\")\n> \n> print(\"\\nVector clocks: which version is newer, or are they concurrent (a conflict to merge)?\")\n> def compare(a, b):\n>     keys = set(a) | set(b)\n>     ge = all(a.get(k, 0) >= b.get(k, 0) for k in keys); le = all(a.get(k, 0) <= b.get(k, 0) for k in keys)\n>     return \"equal\" if ge and le else \"a is newer\" if ge else \"b is newer\" if le else \"CONCURRENT (conflict)\"\n> cart1 = {\"A\": 1}                          # written through server A\n> cart2 = {\"A\": 2}                          # A updates again: descends from cart1\n> cart3 = {\"A\": 1, \"B\": 1}                  # B updated cart1 without seeing cart2\n> print(\"  cart1 vs cart2:\", compare(cart1, cart2))\n> print(\"  cart2 vs cart3:\", compare(cart2, cart3))\n> print(\"  merge result clock:\", {k: max(cart2.get(k, 0), cart3.get(k, 0)) for k in (\"A\", \"B\")})\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 quorum.py",
+     "o": "N = 3 replicas. A read right after a write is stale if the read set misses every replica that took the write.\n R  W  R+W>N?  stale reads   meaning\n 1  1      no        68.3%   fast, but can read old data\n 2  2     yes         0.0%   quorum: every read overlaps the last write\n 1  3     yes         0.0%   writes slow, reads fast\n 3  1     yes         0.0%   reads slow, writes fast\n 2  1      no        31.8%   R+W = N: not enough\n\nVector clocks: which version is newer, or are they concurrent (a conflict to merge)?\n  cart1 vs cart2: b is newer\n  cart2 vs cart3: CONCURRENT (conflict)\n  merge result clock: {'A': 2, 'B': 1}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > merkle.py <<'EOF'\n> import hashlib\n> def H(x): return hashlib.sha256(x.encode()).hexdigest()[:8]\n> def tree(items):                                            # leaves = hash of each (key,value); parents = hash of children\n>     level = [H(f\"{k}={v}\") for k, v in items]; levels = [level]\n>     while len(level) > 1:\n>         level = [H(\"\".join(level[i:i + 2])) for i in range(0, len(level), 2)]; levels.append(level)\n>     return levels\n> N = 1024\n> a = [(f\"k{i:04d}\", f\"v{i}\") for i in range(N)]\n> b = list(a); b[700] = (\"k0700\", \"DIFFERENT\")                  # replica B missed one update\n> ta, tb = tree(a), tree(b)\n> print(\"root A\", ta[-1][0], \"| root B\", tb[-1][0], \"->\", \"in sync\" if ta[-1] == tb[-1] else \"different, walk down\")\n> idx, compared = 0, 1\n> for lvl in range(len(ta) - 2, -1, -1):\n>     left = idx * 2\n>     compared += 2\n>     idx = left if ta[lvl][left] != tb[lvl][left] else left + 1\n> print(f\"found the differing key {a[idx][0]} after comparing {compared} hashes, instead of {N} key-by-key comparisons\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 merkle.py",
+     "o": "root A 69692406 | root B 1b14e47f -> different, walk down\nfound the differing key k0700 after comparing 21 hashes, instead of 1024 key-by-key comparisons",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2343690f01c060cf"
+ },
+ "systems-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sys && cd ~/lab/sys",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > shard.py <<'EOF'\n> import random, hashlib, math\n> random.seed(8)\n> def h(x): return int(hashlib.md5(str(x).encode()).hexdigest()[:8], 16)\n> SHARDS = 8\n> # 1,000 tenants. A few big tenants produce most of the traffic (a Zipf-like distribution).\n> tenants = list(range(1000))\n> weight = {t: 1 / (t + 1) ** 1.1 for t in tenants}\n> total = sum(weight.values())\n> def load_by_shard(placement):\n>     load = [0.0] * SHARDS\n>     for t in tenants: load[placement(t)] += weight[t] / total\n>     return load\n> def report(name, load):\n>     ideal = 1 / SHARDS\n>     print(f\"  {name:34} hottest shard {max(load) / ideal:4.2f}x the fair share, coldest {min(load) / ideal:4.2f}x\")\n> \n> print(\"1) Where a skewed workload lands (fair share = 1.00x)\")\n> report(\"range: tenant id // 125\", load_by_shard(lambda t: t // 125))\n> report(\"hash(tenant) mod 8\", load_by_shard(lambda t: h(t) % SHARDS))\n> print(\"   -> hashing spreads the KEYS evenly, but one huge tenant is still one key: it can only live on one shard\")\n> print(f\"   the single biggest tenant carries {weight[0] / total:.0%} of all traffic; no shard key can split it (you need to split the tenant)\")\n> \n> print(\"\\n2) Resharding cost: going from 4 to 5 machines\")\n> keys = range(100_000)\n> mv = sum(h(k) % 4 != h(k) % 5 for k in keys) / len(keys)\n> print(f\"  hash mod machines                : {mv:5.1%} of rows move\")\n> LOGICAL = 256                                    # many small logical shards, mapped to few machines\n> assign4 = {s: s % 4 for s in range(LOGICAL)}\n> assign5 = dict(assign4)\n> counts = {m: [s for s in range(LOGICAL) if assign4[s] == m] for m in range(4)}\n> need = LOGICAL // 5\n> for m in range(4):                               # each machine hands a share of its logical shards to the new machine 4\n>     for s in counts[m][: len(counts[m]) - need]: assign5[s] = 4\n> moved = sum(assign4[s] != assign5[s] for s in range(LOGICAL)) / LOGICAL\n> print(f\"  256 logical shards, move whole ones: {moved:5.1%} of rows move  (the minimum possible is {1 / 5:.0%})\")\n> print(f\"  a row's logical shard never changes: shard = hash(key) % {LOGICAL}; only the shard -> machine table changes\")\n> \n> print(\"\\n3) The price of a query that does not include the shard key\")\n> def lat(): return random.lognormvariate(math.log(8), 0.3) + (random.uniform(80, 250) if random.random() < 0.01 else 0)\n> def p(xs, q): xs = sorted(xs); return xs[int(q * len(xs))]\n> one = [lat() for _ in range(20000)]\n> fan = [max(lat() for _ in range(SHARDS)) for _ in range(20000)]\n> print(f\"  query to one shard (key known)   : p50 {p(one, .5):5.1f} ms  p99 {p(one, .99):6.1f} ms\")\n> print(f\"  query to all {SHARDS} shards (scatter)  : p50 {p(fan, .5):5.1f} ms  p99 {p(fan, .99):6.1f} ms   (and {SHARDS}x the work)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 shard.py",
+     "o": "1) Where a skewed workload lands (fair share = 1.00x)\n  range: tenant id // 125            hottest shard 6.34x the fair share, coldest 0.10x\n  hash(tenant) mod 8                 hottest shard 2.09x the fair share, coldest 0.36x\n   -> hashing spreads the KEYS evenly, but one huge tenant is still one key: it can only live on one shard\n   the single biggest tenant carries 18% of all traffic; no shard key can split it (you need to split the tenant)\n\n2) Resharding cost: going from 4 to 5 machines\n  hash mod machines                : 79.8% of rows move\n  256 logical shards, move whole ones: 20.3% of rows move  (the minimum possible is 20%)\n  a row's logical shard never changes: shard = hash(key) % 256; only the shard -> machine table changes\n\n3) The price of a query that does not include the shard key\n  query to one shard (key known)   : p50   8.0 ms  p99   92.6 ms\n  query to all 8 shards (scatter)  : p50  12.3 ms  p99  235.3 ms   (and 8x the work)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "38a88a6dcbab363d"
+ },
  "terraform-1": {
   "blocks": [
    [

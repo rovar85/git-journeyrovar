@@ -512,6 +512,35 @@ M["aiinfra"] = dict(
 )
 
 
+M["systems"] = dict(
+ title="One request, from the client to the disk and back, and everything that can go wrong",
+ intro="Follow a single write through the system. Each hop has one idea that decides whether it is fast, safe and correct.",
+ hops=[
+  H("Client", "A timeout leaves the outcome unknown; retry with backoff and jitter, inside a budget and a deadline.", 6),
+  H("Safe to repeat", "An idempotency key saved atomically with the work turns at-least-once into effectively-once.", 7),
+  H("Fan-out", "Every extra service multiplies the chance of a slow call; hedge and set deadlines to protect p99.", 5),
+  H("Placement", "Hash ring or logical shards decide which machine owns a key; hot shards and resharding are the costs.", 8, 9),
+  H("Replication", "No shared clock; leader-follower lag; quorums R+W>N; consensus needs a majority.", 4, 8),
+  H("The database", "Pages, B-trees and a buffer pool; indexes only help when the query can use them.", 2, 3),
+  H("Correctness", "Name the consistency model; test for stale reads and write skew under failure.", 10),
+  H("Write it down", "A design doc with testable goals, non-goals, real options and a rollback plan.", 11),
+ ],
+ tips=[
+  "For any slow query: read the plan first, then ask how many rows are read versus returned.",
+  "For any retry: ask what happens if the first attempt actually succeeded.",
+  "For any 'it is eventually consistent': ask what a reader sees in the meantime and who is hurt by it.",
+  "For any fan-out: compute 1 - (1 - p)^n before you build it.",
+  "Write the design doc's non-goals first; they stop most scope arguments.",
+ ],
+ docs=[D("CMU 15-445 Database Systems", "https://15445.courses.cs.cmu.edu/"), D("Use The Index, Luke", "https://use-the-index-luke.com/"), D("Dynamo paper", "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf"), D("Jepsen analyses", "https://jepsen.io/analyses")],
+ round2=[
+  "Re-run the retry simulation with a different capacity and explain why jitter helped or did not.",
+  "Pick a table you know, list its queries, and say which index each one needs.",
+  "Explain R + W > N, vector clocks and Merkle trees in two sentences each.",
+  "Write a one-page design doc for a rate limiter and have someone answer the review questions.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

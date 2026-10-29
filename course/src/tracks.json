@@ -120,6 +120,14 @@
   "why": "Most interviews are a long list of short questions. This track is the list, answered, with flashcards so it sticks."
  },
  {
+  "id": "systems",
+  "name": "Databases and distributed systems for backend engineers",
+  "group": "Platforms",
+  "level": "Intermediate to expert",
+  "blurb": "Ten topics with runnable models: how a database stores data, indexing and query plans, clocks and consensus, tail latency, retries with backoff and jitter, idempotency, Dynamo-style hashing and quorums, sharding, consistency testing, and design docs. Each pairs with a free paper, lecture or article.",
+  "why": "These are the ideas under every senior backend interview and every serious outage. Each lesson runs code that shows the effect with real numbers."
+ },
+ {
   "id": "capstone",
   "name": "Capstone: lab as code",
   "group": "Put it together",
