@@ -55,6 +55,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Mess With DNS](https://messwithdns.net)
+- [Network debugging mysteries](https://mysteries.wizardzines.com)
 - [ip(8) manual](https://man7.org/linux/man-pages/man8/ip.8.html)
 - [ss(8) manual](https://man7.org/linux/man-pages/man8/ss.8.html)
 - [Netfilter documentation](https://www.netfilter.org/documentation/)

@@ -53,6 +53,7 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Cloud Resume Challenge](https://cloudresumechallenge.dev)
 - [AWS Well-Architected](https://aws.amazon.com/architecture/well-architected/)
 - [Azure Well-Architected](https://learn.microsoft.com/azure/well-architected/)
 - [Google Cloud Architecture Framework](https://cloud.google.com/architecture/framework)

@@ -55,6 +55,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Killercoda scenarios](https://killercoda.com)
+- [iximiuz Labs](https://labs.iximiuz.com)
 - [Dockerfile reference](https://docs.docker.com/reference/dockerfile/)
 - [docker CLI reference](https://docs.docker.com/reference/cli/docker/)
 - [Docker Compose](https://docs.docker.com/compose/)

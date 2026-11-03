@@ -118,6 +118,7 @@ function submit(line){
   if(L.incomplete(text)){ state.buf = text; setPrompt(); return; }
   state.buf = "";
   var h = text.replace(/\n/g, "; ");
+  if(!/^\s*(lab|labinfo|labhelp|reset|labreset)\b/.test(text)) state.last = text;
   if(state.hist[state.hist.length - 1] !== text) state.hist.push(text);
   state.hi = state.hist.length;
   if(/^\s*(reset|labreset)\s*$/.test(text)){ resetLab(); return; }
@@ -398,7 +399,43 @@ function decorateCode(){
     w.appendChild(b);
   });
 }
+/* ---------------- challenges: Start / Check / Show a solution ---------------- */
+function chDone(id){ try{ return localStorage.getItem("agentschool-ch-" + id) === "1"; }catch(e){ return false; } }
+function chMark(id){ try{ localStorage.setItem("agentschool-ch-" + id, "1"); }catch(e){} }
+function decorateChallenges(){
+  document.querySelectorAll(".challenge").forEach(function(box){
+    if(box.dataset.wired) return; box.dataset.wired = "1";
+    var id = box.dataset.id, stat = box.querySelector(".chstat"), sol = box.querySelector(".chsol");
+    var ch = {setup: box.dataset.setup, expect: box.dataset.expect, check: box.dataset.check, solution: box.dataset.solution};
+    function mark(){ stat.textContent = chDone(id) ? "\u2713 done" : ""; }
+    mark();
+    box.addEventListener("click", function(e){
+      var a = e.target && e.target.dataset && e.target.dataset.a; if(!a) return;
+      if(a === "start"){
+        toggle(true);
+        state.queue = state.queue.then(async function(){
+          await L.challenge.start(state.sh, ch); state.last = "";
+          put("--- Challenge started. You are in ~/lab/ch ---\n" + box.querySelector("p").textContent + "\n", "n"); setPrompt(); saveSoon();
+        });
+      } else if(a === "check"){
+        toggle(true);
+        state.queue = state.queue.then(async function(){
+          if(!state.sh.cwd || state.sh.cwd.indexOf("/lab/ch") < 0) put("(Tip: press Start first so the files for this challenge exist.)\n", "n");
+          var r = await L.challenge.check(state.sh, ch, state.last);
+          if(r.ok){ put("PASS: correct. Well done.\n", "c"); chMark(id); mark(); }
+          else if(r.msg){ put(r.msg + "\n", "e"); }
+          else if(ch.expect){ put("Not yet. Your last command printed:\n" + (r.got || "(nothing)") + "\nbut the checker expects:\n" + r.want + "\n", "e"); }
+          else { put("Not yet: the files are not in the expected state. Re-read the task and check with ls -l and cat.\n", "e"); }
+          setPrompt();
+        });
+      } else if(a === "solution"){
+        sol.hidden = !sol.hidden; sol.textContent = "One possible solution:\n" + ch.solution;
+      }
+    });
+  });
+}
 function decorate(){
+  decorateChallenges();
   decorateCode();
   document.querySelectorAll(".term").forEach(function(t){
     var bar = t.querySelector(".term-bar"); if(!bar || t.dataset.lab) return;

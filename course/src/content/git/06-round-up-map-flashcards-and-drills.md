@@ -54,6 +54,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Learn Git Branching](https://learngitbranching.js.org)
+- [Git Exercises](https://gitexercises.fracz.com)
 - [Git reference manual](https://git-scm.com/docs)
 - [Pro Git book](https://git-scm.com/book/en/v2)
 - [git-reflog](https://git-scm.com/docs/git-reflog)

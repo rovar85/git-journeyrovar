@@ -54,6 +54,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Grafana Play](https://play.grafana.org)
+- [SadServers](https://sadservers.com)
 - [Prometheus querying basics](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 - [Metric and label naming](https://prometheus.io/docs/practices/naming/)
 - [Google SRE book](https://sre.google/sre-book/table-of-contents/)

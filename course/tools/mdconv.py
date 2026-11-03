@@ -75,6 +75,26 @@ def guide_html(first_lines, lesson_id):
     n = len(keys)
     return f'<details class="cmdguide"><summary>What {"does this command" if n == 1 else "do these " + str(n) + " commands"} do, and when would I use {"it" if n == 1 else "them"}?</summary><dl>' + "".join(items) + '</dl><p class="gref"><a href="#reference-1">Open the full command reference</a></p></details>'
 
+def parse_challenge(body):
+    d, key, buf = {}, None, []
+    for line in body.split("\n"):
+        m = re.match(r"^([a-z]+):\s*(\|)?\s*(.*)$", line)
+        if m and not line.startswith(" "):
+            if key: d[key] = "\n".join(buf).rstrip()
+            key = m.group(1); buf = [] if m.group(2) else [m.group(3)]
+        else:
+            buf.append(line[2:] if line.startswith("  ") else line)
+    if key: d[key] = "\n".join(buf).rstrip()
+    return d
+
+def challenge_html(d, cid, n):
+    a = lambda k: html.escape(d.get(k, ""), quote=True)
+    return (f'<div class="challenge" data-id="{cid}" data-setup="{a("setup")}" data-expect="{a("expect")}" data-check="{a("check")}" data-solution="{a("solution")}">'
+            f'<div class="chhead"><b>Challenge {n}: {html.escape(d.get("title", ""), quote=False)}</b> <span class="chstat" aria-live="polite"></span></div>'
+            f'<p>{inline(d.get("task", ""))}</p>'
+            f'<div class="chbar"><button type="button" data-a="start">Start in lab</button> <button type="button" data-a="check">Check my answer</button> <button type="button" data-a="solution">Show a solution</button></div>'
+            f'<pre class="chsol" hidden></pre></div>')
+
 def render_nested(items):
     """items: [indent, ordered, text] in document order; builds nested <ul>/<ol>."""
     pos = [0]
@@ -185,6 +205,9 @@ def blocks(text, ctx):
                 out.append(f"@@RUN{idx}@@")
             elif info == "setup":
                 ctx.setup.append(body)
+            elif info == "challenge":
+                ctx.nch = getattr(ctx, "nch", 0) + 1
+                out.append(challenge_html(parse_challenge(body), f"{ctx.lesson_id}-c{ctx.nch}", ctx.nch))
             elif info == "term":
                 out.append(term_html(parse_term(body), "example", ctx.lesson_id))
             else:

@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 13 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 14 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -57,6 +57,9 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Linux challenges in this course](#linux-14)
+- [Bandit wargame (OverTheWire)](https://overthewire.org/wargames/bandit)
+- [CMD Challenge](https://cmdchallenge.com)
 - [man pages online (man7.org)](https://man7.org/linux/man-pages/)
 - [GNU Bash manual](https://www.gnu.org/software/bash/manual/bash.html)
 - [systemd.service manual](https://man7.org/linux/man-pages/man5/systemd.service.5.html)

@@ -80,6 +80,18 @@
   ],
   "docs": [
    {
+    "label": "Linux challenges in this course",
+    "url": "#linux-14"
+   },
+   {
+    "label": "Bandit wargame (OverTheWire)",
+    "url": "https://overthewire.org/wargames/bandit"
+   },
+   {
+    "label": "CMD Challenge",
+    "url": "https://cmdchallenge.com"
+   },
+   {
     "label": "man pages online (man7.org)",
     "url": "https://man7.org/linux/man-pages/"
    },
@@ -171,6 +183,14 @@
   ],
   "docs": [
    {
+    "label": "Mess With DNS",
+    "url": "https://messwithdns.net"
+   },
+   {
+    "label": "Network debugging mysteries",
+    "url": "https://mysteries.wizardzines.com"
+   },
+   {
     "label": "ip(8) manual",
     "url": "https://man7.org/linux/man-pages/man8/ip.8.html"
    },
@@ -254,6 +274,14 @@
    "git stash is for interruptions; git switch -c for experiments; both beat 'copy the folder'."
   ],
   "docs": [
+   {
+    "label": "Learn Git Branching",
+    "url": "https://learngitbranching.js.org"
+   },
+   {
+    "label": "Git Exercises",
+    "url": "https://gitexercises.fracz.com"
+   },
    {
     "label": "Git reference manual",
     "url": "https://git-scm.com/docs"
@@ -437,6 +465,14 @@
    "A container exits when its main process exits: a container 'Exited (0)' immediately usually has the wrong CMD."
   ],
   "docs": [
+   {
+    "label": "Killercoda scenarios",
+    "url": "https://killercoda.com"
+   },
+   {
+    "label": "iximiuz Labs",
+    "url": "https://labs.iximiuz.com"
+   },
    {
     "label": "Dockerfile reference",
     "url": "https://docs.docker.com/reference/dockerfile/"
@@ -711,6 +747,10 @@
   ],
   "docs": [
    {
+    "label": "HashiCorp Terraform tutorials",
+    "url": "https://developer.hashicorp.com/terraform/tutorials"
+   },
+   {
     "label": "Terraform language",
     "url": "https://developer.hashicorp.com/terraform/language"
    },
@@ -837,6 +877,14 @@
   ],
   "docs": [
    {
+    "label": "Killercoda Kubernetes scenarios",
+    "url": "https://killercoda.com"
+   },
+   {
+    "label": "Kubernetes The Hard Way",
+    "url": "https://github.com/kelseyhightower/kubernetes-the-hard-way"
+   },
+   {
     "label": "kubectl quick reference",
     "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/"
    },
@@ -920,6 +968,14 @@
    "Every alert needs an owner, a runbook link and a clear action; delete alerts nobody acts on."
   ],
   "docs": [
+   {
+    "label": "Grafana Play",
+    "url": "https://play.grafana.org"
+   },
+   {
+    "label": "SadServers",
+    "url": "https://sadservers.com"
+   },
    {
     "label": "Prometheus querying basics",
     "url": "https://prometheus.io/docs/prometheus/latest/querying/basics/"
@@ -1066,6 +1122,10 @@
    "Set budgets and alerts before you create anything."
   ],
   "docs": [
+   {
+    "label": "Cloud Resume Challenge",
+    "url": "https://cloudresumechallenge.dev"
+   },
    {
     "label": "AWS Well-Architected",
     "url": "https://aws.amazon.com/architecture/well-architected/"

@@ -1463,3 +1463,28 @@ L.boot = function(out, fsJson){
   sh.interactive = true;
   return sh;
 };
+
+/* ---------------------------------------------------------------- challenges (start / check), shared by the UI and the Node tests */
+L.challenge = {
+  dir: "/home/student/lab/ch",
+  async start(sh, ch){
+    var quiet = function(){};
+    await sh.run("rm -rf ~/lab/ch && mkdir -p ~/lab/ch && cd ~/lab/ch", {out: quiet, err: quiet});
+    if(ch.setup) await sh.run(ch.setup, {out: quiet, err: quiet});
+    sh.cwd = L.challenge.dir; sh.set("PWD", sh.cwd, true);
+  },
+  /* last = the last command line the learner ran. Returns {ok, got, want} */
+  async check(sh, ch, last){
+    var out = "", res;
+    if(ch.expect){
+      if(!last) return {ok: false, msg: "Run a command first, then press Check."};
+      var sub = sh.fork(); sub.cancelled = false; sub.steps = 0; sub.deadline = Date.now() + 8000;
+      var st = await sub.run(last, {out: function(s){ out += s; }, err: function(){}, stdin: ""});
+      var got = out.replace(/\s+$/, ""), want = ch.expect.replace(/\s+$/, "");
+      return {ok: got === want, got: got, want: want};
+    }
+    var sub2 = sh.fork(); sub2.deadline = Date.now() + 8000;
+    var st2 = await sub2.run(ch.check, {out: function(s){ out += s; }, err: function(){}, stdin: ""});
+    return {ok: st2 === 0, got: out.replace(/\s+$/, "")};
+  }
+};

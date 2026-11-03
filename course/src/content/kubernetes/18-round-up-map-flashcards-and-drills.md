@@ -59,6 +59,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Killercoda Kubernetes scenarios](https://killercoda.com)
+- [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 - [kubectl quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/)
 - [Kubernetes tasks (how-to by job)](https://kubernetes.io/docs/tasks/)
 - [Kubernetes security concepts](https://kubernetes.io/docs/concepts/security/)
