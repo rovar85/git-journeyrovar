@@ -55,6 +55,10 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Well-structured Terraform project (TechOps Examples)](https://www.techopsexamples.com/p/guide-to-a-well-structured-terraform-project)
+- [Prevent and recover lost Terraform state (TechOps Examples)](https://www.techopsexamples.com/p/steps-to-prevent-and-recover-lost-terraform-state-files)
+- [Terraform graphs explained (TechOps Examples)](https://www.techopsexamples.com/p/terraform-graphs-explained)
+- [Overusing dynamic blocks (TechOps Examples)](https://www.techopsexamples.com/p/the-problem-with-overusing-terraform-dynamic-blocks)
 - [HashiCorp Terraform tutorials](https://developer.hashicorp.com/terraform/tutorials)
 - [Terraform language](https://developer.hashicorp.com/terraform/language)
 - [CLI commands](https://developer.hashicorp.com/terraform/cli/commands)

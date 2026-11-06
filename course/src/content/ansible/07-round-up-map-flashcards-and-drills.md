@@ -55,6 +55,9 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Ansible ping-pong architecture (TechOps Examples)](https://www.techopsexamples.com/p/ansible-ping-pong-architecture)
+- [Ansible roles directory structure (TechOps Examples)](https://www.techopsexamples.com/p/ansible-roles-directory-structure-breakdown)
+- [Dynamic inventory in Ansible (TechOps Examples)](https://www.techopsexamples.com/p/how-to-set-up-dynamic-inventory-in-ansible)
 - [Playbook guide](https://docs.ansible.com/ansible/latest/playbook_guide/index.html)
 - [Builtin modules](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/index.html)
 - [Vault guide](https://docs.ansible.com/ansible/latest/vault_guide/index.html)

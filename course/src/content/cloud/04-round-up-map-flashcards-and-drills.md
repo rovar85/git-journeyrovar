@@ -53,6 +53,9 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [AWS VPC network segmentation (TechOps Examples)](https://www.techopsexamples.com/p/aws-vpc-network-segmentation-break-down)
+- [AWS Lambda integration patterns with SQS and SNS (TechOps Examples)](https://www.techopsexamples.com/p/aws-lambda-integration-patterns-sqs-sns)
+- [Serverless architecture for SaaS authentication on AWS (TechOps Examples)](https://www.techopsexamples.com/p/designing-an-aws-serverless-architecture-for-saas-user-authentication)
 - [Cloud Resume Challenge](https://cloudresumechallenge.dev)
 - [AWS Well-Architected](https://aws.amazon.com/architecture/well-architected/)
 - [Azure Well-Architected](https://learn.microsoft.com/azure/well-architected/)

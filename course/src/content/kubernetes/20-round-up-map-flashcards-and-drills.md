@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 17 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 19 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -31,11 +31,12 @@ Trace a request from kubectl to a running container, then to the network. Every 
 3. **etcd**: The store of all cluster state: backup, restore, quorum, encryption at rest. Lessons: [1](#kubernetes-1), [11](#kubernetes-11), [17](#kubernetes-17).
 4. **Controllers and scheduler**: Controllers reconcile desired vs actual (Deployments, ReplicaSets); the scheduler places pods using requests, taints, affinity. Lessons: [3](#kubernetes-3), [7](#kubernetes-7), [13](#kubernetes-13).
 5. **Kubelet and runtime**: The node agent pulls images, starts containers through the runtime, runs probes, reports status; its own API must not be open. Lessons: [2](#kubernetes-2), [7](#kubernetes-7), [9](#kubernetes-9), [17](#kubernetes-17).
-6. **Pod and container**: Pod spec: containers, resources, probes, securityContext, volumes, config and secrets. Lessons: [2](#kubernetes-2), [5](#kubernetes-5), [6](#kubernetes-6), [17](#kubernetes-17).
+6. **Pod and container**: Pod spec: containers, resources, probes, securityContext, volumes, config and secrets; the lifecycle from Pending to Terminated. Lessons: [2](#kubernetes-2), [5](#kubernetes-5), [6](#kubernetes-6), [17](#kubernetes-17), [18](#kubernetes-18).
 7. **Service networking**: Services, kube-proxy, DNS, Ingress, NetworkPolicy give stable names and paths to pods. Lessons: [4](#kubernetes-4), [14](#kubernetes-14), [17](#kubernetes-17).
 8. **Detection and audit**: Audit logs, events, Falco-style runtime rules and alerts tell you what happened and who did it. Lessons: [17](#kubernetes-17).
-9. **Operations and troubleshooting**: Rollouts, upgrades, node failure, logs, events, describe, a repeatable triage order. Lessons: [9](#kubernetes-9), [10](#kubernetes-10), [11](#kubernetes-11), [15](#kubernetes-15), [16](#kubernetes-16).
-10. **Extending Kubernetes**: CRDs and operators add new object types and controllers. Lessons: [12](#kubernetes-12).
+9. **GitOps and policy at scale**: Pull-based agents, one template for many clusters, Kyverno policies in Git, Crossplane for cloud resources. Lessons: [19](#kubernetes-19).
+10. **Operations and troubleshooting**: Rollouts, upgrades, node failure, logs, events, describe, a repeatable triage order. Lessons: [9](#kubernetes-9), [10](#kubernetes-10), [11](#kubernetes-11), [15](#kubernetes-15), [16](#kubernetes-16).
+11. **Extending Kubernetes**: CRDs and operators add new object types and controllers. Lessons: [12](#kubernetes-12).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/kubernetes), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 
@@ -59,6 +60,13 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Kubernetes architecture crash course (TechOps Examples)](https://www.techopsexamples.com/p/kubernetes-architecture-crash-course)
+- [Pod lifecycle, behind the scenes (TechOps Examples)](https://www.techopsexamples.com/p/kubernetes-pod-lifecycle-behind-the-scenes)
+- [Pod YAML breakdown (TechOps Examples)](https://www.techopsexamples.com/p/pod-yaml-file-structure-breakdown)
+- [GitOps push vs pull (TechOps Examples)](https://www.techopsexamples.com/p/gitops-push-vs-pull-architecture-which-one-to-choose)
+- [Kyverno policies with Argo CD (TechOps Examples)](https://www.techopsexamples.com/p/using-kyverno-policies-with-argocd)
+- [Multi-cloud GitOps for Kubernetes (TechOps Examples)](https://www.techopsexamples.com/p/multi-cloud-gitops-workflow-for-kubernetes-management)
+- [Crossplane with Argo CD (TechOps Examples)](https://www.techopsexamples.com/p/why-crossplane-with-argocd-is-the-best-gitops)
 - [Killercoda Kubernetes scenarios](https://killercoda.com)
 - [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 - [kubectl quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/)

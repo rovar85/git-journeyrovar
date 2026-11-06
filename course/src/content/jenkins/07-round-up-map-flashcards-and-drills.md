@@ -55,6 +55,8 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [GitHub Actions workflow for Terraform workspaces (TechOps Examples)](https://www.techopsexamples.com/p/github-actions-workflow-for-terraform-workspaces)
+- [GitHub Actions optimization techniques (TechOps Examples)](https://www.techopsexamples.com/p/github-actions-optimization-techniques)
 - [Pipeline syntax reference](https://www.jenkins.io/doc/book/pipeline/syntax/)
 - [Using a Jenkinsfile](https://www.jenkins.io/doc/book/pipeline/jenkinsfile/)
 - [Securing Jenkins](https://www.jenkins.io/doc/book/security/)

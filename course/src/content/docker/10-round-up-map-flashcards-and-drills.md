@@ -55,6 +55,11 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [Dockerfile vs Docker Compose (TechOps Examples)](https://www.techopsexamples.com/p/dockerfile-vs-docker-compose-what-you-should-know)
+- [Reduce Docker image size (TechOps Examples)](https://www.techopsexamples.com/p/how-to-reduce-docker-image-size)
+- [Docker build cache explained (TechOps Examples)](https://www.techopsexamples.com/p/docker-build-cache-explained)
+- [Docker stats (TechOps Examples)](https://www.techopsexamples.com/p/container-resource-monitoring-with-docker-stats)
+- [Docker Scout (TechOps Examples)](https://www.techopsexamples.com/p/detecting-and-mitigating-image-vulnerabilities-with-docker-scout)
 - [Killercoda scenarios](https://killercoda.com)
 - [iximiuz Labs](https://labs.iximiuz.com)
 - [Dockerfile reference](https://docs.docker.com/reference/dockerfile/)

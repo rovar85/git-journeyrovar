@@ -54,6 +54,7 @@ Cards are generated from the track's quiz questions, recap sentences (with the k
 
 When documentation links to eight more resources, you usually need one to three pages. For this track, start here (links are given from memory of stable documentation addresses; if one has moved, search the site for the title):
 
+- [GitHub branching strategy for multi-account environments (TechOps Examples)](https://www.techopsexamples.com/p/github-branching-strategy-for-multi-account-environments)
 - [Learn Git Branching](https://learngitbranching.js.org)
 - [Git Exercises](https://gitexercises.fracz.com)
 - [Git reference manual](https://git-scm.com/docs)

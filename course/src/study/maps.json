@@ -275,6 +275,10 @@
   ],
   "docs": [
    {
+    "label": "GitHub branching strategy for multi-account environments (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/github-branching-strategy-for-multi-account-environments"
+   },
+   {
     "label": "Learn Git Branching",
     "url": "https://learngitbranching.js.org"
    },
@@ -466,6 +470,26 @@
   ],
   "docs": [
    {
+    "label": "Dockerfile vs Docker Compose (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/dockerfile-vs-docker-compose-what-you-should-know"
+   },
+   {
+    "label": "Reduce Docker image size (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/how-to-reduce-docker-image-size"
+   },
+   {
+    "label": "Docker build cache explained (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/docker-build-cache-explained"
+   },
+   {
+    "label": "Docker stats (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/container-resource-monitoring-with-docker-stats"
+   },
+   {
+    "label": "Docker Scout (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/detecting-and-mitigating-image-vulnerabilities-with-docker-scout"
+   },
+   {
     "label": "Killercoda scenarios",
     "url": "https://killercoda.com"
    },
@@ -564,6 +588,14 @@
   ],
   "docs": [
    {
+    "label": "GitHub Actions workflow for Terraform workspaces (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/github-actions-workflow-for-terraform-workspaces"
+   },
+   {
+    "label": "GitHub Actions optimization techniques (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/github-actions-optimization-techniques"
+   },
+   {
     "label": "Pipeline syntax reference",
     "url": "https://www.jenkins.io/doc/book/pipeline/syntax/"
    },
@@ -653,6 +685,18 @@
    "Limit blast radius with --limit host and serial: 1 for rolling changes."
   ],
   "docs": [
+   {
+    "label": "Ansible ping-pong architecture (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/ansible-ping-pong-architecture"
+   },
+   {
+    "label": "Ansible roles directory structure (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/ansible-roles-directory-structure-breakdown"
+   },
+   {
+    "label": "Dynamic inventory in Ansible (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/how-to-set-up-dynamic-inventory-in-ansible"
+   },
    {
     "label": "Playbook guide",
     "url": "https://docs.ansible.com/ansible/latest/playbook_guide/index.html"
@@ -747,6 +791,22 @@
   ],
   "docs": [
    {
+    "label": "Well-structured Terraform project (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/guide-to-a-well-structured-terraform-project"
+   },
+   {
+    "label": "Prevent and recover lost Terraform state (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/steps-to-prevent-and-recover-lost-terraform-state-files"
+   },
+   {
+    "label": "Terraform graphs explained (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/terraform-graphs-explained"
+   },
+   {
+    "label": "Overusing dynamic blocks (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/the-problem-with-overusing-terraform-dynamic-blocks"
+   },
+   {
     "label": "HashiCorp Terraform tutorials",
     "url": "https://developer.hashicorp.com/terraform/tutorials"
    },
@@ -823,12 +883,13 @@
    },
    {
     "label": "Pod and container",
-    "text": "Pod spec: containers, resources, probes, securityContext, volumes, config and secrets.",
+    "text": "Pod spec: containers, resources, probes, securityContext, volumes, config and secrets; the lifecycle from Pending to Terminated.",
     "lessons": [
      2,
      5,
      6,
-     17
+     17,
+     18
     ]
    },
    {
@@ -845,6 +906,13 @@
     "text": "Audit logs, events, Falco-style runtime rules and alerts tell you what happened and who did it.",
     "lessons": [
      17
+    ]
+   },
+   {
+    "label": "GitOps and policy at scale",
+    "text": "Pull-based agents, one template for many clusters, Kyverno policies in Git, Crossplane for cloud resources.",
+    "lessons": [
+     19
     ]
    },
    {
@@ -876,6 +944,34 @@
    "For every scenario, know which documentation page answers it (or practise until you do not need it): kubernetes.io/docs/tasks is organised by job."
   ],
   "docs": [
+   {
+    "label": "Kubernetes architecture crash course (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/kubernetes-architecture-crash-course"
+   },
+   {
+    "label": "Pod lifecycle, behind the scenes (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/kubernetes-pod-lifecycle-behind-the-scenes"
+   },
+   {
+    "label": "Pod YAML breakdown (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/pod-yaml-file-structure-breakdown"
+   },
+   {
+    "label": "GitOps push vs pull (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/gitops-push-vs-pull-architecture-which-one-to-choose"
+   },
+   {
+    "label": "Kyverno policies with Argo CD (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/using-kyverno-policies-with-argocd"
+   },
+   {
+    "label": "Multi-cloud GitOps for Kubernetes (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/multi-cloud-gitops-workflow-for-kubernetes-management"
+   },
+   {
+    "label": "Crossplane with Argo CD (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/why-crossplane-with-argocd-is-the-best-gitops"
+   },
    {
     "label": "Killercoda Kubernetes scenarios",
     "url": "https://killercoda.com"
@@ -1122,6 +1218,18 @@
    "Set budgets and alerts before you create anything."
   ],
   "docs": [
+   {
+    "label": "AWS VPC network segmentation (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/aws-vpc-network-segmentation-break-down"
+   },
+   {
+    "label": "AWS Lambda integration patterns with SQS and SNS (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/aws-lambda-integration-patterns-sqs-sns"
+   },
+   {
+    "label": "Serverless architecture for SaaS authentication on AWS (TechOps Examples)",
+    "url": "https://www.techopsexamples.com/p/designing-an-aws-serverless-architecture-for-saas-user-authentication"
+   },
    {
     "label": "Cloud Resume Challenge",
     "url": "https://cloudresumechallenge.dev"
