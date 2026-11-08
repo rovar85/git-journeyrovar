@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 3 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 4 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -32,6 +32,7 @@ The shared responsibility stack: you move up or down it when you choose IaaS, Pa
 4. **Compute**: VMs, containers, serverless: who patches what. Lessons: [1](#cloud-1), [3](#cloud-3).
 5. **Storage and data**: Object, block, file, databases; durability vs availability. Lessons: [1](#cloud-1), [3](#cloud-3).
 6. **Operate**: Monitoring, backup, cost control, automation, resilience across zones and regions. Lessons: [3](#cloud-3).
+7. **Delivery**: DevOps culture, CI and CD, DORA metrics, shift-left and DevSecOps. Lessons: [4](#cloud-4).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/cloud), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 

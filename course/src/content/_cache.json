@@ -4082,6 +4082,28 @@
   ],
   "key": "30eab8e8ee7f6d13"
  },
+ "cloud-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/devops && cd ~/lab/devops",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > dora.py <<'EOF'\n> from datetime import datetime as D, timedelta as T\n> # Four months of invented deployment records: (deployed at, commit time of the oldest change in it, caused a failure?, minutes to restore)\n> deploys = [\n>  (\"2026-03-02 10:00\", \"2026-03-01 15:00\", False, 0), (\"2026-03-04 11:30\", \"2026-03-03 09:00\", False, 0), (\"2026-03-05 16:00\", \"2026-03-04 10:00\", True, 95),\n>  (\"2026-03-09 10:15\", \"2026-03-06 14:00\", False, 0), (\"2026-03-11 09:40\", \"2026-03-10 16:30\", False, 0), (\"2026-03-12 14:10\", \"2026-03-11 11:00\", False, 0),\n>  (\"2026-03-16 10:00\", \"2026-03-13 15:00\", False, 0), (\"2026-03-18 15:45\", \"2026-03-17 09:30\", True, 40), (\"2026-03-19 11:00\", \"2026-03-18 10:00\", False, 0),\n>  (\"2026-03-23 10:30\", \"2026-03-20 17:00\", False, 0), (\"2026-03-25 13:00\", \"2026-03-24 09:00\", False, 0), (\"2026-03-26 10:20\", \"2026-03-25 14:00\", False, 0),\n> ]\n> f = lambda s: D.strptime(s, \"%Y-%m-%d %H:%M\")\n> days = (f(deploys[-1][0]) - f(deploys[0][0])).days + 1\n> leads = sorted((f(d) - f(c)).total_seconds() / 3600 for d, c, bad, m in deploys)\n> fails = [x for x in deploys if x[2]]\n> print(f\"period: {days} days, {len(deploys)} deployments\\n\")\n> print(f\"1) Deployment frequency   {len(deploys) / days * 7:4.1f} per week\")\n> print(f\"2) Lead time for changes  median {leads[len(leads) // 2]:.0f} h from commit to production\")\n> print(f\"3) Change failure rate    {len(fails) / len(deploys):.0%} of deployments caused a failure that needed a fix or rollback\")\n> print(f\"4) Time to restore        {sum(m for *_, m in fails) / len(fails):.0f} min on average ({', '.join(str(m) for *_, m in fails)} min)\")\n> print(\"\\nHow to read these (the bands move with the industry, so use them as a compass, not a score):\")\n> print(\"  - Frequency and lead time measure THROUGHPUT: how fast value flows.\")\n> print(\"  - Failure rate and time to restore measure STABILITY: how safely and how quickly you recover.\")\n> print(\"  - The surprising finding behind the metrics: speed and stability usually improve TOGETHER, because small, frequent changes are safer.\")\n> print(\"\\nWays these numbers get gamed (and why you should not set them as targets): splitting one change into ten deploys,\")\n> print(\"not recording rollbacks as failures, counting config changes as deploys. A metric used as a target stops being a good metric.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 dora.py",
+     "o": "period: 25 days, 12 deployments\n\n1) Deployment frequency    3.4 per week\n2) Lead time for changes  median 28 h from commit to production\n3) Change failure rate    17% of deployments caused a failure that needed a fix or rollback\n4) Time to restore        68 min on average (95, 40 min)\n\nHow to read these (the bands move with the industry, so use them as a compass, not a score):\n  - Frequency and lead time measure THROUGHPUT: how fast value flows.\n  - Failure rate and time to restore measure STABILITY: how safely and how quickly you recover.\n  - The surprising finding behind the metrics: speed and stability usually improve TOGETHER, because small, frequent changes are safer.\n\nWays these numbers get gamed (and why you should not set them as targets): splitting one change into ten deploys,\nnot recording rollbacks as failures, counting config changes as deploys. A metric used as a target stops being a good metric.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fc88f2a1e7273fed"
+ },
  "cloudsenior-1": {
   "blocks": [
    [
@@ -17900,6 +17922,123 @@
    ]
   ],
   "key": "8e90090777addb30"
+ },
+ "scenarios-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > sg.py <<'EOF'\n> # A tiny model of cloud network rules: security groups (stateful, allow-only) and a world-open audit.\n> GROUPS = {\n>   \"web-sg\": {\"ingress\": [(\"tcp\", 443, \"0.0.0.0/0\"), (\"tcp\", 80, \"0.0.0.0/0\")]},\n>   \"app-sg\": {\"ingress\": [(\"tcp\", 8080, \"sg:web-sg\")]},\n>   \"db-sg\":  {\"ingress\": [(\"tcp\", 5432, \"sg:app-sg\")]},\n>   \"bastion-sg\": {\"ingress\": [(\"tcp\", 22, \"0.0.0.0/0\")]},                      # a classic mistake\n>   \"legacy-sg\":  {\"ingress\": [(\"tcp\", 5432, \"0.0.0.0/0\"), (\"tcp\", 6379, \"0.0.0.0/0\"), (\"tcp\", 9200, \"10.0.0.0/8\")]},\n> }\n> def allowed(src, dst_group, proto, port):\n>     \"\"\"src is 'internet' or a security group name\"\"\"\n>     for p, prt, source in GROUPS[dst_group][\"ingress\"]:\n>         if p == proto and prt == port:\n>             if source == \"0.0.0.0/0\" and src == \"internet\": return True\n>             if source == f\"sg:{src}\": return True\n>     return False\n> print(\"Reachability, as the rules say (stateful: replies are allowed automatically)\")\n> tests = [(\"internet\", \"web-sg\", 443), (\"internet\", \"app-sg\", 8080), (\"web-sg\", \"app-sg\", 8080), (\"app-sg\", \"db-sg\", 5432), (\"web-sg\", \"db-sg\", 5432), (\"internet\", \"db-sg\", 5432), (\"internet\", \"legacy-sg\", 5432)]\n> for src, dst, port in tests:\n>     print(f\"  {src:9} -> {dst:10} tcp/{port:<5} {'ALLOW' if allowed(src, dst, 'tcp', port) else 'deny'}\")\n> SENSITIVE = {22: \"SSH\", 3389: \"RDP\", 5432: \"PostgreSQL\", 3306: \"MySQL\", 6379: \"Redis\", 9200: \"Elasticsearch\", 27017: \"MongoDB\"}\n> print(\"\\nAudit: sensitive ports open to the whole internet\")\n> for name, g in GROUPS.items():\n>     for proto, port, source in g[\"ingress\"]:\n>         if source == \"0.0.0.0/0\" and port in SENSITIVE: print(f\"  FINDING {name}: {SENSITIVE[port]} (tcp/{port}) is open to 0.0.0.0/0\")\n> print(\"\\nGood pattern in this model: the database accepts traffic only from the app tier's group, never from an address range.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 sg.py",
+     "o": "Reachability, as the rules say (stateful: replies are allowed automatically)\n  internet  -> web-sg     tcp/443   ALLOW\n  internet  -> app-sg     tcp/8080  deny\n  web-sg    -> app-sg     tcp/8080  ALLOW\n  app-sg    -> db-sg      tcp/5432  ALLOW\n  web-sg    -> db-sg      tcp/5432  deny\n  internet  -> db-sg      tcp/5432  deny\n  internet  -> legacy-sg  tcp/5432  ALLOW\n\nAudit: sensitive ports open to the whole internet\n  FINDING bastion-sg: SSH (tcp/22) is open to 0.0.0.0/0\n  FINDING legacy-sg: PostgreSQL (tcp/5432) is open to 0.0.0.0/0\n  FINDING legacy-sg: Redis (tcp/6379) is open to 0.0.0.0/0\n\nGood pattern in this model: the database accepts traffic only from the app tier's group, never from an address range.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > flood.py <<'EOF'\n> import random\n> random.seed(5)\n> # 20 legitimate users send 1 request per second each; one attacker sends 400 per second. The server can do 100 per second.\n> USERS, ATTACKER_RATE, SECONDS = 20, 400, 30\n> def simulate(policy):\n>     served = {\"legit\": 0, \"attacker\": 0}; sent = {\"legit\": 0, \"attacker\": 0}\n>     buckets = {}\n>     for t in range(SECONDS):\n>         reqs = [(\"legit\", f\"user{u}\") for u in range(USERS)] + [(\"attacker\", \"evil\")] * ATTACKER_RATE\n>         random.shuffle(reqs)\n>         capacity = 100\n>         counts = {}\n>         for kind, who in reqs:\n>             sent[kind] += 1\n>             counts[who] = counts.get(who, 0) + 1\n>             if policy == \"none\":\n>                 ok = capacity > 0\n>             elif policy == \"per-IP limit (5/s)\":\n>                 ok = counts[who] <= 5 and capacity > 0\n>             if ok: capacity -= 1; served[kind] += 1\n>     return sent, served\n> print(f\"server capacity 100/s; {USERS} users at 1/s; attacker at {ATTACKER_RATE}/s\")\n> print(f\"{'policy':22} {'legit served':>13} {'attacker served':>16} {'legit success rate':>19}\")\n> for pol in (\"none\", \"per-IP limit (5/s)\"):\n>     sent, served = simulate(pol)\n>     print(f\"{pol:22} {served['legit']:13d} {served['attacker']:16d} {served['legit'] / sent['legit']:19.0%}\")\n> print(\"\\nPer-client limits protect the real users from one noisy source. A distributed attack (thousands of IPs, each polite) needs a CDN / WAF / provider scrubbing, not a per-IP rule.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 flood.py",
+     "o": "server capacity 100/s; 20 users at 1/s; attacker at 400/s\npolicy                  legit served  attacker served  legit success rate\nnone                             147             2853                 24%\nper-IP limit (5/s)               600              150                100%\n\nPer-client limits protect the real users from one noisy source. A distributed attack (thousands of IPs, each polite) needs a CDN / WAF / provider scrubbing, not a per-IP rule.",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > flow.py <<'EOF'\n> import random, statistics\n> random.seed(21)\n> # Synthetic VPC flow-log summaries: (minute, src, dst, dst_port, bytes). Mostly normal, plus a port scan and a slow data theft.\n> flows = []\n> hosts = [f\"10.0.1.{i}\" for i in range(10, 30)]\n> for minute in range(0, 240):\n>     for _ in range(40):\n>         flows.append((minute, random.choice(hosts), random.choice([\"10.0.2.5\", \"10.0.2.6\", \"10.0.3.9\"]), random.choice([443, 8080, 5432]), int(random.lognormvariate(8, 1))))\n> for i, port in enumerate(range(20, 220)):                                      # port scan from one internal host in minutes 100-101\n>     flows.append((100 + i // 100, \"10.0.1.23\", \"10.0.2.5\", port, 60))\n> for minute in range(180, 240, 5):                                              # steady large uploads to an outside address\n>     flows.append((minute, \"10.0.1.17\", \"203.0.113.50\", 443, 40_000_000))\n> print(f\"{len(flows)} flow records\\n\")\n> print(\"Detector 1: one source touching many different destination ports within a minute (scan)\")\n> by = {}\n> for m, s, d, p, b in flows: by.setdefault((m, s, d), set()).add(p)\n> for (m, s, d), ports in sorted(by.items()):\n>     if len(ports) >= 50: print(f\"  minute {m}: {s} probed {len(ports)} ports on {d}\")\n> print(\"\\nDetector 2: bytes sent to addresses outside the private ranges, against a baseline\")\n> out = {}\n> for m, s, d, p, b in flows:\n>     if not d.startswith(\"10.\"): out[s] = out.get(s, 0) + b\n> base = [b for m, s, d, p, b in flows if d.startswith(\"10.\")]\n> print(f\"  typical internal flow: median {int(statistics.median(base)):,} bytes\")\n> for s, b in sorted(out.items(), key=lambda x: -x[1]): print(f\"  {s} sent {b / 1e6:,.0f} MB to external addresses in 4 hours  <- investigate\")\n> print(\"\\nNeither detector proves an attack: a scanner could be an approved vulnerability tool and the upload a backup. They tell you WHERE to look first.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 flow.py",
+     "o": "9812 flow records\n\nDetector 1: one source touching many different destination ports within a minute (scan)\n  minute 100: 10.0.1.23 probed 102 ports on 10.0.2.5\n  minute 101: 10.0.1.23 probed 102 ports on 10.0.2.5\n\nDetector 2: bytes sent to addresses outside the private ranges, against a baseline\n  typical internal flow: median 2,831 bytes\n  10.0.1.17 sent 480 MB to external addresses in 4 hours  <- investigate\n\nNeither detector proves an attack: a scanner could be an approved vulnerability tool and the upload a backup. They tell you WHERE to look first.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "7373e961237e5327"
+ },
+ "scenarios-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/cost && cd ~/lab/cost",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bill.py <<'EOF'\n> import random\n> random.seed(9)\n> # Illustrative daily bill lines (invented prices, not a real price list): (day, service, team tag, dollars)\n> lines = []\n> for day in range(1, 31):\n>     lines += [(day, \"compute\", \"shop\", 310 + random.uniform(-10, 10)), (day, \"compute\", \"search\", 180 + random.uniform(-8, 8)),\n>               (day, \"storage\", \"shop\", 60 + day * 0.2), (day, \"database\", \"shop\", 140), (day, \"database\", \"search\", 90),\n>               (day, \"nat-data-processing\", \"untagged\", 20 + random.uniform(-2, 2) if day < 18 else 95 + random.uniform(-5, 5)),   # a deploy on day 18 started pulling images through NAT\n>               (day, \"logs\", \"untagged\", 35 + (day > 10) * 25), (day, \"support\", \"untagged\", 12)]\n> total = sum(l[3] for l in lines)\n> print(f\"month total ${total:,.0f}\\n\")\n> print(\"1) Where does the money go?\")\n> by = {}\n> for d, s, t, c in lines: by[s] = by.get(s, 0) + c\n> for s, c in sorted(by.items(), key=lambda x: -x[1]): print(f\"   {s:22} ${c:8,.0f}  {c / total:5.1%}\")\n> print(\"\\n2) Which service changed the most between the first and the last week?\")\n> def week(a, b, s): return sum(c for d, sv, t, c in lines if a <= d <= b and sv == s)\n> for s in by:\n>     w1, w4 = week(1, 7, s), week(24, 30, s)\n>     if w1 and abs(w4 - w1) / w1 > 0.25: print(f\"   {s:22} week 1 ${w1:7,.0f} -> last week ${w4:7,.0f}  ({(w4 - w1) / w1:+.0%})\")\n> print(\"\\n3) Find the day the spike started (largest day-over-day jump of NAT data processing)\")\n> daily = {d: c for d, s, t, c in lines if s == \"nat-data-processing\"}\n> d_max = max(range(2, 31), key=lambda d: daily[d] - daily[d - 1])\n> print(f\"   day {d_max}: ${daily[d_max - 1]:.0f} -> ${daily[d_max]:.0f}  (look at what was deployed or changed that day)\")\n> print(\"\\n4) Allocation: how much cost has no owner?\")\n> un = sum(c for d, s, t, c in lines if t == \"untagged\")\n> print(f\"   untagged ${un:,.0f} = {un / total:.0%} of the bill. Nobody can be asked to fix what nobody owns: enforce tags at creation.\")\n> print(\"\\n5) What a fix is worth: a gateway endpoint for object storage and image registry traffic instead of NAT\")\n> extra = sum(c for d, s, t, c in lines if s == \"nat-data-processing\" and d >= 18) - 13 * 20\n> print(f\"   the post-deploy increase cost about ${extra:,.0f} this month; at that rate about ${extra / 13 * 30:,.0f} per month\")\n> print(\"\\n6) Rightsizing candidates (instances whose 14-day peak CPU stays low)\")\n> fleet = [(\"web-1\", 4, 38), (\"web-2\", 4, 41), (\"batch-1\", 16, 9), (\"batch-2\", 16, 11), (\"report-1\", 8, 4), (\"cache-1\", 8, 62)]\n> for name, vcpu, peak in fleet:\n>     if peak < 20: print(f\"   {name:9} {vcpu:2d} vCPU, peak CPU {peak:2d}% -> try {max(2, vcpu // 2)} vCPU (about half the compute cost for that instance)\")\n> print(\"\\n7) Commitment: when does a 1-year commitment beat on-demand?\")\n> on_demand, committed_rate = 1.00, 0.65                                           # $/hour, committed price per hour for the whole year\n> for util in (0.5, 0.65, 0.8, 1.0):\n>     print(f\"   instance used {util:4.0%} of hours: on-demand ${on_demand * util:.2f}/h-equivalent vs committed ${committed_rate:.2f} -> {'commit wins' if committed_rate < on_demand * util else 'stay on-demand'}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bill.py",
+     "o": "month total $26,939\n\n1) Where does the money go?\n   compute                $  14,679  54.5%\n   database               $   6,900  25.6%\n   storage                $   1,893   7.0%\n   nat-data-processing    $   1,556   5.8%\n   logs                   $   1,550   5.8%\n   support                $     360   1.3%\n\n2) Which service changed the most between the first and the last week?\n   nat-data-processing    week 1 $    138 -> last week $    658  (+377%)\n   logs                   week 1 $    245 -> last week $    420  (+71%)\n\n3) Find the day the spike started (largest day-over-day jump of NAT data processing)\n   day 18: $18 -> $91  (look at what was deployed or changed that day)\n\n4) Allocation: how much cost has no owner?\n   untagged $3,466 = 13% of the bill. Nobody can be asked to fix what nobody owns: enforce tags at creation.\n\n5) What a fix is worth: a gateway endpoint for object storage and image registry traffic instead of NAT\n   the post-deploy increase cost about $958 this month; at that rate about $2,211 per month\n\n6) Rightsizing candidates (instances whose 14-day peak CPU stays low)\n   batch-1   16 vCPU, peak CPU  9% -> try 8 vCPU (about half the compute cost for that instance)\n   batch-2   16 vCPU, peak CPU 11% -> try 8 vCPU (about half the compute cost for that instance)\n   report-1   8 vCPU, peak CPU  4% -> try 4 vCPU (about half the compute cost for that instance)\n\n7) Commitment: when does a 1-year commitment beat on-demand?\n   instance used  50% of hours: on-demand $0.50/h-equivalent vs committed $0.65 -> stay on-demand\n   instance used  65% of hours: on-demand $0.65/h-equivalent vs committed $0.65 -> stay on-demand\n   instance used  80% of hours: on-demand $0.80/h-equivalent vs committed $0.65 -> commit wins\n   instance used 100% of hours: on-demand $1.00/h-equivalent vs committed $0.65 -> commit wins",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "1feb1491dd63d29f"
+ },
+ "scenarios-12": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > alerts.py <<'EOF'\n> import random\n> random.seed(3)\n> # A service with a 99.9% availability target (error budget 0.1%). One minute of data per point.\n> def day(fault_start=None, fault_len=0, fault_rate=0.0):\n>     errs = []\n>     for m in range(1440):\n>         base = max(0.0, random.gauss(0.0006, 0.0008))                        # normal noise around 0.06% errors\n>         if fault_start is not None and fault_start <= m < fault_start + fault_len: base = fault_rate\n>         errs.append(base)\n>     return errs\n> def static(errs, thr=0.002):                                                  # fire whenever one minute is above 0.2%\n>     return [i for i, e in enumerate(errs) if e > thr]\n> def sustained(errs, thr=0.002, n=5):                                          # 'for: 5m'\n>     return [i for i in range(n, len(errs)) if all(e > thr for e in errs[i - n:i])]\n> def burn(errs, short=5, long=60, rate=14.4, budget=0.001):                    # multi-window burn rate: both windows burning fast\n>     out = []\n>     for i in range(long, len(errs)):\n>         s = sum(errs[i - short:i]) / short; l = sum(errs[i - long:i]) / long\n>         if s > rate * budget and l > rate * budget: out.append(i)\n>     return out\n> quiet = day()\n> print(\"A quiet day with NO real problem: how many times would each rule page someone?\")\n> print(f\"   static threshold (any minute > 0.2%):        {len(static(quiet)):4d} alert-minutes\")\n> print(f\"   same, but only if it lasts 5 minutes:        {len(sustained(quiet)):4d} alert-minutes\")\n> print(f\"   burn-rate (5 min and 60 min both fast):      {len(burn(quiet)):4d} alert-minutes\")\n> print(f\"   burn-rate slow tier (30 min and 6 h):        {len(burn(quiet, short=30, long=360, rate=6)):4d} alert-minutes\")\n> print(\"\\nA real incident: 2% errors starting at minute 600 and lasting 90 minutes\")\n> inc = day(600, 90, 0.02)\n> for name, f in ((\"static threshold\", static), (\"5-minute sustained\", sustained), (\"burn-rate fast tier\", burn)):\n>     hits = [i for i in f(inc) if 600 <= i < 690]\n>     print(f\"   {name:20} first alert {('after ' + str(hits[0] - 600) + ' min') if hits else 'NEVER':14} alert-minutes during the incident: {len(hits)}\")\n> print(\"\\nA slow leak: 0.8% errors for 6 hours (never looks scary, but it eats the budget)\")\n> leak = day(300, 360, 0.008)\n> slow = lambda e: burn(e, short=30, long=360, rate=6)\n> for name, f in ((\"static threshold\", static), (\"5-minute sustained\", sustained), (\"burn-rate fast tier\", burn), (\"burn-rate slow tier\", slow)):\n>     hits = [i for i in f(leak) if 300 <= i < 660]\n>     print(f\"   {name:20} first alert {('after ' + str(hits[0] - 300) + ' min') if hits else 'NEVER':14}\")\n> print(\"\\nBudget used by the leak:\", f\"{sum(leak) / 1440 / 0.001:.0%} of the daily 99.9% error budget\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 alerts.py",
+     "o": "A quiet day with NO real problem: how many times would each rule page someone?\n   static threshold (any minute > 0.2%):          62 alert-minutes\n   same, but only if it lasts 5 minutes:           0 alert-minutes\n   burn-rate (5 min and 60 min both fast):         0 alert-minutes\n   burn-rate slow tier (30 min and 6 h):           0 alert-minutes\n\nA real incident: 2% errors starting at minute 600 and lasting 90 minutes\n   static threshold     first alert after 0 min    alert-minutes during the incident: 90\n   5-minute sustained   first alert after 5 min    alert-minutes during the incident: 85\n   burn-rate fast tier  first alert after 43 min   alert-minutes during the incident: 47\n\nA slow leak: 0.8% errors for 6 hours (never looks scary, but it eats the budget)\n   static threshold     first alert after 0 min   \n   5-minute sustained   first alert after 5 min   \n   burn-rate fast tier  first alert NEVER         \n   burn-rate slow tier  first alert after 263 min \n\nBudget used by the leak: 254% of the daily 99.9% error budget",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/mon && cd ~/lab/mon",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > cardinality.py <<'EOF'\n> # Time-series databases store one series per unique combination of label values. Count what a label choice costs.\n> labels = {\"service\": 40, \"method\": 6, \"status\": 8, \"instance\": 120}\n> series = 1\n> for k, v in labels.items(): series *= v\n> print(\"labels and their distinct values:\", labels)\n> print(f\"series for ONE metric: 40 x 6 x 8 x 120 = {series:,}\")\n> BYTES_PER_SERIES = 3000                                                           # rough memory per active series, illustrative\n> print(f\"memory at ~{BYTES_PER_SERIES} bytes per series: about {series * BYTES_PER_SERIES / 1e6:,.0f} MB for this one metric\\n\")\n> print(\"Now someone adds user_id (50,000 users) as a label 'to debug one customer':\")\n> bad = series * 50_000\n> print(f\"   {bad:,} series, about {bad * BYTES_PER_SERIES / 1e9:,.0f} GB of memory. The monitoring system falls over, usually during the incident you wanted it for.\")\n> print(\"\\nSafer: keep identifiers (user, request, trace id) in LOGS and TRACES, and keep metric labels to small, bounded sets.\")\n> print(\"A quick audit rule: any label whose number of distinct values can grow with traffic or with users does not belong on a metric.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 cardinality.py",
+     "o": "labels and their distinct values: {'service': 40, 'method': 6, 'status': 8, 'instance': 120}\nseries for ONE metric: 40 x 6 x 8 x 120 = 230,400\nmemory at ~3000 bytes per series: about 691 MB for this one metric\n\nNow someone adds user_id (50,000 users) as a label 'to debug one customer':\n   11,520,000,000 series, about 34,560 GB of memory. The monitoring system falls over, usually during the incident you wanted it for.\n\nSafer: keep identifiers (user, request, trace id) in LOGS and TRACES, and keep metric labels to small, bounded sets.\nA quick audit rule: any label whose number of distinct values can grow with traffic or with users does not belong on a metric.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f8d72439d7b238d8"
  },
  "scenarios-2": {
   "blocks": [

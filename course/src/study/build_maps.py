@@ -316,6 +316,7 @@ M["cloud"] = dict(
   H("Compute", "VMs, containers, serverless: who patches what.", 1, 3),
   H("Storage and data", "Object, block, file, databases; durability vs availability.", 1, 3),
   H("Operate", "Monitoring, backup, cost control, automation, resilience across zones and regions.", 3),
+  H("Delivery", "DevOps culture, CI and CD, DORA metrics, shift-left and DevSecOps.", 4),
  ],
  tips=[
   "Draw the shared-responsibility line for every service you use: what is the provider's job, what is yours?",
@@ -366,6 +367,7 @@ M["scenarios"] = dict(
   H("Read the evidence", "Events, conditions, plans, traces: let the system say why (describe, plan, logs).", 4, 6),
   H("Fix the cause", "Change the smallest thing that explains the evidence; avoid fixing symptoms.", 1, 7),
   H("Verify and prevent", "Measure the fix, add a guardrail, test, alert or runbook.", 7, 8),
+  H("Security, cost and monitoring scenarios", "Contain before you analyse; group the bill and find the day; page on symptoms and budget burn.", 10, 11, 12),
  ],
  tips=[
   "State the model before the commands: how it should work, then where it deviates.",

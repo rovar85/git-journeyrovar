@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 9 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 12 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -32,6 +32,7 @@ Scenario questions reward a method, not a guess. The same loop solves all nine.
 4. **Read the evidence**: Events, conditions, plans, traces: let the system say why (describe, plan, logs). Lessons: [4](#scenarios-4), [6](#scenarios-6).
 5. **Fix the cause**: Change the smallest thing that explains the evidence; avoid fixing symptoms. Lessons: [1](#scenarios-1), [7](#scenarios-7).
 6. **Verify and prevent**: Measure the fix, add a guardrail, test, alert or runbook. Lessons: [7](#scenarios-7), [8](#scenarios-8).
+7. **Security, cost and monitoring scenarios**: Contain before you analyse; group the bill and find the day; page on symptoms and budget burn. Lessons: [10](#scenarios-10), [11](#scenarios-11), [12](#scenarios-12).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/scenarios), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 

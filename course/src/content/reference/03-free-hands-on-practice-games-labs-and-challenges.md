@@ -105,6 +105,19 @@ Use the sites below for what a browser simulation cannot give: a real kernel, re
 | [90 Days of DevOps](https://github.com/MichaelCade/90DaysOfDevOps) | A free long-form learning path in a repository | The whole course |
 | [Hands-on DevOps projects (roadmap.sh)](https://roadmap.sh/devops/projects) | Project ideas with briefs | [Capstone](#capstone-1), [AI deep dive 21](#aideep-21) |
 
+## Scenario questions: where to practise them here
+
+Interview lists often group "scenario" questions into the same few categories. Here is where each is covered in this course:
+
+| Scenario category | Where to practise |
+| --- | --- |
+| Kubernetes troubleshooting | [Troubleshooting](#kubernetes-9), [cluster and node troubleshooting](#kubernetes-15), [Pod lifecycle](#kubernetes-18), [scenarios 2 to 6](#scenarios-2) |
+| Linux admin scenarios | [Troubleshooting and performance](#linux-11), the [Linux challenges](#linux-14), [question bank](#qbank-1) |
+| Monitoring and logging | [Monitoring](#monitoring-1), [scenarios 9](#scenarios-9) and [12](#scenarios-12) |
+| Cloud cost optimisation | [Senior cloud 5](#cloudsenior-5), [scenarios 11](#scenarios-11) |
+| Network security | [Firewalls and NAT](#networking-7), [Cloud networking](#cloud-2), [scenarios 10](#scenarios-10) |
+| Core DevOps concepts | [DevOps foundations](#cloud-4), [Senior cloud](#cloudsenior-1), [question bank](#qbank-1) |
+
 ## A practice plan for someone with no machine
 
 1. **Week 1: Linux.** Use the Lab and the [Linux challenges](#linux-14), then play Terminus or Bashcrawl for fun.
