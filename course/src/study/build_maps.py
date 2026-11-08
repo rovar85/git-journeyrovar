@@ -574,6 +574,33 @@ M["aibank"] = dict(
  ],
 )
 
+M["seniorqa"] = dict(
+ title="One senior question, from the clarifying question to the follow-up",
+ intro="Every senior design or incident answer follows the same route: clarify, fix the numbers, design, walk the failures, name the trade-offs and say how you will measure.",
+ hops=[
+  H("Map", "Which of the 20 questions are answered where; the six moves of a senior answer.", 1),
+  H("Platform design", "Multi-region availability, zero-downtime upgrades and stateful migration: targets, order of steps, failure modes.", 2, 3, 4),
+  H("Delivery", "GitOps for many teams, a fast pipeline, rollbacks that do not depend on the pipeline, and no config drift.", 5, 6, 7, 8),
+  H("Infrastructure as code", "A half-failed Terraform apply: state, import, taint, locks and restores.", 9),
+  H("Reliability", "Self-healing with bounds, and cascading failures with timeouts, bulkheads and breakers.", 10, 11),
+  H("Incident", "A latency regression after a deploy: confirm, protect users, narrow by endpoint and hop, root-cause.", 12),
+ ],
+ tips=[
+  "Say your assumptions and the numbers (availability, RTO, RPO, latency) in the first 30 seconds.",
+  "For any 'rollback' or 'recovery' question, ask what path still works when the normal path is the thing that broke.",
+  "For any 'at scale' question, name who owns what and what limits the blast radius.",
+  "For any incident, stop the harm first, then find the cause.",
+  "Finish with how you would know it works: the metric, the alert, the drill.",
+ ],
+ docs=[D("Google SRE Book: Addressing Cascading Failures", "https://sre.google/sre-book/addressing-cascading-failures/"), D("Argo CD ApplicationSet", "https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/"), D("Kubernetes: Safely drain a node", "https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/"), D("Terraform: import existing resources", "https://developer.hashicorp.com/terraform/cli/import"), D("AWS Well-Architected: Reliability pillar", "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html")],
+ round2=[
+  "Pick a question, set a two-minute timer and answer out loud; then check which of the six moves you skipped.",
+  "Change one number in a model (for example the failover time or the retry count) and predict the result before you run it.",
+  "Pair Q16 (cascading failure) with Q19 (latency) and tell them as one incident story.",
+  "Write your own answer to question 20 using the skeleton in lesson 1.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

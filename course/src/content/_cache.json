@@ -19555,6 +19555,248 @@
   ],
   "key": "0aa18b598af6d4f5"
  },
+ "seniorqa-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q15 && cd ~/lab/seniorqa/q15",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > selfheal.py <<'EOF'\n> # A self-healing control loop: observe -> compare with desired -> act, with guard rails so it does not make things worse.\n> import random\n> random.seed(7)\n> DESIRED = 6\n> class Fleet:\n>     def __init__(s): s.healthy = DESIRED; s.t = 0; s.restarts = []\n> fleet = Fleet()\n> def step(f, failures, max_restarts_per_5min=3, safe_floor=0.5, bad_release=False):\n>     f.healthy -= failures\n>     f.t += 1\n>     missing = DESIRED - f.healthy\n>     acted = \"-\"\n>     recent = [t for t in f.restarts if f.t - t < 5]\n>     if missing > 0:\n>         if f.healthy < DESIRED * safe_floor:\n>             acted = \"ALERT human: below safe floor, automation paused\"\n>         elif len(recent) >= max_restarts_per_5min:\n>             acted = \"STOP: restart budget used (crash loop), escalate\"\n>         else:\n>             f.healthy += missing; f.restarts.append(f.t); acted = f\"replaced {missing} pod(s)\"\n>     return acted\n> print(\"tick failures healthy action\")\n> for failures in [1, 0, 2, 0, 1, 1, 1, 1]:\n>     a = step(fleet, failures)\n>     print(f\"{fleet.t:4d} {failures:8d} {fleet.healthy:7d} {a}\")\n> print(\"\\nWhy the guard rails matter: a loop with no budget restarts a crash-looping pod forever and hides the real fault;\")\n> print(\"a loop with no floor can 'heal' by killing the rest of a fleet that is failing for a shared reason (bad config, dead dependency).\")\n> print(\"\\nLayers of self-healing in a real platform:\")\n> for l, w in [(\"container\", \"liveness probe restarts a hung process; readiness probe removes it from traffic\"), (\"pod\", \"Deployment/ReplicaSet recreates pods; PDB protects against evictions\"), (\"node\", \"node auto-repair / cluster autoscaler replaces a bad node; taints and drain\"),\n>              (\"traffic\", \"load balancer health checks, outlier ejection, circuit breakers, retries with budgets\"), (\"release\", \"progressive delivery (Argo Rollouts/Flagger) aborts and rolls back on SLO burn\"),\n>              (\"config\", \"GitOps reverts manual drift\"), (\"capacity\", \"HPA/KEDA scale on load; queues absorb spikes\"), (\"data\", \"automated failover of replicas with fencing; backups restore-tested\"), (\"alerts\", \"remediation runbooks as code; page only when automation fails\")]:\n>     print(f\"  {l:9} {w}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 selfheal.py",
+     "o": "tick failures healthy action\n   1        1       6 replaced 1 pod(s)\n   2        0       6 -\n   3        2       6 replaced 2 pod(s)\n   4        0       6 -\n   5        1       6 replaced 1 pod(s)\n   6        1       6 replaced 1 pod(s)\n   7        1       5 STOP: restart budget used (crash loop), escalate\n   8        1       6 replaced 2 pod(s)\n\nWhy the guard rails matter: a loop with no budget restarts a crash-looping pod forever and hides the real fault;\na loop with no floor can 'heal' by killing the rest of a fleet that is failing for a shared reason (bad config, dead dependency).\n\nLayers of self-healing in a real platform:\n  container liveness probe restarts a hung process; readiness probe removes it from traffic\n  pod       Deployment/ReplicaSet recreates pods; PDB protects against evictions\n  node      node auto-repair / cluster autoscaler replaces a bad node; taints and drain\n  traffic   load balancer health checks, outlier ejection, circuit breakers, retries with budgets\n  release   progressive delivery (Argo Rollouts/Flagger) aborts and rolls back on SLO burn\n  config    GitOps reverts manual drift\n  capacity  HPA/KEDA scale on load; queues absorb spikes\n  data      automated failover of replicas with fencing; backups restore-tested\n  alerts    remediation runbooks as code; page only when automation fails",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "978424225e7085fc"
+ },
+ "seniorqa-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q16 && cd ~/lab/seniorqa/q16",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > cascade.py <<'EOF'\n> # Cascading failure: a slow dependency holds callers' threads; the service then fails even on endpoints that never touch it.\n> # Model: 100 threads. 50 req/s need the dependency, 20 req/s (/health) do not. Dependency takes 4 s between t=20 and t=60 (normally 20 ms).\n> def simulate(timeout_s, retries, bulkhead, breaker):\n>     busy = []                       # release times of threads in use\n>     dep_ok = dep_err = fast = 0; health_ok = health_bad = 0; dep_calls = 0; streak = 0; open_until = -1\n>     for tick in range(1000):                      # 100 s in 0.1 s ticks\n>         t = tick / 10; slow = 20 <= t < 60\n>         busy = [r for r in busy if r > t]\n>         for _ in range(5):                        # 5 dependency requests per tick = 50/s\n>             if breaker and t < open_until: fast += 1; continue\n>             used = len(busy); cap = 40 if bulkhead else 100\n>             if used >= cap: dep_err += 1; streak += 1; continue\n>             hold = 0.0; ok = False\n>             for _a in range(1 + retries):\n>                 dep_calls += 1\n>                 lat = 4.0 if slow else 0.02\n>                 if lat <= timeout_s: hold += lat; ok = True; break\n>                 hold += timeout_s\n>             busy.append(t + hold)\n>             if ok: dep_ok += 1; streak = 0\n>             else: dep_err += 1; streak += 1\n>             if breaker and streak >= 20: open_until = t + 5; streak = 0\n>         for _ in range(2):                        # 2 health requests per tick = 20/s, need a free thread for 10 ms\n>             if len(busy) < 100: health_ok += 1\n>             else: health_bad += 1\n>     return dep_ok, dep_err, fast, health_bad, dep_calls\n> print(f\"{'configuration':58} {'dep ok':>7} {'dep err':>8} {'fast-fail':>9} {'/health failed':>15} {'calls to dep':>13}\")\n> for label, a in [(\"no protection: 5 s timeout, 2 retries\", (5, 2, False, False)),\n>                  (\"5 s timeout + bulkhead (40 threads for the dependency)\", (5, 0, True, False)),\n>                  (\"short timeout 300 ms, 2 retries\", (0.3, 2, False, False)),\n>                  (\"short timeout 300 ms, no retries\", (0.3, 0, False, False)),\n>                                   (\"+ circuit breaker (5 s fail-fast after 20 errors)\", (0.3, 0, True, True))]:\n>     r = simulate(*a); print(f\"{label:58} {r[0]:7d} {r[1]:8d} {r[2]:9d} {r[3]:15d} {r[4]:13d}\")\n> print(\"\\nRead the '/health failed' column: with no protection the slow dependency takes every thread and even endpoints that never call it fail. That is the cascade.\")\n> print(\"A short timeout frees threads sooner; a bulkhead caps what one dependency can take; a circuit breaker stops sending doomed calls (see 'calls to dep') so the dependency can recover.\")\n> print(\"Retries multiply load on an already-slow dependency: only with backoff + jitter + a retry budget (Systems 6). Also: shed load at the edge, degrade (cached or partial result), prefer queues to synchronous chains.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 cascade.py",
+     "o": "configuration                                               dep ok  dep err fast-fail  /health failed  calls to dep\nno protection: 5 s timeout, 2 retries                         4000     1000         0             764          4000\n5 s timeout + bulkhead (40 threads for the dependency)        3400     1600         0               0          3400\nshort timeout 300 ms, 2 retries                               3000     2000         0               0          9000\nshort timeout 300 ms, no retries                              3000     2000         0               0          5000\n+ circuit breaker (5 s fail-fast after 20 errors)             2880      160      1960               0          3040\n\nRead the '/health failed' column: with no protection the slow dependency takes every thread and even endpoints that never call it fail. That is the cascade.\nA short timeout frees threads sooner; a bulkhead caps what one dependency can take; a circuit breaker stops sending doomed calls (see 'calls to dep') so the dependency can recover.\nRetries multiply load on an already-slow dependency: only with backoff + jitter + a retry budget (Systems 6). Also: shed load at the edge, degrade (cached or partial result), prefer queues to synchronous chains.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a73c4baac2cde6bb"
+ },
+ "seniorqa-12": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q19 && cd ~/lab/seniorqa/q19",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > latency.py <<'EOF'\n> # Latency went 80 ms -> 2 s after a deploy. Triage by comparing before/after per hop and per cohort.\n> import random\n> random.seed(11)\n> def pct(xs, p): xs = sorted(xs); return xs[int(len(xs) * p / 100) - 1]\n> def req(version, pod, endpoint):\n>     base = {\"auth\": 10, \"cart\": 25, \"db\": 30, \"render\": 15}\n>     hops = dict(base)\n>     if version == \"v2\" and endpoint == \"/search\": hops[\"db\"] += 1900        # the regression: a new query without an index\n>     if pod == \"pod-3\": hops[\"render\"] += 40                                  # an unrelated noisy pod\n>     return {k: v * random.uniform(0.8, 1.25) for k, v in hops.items()}\n> rows = []\n> for i in range(4000):\n>     v = \"v2\" if i >= 2000 else \"v1\"; pod = f\"pod-{i % 4}\"; ep = random.choice([\"/search\", \"/cart\", \"/home\"])\n>     h = req(v, pod, ep); rows.append((v, pod, ep, sum(h.values()), h))\n> def show(title, key):\n>     print(title)\n>     groups = {}\n>     for r in rows: groups.setdefault(key(r), []).append(r[3])\n>     for k in sorted(groups): print(f\"   {str(k):18} n={len(groups[k]):5d}  p50={pct(groups[k], 50):7.0f} ms  p99={pct(groups[k], 99):7.0f} ms\")\n> show(\"1) before vs after the deploy\", lambda r: r[0])\n> print(\"2) v2 only, by endpoint (is it everything, or one path?)\")\n> g = {}\n> for r in rows:\n>     if r[0] == \"v2\": g.setdefault(r[2], []).append(r[3])\n> for k in sorted(g): print(f\"   {k:18} p50={pct(g[k], 50):7.0f} ms  p99={pct(g[k], 99):7.0f} ms\")\n> print(\"3) v2 /search only, mean time per hop (where does the time go?)\")\n> hop = {}\n> for r in rows:\n>     if r[0] == \"v2\" and r[2] == \"/search\":\n>         for k, v in r[4].items(): hop.setdefault(k, []).append(v)\n> for k, v in sorted(hop.items(), key=lambda kv: -sum(kv[1])): print(f\"   {k:8} {sum(v)/len(v):7.0f} ms\")\n> print(\"4) v2 by pod (a red herring: pod-3 is a bit slower for a different reason)\")\n> g = {}\n> for r in rows:\n>     if r[0] == \"v2\" and r[2] != \"/search\": g.setdefault(r[1], []).append(r[3])\n> for k in sorted(g): print(f\"   {k:8} p50={pct(g[k], 50):6.0f} ms\")\n> print(\"\\nTriage order: 1) did it start at the deploy? (overlay deploy markers on the graph)  2) one endpoint or all?  3) which hop (traces)?  4) CPU/memory/GC/connection pool/saturation?\")\n> print(\"             5) dependency changes: new query, missing index, N+1, cache miss, timeout/retry change, config/feature flag, bigger payload?  6) roll back first if user impact is high, then root-cause.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 latency.py",
+     "o": "1) before vs after the deploy\n   v1                 n= 2000  p50=     85 ms  p99=    138 ms\n   v2                 n= 2000  p50=    107 ms  p99=   2455 ms\n2) v2 only, by endpoint (is it everything, or one path?)\n   /cart              p50=     84 ms  p99=    138 ms\n   /home              p50=     84 ms  p99=    137 ms\n   /search            p50=   2055 ms  p99=   2469 ms\n3) v2 /search only, mean time per hop (where does the time go?)\n   db          1990 ms\n   render        26 ms\n   cart          26 ms\n   auth          10 ms\n4) v2 by pod (a red herring: pod-3 is a bit slower for a different reason)\n   pod-0    p50=    82 ms\n   pod-1    p50=    81 ms\n   pod-2    p50=    82 ms\n   pod-3    p50=   122 ms\n\nTriage order: 1) did it start at the deploy? (overlay deploy markers on the graph)  2) one endpoint or all?  3) which hop (traces)?  4) CPU/memory/GC/connection pool/saturation?\n             5) dependency changes: new query, missing index, N+1, cache miss, timeout/retry change, config/feature flag, bigger payload?  6) roll back first if user impact is high, then root-cause.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e81d7678b1b944fe"
+ },
+ "seniorqa-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q1 && cd ~/lab/seniorqa/q1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > avail.py <<'EOF'\n> # Availability arithmetic for a multi-region design. Numbers are illustrative inputs, not provider promises.\n> def nines(a): return f\"{a * 100:.4f}%\"\n> def downtime_min_per_month(a): return (1 - a) * 30 * 24 * 60\n> region = 0.9995                     # what one region (all its dependencies) delivers\n> print(\"single region                          \", nines(region), f\"-> {downtime_min_per_month(region):6.1f} min/month down\")\n> # active-active across 2 regions: down only when BOTH are down (assumes independent failures) AND the routing layer works\n> router = 0.99999\n> aa = (1 - (1 - region) ** 2) * router\n> print(\"2 regions active-active (independent)  \", nines(aa), f\"-> {downtime_min_per_month(aa):6.1f} min/month  <- limited by the router\")\n> print(\"   with correlated failures (shared bad deploy, shared control plane): treat the regions as ONE for that failure class\")\n> # active-passive: the passive region only helps after detection + failover time\n> detect_and_switch_min = 8; region_failures_per_year = 2\n> ap_down = region_failures_per_year * detect_and_switch_min\n> ap = 1 - (ap_down / (365 * 24 * 60)) ; ap = min(ap, 1)\n> print(f\"active-passive, {detect_and_switch_min} min failover x {region_failures_per_year}/yr  \", nines(ap), f\"-> {downtime_min_per_month(ap):6.1f} min/month (only the failover windows count)\")\n> print(\"\\nWhat the failover window is made of (DNS-based failover):\")\n> steps = [(\"health check detects failure (3 checks x 10 s)\", 30), (\"DNS record changes (TTL 60 s, clients cache)\", 60), (\"resolvers and clients that ignore TTL\", 120), (\"warm-up of cold caches/pods in the survivor\", 90)]\n> t = 0\n> for name, sec in steps: t += sec; print(f\"   +{sec:4d} s  {name:52} cumulative {t:4d} s\")\n> print(f\"   => plan for about {t / 60:.0f} minutes of degraded service unless you use anycast/global load balancing and pre-warmed capacity\")\n> print(\"\\nRPO (data loss) is set by the replication mode, RTO (time) by detection + routing + capacity:\")\n> for mode, rpo, note in ((\"synchronous replication across regions\", \"0 s\", \"every write waits for the far region: higher write latency\"), (\"asynchronous replication\", \"seconds (replication lag)\", \"lowest latency, may lose the last writes\"), (\"periodic backups copied to another region\", \"minutes to hours\", \"cheapest\")):\n>     print(f\"   {mode:42} RPO ~ {rpo:26} {note}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 avail.py",
+     "o": "single region                           99.9500% ->   21.6 min/month down\n2 regions active-active (independent)   99.9990% ->    0.4 min/month  <- limited by the router\n   with correlated failures (shared bad deploy, shared control plane): treat the regions as ONE for that failure class\nactive-passive, 8 min failover x 2/yr   99.9970% ->    1.3 min/month (only the failover windows count)\n\nWhat the failover window is made of (DNS-based failover):\n   +  30 s  health check detects failure (3 checks x 10 s)       cumulative   30 s\n   +  60 s  DNS record changes (TTL 60 s, clients cache)         cumulative   90 s\n   + 120 s  resolvers and clients that ignore TTL                cumulative  210 s\n   +  90 s  warm-up of cold caches/pods in the survivor          cumulative  300 s\n   => plan for about 5 minutes of degraded service unless you use anycast/global load balancing and pre-warmed capacity\n\nRPO (data loss) is set by the replication mode, RTO (time) by detection + routing + capacity:\n   synchronous replication across regions     RPO ~ 0 s                        every write waits for the far region: higher write latency\n   asynchronous replication                   RPO ~ seconds (replication lag)  lowest latency, may lose the last writes\n   periodic backups copied to another region  RPO ~ minutes to hours           cheapest",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "455e76633b466ee6"
+ },
+ "seniorqa-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q3 && cd ~/lab/seniorqa/q3",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > upgrade.py <<'EOF'\n> # Rolling node upgrade with a PodDisruptionBudget (PDB). Each node hosts pods; upgrading a node means cordon + drain (evict) + upgrade + uncordon.\n> import itertools\n> nodes = {f\"node{i}\": {\"web\": 2, \"api\": 1} for i in range(1, 7)}          # 6 nodes, per node: 2 web pods and 1 api pod\n> REPLICAS = {\"web\": 12, \"api\": 6}\n> PDB_MIN_AVAILABLE = {\"web\": 9, \"api\": 5}                                 # the budget: how many must stay Ready\n> def ready(app, down_nodes):\n>     return sum(n[app] for name, n in nodes.items() if name not in down_nodes)\n> def can_drain(node, down):\n>     after = set(down) | {node}\n>     return all(ready(a, after) >= PDB_MIN_AVAILABLE[a] for a in REPLICAS), {a: ready(a, after) for a in REPLICAS}\n> print(\"Rule used by the eviction API: an eviction is refused if it would leave fewer than the PDB minimum Ready pods.\\n\")\n> print(\"A) naive: drain two nodes at the same time\")\n> ok, r = can_drain(\"node2\", {\"node1\"}); print(\"   node1 already draining, now node2 ->\", \"allowed\" if ok else \"REFUSED by the PDB\", r)\n> print(\"\\nB) one node at a time (replacement pods are scheduled on the other nodes first)\")\n> for n in nodes:\n>     ok, r = can_drain(n, set())\n>     print(f\"   drain {n}: ready after eviction {r} -> {'ok' if ok else 'blocked'}\")\n> print(\"\\nC) what makes a drain hang forever (a classic upgrade failure)\")\n> hang = {\"web\": 12}                                                       # a PDB that demands ALL pods (minAvailable = replicas)\n> print(\"   PDB minAvailable=12 of 12 web pods: any eviction would leave 11 -> every drain is refused, the upgrade stalls\")\n> print(\"   fix: allow at least one pod to be disrupted (minAvailable = replicas - 1, or maxUnavailable: 1)\")\n> print(\"\\nD) capacity check before you start: can the other 5 nodes hold everything?\")\n> need_cpu = 6 * 3 * 0.5; per_node_cpu = 4.0                               # 18 pods x 0.5 CPU on nodes with 4 CPU\n> print(f\"   pods need {need_cpu} CPU in total; 5 nodes x {per_node_cpu} = {5 * per_node_cpu} CPU -> {'fits' if need_cpu <= 5 * per_node_cpu else 'does NOT fit: add a surge node first'}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 upgrade.py",
+     "o": "Rule used by the eviction API: an eviction is refused if it would leave fewer than the PDB minimum Ready pods.\n\nA) naive: drain two nodes at the same time\n   node1 already draining, now node2 -> REFUSED by the PDB {'web': 8, 'api': 4}\n\nB) one node at a time (replacement pods are scheduled on the other nodes first)\n   drain node1: ready after eviction {'web': 10, 'api': 5} -> ok\n   drain node2: ready after eviction {'web': 10, 'api': 5} -> ok\n   drain node3: ready after eviction {'web': 10, 'api': 5} -> ok\n   drain node4: ready after eviction {'web': 10, 'api': 5} -> ok\n   drain node5: ready after eviction {'web': 10, 'api': 5} -> ok\n   drain node6: ready after eviction {'web': 10, 'api': 5} -> ok\n\nC) what makes a drain hang forever (a classic upgrade failure)\n   PDB minAvailable=12 of 12 web pods: any eviction would leave 11 -> every drain is refused, the upgrade stalls\n   fix: allow at least one pod to be disrupted (minAvailable = replicas - 1, or maxUnavailable: 1)\n\nD) capacity check before you start: can the other 5 nodes hold everything?\n   pods need 9.0 CPU in total; 5 nodes x 4.0 = 20.0 CPU -> fits",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d76b0cfa67572d5c"
+ },
+ "seniorqa-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q4 && cd ~/lab/seniorqa/q4",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > migrate.py <<'EOF'\n> import random\n> random.seed(2)\n> # Live migration of a database: copy the base data, then replicate the changes until the lag is tiny, then cut over.\n> WRITE_RATE = 800          # writes per second on the old database\n> APPLY_RATE = 1500         # changes per second the new database can apply while catching up\n> BASE_COPY_SEC = 900       # time to copy the snapshot (writes keep arriving meanwhile)\n> backlog = WRITE_RATE * BASE_COPY_SEC\n> print(f\"1) snapshot copy takes {BASE_COPY_SEC // 60} min; {backlog:,} changes pile up meanwhile\")\n> t = 0\n> print(\"2) catch-up: the new database applies changes faster than they arrive\")\n> while backlog > WRITE_RATE * 2 and t < 3600:\n>     backlog = backlog + WRITE_RATE - APPLY_RATE if backlog > 0 else 0\n>     t += 1\n>     if t % 300 == 0: print(f\"   after {t // 60:2d} min of catch-up: lag = {backlog / WRITE_RATE:6.1f} s of writes\")\n> print(f\"   caught up after {t} s; lag now {backlog / WRITE_RATE:.1f} s\")\n> print(\"\\n3) cutover window (the only real downtime):\")\n> steps = [(\"stop writes on the old database (read-only or drain the app)\", 5), (\"let the last changes replicate (lag)\", backlog / WRITE_RATE), (\"verify row counts / checksums on a sample\", 20), (\"switch the app's connection (config / DNS / service)\", 10), (\"enable writes on the new database\", 3)]\n> total = 0\n> for name, sec in steps: total += sec; print(f\"   {sec:5.1f} s  {name}\")\n> print(f\"   => about {total:.0f} seconds of write downtime. Reads can stay up the whole time.\")\n> print(\"\\nIf the apply rate were SLOWER than the write rate the backlog would never shrink:\")\n> print(\"   writes 800/s, apply 700/s -> lag grows by\", 800 - 700, \"changes every second. Check this BEFORE you start; throttle writes or scale the target.\")\n> print(\"\\n4) rollback plan: keep the old database as a replica of the new one (reverse replication) for a few days, so you can switch back without data loss\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 migrate.py",
+     "o": "1) snapshot copy takes 15 min; 720,000 changes pile up meanwhile\n2) catch-up: the new database applies changes faster than they arrive\n   after  5 min of catch-up: lag =  637.5 s of writes\n   after 10 min of catch-up: lag =  375.0 s of writes\n   after 15 min of catch-up: lag =  112.5 s of writes\n   caught up after 1027 s; lag now 1.4 s\n\n3) cutover window (the only real downtime):\n     5.0 s  stop writes on the old database (read-only or drain the app)\n     1.4 s  let the last changes replicate (lag)\n    20.0 s  verify row counts / checksums on a sample\n    10.0 s  switch the app's connection (config / DNS / service)\n     3.0 s  enable writes on the new database\n   => about 39 seconds of write downtime. Reads can stay up the whole time.\n\nIf the apply rate were SLOWER than the write rate the backlog would never shrink:\n   writes 800/s, apply 700/s -> lag grows by 100 changes every second. Check this BEFORE you start; throttle writes or scale the target.\n\n4) rollback plan: keep the old database as a replica of the new one (reverse replication) for a few days, so you can switch back without data loss",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "5460a216c6290df6"
+ },
+ "seniorqa-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q5 && cd ~/lab/seniorqa/q5",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > gitops20.py <<'EOF'\n> # A repository layout and ownership model for 20 teams, plus a validator for the rules that keep teams from hurting each other.\n> TEAMS = [f\"team-{c}\" for c in \"abcdefghijklmnopqrst\"]\n> ENVS = [\"dev\", \"staging\", \"prod\"]\n> CLUSTERS = {\"dev\": \"cluster-dev\", \"staging\": \"cluster-stg\", \"prod\": \"cluster-prod-eu\"}\n> apps = []\n> for t in TEAMS:\n>     for e in ENVS:\n>         apps.append({\"name\": f\"{t}-{e}\", \"project\": t, \"repo\": f\"git@git.example.com:{t}/deploy.git\", \"path\": f\"envs/{e}\", \"cluster\": CLUSTERS[e], \"namespace\": f\"{t}-{e}\", \"auto_sync\": e != \"prod\"})\n> # two mistakes a real review would catch\n> apps[14][\"namespace\"] = \"kube-system\"                       # a team deploying into a platform namespace\n> apps[40][\"project\"] = \"default\"                             # an app outside any team project (no limits on what it may do)\n> print(f\"{len(TEAMS)} teams x {len(ENVS)} environments = {len(apps)} Applications, generated from one template (ApplicationSet)\\n\")\n> print(\"Ownership model:\")\n> print(\"  platform team owns : cluster add-ons, the ApplicationSet, AppProjects, policies, shared base charts\")\n> print(\"  each product team  : its own deploy repository and its own namespaces (team-x-dev / -staging / -prod); releases on its own schedule\")\n> print(\"  production         : auto-sync OFF; a pull request merged into envs/prod is the release, and a human or pipeline presses sync\\n\")\n> problems = []\n> for a in apps:\n>     if a[\"project\"] == \"default\": problems.append((a[\"name\"], \"not in a team AppProject: no limits on repos, clusters or namespaces\"))\n>     if not a[\"namespace\"].startswith(a[\"project\"]) : problems.append((a[\"name\"], f\"namespace {a['namespace']} is not owned by project {a['project']}\"))\n>     if a[\"namespace\"] in (\"kube-system\", \"argocd\", \"kyverno\"): problems.append((a[\"name\"], f\"deploys into the protected namespace {a['namespace']}\"))\n> print(\"Validator findings (run in CI on every change to the platform repository):\")\n> for n, why in problems: print(f\"  FAIL {n}: {why}\")\n> print(f\"\\n{len(apps) - len(set(n for n, _ in problems))} of {len(apps)} applications pass\")\n> print(\"\\nBlast-radius check: what can one team's project touch?\")\n> print(\"  AppProject team-a: destinations only team-a-* namespaces, sources only team-a repositories, no cluster-scoped kinds except an allow-list\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 gitops20.py",
+     "o": "20 teams x 3 environments = 60 Applications, generated from one template (ApplicationSet)\n\nOwnership model:\n  platform team owns : cluster add-ons, the ApplicationSet, AppProjects, policies, shared base charts\n  each product team  : its own deploy repository and its own namespaces (team-x-dev / -staging / -prod); releases on its own schedule\n  production         : auto-sync OFF; a pull request merged into envs/prod is the release, and a human or pipeline presses sync\n\nValidator findings (run in CI on every change to the platform repository):\n  FAIL team-e-prod: namespace kube-system is not owned by project team-e\n  FAIL team-e-prod: deploys into the protected namespace kube-system\n  FAIL team-n-staging: not in a team AppProject: no limits on repos, clusters or namespaces\n  FAIL team-n-staging: namespace team-n-staging is not owned by project default\n\n58 of 60 applications pass\n\nBlast-radius check: what can one team's project touch?\n  AppProject team-a: destinations only team-a-* namespaces, sources only team-a repositories, no cluster-scoped kinds except an allow-list",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "eac6f1b1a9e3dc3b"
+ },
+ "seniorqa-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q6 && cd ~/lab/seniorqa/q6",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pipeline.py <<'EOF'\n> # Critical-path analysis of a CI/CD pipeline: where do the 30 minutes go, and what is the fastest it could be?\n> stages = {                       # name: (minutes, depends on)\n>  \"checkout+deps\":   (4, []),\n>  \"lint\":            (2, [\"checkout+deps\"]),\n>  \"unit tests\":      (9, [\"checkout+deps\"]),\n>  \"build image\":     (7, [\"checkout+deps\"]),\n>  \"integration\":     (6, [\"build image\"]),\n>  \"security scan\":   (3, [\"build image\"]),\n>  \"deploy staging\":  (2, [\"integration\", \"security scan\", \"unit tests\", \"lint\"]),\n>  \"e2e smoke\":       (4, [\"deploy staging\"]),\n> }\n> def schedule(stages):\n>     finish = {}\n>     def f(n):\n>         if n not in finish:\n>             d, deps = stages[n]; finish[n] = max([f(x) for x in deps], default=0) + d\n>         return finish[n]\n>     for n in stages: f(n)\n>     return finish\n> def path(stages, finish):\n>     n = max(finish, key=finish.get); p = [n]\n>     while stages[n][1]: n = max(stages[n][1], key=lambda x: finish[x]); p.append(n)\n>     return list(reversed(p))\n> seq = sum(d for d, _ in stages.values())\n> print(f\"run one after another: {seq} min\")\n> fin = schedule(stages)\n> print(f\"as the stages are wired now (parallel where allowed): {max(fin.values())} min, critical path: {' -> '.join(path(stages, fin))}\\n\")\n> def variant(name, change):\n>     s = {k: (v[0], list(v[1])) for k, v in stages.items()}; change(s); fin = schedule(s)\n>     print(f\"{name:62} {max(fin.values()):3d} min   path: {' -> '.join(path(s, fin))}\")\n> variant(\"baseline\", lambda s: None)\n> variant(\"1. dependency cache (checkout+deps 4 -> 1)\", lambda s: s.update({\"checkout+deps\": (1, [])}))\n> def b2(s): s[\"checkout+deps\"] = (1, []); s[\"unit tests\"] = (9 // 3 + 1, [\"checkout+deps\"])\n> variant(\"2. + shard unit tests over 3 runners (9 -> 4)\", b2)\n> def b3(s): b2(s); s[\"build image\"] = (2, [\"checkout+deps\"])\n> variant(\"3. + layer cache / remote build cache (build 7 -> 2)\", b3)\n> def b4(s): b3(s); s[\"integration\"] = (3, [\"build image\"]); s[\"security scan\"] = (1, [\"build image\"])\n> variant(\"4. + faster integration, scan only changed layers (6->3, 3->1)\", b4)\n> def b5(s): b4(s); s[\"e2e smoke\"] = (1, [\"deploy staging\"]); s[\"deploy staging\"] = (1, [\"integration\", \"security scan\", \"unit tests\", \"lint\"])\n> variant(\"5. + smoke only on critical paths, deploy by GitOps pull (2->1, 4->1)\", b5)\n> print(\"\\nOther levers: skip work for unchanged code (path filters, monorepo affected-only builds), faster runners, run lint and tests while the image builds,\")\n> print(\"move slow checks (full e2e, load, deep scans) off the pull-request path to a nightly or post-merge pipeline, and fail fast (cheap checks first).\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pipeline.py",
+     "o": "run one after another: 37 min\nas the stages are wired now (parallel where allowed): 23 min, critical path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n\nbaseline                                                        23 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n1. dependency cache (checkout+deps 4 -> 1)                      20 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n2. + shard unit tests over 3 runners (9 -> 4)                   20 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n3. + layer cache / remote build cache (build 7 -> 2)            15 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n4. + faster integration, scan only changed layers (6->3, 3->1)  12 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n5. + smoke only on critical paths, deploy by GitOps pull (2->1, 4->1)   8 min   path: checkout+deps -> build image -> integration -> deploy staging -> e2e smoke\n\nOther levers: skip work for unchanged code (path filters, monorepo affected-only builds), faster runners, run lint and tests while the image builds,\nmove slow checks (full e2e, load, deep scans) off the pull-request path to a nightly or post-merge pipeline, and fail fast (cheap checks first).",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "326f0c1f14639c31"
+ },
+ "seniorqa-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q7 && cd ~/lab/seniorqa/q7",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rollback.py <<'EOF'\n> # Why a rollback can fail: code and database schema must be compatible in BOTH directions during a release.\n> print(\"Compatibility of code version x schema version (T = works, F = breaks)\\n\")\n> print(\"A) one-step migration: v2 RENAMES column name -> full_name in the same release\")\n> combos = [(\"v1 code\", \"old schema\", True), (\"v1 code\", \"new schema\", False), (\"v2 code\", \"old schema\", False), (\"v2 code\", \"new schema\", True)]\n> for c, s, ok in combos: print(f\"   {c} on {s:10}: {'T' if ok else 'F'}\")\n> print(\"   Rollback = v1 code on the NEW schema = F. The rollback you planned does not work.\\n\")\n> print(\"B) expand / contract (three releases, every pair of neighbours is compatible)\")\n> steps = [(\"release 1 EXPAND\", \"add column full_name, keep name; v1 keeps writing name\", \"v1 and v2 both fine\"),\n>          (\"release 2 MIGRATE\", \"v2 writes BOTH columns, reads full_name; backfill old rows\", \"rollback to release 1 is safe\"),\n>          (\"release 3 CONTRACT\", \"after a soak period, drop column name\", \"rollback now needs a restore: do it only when sure\")]\n> for n, what, note in steps: print(f\"   {n:20} {what:62} -> {note}\")\n> print(\"\\nC) rollback decision when the DEPLOY STAGE ITSELF fails (the pipeline is broken or half-applied)\")\n> cases = [(\"pipeline crashed after updating 3 of 10 pods\", \"re-run the same pipeline is risky; roll back OUT OF BAND: `helm rollback` / `kubectl rollout undo` / revert the Git commit and let the GitOps agent converge\"),\n>          (\"CI system is down\", \"the rollback must not depend on CI: a documented command or button using credentials the on-call already has; GitOps pull works without CI\"),\n>          (\"new image cannot be pulled\", \"keep the previous N image tags in the registry (never delete the last good); the old ReplicaSet is still there, scale it back\"),\n>          (\"feature is bad but deployment is healthy\", \"turn the feature flag off: no deploy needed, seconds not minutes\"),\n>          (\"bad config change\", \"config is versioned too: revert the config commit; restart only the pods that read it at start-up\")]\n> for sit, act in cases: print(f\"   - {sit}\\n       {act}\")\n> print(\"\\nRules: artifacts are immutable and versioned; the previous version is always deployable; schema changes are backward compatible; rollback is rehearsed in staging.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rollback.py",
+     "o": "Compatibility of code version x schema version (T = works, F = breaks)\n\nA) one-step migration: v2 RENAMES column name -> full_name in the same release\n   v1 code on old schema: T\n   v1 code on new schema: F\n   v2 code on old schema: F\n   v2 code on new schema: T\n   Rollback = v1 code on the NEW schema = F. The rollback you planned does not work.\n\nB) expand / contract (three releases, every pair of neighbours is compatible)\n   release 1 EXPAND     add column full_name, keep name; v1 keeps writing name         -> v1 and v2 both fine\n   release 2 MIGRATE    v2 writes BOTH columns, reads full_name; backfill old rows     -> rollback to release 1 is safe\n   release 3 CONTRACT   after a soak period, drop column name                          -> rollback now needs a restore: do it only when sure\n\nC) rollback decision when the DEPLOY STAGE ITSELF fails (the pipeline is broken or half-applied)\n   - pipeline crashed after updating 3 of 10 pods\n       re-run the same pipeline is risky; roll back OUT OF BAND: `helm rollback` / `kubectl rollout undo` / revert the Git commit and let the GitOps agent converge\n   - CI system is down\n       the rollback must not depend on CI: a documented command or button using credentials the on-call already has; GitOps pull works without CI\n   - new image cannot be pulled\n       keep the previous N image tags in the registry (never delete the last good); the old ReplicaSet is still there, scale it back\n   - feature is bad but deployment is healthy\n       turn the feature flag off: no deploy needed, seconds not minutes\n   - bad config change\n       config is versioned too: revert the config commit; restart only the pods that read it at start-up\n\nRules: artifacts are immutable and versioned; the previous version is always deployable; schema changes are backward compatible; rollback is rehearsed in staging.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "17566b75791fd764"
+ },
+ "seniorqa-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q8 && cd ~/lab/seniorqa/q8",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > drift.py <<'EOF'\n> # Config drift: render every environment from ONE base plus small overlays, then detect any difference that is not declared.\n> BASE = {\"image\": \"shop:1.8.2\", \"replicas\": 2, \"log_level\": \"info\", \"feature_new_checkout\": False, \"db_pool\": 10, \"timeout_ms\": 2000}\n> OVERLAYS = {                       # what each environment is ALLOWED to change (reviewed in Git)\n>   \"dev\":     {\"replicas\": 1, \"log_level\": \"debug\"},\n>   \"staging\": {\"replicas\": 2},\n>   \"prod\":    {\"replicas\": 6, \"db_pool\": 40},\n> }\n> def render(env): d = dict(BASE); d.update(OVERLAYS[env]); return d\n> \n> LIVE = {env: render(env) for env in OVERLAYS}          # what is actually running\n> LIVE[\"prod\"][\"timeout_ms\"] = 5000                      # someone edited prod by hand during an incident\n> LIVE[\"staging\"][\"image\"] = \"shop:1.8.3\"                # staging got a newer image outside the pipeline\n> \n> print(\"Desired state is rendered from Git; live state is read from the cluster. Diff them:\\n\")\n> for env in OVERLAYS:\n>     want, have = render(env), LIVE[env]\n>     diff = {k: (want[k], have[k]) for k in want if want[k] != have[k]}\n>     print(f\"{env:8} {'IN SYNC' if not diff else 'DRIFT'}\", *(f\"\\n   {k}: git={a!r} live={b!r}\" for k, (a, b) in diff.items()))\n> \n> print(\"\\nWhich differences between environments are INTENDED (declared overlays)?\")\n> for k in BASE:\n>     vals = {env: render(env)[k] for env in OVERLAYS}\n>     if len(set(map(str, vals.values()))) > 1: print(f\"   {k:10} differs by design: {vals}\")\n> print(\"\\nEverything else must be identical across environments. 'Works in staging' only means something if staging is the same as prod.\")\n> print(\"Controls: (1) one artifact promoted dev->staging->prod, never rebuilt  (2) config in Git, rendered per environment  (3) GitOps controller reverts manual edits (selfHeal)\")\n> print(\"          (4) break-glass edits are allowed but alert and must be back-ported to Git  (5) scheduled `terraform plan` / `helm diff` reports drift\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 drift.py",
+     "o": "Desired state is rendered from Git; live state is read from the cluster. Diff them:\n\ndev      IN SYNC\nstaging  DRIFT \n   image: git='shop:1.8.2' live='shop:1.8.3'\nprod     DRIFT \n   timeout_ms: git=2000 live=5000\n\nWhich differences between environments are INTENDED (declared overlays)?\n   replicas   differs by design: {'dev': 1, 'staging': 2, 'prod': 6}\n   log_level  differs by design: {'dev': 'debug', 'staging': 'info', 'prod': 'info'}\n   db_pool    differs by design: {'dev': 10, 'staging': 10, 'prod': 40}\n\nEverything else must be identical across environments. 'Works in staging' only means something if staging is the same as prod.\nControls: (1) one artifact promoted dev->staging->prod, never rebuilt  (2) config in Git, rendered per environment  (3) GitOps controller reverts manual edits (selfHeal)\n          (4) break-glass edits are allowed but alert and must be back-ported to Git  (5) scheduled `terraform plan` / `helm diff` reports drift",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "467f6d45034bef73"
+ },
+ "seniorqa-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/seniorqa/q10 && cd ~/lab/seniorqa/q10",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > tfpartial.py <<'EOF'\n> # Terraform apply that fails half-way: what state holds, and how to recover safely.\n> resources = [\"vpc\", \"subnet\", \"sg\", \"db\", \"instance\", \"dns\"]\n> created = {\"vpc\", \"subnet\", \"sg\"}            # applied OK and recorded in state\n> failed = \"db\"                                # quota error; instance and dns never attempted\n> print(\"apply order follows the dependency graph:\", \" -> \".join(resources))\n> print(\"result: created\", sorted(created), \"| FAILED:\", failed, \"| not attempted:\", [r for r in resources if r not in created and r != failed])\n> print(\"\\nKey facts: Terraform writes state after each successful resource, so created resources ARE in state. There is no automatic rollback.\")\n> print(\"           the plan was a promise; the cloud said no (quota, permissions, name clash, eventual consistency, timeout).\\n\")\n> def plan(state):\n>     return [(\"create\" if r not in state else \"keep\", r) for r in resources]\n> print(\"Recovery step 1: do NOT delete state, do NOT hand-edit it. Read the error, fix the cause (quota, permission, name).\")\n> print(\"Recovery step 2: re-run plan against the same state ->\", plan(created))\n> print(\"                 only the missing resources are created; apply is idempotent.\\n\")\n> print(\"Hard cases:\")\n> cases = [\n>  (\"timeout: resource exists in the cloud but NOT in state\", \"terraform import <addr> <id>, then plan shows no change (or `import` block in 1.5+)\"),\n>  (\"resource tainted by a failed create\", \"plan shows destroy-and-recreate; `terraform untaint` if the object is actually fine\"),\n>  (\"state lock left behind by a crashed run\", \"check nobody is running; then `terraform force-unlock <ID>` (last resort)\"),\n>  (\"someone changed things by hand meanwhile\", \"`plan -refresh-only` to see drift first; decide per item: adopt into code or revert\"),\n>  (\"state file damaged or lost\", \"restore the previous state VERSION from the versioned remote backend (S3 versioning / GCS / Terraform Cloud)\"),\n>  (\"you want to abandon the half-built stack\", \"`terraform destroy` removes only what is in state; check for orphans created before a state write failed\")]\n> for a, b in cases: print(f\"  - {a}\\n      {b}\")\n> print(\"\\nPrevention: remote backend with locking and versioning; small stacks (small blast radius); `plan -out` then apply that exact plan file; quotas/permissions checked in plan stage; CI-only applies; policy checks (OPA/Sentinel).\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 tfpartial.py",
+     "o": "apply order follows the dependency graph: vpc -> subnet -> sg -> db -> instance -> dns\nresult: created ['sg', 'subnet', 'vpc'] | FAILED: db | not attempted: ['instance', 'dns']\n\nKey facts: Terraform writes state after each successful resource, so created resources ARE in state. There is no automatic rollback.\n           the plan was a promise; the cloud said no (quota, permissions, name clash, eventual consistency, timeout).\n\nRecovery step 1: do NOT delete state, do NOT hand-edit it. Read the error, fix the cause (quota, permission, name).\nRecovery step 2: re-run plan against the same state -> [('keep', 'vpc'), ('keep', 'subnet'), ('keep', 'sg'), ('create', 'db'), ('create', 'instance'), ('create', 'dns')]\n                 only the missing resources are created; apply is idempotent.\n\nHard cases:\n  - timeout: resource exists in the cloud but NOT in state\n      terraform import <addr> <id>, then plan shows no change (or `import` block in 1.5+)\n  - resource tainted by a failed create\n      plan shows destroy-and-recreate; `terraform untaint` if the object is actually fine\n  - state lock left behind by a crashed run\n      check nobody is running; then `terraform force-unlock <ID>` (last resort)\n  - someone changed things by hand meanwhile\n      `plan -refresh-only` to see drift first; decide per item: adopt into code or revert\n  - state file damaged or lost\n      restore the previous state VERSION from the versioned remote backend (S3 versioning / GCS / Terraform Cloud)\n  - you want to abandon the half-built stack\n      `terraform destroy` removes only what is in state; check for orphans created before a state write failed\n\nPrevention: remote backend with locking and versioning; small stacks (small blast radius); `plan -out` then apply that exact plan file; quotas/permissions checked in plan stage; CI-only applies; policy checks (OPA/Sentinel).",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "abf8f9c7ad09d87a"
+ },
  "systems-10": {
   "blocks": [
    [

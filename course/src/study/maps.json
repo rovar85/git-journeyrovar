@@ -2278,6 +2278,95 @@
    "Pair a system-design question with an incident scenario from the same system and tell them as one story."
   ]
  },
+ "seniorqa": {
+  "title": "One senior question, from the clarifying question to the follow-up",
+  "intro": "Every senior design or incident answer follows the same route: clarify, fix the numbers, design, walk the failures, name the trade-offs and say how you will measure.",
+  "hops": [
+   {
+    "label": "Map",
+    "text": "Which of the 20 questions are answered where; the six moves of a senior answer.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Platform design",
+    "text": "Multi-region availability, zero-downtime upgrades and stateful migration: targets, order of steps, failure modes.",
+    "lessons": [
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "label": "Delivery",
+    "text": "GitOps for many teams, a fast pipeline, rollbacks that do not depend on the pipeline, and no config drift.",
+    "lessons": [
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "label": "Infrastructure as code",
+    "text": "A half-failed Terraform apply: state, import, taint, locks and restores.",
+    "lessons": [
+     9
+    ]
+   },
+   {
+    "label": "Reliability",
+    "text": "Self-healing with bounds, and cascading failures with timeouts, bulkheads and breakers.",
+    "lessons": [
+     10,
+     11
+    ]
+   },
+   {
+    "label": "Incident",
+    "text": "A latency regression after a deploy: confirm, protect users, narrow by endpoint and hop, root-cause.",
+    "lessons": [
+     12
+    ]
+   }
+  ],
+  "tips": [
+   "Say your assumptions and the numbers (availability, RTO, RPO, latency) in the first 30 seconds.",
+   "For any 'rollback' or 'recovery' question, ask what path still works when the normal path is the thing that broke.",
+   "For any 'at scale' question, name who owns what and what limits the blast radius.",
+   "For any incident, stop the harm first, then find the cause.",
+   "Finish with how you would know it works: the metric, the alert, the drill."
+  ],
+  "docs": [
+   {
+    "label": "Google SRE Book: Addressing Cascading Failures",
+    "url": "https://sre.google/sre-book/addressing-cascading-failures/"
+   },
+   {
+    "label": "Argo CD ApplicationSet",
+    "url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/"
+   },
+   {
+    "label": "Kubernetes: Safely drain a node",
+    "url": "https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/"
+   },
+   {
+    "label": "Terraform: import existing resources",
+    "url": "https://developer.hashicorp.com/terraform/cli/import"
+   },
+   {
+    "label": "AWS Well-Architected: Reliability pillar",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"
+   }
+  ],
+  "round2": [
+   "Pick a question, set a two-minute timer and answer out loud; then check which of the six moves you skipped.",
+   "Change one number in a model (for example the failover time or the retry count) and predict the result before you run it.",
+   "Pair Q16 (cascading failure) with Q19 (latency) and tell them as one incident story.",
+   "Write your own answer to question 20 using the skeleton in lesson 1."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

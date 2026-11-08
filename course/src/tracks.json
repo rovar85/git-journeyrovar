@@ -128,6 +128,14 @@
   "why": "These are the ideas under every senior backend interview and every serious outage. Each lesson runs code that shows the effect with real numbers."
  },
  {
+  "id": "seniorqa",
+  "name": "Senior DevOps and SRE questions: 20 design and incident answers",
+  "group": "Platforms",
+  "level": "Advanced to expert",
+  "blurb": "Twenty senior questions: multi-region Kubernetes, zero-downtime upgrades, stateful migration, GitOps for 20 teams, a 5-minute pipeline, rollbacks that survive a failed deploy, config drift, Terraform recovery, self-healing, cascading failures and a latency regression. A map shows which are answered elsewhere; the rest have full answers with a runnable model and a 60-second spoken version.",
+  "why": "Senior interviews are open design and incident questions. Each lesson gives the clarifying questions, the structured answer, the trade-offs, follow-ups and the sentence to say."
+ },
+ {
   "id": "capstone",
   "name": "Capstone: lab as code",
   "group": "Put it together",
