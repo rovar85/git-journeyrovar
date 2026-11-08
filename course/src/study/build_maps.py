@@ -544,6 +544,36 @@ M["systems"] = dict(
  ],
 )
 
+_ab = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "aibank_lessons.json")))["lessons"]
+def _a(*cards): return [l["n"] for l in _ab if l["card"] in cards]
+M["aibank"] = dict(
+ title="One AI interview answer, from the concept to the evidence",
+ intro="Interview questions in this bank test four things: you know the concept, you can estimate with numbers, you can read evidence, and you can design and explain trade-offs.",
+ hops=[
+  H("Foundations", "Math, deep learning, the transformer, tokenisation and decoding: be able to derive and estimate, not only define.", *_a("math-classical-ml", "deep-learning", "transformers", "tokenization-decoding")),
+  H("Models", "Post-training, inference and serving, GPU memory and quantisation: prefill and decode, KV cache, batching, memory arithmetic.", *_a("post-training", "inference-serving", "gpu-memory-quantization")),
+  H("Applications", "RAG, prompting and structured output, evaluation, multimodal: measure before you tune.", *_a("rag", "prompting-structured-output", "evaluation", "multimodal")),
+  H("Agents", "Agent loops, MCP, A2A and skills, multi-agent systems, sandboxes: tools, state, trust boundaries.", *_a("agents", "protocols", "multi-agent", "sandboxes", "evidence-reverse-engineering")),
+  H("Production", "Releases, observability, cost and capacity, safety: how a model service is operated.", *_a("production-mlops", "cost-capacity", "safety")),
+  H("Rounds", "System design, coding and behavioural rounds: structure your answer, state assumptions and trade-offs.", *_a("system-design", "coding", "behavioral")),
+  H("Incidents", "Read the evidence first, form a hypothesis, find the root cause, then say what you would change.", *_a("scenarios")),
+ ],
+ tips=[
+  "Cover the answer, say yours, then open it. Note the wrong answers: interviewers hear them often.",
+  "Do levels 1 and 2 for your target topics first, then 3; level 4 is for staff-level interviews.",
+  "For estimation questions, write the formula and units before the numbers.",
+  "For incident scenarios, read every listing before forming a hypothesis, and say what evidence would change your mind.",
+  "Re-derive the key formulas (attention cost, KV cache size, memory per parameter) until you can do them on a whiteboard.",
+ ],
+ docs=[D("Source repository (MIT licence)", "https://github.com/rohitg00/ai-engineering-from-scratch"), D("Attention Is All You Need", "https://arxiv.org/abs/1706.03762"), D("vLLM documentation", "https://docs.vllm.ai/")],
+ round2=[
+  "Redo the questions you missed, then answer the follow-ups out loud.",
+  "Pick five estimation questions and solve them on paper without the answer.",
+  "Take two incident scenarios and write the root cause in three sentences each before opening the walkthrough.",
+  "Pair a system-design question with an incident scenario from the same system and tell them as one story.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

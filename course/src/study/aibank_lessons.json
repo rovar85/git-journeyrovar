@@ -1,0 +1,331 @@
+{
+ "lessons": [
+  {
+   "n": 1,
+   "card": "",
+   "title": "Start here",
+   "count": 0
+  },
+  {
+   "n": 2,
+   "card": "math-classical-ml",
+   "title": "AI interview bank: Math and classical ML (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 3,
+   "card": "math-classical-ml",
+   "title": "AI interview bank: Math and classical ML (part 2 of 2)",
+   "count": 10
+  },
+  {
+   "n": 4,
+   "card": "deep-learning",
+   "title": "AI interview bank: Deep learning (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 5,
+   "card": "deep-learning",
+   "title": "AI interview bank: Deep learning (part 2 of 2)",
+   "count": 10
+  },
+  {
+   "n": 6,
+   "card": "transformers",
+   "title": "AI interview bank: Transformers (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 7,
+   "card": "transformers",
+   "title": "AI interview bank: Transformers (part 2 of 2)",
+   "count": 7
+  },
+  {
+   "n": 8,
+   "card": "tokenization-decoding",
+   "title": "AI interview bank: Tokenization, sampling and decoding (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 9,
+   "card": "tokenization-decoding",
+   "title": "AI interview bank: Tokenization, sampling and decoding (part 2 of 2)",
+   "count": 8
+  },
+  {
+   "n": 10,
+   "card": "post-training",
+   "title": "AI interview bank: Post-training (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 11,
+   "card": "post-training",
+   "title": "AI interview bank: Post-training (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 12,
+   "card": "inference-serving",
+   "title": "AI interview bank: Inference and serving systems (part 1 of 3)",
+   "count": 12
+  },
+  {
+   "n": 13,
+   "card": "inference-serving",
+   "title": "AI interview bank: Inference and serving systems (part 2 of 3)",
+   "count": 12
+  },
+  {
+   "n": 14,
+   "card": "inference-serving",
+   "title": "AI interview bank: Inference and serving systems (part 3 of 3)",
+   "count": 5
+  },
+  {
+   "n": 15,
+   "card": "gpu-memory-quantization",
+   "title": "AI interview bank: GPU memory, quantization and hardware",
+   "count": 9
+  },
+  {
+   "n": 16,
+   "card": "rag",
+   "title": "AI interview bank: RAG (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 17,
+   "card": "rag",
+   "title": "AI interview bank: RAG (part 2 of 2)",
+   "count": 11
+  },
+  {
+   "n": 18,
+   "card": "prompting-structured-output",
+   "title": "AI interview bank: Prompting and structured output (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 19,
+   "card": "prompting-structured-output",
+   "title": "AI interview bank: Prompting and structured output (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 20,
+   "card": "evaluation",
+   "title": "AI interview bank: Evaluation (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 21,
+   "card": "evaluation",
+   "title": "AI interview bank: Evaluation (part 2 of 2)",
+   "count": 14
+  },
+  {
+   "n": 22,
+   "card": "multimodal",
+   "title": "AI interview bank: Multimodal (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 23,
+   "card": "multimodal",
+   "title": "AI interview bank: Multimodal (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 24,
+   "card": "agents",
+   "title": "AI interview bank: Agents (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 25,
+   "card": "agents",
+   "title": "AI interview bank: Agents (part 2 of 2)",
+   "count": 14
+  },
+  {
+   "n": 26,
+   "card": "protocols",
+   "title": "AI interview bank: Protocols: MCP, A2A and skills (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 27,
+   "card": "protocols",
+   "title": "AI interview bank: Protocols: MCP, A2A and skills (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 28,
+   "card": "multi-agent",
+   "title": "AI interview bank: Multi-agent systems (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 29,
+   "card": "multi-agent",
+   "title": "AI interview bank: Multi-agent systems (part 2 of 2)",
+   "count": 8
+  },
+  {
+   "n": 30,
+   "card": "sandboxes",
+   "title": "AI interview bank: Sandboxes (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 31,
+   "card": "sandboxes",
+   "title": "AI interview bank: Sandboxes (part 2 of 2)",
+   "count": 6
+  },
+  {
+   "n": 32,
+   "card": "evidence-reverse-engineering",
+   "title": "AI interview bank: Evidence and reverse engineering",
+   "count": 14
+  },
+  {
+   "n": 33,
+   "card": "production-mlops",
+   "title": "AI interview bank: Production and MLOps (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 34,
+   "card": "production-mlops",
+   "title": "AI interview bank: Production and MLOps (part 2 of 2)",
+   "count": 14
+  },
+  {
+   "n": 35,
+   "card": "cost-capacity",
+   "title": "AI interview bank: Cost and capacity (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 36,
+   "card": "cost-capacity",
+   "title": "AI interview bank: Cost and capacity (part 2 of 2)",
+   "count": 10
+  },
+  {
+   "n": 37,
+   "card": "safety",
+   "title": "AI interview bank: Safety (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 38,
+   "card": "safety",
+   "title": "AI interview bank: Safety (part 2 of 2)",
+   "count": 9
+  },
+  {
+   "n": 39,
+   "card": "system-design",
+   "title": "AI interview bank: System design (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 40,
+   "card": "system-design",
+   "title": "AI interview bank: System design (part 2 of 2)",
+   "count": 10
+  },
+  {
+   "n": 41,
+   "card": "coding",
+   "title": "AI interview bank: Coding (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 42,
+   "card": "coding",
+   "title": "AI interview bank: Coding (part 2 of 2)",
+   "count": 10
+  },
+  {
+   "n": 43,
+   "card": "behavioral",
+   "title": "AI interview bank: Behavioral (part 1 of 2)",
+   "count": 12
+  },
+  {
+   "n": 44,
+   "card": "behavioral",
+   "title": "AI interview bank: Behavioral (part 2 of 2)",
+   "count": 4
+  },
+  {
+   "n": 45,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 1 of 10)",
+   "count": 6
+  },
+  {
+   "n": 46,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 2 of 10)",
+   "count": 6
+  },
+  {
+   "n": 47,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 3 of 10)",
+   "count": 6
+  },
+  {
+   "n": 48,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 4 of 10)",
+   "count": 6
+  },
+  {
+   "n": 49,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 5 of 10)",
+   "count": 6
+  },
+  {
+   "n": 50,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 6 of 10)",
+   "count": 6
+  },
+  {
+   "n": 51,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 7 of 10)",
+   "count": 6
+  },
+  {
+   "n": 52,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 8 of 10)",
+   "count": 6
+  },
+  {
+   "n": 53,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 9 of 10)",
+   "count": 6
+  },
+  {
+   "n": 54,
+   "card": "scenarios",
+   "title": "AI incident scenarios, read the evidence (part 10 of 10)",
+   "count": 6
+  }
+ ],
+ "added": 461,
+ "skipped": 21,
+ "scenarios": 60
+}

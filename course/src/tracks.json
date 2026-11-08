@@ -182,5 +182,13 @@
   "level": "Intermediate to expert",
   "blurb": "GPUs and memory, prefill and decode, the KV cache, measuring TTFT and ITL, vLLM and Triton and Dynamo, parallelism, SLOs and autoscaling, GitOps with Argo CD, KEDA, MLflow and Kubeflow, and AI observability with Prometheus, Grafana and OpenTelemetry.",
   "why": "Serving models is where DevOps meets AI: the stack from your roadmap and your tool list, with runnable calculators, simulators and a real GitOps loop."
+ },
+ {
+  "id": "aibank",
+  "name": "AI engineering interview bank (460+ questions, 60 incident scenarios)",
+  "group": "AI",
+  "level": "Intermediate to expert",
+  "blurb": "Questions for the AI engineering interview, by topic: transformers, tokenisation, post-training, inference and serving, GPU memory, RAG, prompting, evaluation, multimodal, agents, MCP and A2A, multi-agent, sandboxes, MLOps, cost, safety, system design, coding and behavioural, plus incident scenarios where you read logs and find the root cause. Answers are folded so you can try first.",
+  "why": "AI interviews now mix concepts, debugging, estimation and design. This is the long list, with the wrong answers interviewers hear, and flashcards for the short answers."
  }
 ]

@@ -229,6 +229,8 @@ def blocks(text, ctx):
             inner = "\n".join(buf)
             if kind == "quiz":
                 ctx.quizzes.extend(render_quiz(inner))
+            elif kind == "answer":
+                out.append('<details class="ans"><summary>' + inline(title or "Show answer") + '</summary>' + "".join(blocks(inner, ctx)) + "</details>")
             elif kind == "goals":
                 out.append(f'<div class="goals"><b>{inline(title or "By the end of this lesson you can:")}</b>' + "".join(blocks(inner, ctx)) + "</div>")
             elif kind == "recap":

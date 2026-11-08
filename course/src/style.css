@@ -389,3 +389,7 @@ html:has(body.lab-open){scroll-padding-bottom:44vh}
 .challenge .chbar button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
 .challenge .chbar button[data-a="check"]{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
 .challenge .chsol{white-space:pre-wrap;background:#0f1417;color:#d8e2e8;border-radius:8px;padding:10px 12px;margin:10px 0 0;font-size:.85rem}
+
+details.ans{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:6px 14px;margin:12px 0}
+details.ans>summary{cursor:pointer;font-weight:700;color:var(--accent);padding:6px 0}
+details.ans[open]>summary{margin-bottom:8px}
