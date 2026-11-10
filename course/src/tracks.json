@@ -136,6 +136,14 @@
   "why": "Senior interviews are open design and incident questions. Each lesson gives the clarifying questions, the structured answer, the trade-offs, follow-ups and the sentence to say."
  },
  {
+  "id": "dataeng",
+  "name": "Data engineering: from beginner to professional",
+  "group": "Platforms",
+  "level": "Beginner to expert",
+  "blurb": "Seventeen lessons in five stages: Python for data and SQL, pandas, APIs and file formats, a real ETL pipeline, loading nested data, star schemas, data quality, orchestration, big data and Spark, streaming, the warehouse and dbt, production practice, then a capstone and the interview. Every lesson runs code, and ten free videos are mapped to the lessons.",
+  "why": "Your list of ten videos covers Python, pandas, APIs, Parquet and ETL. This track makes each of those runnable and adds what a job needs beyond them: SQL, modelling, quality, orchestration, scale and operations."
+ },
+ {
   "id": "capstone",
   "name": "Capstone: lab as code",
   "group": "Put it together",

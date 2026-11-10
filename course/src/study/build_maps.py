@@ -601,6 +601,36 @@ M["seniorqa"] = dict(
  ],
 )
 
+M["dataeng"] = dict(
+ title="One order, from the source system to the dashboard",
+ intro="Follow one record through a data platform. Each hop has one idea that decides whether the number on the dashboard is right and on time.",
+ hops=[
+  H("Path", "The five stages, the ten videos and how to study.", 1),
+  H("Languages", "Python to read messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts.", 2, 3, 4),
+  H("Get and store", "pandas for tables in memory, APIs with pagination and retries, Parquet for analytics.", 5, 6, 7),
+  H("Pipeline", "Incremental, idempotent, observable loads; nested data and schema evolution.", 8, 9),
+  H("Model and trust", "Facts, dimensions and history; checks on every load; write, audit, publish.", 10, 11),
+  H("Run", "A DAG with retries, re-runs and backfills, parameterised by date.", 12),
+  H("Scale", "Partitions, shuffles and skew; logs, offsets and windows; the warehouse, ELT and dbt.", 13, 14, 15),
+  H("Professional", "Tests, containers, CI, monitoring, cost and privacy; the capstone and the interview.", 16, 17),
+ ],
+ tips=[
+  "For any pipeline: what happens if it runs twice, and what happens if it crashes halfway?",
+  "For any join: which side is unique on the key? Compare row counts before and after.",
+  "For any number that looks wrong: trace the lineage backwards and compare counts at each step.",
+  "For any slow job: read less, shuffle less, then look for skew.",
+  "For any new tool: which of the ideas in this track does it automate?",
+ ],
+ docs=[D("PostgreSQL tutorial: window functions", "https://www.postgresql.org/docs/current/tutorial-window.html"), D("pandas: 10 minutes to pandas", "https://pandas.pydata.org/docs/user_guide/10min.html"), D("Apache Parquet documentation", "https://parquet.apache.org/docs/"), D("Apache Airflow: core concepts", "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/index.html"), D("dbt documentation", "https://docs.getdbt.com/"), D("Apache Spark: SQL performance tuning", "https://spark.apache.org/docs/latest/sql-performance-tuning.html"), D("Data Engineering Zoomcamp (DataTalks.Club)", "https://github.com/DataTalksClub/data-engineering-zoomcamp")],
+ round2=[
+  "Rewrite the keep-the-latest-row query and the upsert from memory, then run them.",
+  "Run the ETL pipeline twice and explain, line by line, why the second run changes nothing.",
+  "Explain a shuffle, skew and salting to someone in two minutes.",
+  "Take the stream model and say what at-most-once would lose.",
+  "Do milestone 1 of the capstone today.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

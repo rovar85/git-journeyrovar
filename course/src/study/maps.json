@@ -2367,6 +2367,121 @@
    "Write your own answer to question 20 using the skeleton in lesson 1."
   ]
  },
+ "dataeng": {
+  "title": "One order, from the source system to the dashboard",
+  "intro": "Follow one record through a data platform. Each hop has one idea that decides whether the number on the dashboard is right and on time.",
+  "hops": [
+   {
+    "label": "Path",
+    "text": "The five stages, the ten videos and how to study.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Languages",
+    "text": "Python to read messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts.",
+    "lessons": [
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "label": "Get and store",
+    "text": "pandas for tables in memory, APIs with pagination and retries, Parquet for analytics.",
+    "lessons": [
+     5,
+     6,
+     7
+    ]
+   },
+   {
+    "label": "Pipeline",
+    "text": "Incremental, idempotent, observable loads; nested data and schema evolution.",
+    "lessons": [
+     8,
+     9
+    ]
+   },
+   {
+    "label": "Model and trust",
+    "text": "Facts, dimensions and history; checks on every load; write, audit, publish.",
+    "lessons": [
+     10,
+     11
+    ]
+   },
+   {
+    "label": "Run",
+    "text": "A DAG with retries, re-runs and backfills, parameterised by date.",
+    "lessons": [
+     12
+    ]
+   },
+   {
+    "label": "Scale",
+    "text": "Partitions, shuffles and skew; logs, offsets and windows; the warehouse, ELT and dbt.",
+    "lessons": [
+     13,
+     14,
+     15
+    ]
+   },
+   {
+    "label": "Professional",
+    "text": "Tests, containers, CI, monitoring, cost and privacy; the capstone and the interview.",
+    "lessons": [
+     16,
+     17
+    ]
+   }
+  ],
+  "tips": [
+   "For any pipeline: what happens if it runs twice, and what happens if it crashes halfway?",
+   "For any join: which side is unique on the key? Compare row counts before and after.",
+   "For any number that looks wrong: trace the lineage backwards and compare counts at each step.",
+   "For any slow job: read less, shuffle less, then look for skew.",
+   "For any new tool: which of the ideas in this track does it automate?"
+  ],
+  "docs": [
+   {
+    "label": "PostgreSQL tutorial: window functions",
+    "url": "https://www.postgresql.org/docs/current/tutorial-window.html"
+   },
+   {
+    "label": "pandas: 10 minutes to pandas",
+    "url": "https://pandas.pydata.org/docs/user_guide/10min.html"
+   },
+   {
+    "label": "Apache Parquet documentation",
+    "url": "https://parquet.apache.org/docs/"
+   },
+   {
+    "label": "Apache Airflow: core concepts",
+    "url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/index.html"
+   },
+   {
+    "label": "dbt documentation",
+    "url": "https://docs.getdbt.com/"
+   },
+   {
+    "label": "Apache Spark: SQL performance tuning",
+    "url": "https://spark.apache.org/docs/latest/sql-performance-tuning.html"
+   },
+   {
+    "label": "Data Engineering Zoomcamp (DataTalks.Club)",
+    "url": "https://github.com/DataTalksClub/data-engineering-zoomcamp"
+   }
+  ],
+  "round2": [
+   "Rewrite the keep-the-latest-row query and the upsert from memory, then run them.",
+   "Run the ETL pipeline twice and explain, line by line, why the second run changes nothing.",
+   "Explain a shuffle, skew and salting to someone in two minutes.",
+   "Take the stream model and say what at-most-once would lose.",
+   "Do milestone 1 of the capstone today."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",
