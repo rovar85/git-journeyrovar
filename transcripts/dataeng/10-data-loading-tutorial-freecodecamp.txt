@@ -1,0 +1,4353 @@
+https://www.youtube.com/watch?v=T23Bs75F7ZQ
+
+Welcome to this course on mastering data
+ingestion for data engineering. Learn to
+tackle common pipeline features like
+schema changes and API limits by
+adopting the mindset and practices of a
+senior platform engineer. This course
+covers essential techniques including
+extracting data from APIs, automatic
+schema management, incremental loading,
+and orchestrating scalable automated
+workflows using modern tools. Alexi and
+Adrian are the data scientists who
+created this course, and dhub.com
+provided a grant to make this course
+possible.
+Hi everyone, welcome to our course about
+the basics of data injection for data
+engineering. My name is Alexe and I have
+been in the software industry since
+2010. Last 12 years I focus on data and
+creating data pipelines. I'm the founder
+of data talks club which is a community
+of people who love data and there we
+teach precourses. One of these courses
+is data engineering zoom camp a 10week
+long boot camp about getting started in
+data engineering. I am the instructor
+for the first part of this course. Here
+we will cover the basics of data
+engineering. Specifically, we will talk
+about things like data pipeline, data
+injection, ETL and I will also talk
+about extracting data from APIs and
+putting it to a data warehouse. In the
+second part, we will talk about DT the
+standard tool for data injection. It
+will be covered by my co-instructor
+Adrian. Let's get
+started. You've built a data pipeline.
+The script works. Everyone is happy. The
+data flows, reports update, everything
+looks great until one day you come to
+work only to realize that the job
+failed. You start on investigating why
+turned out that the schema changed and
+now the script no longer works or API
+requests hit rate limit and your script
+fails because there are no retries and
+this leads to entire job failing and the
+script you wrote using AI is now a
+spaghetti mess and nobody wants to
+maintain it and um suddenly the entire
+engineering team is firefighting instead
+of creating new data pipelines instead
+of creating new reports and uh nobody is
+maybe and nobody trusts your data. If it
+sounds familiar and you want to avoid
+situations like that in the future, this
+course is for you. And the reality is
+that most engineers can write a script
+that moves data from A to B. But the
+scripts are not always reliable. Senior
+engineers think ahead. They design for
+resilience, scalability, and automation.
+In this course, you learn how to deal
+with situations like that. This course
+is not about basic ETL. It's about
+approaching adjustion like a senior
+platform engineer so that you can build
+data pipelines that work that are
+resilient even when things around them
+change. You already have a picture of
+what may happen if you ignore best
+practices. You spend more time fixing
+than building new data plans. Data
+breaks unexpectedly leading to trust
+issues. The management no longer wants
+to use your dashboards because they
+don't trust the data in these
+dashboards. Your team avoids your
+pipelines because the code there is not
+reliable. It's not easy to understand.
+It's not easy to maintain and scaling
+these pipelines is painful and it
+requires constant refactoring. So this
+is not a fun situation to have and
+senior engineers don't want these
+situations to happen. They design
+injection pipelines that work now and in
+the future even when things change and
+this is exactly what we will talk about
+in the course. So this course is for
+analytics engineers, people who want to
+ingest structured and unstructured data,
+handle schema evolution, enable self-
+service analytics. This is also for data
+engineers, junior and mid level who want
+to move beyond creating scripts to
+building production ready data pipelines
+who want to automate data injection and
+scale efficiently. This is also good for
+analytics managers and architects who
+want to design reliable, scalable and
+costefficient digestion for analytics,
+machine learning and operations. By the
+end of this course, you'll go from
+moving data from A to B to engineering
+injection systems. So you're not just
+reacting to failures but preventing
+them. In this course, you learn the
+following. So first of all, you we will
+learn extracting data from APIs and
+handling API challenges. So we will work
+with back services. So we will need to
+handle situations like authentication
+rate limits uh penation in order to
+extract data efficiently. Then we will
+also cover schema management and
+automatic normalization. We will use DT
+to infer schema from the JSON data. Then
+we will flatten nested JSON. We'll
+extract list into children tables. And
+we will see how to handle schema
+evolution automatically. We'll also
+handle we'll also look at incremental
+data instruction and state tracking.
+When our jobs need to reprocess the same
+amount when our jobs need to reprocess
+the same data over and over again, this
+is not effective. So we will learn how
+to load only new or modified records and
+thus avoiding unnecessary reprocessing.
+Then we will see how to load data into
+various destinations. So first we'll
+look how to store data in duct DB but
+then we'll move beyond duct DB and store
+data in data warehouses such as
+BigQuery, Snowflake or data lake and all
+of that will happen automatically.
+Finally we will talk about automating
+and orchestrating pipelines who will
+deploy, schedule and maintain injection
+workflows with tools like Dexter, GitHub
+actions and chrome jobs. And finally we
+will also talk about scaling data
+pipelines efficiently. We will see how
+to handle large scale data ingestion
+while optimizing for performance,
+retries, and parallel execution. By the
+end of this course, you will not just
+know data ingestion. You will be able to
+build an API injection pipeline that
+automatically detects schema changes,
+retries intelligently, and scales with
+demand. If you've been in data science
+or analytics, you know that you usually
+have a clean data set that you can use.
+um somebody prepared this data set like
+you have a table with all the columns
+you need without any data issues like
+you don't have any data duplicates and
+what you do is just take this data and
+train a machine learning model on top of
+that or you build some analytics on top
+of this data but the reality is that
+this data does not just magically appear
+in your data warehouse somebody has to
+process this data has to make it
+available and has to clean this data
+such that you as a data scientist or
+data analyst can use it for your job.
+And in this particular case, the data
+that um data scientists or data analysts
+use is already well structured. There is
+an explicit schema and uh we can use
+this data immediately. So examples could
+be packet of raw database tables and so
+on. But usually as we know the data does
+not just magically appear there.
+Somebody has to put it there and usually
+the source data is raw. it's uh not
+clean. It doesn't have schema. It can be
+JSON file. It can be CSV files. It can
+be some row logs from our server. So,
+somebody needs to process this data,
+normalize it and um sometimes aggregate
+and then put it to our table. Here in
+this course, we will learn how to be the
+magicians who take the raw unstructured
+data and turn this into well structured
+data.
+So we will be the one making data sets
+magically appear and in order to do this
+we need to extract data from various
+sources APIs databases files then
+normalize this data by transforming
+cleaning and defining schemas and
+finally load this data to the place
+where it can be used data warehouse data
+lake or database and we usually call
+this entire thing data
+injection. So the process of turning
+unstructured data into structured data
+this is what we call data ingestion. So
+we extract data from a source transport
+it to a suitable environment and prepare
+it for the use. So usually it includes
+multiple steps. So first we extract data
+from the source. Then we normalize data.
+Then we clean it. We remove
+inconsistencies, duplicates. We add
+metadata such as schema or maybe we need
+to look something up. And then finally
+we'll b the data to a data warehouse or
+some other environment where it's ready
+to be used. And people who take care of
+this process are data engineers and
+they're extremely important in this
+process. So the data engineers are the
+architects behind these pipelines. They
+don't just build pipelines. They make
+sure that they are reliable, efficient
+and scalable. So when the data when they
+know that data scientists and analysts
+expect the data they make sure the data
+happens and that the end users can trust
+this data. Beyond pipeline development
+data engineers need to think about the
+use case and select the best storage for
+keeping the cost low and performance
+high because every use case might be
+unique and we need a specific data
+storage for this specific use case. They
+ensure data quality and integrity. There
+could be some duplicates in the data
+source that need to be handled. There
+could be some inconsistencies that need
+to be removed. There could be some
+missing values that need to be added
+back to the data set. Then also it's
+important that only people who are
+supposed to access the data can access
+it and the others cannot. So this is uh
+this is called data governance and data
+engineers need to also think about that.
+So they need to implement governance for
+secure compliant element and
+well-managed data. So the role of the
+data engineers is to manage the entire
+data life cycle from collecting to
+consumption. Now we want to extract the
+data. We have two options. We can
+process it in batches and or we can
+process it in steaming. When it comes to
+steaming, when event is generated, we
+want to process it as soon as possible.
+So we processing we are processing data
+continuously as it arrives. In case of
+batching we let events accumulate and we
+process it periodically. So could be
+every 5 minutes, every hour, every day
+or every week. So batch processing is
+good for scheduled tasks and um stream
+is ideal for realtime processing use
+cases. Choosing the best approach
+depends on factors like data volume,
+latency requirements and system
+architecture. But typically the latency
+requirement is the most important one.
+Do we have to process data immediately
+as soon as it arrives or we can wait for
+some time before we do this. In this
+course, we will focus primarily on batch
+processing as this is the most common
+way of processing data. We'll briefly
+touch on streaming.
+uh but uh the majority of applications
+in real world data engineering are batch
+batch processing is best when you can
+wait for data to accumulate before we
+process it and we process it in large
+chunks. So it's more cost efficient and
+works well for non-timesensitive work
+codes. So for example we want to update
+a database uh during the night or we
+want to generate daily or weekly
+reports. When it comes to streaming, we
+want to process data in real time or
+close to real time with minimal delay.
+Common use cases for streaming include
+fraud detection. We don't want to wait
+till fudsters do anything bad to our
+system, we want to catch them
+immediately as soon as possible. And
+there are many other applications like
+for example in EoT when we have some
+sensors attached to our production
+devices and if something happens to the
+devices, we want to detect this as soon
+as possible. And there are of course
+many many other use cases. And when we
+want to select between batch and
+streaming first of all think about
+latency. So if we can wait minutes,
+hours, days, then we need to go for
+batch. If we cannot wait, so we talk
+about milliseconds or seconds, then it's
+streaming. And with streaming it's
+continuous small events while in batches
+it's usually a chunk of data. So it's
+way larger. It's not individual events.
+Use cases for batch include generating
+reports uh ETL jobs and stream
+processing is about real-time analytics
+and event-driven applications. When it
+comes to complexity, steaming
+applications are not easy to maintain.
+So it requires a complex event-driven
+architecture while bite jobs are easier
+to manage. And when it comes to cost u
+usually batch processing is cheaper
+because we don't uh we already know what
+kind of servers we need and we can
+provision the servers just for the time
+of the job while for stream processing
+we need uh our applications constantly
+up and running which results in higher
+cost for always on processing. There are
+many tools on the market that can
+support both bot and streaming. So first
+there are tools that are specifically
+designed for steaming or more designed
+for steaming. So these tools are Apache
+Kafka, Rabbit MQ, AWS, Kinesis, Google
+WhatsApp. Of course we can do some batch
+workloads there but people usually use
+it more for event driven architectures.
+And there are tools um for building
+pipelines tools like Apache Spark, DBT,
+Flink, Nifi, AWS Glue, Google Cloud Data
+Flow and DT. So these tools um some of
+them uh work better with steaming, some
+of them work better with budge um but uh
+many of them can handle both. So you can
+choose whatever tool you want. In this
+course we will focus mainly on DOT. So
+this is uh the standard tool for DP
+injection. So it can automate API
+instruction, incremental adjustion,
+schema evolution and it works with both
+batch and streaming
+pipelines. Okay, now let's go to the
+practical part. So we talked about
+processing data in batch versus
+streaming approaches and imagine that we
+want to extract data from an API data
+source. When it comes to batch we when
+we use Python we can use the request
+library to send a get request uh to our
+API and then get back the response
+process this and put this results into a
+data warehouse. So the use case we have
+uh for this course is um the events that
+we have from our one of our
+repositories. Uh this is our course
+about data engineering data engineering
+zoom camp. And every time something
+happens in this repository somebody
+starts a rep or somebody forks a repo.
+Uh we see this in uh this endpoint. So
+the endpoint is slash events right. So
+these are all the events we have here.
+Um so we see the fork event. If we
+scroll down, we will see a watch event.
+This API is well doumented. We can see
+all the event types. So for example,
+watch event is when somebody starts the
+repository. But we can see that there
+are many many
+other events that um we can have here
+this API that this API returns. So what
+we want to do is we want to visit the
+URL and we want to send a request to
+this URL. Want to send a get request to
+this URL. it will return this JSON and
+we want to process this JSON. We'll use
+the request library. I'm going to start
+by importing
+it and then I'm going to send a get
+request to this URL.
+First let
+me name it a
+URL and then
+requests.get and then we get the
+URL. We save this to response.
+And since we know that this is JSON, we
+can
+type
+response to
+JSON and then this way we send a get
+request to this API. We get back the
+results and we display these results. So
+we see this is the same data as we have
+here. I am going
+to hide it. And this is how we
+send this is how we get data for batch
+processing from AIS. We see
+that the protocol here HTTPS it could be
+HTTP or
+HTTPS and we typically send the get
+request. We get back some responses and
+then we do something with this responses
+for example putting them to a data
+processing them putting them to a data
+warehouse and building some analytics on
+top of that. When it comes to streaming
+it looks a little bit different. So I'm
+not going to live code it right now. I
+just want to give you a short example.
+So here uh instead of sending a cat
+request, we subscribed we subscribe for
+events in this team. So usually the URLs
+that we have for streaming APIs, they
+start with uh WDSS protocol which is
+websockets and then you define a
+listener, you say every time that there
+is a new event, I want to do something
+with this event. So could be putting
+this event to a cafka theme or I don't
+know reacting somehow to this event. So
+this is how typically it looks like and
+uh we will not focus on this part here
+in this course. Okay, we have seen how
+to send the get requests to get the data
+from an API endpoint and how to we
+haven't processed it yet but we have
+seen some data that now we can process
+but that's not the end of the story. So
+we cannot just send a get request get
+the data and assume it will work like
+that forever. There are some challenges
+with extracting data from APIs and the
+common challenges are first of all there
+could be some authentication involved.
+So when there are some endpoints that
+are restricted only people who are
+supposed to access it can can access it.
+So we need to tell the API that yes we
+can do this and this usually requires a
+different authe authentication
+mechanisms like including API keys and
+so on. Then the events that this
+endpoint returns this is actually not
+all the events. So if we can see that
+the last event is from the 6th of
+May from the 6th of March but there were
+events before that. How can we access
+that? How can we access this data? So
+for that we need to
+uh use the concept of pagenation. We
+need to be able to access holder data.
+Then there could be also rate limits. If
+we start if we start bombarding this API
+with requests requesting the same data
+over and over again at some point they
+will say hey slow down you're sending
+too many requests. We cannot handle this
+request from your side. And they will
+just start returning an error code
+instead of actually returning the data.
+So we also need to take into account and
+if something like that happens we need
+to slow down um and come back to request
+and the data again later or could be
+some network failures for example
+something between u the computer where
+the job is running and the server the
+connection is interrupted and we cannot
+uh request the data anymore. So then the
+network the API uh the URL becomes
+unavailable for some time and we need to
+retry later to be able to access this
+data. And finally there could be some
+memory issues when the API returns so
+many data points that we cannot process
+at once. we need to
+um gracefully handle the situation and
+uh u perhaps uh introduce chunks uh um
+and not process all the data at once. So
+we need to keep in mind all the snakes
+when we deal with APIs. And um some APIs
+they actually some of the API developers
+they are actually kind enough
+to provide a special URL where we can
+see what are our current rate limits. So
+for example the case of GitHub they have
+a special endpoint rate limit and we can
+see what are our current rate limits by
+sending a cat request uh to this
+um endpoint and then when we do this we
+can see that uh okay so these are our
+limits. So we have 60 requests. Uh there
+are 59 uh remaining requests and the
+reset of the rate limits will happen at
+this particular uh time time point.
+Right? So for example we can then access
+this rate
+uh
+remaining. So this is how we can uh see
+okay we have 59 remaining requests and
+our code
+remaining and for example if we want to
+if we hit the rate limits and uh we need
+to handle this situation. So typically
+when it happens we need to sleep for
+some time. So for example we can wait
+for 30 seconds before retrying and uh so
+for example in code it can look like if
+remaining equals zero then we
+sleep for let's say 30 seconds and of
+course we need to import time for that.
+So this is how we can handle a station
+like that when we are running out of
+um when we're hitting the rate
+limits. Then in addition to rate
+limiting we um can come across
+authenticated endpoints endpoints that
+require me to prove that I'm actually
+that it's actually me who is running
+this request. Um so an example again
+from API is uh /point user. So if I try
+to send the request right now to this
+endpoint then we will see
+that it's responds with 401
+error code. Um so here we actually see
+if we look at the request it says it
+requires authentication and here is
+documentation about that. So this is
+um this endpoint is not it's not
+possible to use this endpoint without a
+proper API key and I already have an API
+token that I can use. So I went to my
+GitHub settings and I generated an API
+token. So this API token is um stored
+here in the secrets. So I can use this
+token now and
+um right now I'm running on Google
+Collab. So in Google Collab I can use uh
+this user data to access the token. But
+if um um you're using it elsewhere, if
+you're running your code elsewhere, you
+can use environment variables for that.
+Um so we have the API token and uh the
+way we authenticate is we include this
+token in our um headers.
+So
+there's it's
+authorization and
+then the standard way of doing this is
+in including this
+into the header like that app
+token. And when we send a get request,
+we include this
+um we include this in in the
+request. So now this is my token and we
+see all the information about
+me. This is how we deal with
+authorization. And the last thing I
+wanted to talk about here is pagenation.
+So here um we see that um this is
+definitely not the last event that um we
+generated that was generated in our
+repo. If we want to access the events um
+before this date, we can um use specify
+the get parameter page and say okay we
+want the second page and then this way
+we can go back to um to see all their
+events right and this way we can iterate
+over different pages and like for
+example it is page 10 um and um yeah we
+can iterate over all these pages and
+collect all this data and process as we
+need this Again the same URL we use a
+get request to send data to this
+URL and uh right
+now if we want to understand what is u
+okay we send the request to this page
+I'll send the request to this page so it
+returns uh some JSON data and we wanted
+to understand what is the next page for
+this and
+they the developers of this API they
+include this information in uh the
+headers of the response. So we can see
+that there's a link header. I can access
+this header here. We see that for this
+particular request for this particular
+endpoint the next page is um this is how
+we access the next page by adding the
+parameter uh page equals to and there's
+also the last page page number 10.
+Right? So now what we can do is we can
+iterate uh we can have a loop and then
+every time we send the request we see
+okay what is the next page and this way
+we process all the events until uh yeah
+we reach the last one and for example if
+we actually send a request for the last
+one it looks a bit different. So there
+is no next link here there is only
+previous link. So what we can do is we
+can just check if next is there in the
+links and if it's there we take the link
+we send another request and we keep
+doing this until there is no next. Um
+then this thing is not actually easy to
+parse. We can parse it because there is
+structure but we don't want to parse it
+ourselves and um the requests library
+already does this for us. So we can just
+access links um
+by using links links there. Um and um
+yeah let me check a different page. So
+if we do it page number nine we have the
+next link. So what we do is we check if
+next is there among all these links and
+if it's
+there next if it's there we just access
+the URL.
+So, and we uh keep the rating until we
+get all the pages we
+need. So, let us implement
+that. So, I'm going to have
+a while loop while true. So, we will do
+it forever and uh we'll break inside the
+loop. So here I want to check if
+next is not in response links then we
+break loop but if it's there we get the
+URL and the URL is this is how we
+actually access it right so in this way
+we send a get request and we get the new
+URL and we keep doing this until there
+is no next link and now we can do
+something with the response. So for
+example I can do the length of the data
+and data would be in this case
+[Music]
+response.json. So let me execute
+this. Yeah, of course I need to start
+with the event num with uh the first
+page and we see that it has each page
+has 30 events uh except the last one
+which has 22 so and 10 pages in total.
+So this is how we process uh this is how
+we
+handleation in case of APIs. Um yeah so
+different APIs uh different API prov
+providers handle the situation a little
+bit different. So in this case in case
+of GitHub we get it from the header
+information from the links section. Some
+may explicitly return this in the
+response and we need to adjust our code
+to each of the API
+providers. Okay. So now we know how to
+handle pion and let's say we want to
+process all this data. We want to take
+all this data and put this to our data
+warehouse. So we can run a script like
+that and simply append this to a list
+and then at the end once we collect all
+this data we load this to a data
+warehouse. This could be problematic if
+we have a lot of pages. In this case we
+have just 10 pages but what if we had uh
+thousand pages and each page contains
+not 30 uh items not 30 events but uh a
+million events then we will quickly run
+out of memory. Our job will crash. So
+we'll need to do something about that.
+Instead of collecting everything at once
+and then processing, we can um do this
+in chunks. And um since this API already
+uh kind of chunks the events data, we
+can for example use one we can process
+one page at a time. And for that I will
+take the code we have already written
+and modify it
+slightly. So we will write a special
+function that will call events
+getter and here when we get back the
+data we will so this function events
+getter is actually a generator. So it
+will return
+u every time we request a new page it
+will return this. So instead of
+accumulating this in a list and
+returning everything, we use the yield
+keyword to actually at the moment when
+the page is ready, we immediately return
+and the client like whoever is using
+this function will process this one page
+at a time. And uh so now I'm just going
+to use this uh generator here. I'll call
+it
+events
+pages and we can trade over uh these
+pages and for example uh we do some
+logic here right now I'm just going to
+print it u but this is where we do some
+processing right and now we send a get
+request for each of the pages and
+uh instead of accumulating and all the
+pages we process them one at a time.
+Okay, so we know now how to request
+pages. We talked about all the possible
+issues that might arise and now we are
+ready to actually do something with this
+data because we cannot simply take this
+data set as is and insert it load this
+into our data warehouse. We actually
+need to do something cuz in our data
+warehouse we have tables and this is
+JSON JSON is unstructured. Um so we have
+uh nested uh fields here. So for example
+actor is a nested field and we in order
+to put this into a table format in order
+to convert it to a table format we need
+to uh we call this process uh unnsting
+adjacent fields. So this is one of the
+things we can do. Um there are other
+things. So we often have a station like
+um we have lists in the quests. So for
+example here we have a list with topics.
+This is for a pull request event. We
+have some
+topics right? And we need to also be
+able to do something with this to also
+um flatten this list. And there are many
+other things. So we can add types, we
+can rename columns like all these things
+um are important when we are converting
+data from the row format to table format
+when we want to load this to a data
+warehouse. And
+um this is uh let me take a look at one
+of the events that we have and
+take
+page. So this is our event and right now
+we want to write some code that
+processes this event and flattens it. So
+I will call this function uh process
+event. Let me just print it one more
+time. So this will be the function that
+is uh taking the row event and returns
+an event that we'll later put in in our
+data warehouse.
+So we'll start with an empty dictionary
+and right now uh we first will just
+um copy some of the fields that do not
+need any
+pre-processing. So this is special p ID.
+So this is this thing uh then uh type.
+So for ID we simply copy it as is
+without any
+changes. Then we do the same with
+uh
+type with
+public and with created
+that. So we simply take the these events
+uh we take these fields as they are
+without any extra pre-processing and
+return them. And then we want to do
+something with actor. So actor is a
+nested JSON field. We need to do
+something about this. So we want to
+access ID and let's say login. And here
+we use the special naming convention. So
+when we access uh when we
+create when we normalize the data. So
+the naming convention is actor ID
+meaning that actor was a nested field
+and uh we split we say okay it was a
+nested field uh and the field inside
+this actor is
+ID and in Python this is how we access
+it right so it's a dictionary inside a
+dictionary and uh we also want to copy
+to
+login and now we simply return the
+result. Let us quickly test it. So I'm
+going to use this function on the
+event. Okay. So this is how we convert
+uh the original event that we had into a
+processed event. So I'll call it
+pro and then of course we can use this
+function for all the for all the events
+we have in our batch in our page. So
+I'll just do a for loop or event in
+um events
+page and then let's say we can
+accumulate all these events
+into a list that I will call processed
+events. Okay. Okay. And now at the end
+we just
+simply can see what is inside. It
+contains all the events with that we
+have but they are already processed so
+they are uh
+normalized. And uh here we copied
+created at as is we didn't do any
+changes but actually we can uh parse
+this too. So this is um is in a special
+it's stored in a special uh ICO date
+time string and let's say we want to
+parse this string and store it as a Unix
+time stamp. So we can do this
+[Music]
+um right now we will
+take our function. So let me find this.
+We'll take our function for processing
+events and we'll adjust it.
+And here yeah I already imported
+datetime and in case of uh so in case of
+Python we can use this from ISO
+format function for parsing
+uh parsing the
+data so
+pared stump
+And I can now extract the Unix time
+stamp from this using the time stamp
+field. Yeah. So when I do something like
+that and let's we can immediately check
+how it looks like for our let's
+sorry okay now we can see that uh the
+created at field in the process to looks
+like that. So right now it's a Unix time
+stamp. Okay. And then there's another
+thing we talked about. So here we want
+to extract the these topics and these
+topics the structure is it's quite
+nested. So topics leave inside uh we'll
+see inside repo and then repo is
+inside
+base then this is inside
+uh what
+um pull request and pull request is
+inside payload. So this is super nested
+and uh what makes the matter even more
+complicated is not all the events
+actually have this. So we want to be
+careful and um or what we are going to
+do right now is I'll just use the uh get
+function of a
+dictionary and I'm going to get the
+payload and if payload the payload field
+is not there I'm simply returning an
+empty dictionary and then um from
+payload it's pull
+request
+again empty dictionary if it's not here
+then
+base then um
+repo and then finally topics and if
+again topics is empty then we return an
+empty
+list and let us just
+uh return
+topics. Now I can do this for all the
+data for event infall data
+uh process event event and uh yeah we
+will put
+[Music]
+them inside processed event list. Uh we
+have already written this
+uh but also now we need topics. So I'll
+call this processed topics.
+and
+topics. And what we're going to do is
+we're going to extend this list with
+topics. Extend topics. And then of
+course here we append to the
+events. We append to process
+that. So now we can see we can just
+print uh both of
+them. No, it's I guess too much. Uh
+let's just uh look at
+first
+five and I'm going to actually print
+them.
+So now yeah we see that uh these are our
+events and these are our topics but as I
+said uh we actually need to be able to
+link back the topic to the event and for
+that we need to have the ID we need to
+use the ID as the reference. So it means
+that we need to do a bit of extra
+processing for
+topics which I'll do inside here in the
+inside this function
+topics. So have a variable called
+processed topic which will be a
+dictionary. First we'll have event
+ID which is the
+ID and then topic name which is the
+topic itself.
+So now when I do
+this, yeah, of course I need to also put
+the results to process topics because we
+don't say
+them. Okay, now it looks much better. So
+now for each of the topic we know what
+is the corresponding aant ID. So we have
+uh two lists each of them contains uh
+dictionaries and these dictionaries is
+what we are going to put inside a data
+warehouse. Okay. So we prepared all the
+data uh this data is in these two lists
+um process events and process topics.
+Now they contain the dictionaries with
+the cleaned event data cleaned topics
+and now we're ready to load this data
+inside a into a data warehouse. So let
+us do that. Uh as a data warehouse we
+would use DDB which is a simple inmemory
+database that we can
+use
+[Music]
+and dis
+Okay. So, first we create a connection
+to a DDB database. This will create a
+file github events
+db.
+Next, next we will create the GitHub
+events table.
+And if we look at our event. So if I
+look u at process processed
+events we have um these fields we have
+ID type public created at actor ID login
+actor login right and we have all these
+fields here. So there's one to one
+mapping between this dictionary and
+table and yeah here are the types
+too. So now we want to insert all these
+processed events in that in this
+table. So we have all these fans. uh
+first we need to turn the dictionaries
+into a list of tpples and then
+we have this insert statement and we
+apply it to all the data.
+So now the data is there and we can
+verify that by executing a select star
+request and then um yeah let's see what
+are
+the first five events there. So we see
+that the data is there. We successfully
+loaded the data to our data warehouse to
+the GitHub events table and we have
+these six uh columns there ID type
+public created at actor ID and actor
+login. Cool. So we were able to do this
+and um before I forget let us also close
+the
+connection. So now the data is there the
+and we can now start building uh
+analytics. On top of that, we can start
+building dashboards and we can do
+whatever we want with this data. And
+even though it works, if we look at this
+code, there are actually many problems.
+So first of
+all, when
+we when we specify the when we create a
+table, we hardcode all the values of the
+fields. So we say that okay type uh is
+text public is boolean we have to
+manually do this and this is problematic
+uh if uh we have um when we want to do
+more then we have to
+um maintain a lot of code. So this is
+not fun to do this. There are other
+problems like uh we don't have automatic
+retries. Um we have some code that loss
+data to our data warehouse. But what if
+something happens and um let's say in a
+case we don't use duct DB but use
+BigQuery. Uh
+BigQuery is a remote data storage. It's
+a data warehouse that uh does not live
+on our computer and if there's there are
+network issues and something happens we
+cannot insert data. We cannot load data.
+We don't have any automatic retire
+mechanisms. Then also there is no
+incremental loading. So we take all the
+data we have and we load the entire data
+set into our uh data warehouse. But what
+if we want to run this code tomorrow,
+right? Tomorrow we will have new events
+of course but also we will have a lot of
+old events. We don't want to reprocess
+all the old events. We want to all only
+process the new ones. So this is we
+would solve this problem with
+incremental loading. And there's a lot
+of code to maintain like if you look at
+this code like it's not uh pleasant and
+we need to maintain it. We need to every
+time we add something new we need to
+also keep track of that. So this is not
+fun. This is a lot of work and um yeah
+we will need a team of engineers to
+actually maintain this code over time.
+So these issues are not fun. Let's say
+we want to address some of these issues.
+And the use case we'll have is we want
+to add a new column here. So I'll take
+the code that we already have for
+processing
+events. And let's say we want to
+uh add a new field. We want to add a new
+column repo ID because we want to run
+this analytics job on multiple uh
+repositories not just data engineers on
+camp. We also want to do it for our
+other courses and we want to
+know which event belongs to which
+repository. So for that we need to know
+the repo ID and we right now will add
+this. So add
+result ID which is events
+event repo
+id. So this way we will copy the repo
+id. We will also nest it and we get the
+ID of the
+repo. So the modification here in the
+process event function is relatively
+straightforward.
+Let us also execute it
+for all the
+events. So now if I look at uh process
+events, we see that there is a new field
+repo
+id. So now we have the new field in our
+um dictionaries in the processed events.
+Now we need
+to load them to load this particular
+column to back to our data
+warehouse and we want to be smarter this
+time. So instead of u hard coding the
+type uh the type information the scheme
+information um we want to automatically
+infer
+it. I will start with again uh opening a
+connection to our db. Then the next
+thing I want to do is I want to
+understand what kind of columns we
+already have in uh this table in GitHub
+events. So these are the columns we have
+and what we want to do now is iterate
+over all processed events and if we come
+across a new column that is not present
+in this list of columns uh in this set
+of columns then we create an alter table
+statement and then we added this to the
+set.
+So this is how we do it. We iterate over
+all the events we have and we check the
+fields the keys in these dictionaries
+and if we see that there's something new
+that something we haven't seen before.
+We try to understand what kind of type
+of this thing is in our case it will be
+an integer. So the column type will be
+big int and we will issue we will
+execute the alter table statement on the
+GitHub and events table.
+and we will add a new column. So let us
+execute this code and we see that u yeah
+we successfully added a new column. Now
+we need to load the data
+again and uh right now we don't have any
+new data but imagine that uh maybe we do
+it a few days later there are some new
+columns uh there are some new events
+that appeared there are some events that
+uh were before. So we cannot simply just
+redo the whole thing. So we need to be a
+bit smart about
+that. So this is the code we can use for
+that. Um so again uh first we turn our
+uh dictionaries into a list of uh
+toubles and then we
+construct a SQL query for that. And in
+the query when we insert into GitHub
+events we do this on conflict when there
+is already a record with this ID we
+actually update it. So we uh see okay
+the record is already there um but the
+field is missing uh so let's insert this
+field. So this is what this query is
+doing and now we can execute this query.
+Okay, this query has
+executed
+and let's actually take a look at what's
+inside our table now.
+So now inside the table we have the same
+information as we had previously but
+there's a new column repo ID and the
+repo ID contains the ID of the
+repository from which the event is
+generated. Okay
+cool. Um now the code is a little bit
+better even though it's more difficult
+to understand now but it's more generic.
+So every time we add a new column, we
+don't need to hardcode values. So this
+code will be able to automatically infer
+the type of the new column and add this
+to uh the table. Right? So this becomes
+easier. But as you can imagine with time
+this code will grow and it will become
+more complex. it will become more
+difficult to maintain this code and this
+is not something that um the team will
+be looking forward to working with
+because it will be uh a big spaghetti a
+big file with lost spaghetti code that
+is hard to maintain and even if you will
+take a take a lot of time to make this
+code really good it's still you probably
+don't want to spend time on this library
+you want to spend time on innovating on
+solving business problems on creating
+data pipelines or uh maybe new
+dashboards. Uh so you'd rather put your
+time there than into maintaining this
+code. And this is why you want to
+actually delegate this job to a special
+library that can do this for you. And
+this library is DOT and
+DOT can do automatic schema management.
+So it handles schema changes for you.
+Like when you add a new column, it will
+just automatically add this when you
+need it. Then it also can handle
+incremental loading. So it ingests only
+new or updated
+records. It can work with any
+destination that you can think of. So
+here we use duct db. But when we switch
+to DT, you can ingest data. You can load
+data into BigQuery, into Snowflake, into
+posgress, into anything you can think
+of. Then uh it also works better because
+there is uh you can ingest data faster
+with uh built-in
+paralization and u something we also
+don't have in our code is we don't have
+transactions we don't have uh atomicity
+the tries dot handles of all that so
+when you switch from your homegrown uh
+code for loading data to something like
+dot life becomes a lot more easier and
+this is what we are going to cover in
+the second part of this
+course. In the second part of this
+course, Adrian, my co-instructor, will
+introduce DT which make your life a lot
+easier.
+Woo. So, welcome to data engineering for
+senior professionals, the second part of
+the course, the advanced topics. My name
+is Adrian and I'm a data engineer. I got
+into the data field some 10 years ago.
+Um I did 5 years of startups, 5 years of
+freelancing building data warehouses and
+data teams and um then I started working
+on DT or data load tool. Uh it's a dev
+tool for data engineering that we will
+learn how to use
+um which I hope you will enjoy
+today. So why did we create the LT data
+load tool? Um it's basically coming out
+of my own need as a data engineer. uh
+one of the needs that I had was that
+it's fast and easy to create pipelines
+that then self-maintain and that also
+the rest of the team can use them or
+create them or you know so I saw for
+example that data scientists can all do
+pandas data frame to SQL I wanted it to
+be that easy for everyone to load data
+in engineering complete best practice
+kind of way so not like pandas to SQL
+um so this is DT the tool that will take
+your weekly typed JSON data or stuff
+like that and automatically
+um clean it up and load it strongly
+typed into a uh data warehouse or data
+lake. Um it basically automates the
+unpleasant part of the work. So like
+turning weakly typed data into strongly
+typed data. It enables the team and it
+solves most data engineering problems
+once and for all. So what I mean is for
+example you might want to parallelize a
+pipeline at some point. So at DLT, you
+know, once we added the ability to
+parallelize, you can parallelize all
+your DT pipelines. So it's the
+boilerplate code that I wish I had. This
+has already happened. So we created this
+library. We put it out there and our
+early 3K uh community already built over
+20,000 sources. So it's a different dev
+tool. I would say we mostly care about
+enabling you and your ability to build
+with it. Uh you might ask how because
+it's a very common question. How do you
+thrive as an open- source project? And
+the answer to that is that we're an open
+core company. So we offer DT OSS for
+free, no limits, um and DT plus
+commercially. Um what this also means to
+be an open core company, it means that
+we aim to make DT an ingestion
+standard. Similar companies that do
+something like this are Confluent and
+they create Kafka or Elastic who creates
+elastic search. And in this course
+basically we will learn about how to do
+data engineering uh using DT because it
+already has the best printed and um you
+know how to have let's say a happier
+experience when you're working uh with
+your data
+stacks. So let's look at uh what we will
+learn in this session. So first we will
+uh learn about extraction. uh we will
+look at into different ways to request
+data from REST APIs. Uh then we will
+look at what a DT resource is which is
+basically an extractor and look how we
+can configure that. Uh then we will look
+at normalization. In the case of DT uh
+we built DT to automate this
+normalization because this is hard and
+tedious. So you can adjust how that
+happens. Uh or you can set a data
+contract or you can alert schema
+changes.
+Uh so we will look into how to do that.
+Um after normalizing we will move on to
+loading. Uh so we'll look into how to
+configure right disposition in a
+resource. Understanding how uh replace
+right disposition works a step-by-step
+example. Then we'll go to incremental
+loading uh which is uh significantly
+more complex. So we will uh first look
+into the theory of how that works and
+then uh we will go with an
+example and then we'll look over SQL to
+SQL copy specifics. So specifically uh
+because the data in SQL is already typed
+strongly typed uh we can skip the type
+inference uh so we can use arrow or
+connector X uh under the hood. uh I'll
+show you how to do back filling uh
+because this is a common question people
+have and how to historiize data with
+slowly changing
+dimension. Then we'll move to
+performance tuning which uh will teach
+you how to do memory management with DT
+so your pipelines never crash running
+out of memory uh how to do asynchronous
+requesting so you can uh essentially
+parallelize extraction and how to do
+parallelism on the rest of the pipeline.
+So for normalization and loading then
+we'll look into loading uh to data lakes
+and lakehouses because there are some
+specifics um around them. So like
+loading to park files
+um loading to uh iceberg and Athena
+uh talking a little bit about uh iceberg
+partitions and uh
+cataloges uh then we will uh learn about
+the specifics of loading to data
+warehouses or MPs. So understanding uh
+how staging works. Staging is
+essentially like a data lake for data
+warehouses and then we'll move to
+deployment and orchestration with some
+examples of how to deploy to chron job
+airflow or dexter. Um looking forward to
+guiding you through all of this
+content. So let's talk about data
+extraction. Uh we have this notebook
+here. Um I'm pip installing DT with TCD
+DB and um previously Alex was showing
+you how to do Python imperative API
+calls. Now I will show you how to do
+hybrid
+uh type of calls. So something between
+imperative and declarative using the
+rest client uh from DT. So the rest
+client from DT was actually built uh for
+this uh declarative uh API client uh
+that you can also use. Um and it offers
+you some components to make requesting
+data a little bit easier because it
+automatically detects some things or you
+can tell it what type of pageionator to
+use for example. Uh so it's very useful
+for mixing let's say uh Pythonic code
+with customizations
+uh with just a simple uh automated REST
+API
+client. You can read more about the docs
+here from this notebook. Um and you can
+also self-learn the REST API
+documentation. You can also find on
+YouTube some uh tutorials uh how to do
+it. They're quite comprehensive. So I
+will not teach that here because it
+would be quite long. Um so let's uh uh
+do the step-by-step example. So we had
+the uh previous example requesting data.
+So now we will go to documentation and
+copy uh snippet of the rest client and
+then uh work with the other elements and
+build our request. So just quickly going
+to
+documentation. Um so I'm just going to
+copy out this snippet from the
+top. And now let's implement
+it. First I will paste it here. Um we
+don't need most of these
+things. So we don't need a session. We
+don't need a data selector. We need a
+pageionator. But it's not this one. We
+need
+authentication. We don't need headers.
+And we need the base
+URL. So let's put in
+the base URL. I can copy it from
+here.
+Actually I have
+it this and let's use also the
+credential that we were using for the
+GitHub
+uh API. So the access token uh we have
+it in our variable. So let's uh read it
+there. So it's a collab uh user
+data can see it here or we need to give
+uh collab access to it in order to have
+access to
+it and we need to uh print the data from
+this pageator. I'm going to quickly look
+at
+the documentation
+[Music]
+again. Where was it
+[Music]
+here? So, how do I print
+it? Okay. Yeah, this is how we print it.
+And for us the endpoint is
+events. I think it's
+plural. And we don't have okay we need
+to put in our base
+URLs and for
+authentication we pass our API
+token and for the pagionator we actually
+need to use something called uh header
+pagenator.
+there.
+So let's look
+for header link pagionator it's
+called. So just header link pageionator.
+Let's copy
+this here. Let's import this one.
+And here our path was
+next. And
+uh in the documentation for the header
+link pagionator, we also have the
+variable name here. Unfortunately, it's
+different. Uh we should probably fix
+that. But yeah, this is how it looks.
+Let's see if it works.
+should get pages of data. User data is
+not
+defined. Oh, we need to import
+the
+collab user
+data. Okay. Now we basically see pages
+of data coming. So uh our example is
+working. Now let's convert it into a DT
+resource. So what is a DT resource? It's
+a function that yields data. So we just
+need to wrap our code in a function and
+make it yield each page. And then on top
+of this function we put a decorator. And
+what this does is it will allow us to
+customize our function. So basically
+customize how it will behave in
+normalization or loading or all kinds of
+things. So let's uh implement that. So
+let's define a method
+here.
+Um we were calling it pagionated getter.
+So let's do that.
+And we want
+to declare that this is a DT resource.
+And as you can
+see by auto
+suggests is
+already suggesting me what to do. Um now
+DT when you yield
+something it uh works with records but
+if you pages of records it's also fine
+with that. It will actually work faster.
+Um but DLT will break that page into
+records anyway. So let's see when we
+print it.
+Oh. Oh
+Uh I think uh I need to do something
+different there but anyway now this will
+work. Let's print it.
+So as I mentioned now we have records uh
+being emitted not pages. So as you see
+we're doing uh printing the records. And
+now you should see basically the same
+data but instead of it being like list
+of records it's printing a bunch of
+records at once instead of printing a
+list of records at once. Right? So it's
+the same just slightly different
+um yeah format.
+All right. In the previous section, we
+were looking at how to extract data and
+how to uh create a resource. Now, let's
+look how to um configure secrets for DT
+so you don't risk leaking your
+credentials. So, let's try to understand
+how that
+works. And
+um basically DT has uh configuration or
+secrets. Um these are both uh
+declarative uh YAML stores. Um so
+secrets is for sensitive data like
+passwords. This should not get committed
+to GitHub for example while
+configurations are nonsensitive
+settings. So for example maybe which
+tables you want to copy from a SQL
+database. Uh this would be okay to
+commit to GitHub. So
+um there are multiple ways for DLD to
+get these uh variables or credentials
+and it can either do that through
+environment variables or from
+configuration files or from so like you
+do under local machine or directly in
+code. So for example, if you have um a
+credential store, you can pass uh you
+know the outcome of a function from your
+credential store to
+DT. Uh for airflow, for example, it will
+read it from airflow secrets. Anyway, so
+um let's look at how to uh retrieve
+secrets from uh environment variables.
+So let's set our GitHub access token in
+the environment and retrieve it uh via
+the LTS method. So let's just copy the
+code we were using
+before
+and paste it here.
+And the first thing we're going to do is
+uh put this
+uh access token into the operating
+system. So we can do that
+um by using the OS library.
+So we can just uh put in uh the
+environment variable access token our
+access token from our user data. Um now
+it will be available to DT to read from
+there. So we should change how we pass
+this credential here. Uh so we just need
+to uh tell DT that um it will get an
+access token with the name access
+token from uh the DT secrets vault and
+then here where we are passing the API
+token we should just pass the access
+token. So now as you can see there is no
+access token variable here. So it's
+being read from environment. If
+everything goes well, let's try
+it. It did not.
+And I think we
+[Music]
+can think. Uh yeah, sometimes what
+happens is the collab session gets a
+little
+stuck. So we just need to
+uh restart
+it. So let's try it
+[Music]
+now. All right. Now it worked. Um if
+you're not using collab this should work
+every time. If you're using collab uh
+then uh collab notebooks have state
+which sometimes can get buggy and uh you
+know you need to basically
+um restart your
+session to clear the
+cache. All right. So we saw how we can
+pass credentials. Uh let's move on to
+normalizing section.
+So let's talk about data normalization.
+What is data normalization? Well, data
+normalization is taking data from
+whatever shape it's in and putting it
+into some kind of normal form. Um those
+normal forms could be just some kind of
+flat form. Of course, you want the data
+to be typed and clean. So um the
+challenge usually when you call data
+from an API, you will get some kind of
+JSON. JSON is an interchange format.
+It's for exchanging data. It's kind of
+like a lowest common denominator. It
+doesn't have types. What this means is
+for example a date time in JSON will be
+represented a string. A boolean true or
+false will be represented a string. So
+if you want to be able to work with the
+data as it actually is like the types
+you would need to type it. So you need
+to convert the string into a date time
+for example. Another issue with JSON is
+that you don't have a clear schema. So
+you don't know what fields you have. You
+might need to constantly evolve your
+schema with whatever comes because JSON
+is
+schemalas. JSON has nested fields. So
+for example, nested dictionaries. Um you
+would want to flatten those into a
+single level or uh you might have nested
+lists that you might want to break out
+into separate tables.
+So, DT will do all of this for you
+automatically. Um, and what we're going
+to do right now is showcase how that
+works and talk about how we can adjust
+this automatic process. Why use DT for
+doing this? Well, this is actually one
+of the most tedious parts of data
+engineering. So, uh it's also very
+errorprone. So, actually automating it
+with DT is u you know a breath of fresh
+air.
+So uh let's look step by step how that
+works. So let's look at what kind of
+data we were loading. Um it was um
+GitHub events data. As you can see there
+are some nested structures. It's mostly
+nested dictionaries. There might be
+nested lists as well but not in this
+specific uh
+event. So instead of manually working
+with this and flattening it, we can use
+DT. And what we do here is we create a
+DT
+pipeline. We give this pipeline a name.
+We call it get GitHub
+data. Uh we give it a destination. And
+here we choose Dak DB because uh duct DB
+is an in-memory database. So we don't
+need to set anything up. We can just uh
+spin it up ad hoc as we need it. And
+then there is a data set that we create
+in duct DB and we call that events. Uh
+then we invoke the pipeline pipeline
+object. The pipeline object will take um
+iterable. So we give it our function. Uh
+we could also give it a data frame or
+something like that. Uh we give it a
+table name to which we want it to load
+and how it should load the data. So
+let's just run this code and see what
+happens. It will tell us it loaded some
+data. It's running the extractor right
+now.
+So now you can see we printed the
+information of what happened and it says
+a load package was loaded. This is
+basically a Unix time stamp. It
+identifies a load package and you can
+see the tables that were loaded. So we
+have events, we have events, payload
+commits, events, payload pull request
+base repo topics. So basically those
+were some kind of like nested lists
+within this event. Um, and here we print
+the events data frame so you can see
+what it looks like. As you can see, the
+data is
+clean. And let's print another
+table. So, we have events payload
+commits here. As you can see, it's
+unpacked with two underscores. This
+shows you basically that this is coming
+out of a nested dictionary. And I think
+this is the nested list.
+So let's let's look at the commits.
+These are commits
+basically. So this is a separate
+table and we can as I was saying join
+the parent table that we loaded to its
+children that were unpacked through
+generated keys. So basically here we
+have the events DT ID is the parent ID
+for the child table commits. So we can
+run this query and see what happens. As
+you can see, we have a SQL client here
+uh built into the pipeline. This is a
+universal SQL client. So, basically, if
+you were to load the files, for example,
+you could still use this uh SQL client.
+What we do under the hood is we spin up
+a duct DB and that enables you to query
+your file system with
+it. Um yeah, so you can see here uh that
+we have the result
+of that query. Yeah, I could have
+printed it nicer, I guess. Um, but yeah,
+the query
+worked. And something quite uh relevant
+is a schema was inferred. So, I'm just
+printing it here. You can see what it
+looks like. Let's look through
+it. Okay.
+Well, here we go.
+It's very large it
+seems. So let's see what we have in the
+schema. We have tables. We have DT
+version, DLT
+loads and uh events. So these underscore
+DLT tables are basically metadata that
+helps DT keep track of what was loaded.
+Uh then we have our events table. And
+you can see that
+the integers are integers and stuff like
+that. Time stamp.
+[Music]
+Um then we have our unpacked
+columns. Um we have DT load ID which is
+a time stamp. We have the row ID which
+you can use uh to join as I was showing
+you before. Here we have the two
+underscores which are basically saying
+this was a dictionary for key uh in
+payload. So uh it got unpacked. We can
+see the ids
+here. Lots of information in
+there. Okay, I want to get to the end of
+it because there's some more interesting
+information.
+Okay, here we are.
+So here you see another table. Um and
+you can see actually these tables have
+right disposition. They have some kind
+of file format uh if you declare it
+otherwise you know it's all default.
+Um some normalizer settings and here you
+have more generic settings. So for
+example, detecting timestamps, what you
+want for detections to be used,
+um default hints on columns, you could
+add more normalizers for the column
+names. So column names like you saw,
+they get uh unpacked. So we need to
+create new column names. There's
+versioning as well. Um okay, so now you
+probably wonder how can I adjust this
+normalization? A lot is happening
+automatically.
+And like I said, basically one of the
+parts is you can export the schema,
+modify it settings and reimpport it. You
+can also do that from code. This is a
+very comprehensive piece of
+documentation. Uh let's not get into it
+now because uh it's uh going to take a
+long time. But um you can also just
+simply reduce the nesting level of
+tables. So just so you don't unpack data
+for example. But in the schema you can
+do almost anything from let's say
+changing column types uh deciding to
+remove some columns and then for example
+setting the data contract to prevent
+them from appearing
+again. So um you can check on your own
+how to adjust the normalization. Uh most
+people don't need to do that. Um but you
+know you might have some very specific
+cases. Uh you can also just adjust your
+data before passing it to DT. So before
+emitting it from a resource uh to modify
+it to do whatever is needed. Um so for
+example you could synonymize your data
+before loading
+it. Okay. Now let's talk about data
+contracts. Data contracts are
+essentially an agreement between a
+producer of data and a consumer of data
+as to the contents of the data. Now,
+that is a very up in the air definition
+because fundamentally the producer might
+be completely outside of your control.
+The producer might be a browser that is
+triggering events and the producer might
+be somebody that is actually maliciously
+looking into your website code and
+sending you some random trash. So it's
+not an agreement necessarily between the
+producer but it's an agreement between
+let's say some place that holds the data
+and another place that holds the data.
+Um so for example when you are doing a
+data contract that is on event ingestion
+and the events are coming from the
+worldwide web then the contract is
+between a piece that checks and the
+piece that accepts right it's about two
+pieces of software that are talking to
+each other. Um so anyway it could also
+be that a data contract is an agreement
+between two individuals like two
+departments that are transacting data
+but fundamentally a data contract has
+two sides of it when it comes to
+actually validating the data. One of
+them is validating the schema and the
+other one is data quality checks. So
+validating the schema is called a schema
+contract. And like I said, we would use
+that for event ingestion or basically
+it's just a technical uh let's say
+contract or
+barrier. Um and data quality checks
+would be like business rules or data
+quality rules um that the data should
+validate. So let's look at what we can
+do with DT. So because DT has a schema
+inference engine, of course a schema
+contract is natural, we can easily
+validate the schema that we read um
+compared to the schema that we already
+have. So let me just quickly show you
+what DT can do in the documentation.
+It's really to the point. So you have
+tables, columns or data types. So it's
+entities that you can control. And you
+have the modes evolve, freeze, discard
+row, and discard value. Evolve means
+just a default. It means you don't
+really have a constraint. Freeze means
+you have a constraint. So basically, if
+things don't match your rules, it will
+break. Discard row means if there is
+some kind of row that doesn't match the
+rules from many rows in your data set,
+that specific row will be discarded.
+And discard value basically says if
+there is a value that is causing the
+violation. So for example like uh we
+have a new column or u something like
+that then specifically this value will
+not be loaded and the rest of the row
+will now go to collab and do an actual
+implementation.
+So I have here our pipeline and it has
+the contract set to evolve completely.
+So it's like it doesn't have a contract
+and I already loaded the data once I
+think. I'm just going to run it to make
+sure. Okay. So this was the first time
+it ran I think and it basically loaded
+some data and this is our data
+set and now what I'm going to do is show
+you how the schema evolution works
+first. So what I'm going to do is add
+some extra data as an
+integer and let's see how that column
+gets
+added. Of course, when you have a new
+column, you want to um alert it so you
+can do something about it. So, for
+example, you load a new row data column
+and then you want to put this in a
+report. The analyst should know. So,
+we'll uh tell you about how to alert it
+later. But now, let's say the type
+changes from integer to
+string. Let's see what happens.
+As you can see, it still worked. And
+what happened was you got the variant
+text column. So this is your old column
+because we're loading with right
+disposition replace. There's all your
+old data got deleted. But your new data
+now has this variant column. Now maybe
+you don't want this to happen. I
+probably do because I want to know when
+this happens and I want to be able to
+fix it and merge it later. But maybe the
+problem needs to be solved at the
+source, right? Maybe there is a source
+that you can talk to. So in that case,
+you would want to set a data
+contract. So let's say we don't want
+uh let's just load a new column
+first. Let's set it to freeze. Let's say
+we don't want new data types.
+So now everything should work. We should
+get this new
+column.
+Oh, sorry. I wanted to load an integer
+because now an integer would fit in a
+string. So let's do it
+this. So now it should be fine. But now
+when I switch it to string, it won't
+work. So as you can see, it says schema
+is violated. Contract data type with
+mode freeze is violated. This column was
+not allowed. Um yeah, so stuff didn't
+load. Now we could demonstrate the other
+kinds. I would say you know uh do it on
+your own uh fun and depending on what
+case exactly you have you can use any of
+the modes to prevent schema evolution.
+Keep in mind when you're playing locally
+that DT essentially like this rejected
+package is actually still stored locally
+by DT uh in order to be able to retry it
+if it should be retrieded. In this case,
+it should not be retrieded. But if you
+will change something right now, you
+have a local state that might get mixed
+up. So you might want to use developer
+development mode. Uh you can read about
+that in our documentation. Um anyway, uh
+next we'll talk about alerting schema
+changes so you know when you have a
+change that it exists and you can do
+something about
+it. Okay. Um now this is for data
+contracts but typically you would just
+want to receive the data as it is
+because that is the truth and uh decide
+what you promote to production from the
+raw layer. So what people typically
+would do is just load everything with
+schema evolution into raw data into a
+raw staging layer. Um and then basically
+uh apply schema evolution alert. And
+let's look at the docs for a
+second. So you can you basically have
+documentation here how to alert schema
+changes to curate new data. And
+basically what is happening is um in the
+load info after we load a pipeline we
+have way more information that we can
+get out. And here we also have a slack
+message uh function that we can uh use
+to send this information to a slack hook
+so you get notified. But let's uh go
+back to our notebook and see what we
+could do.
+So, we have this uh already set up
+example, but you could just uh copy this
+snippet from the docs. And then here we
+just have our previous pipeline
+uh slightly different data set, pipeline
+name, whatever. Uh we can just load
+this. Let's see what happens. Ah yeah, I
+had a different uh pipeline name here.
+So you can see because if we already
+loaded the data and the schema is there
+and it won't evolve it. So we need a
+fresh one. So we can run the code and
+then we will see basically what is being
+emitted here cuz we're just printing the
+column
+names column table names. So as you can
+see these are all the columns that were
+added because they were all new because
+it was the first load. And you can see
+basically there's this new column. It
+has this name. It has this data type. It
+has this
+[Music]
+information. Uh it's a lot of data in
+here. It's kind of crashing my browser a
+little bit. Uh but yeah, it's um it's a
+lot of information. My point is that
+when you have a new column, you could
+send this alert to Slack and you will
+know to go into your DBT model or
+something like that and adjust it to
+make sure it works. Um so I hope you
+enjoyed this section. The next section
+we will uh focus deeper on loading and
+um then also talk about incremental
+loading. So um if you need to make a
+break you could do that now. See you in
+the next
+section. So welcome to the next section
+loading. Um and in this section we will
+learn how to configure the right
+disposition in the resource and
+understanding how the replace operation
+actually works under the hood. So first
+of all why would we want to do this
+configure the right disposition in the
+resource and the reason for that is
+because typically when you have a data
+source that data source might have
+multiple resources and you might want to
+configure each of them individually and
+granularly
+um and then finally pass them to a
+pipeline together when you load them.
+Whereas if you have a data structure
+like just some records or a data frame
+then you don't have a resource and then
+you can just use the pipeline for the
+configuration. But you have more options
+when you configure uh things on the
+resource level. So let's look how to do
+that. Uh so we have the resource here.
+This is our code from before. and we
+take the right disposition from the
+pipeline and we move it to the resource.
+Uh so that should be it basically. Let's
+run the code and see if that worked
+out. It should load this pageated getter
+with replace it. did it
+[Music]
+um did it
+here and now uh let's look at what
+actually happened under the hood. So
+let's discuss how replace works. Uh I'll
+show you the docs briefly and um and
+here you can see that actually for
+replace we have multiple strategies. One
+of them is the truncate insert and this
+is the default one and it's the fastest.
+It's uh also possibly uh cheaper
+depending on um the exact uh technology
+that we're loading to. Um it's default
+because
+um you generally don't need more but as
+a shortcoming it's that there will be no
+data in this in the table uh while we're
+loading because what happens is first if
+there is a table there we will truncate
+it and then we will insert data. So in
+the time between truncation and
+insertion there will be no
+data. If you're not fine with this uh
+you can do insert from staging strategy.
+So this is a little safer because first
+we create the staging table. Uh and once
+that staging table is created so we have
+the confirmation that everything is
+working fine. Uh then we uh truncate
+the uh destination table and we move the
+data over or replace it depends exactly
+how it's uh created how it's
+implemented.
+And finally we have staging optimized
+strategy which which is similar to
+insert from staging but it has
+um some extra pros and some extra cons.
+So uh basically uh this is dropping the
+destination tables um in some cases
+which means that if you have dependent
+views on those tables uh it will not
+work. Uh so basically if you don't have
+dependent fuse you could use it. Um it
+has some performance and cost-saving
+opportunities
+implemented. Okay let's go back to our
+example. Uh so this was um what was uh
+worth uh learning about unloading and
+now let's move to incremental
+loading. So let's talk about incremental
+loading.
+When we talk about incremental loading,
+we don't just talk about incremental
+loading. We specifically talk about
+incremental extraction, the state of
+where we are in an incremental load and
+the right disposition that we use to
+load the increment of
+data. What are these things? So the
+incremental state is usually a marker or
+checkpoint from the last load that tells
+us where we left off. It might somehow
+identify the increment of data either by
+maybe a maximum ID, a last time stamp or
+maybe something like the date of the
+data. Maybe we have multiple rows with
+like a report date and
+um we basically save this piece of
+information so we can use it for the
+next incremental extract. So once uh
+data pipeline has loaded once we have a
+state and we use this state on the next
+run to incrementally extract data.
+Finally we take this incremental extract
+and we use a specific right disposition
+to append it to the destination. And I
+say a specific right disposition because
+you could replace the data that's not
+incremental. You could append it that's
+incremental or you could actually
+replace a specific increment of data
+which could also be incremental despite
+you using right disposition replace or
+you could be merging data or using
+slowly changing dimension right
+disposition uh which will update the
+data at the destination. So like I said
+we can mix and match uh to configure
+different types of incremental loading
+for different use cases. In our case,
+we'll do a simple uh example of how we
+would load a bunch of events to make
+sure that we're not loading the same
+events twice. So, we call this
+incremental loading with a cursor field
+because of u basically cursor field
+being this event date and uh we'll have
+to follow these steps. identifying the
+cursor field using the last
+value and uh then appending uh the data
+to the destination. So let's look at the
+data that we had. This is an example of
+a record. This is the created at date.
+And now we need to write our example. So
+I'm going to take the one we had
+before. I'm just going to copy this from
+our previous step and then put it in
+here.
+The first thing that I'm going to do is
+just simply change the right disposition
+to append which means that now we won't
+be replacing the data but loading it
+again. Um, next thing we want is
+actually to put a cursor field in here.
+So you can see it's giving me some u
+suggestions already. You can find this
+in documentation.
+So this is example incremental loading
+with a cursor field. So you could just
+copy this out. Um in my case I will just
+type it because I have the uh
+autosuggest as
+well. So I'll go with cursor date and we
+have the LT sources incremental created
+that. This is our cursor field from
+here. Um you know if you had a different
+field you'd be using that. We give it an
+initial value.
+Um, it's just a default for the first
+run. What else? And basically what we
+would be doing right now is also
+[Music]
+um basically we would so I'm just going
+to do
+this. So I was as I was saying we would
+typically need to use the last value
+from the uh
+cursor. In our case um unfortunately we
+cannot pass this back to the rest client
+because I mean we can pass it to the
+client but the API won't accept it
+because GitHub events API doesn't have a
+way to only request data after a
+specific time stamp. So what we will do
+instead is DT will automatically check
+and if it finds any kind of um fields
+that precede this date uh it will not
+load them because it knows they were
+already loaded. So let's run this
+pipeline and see what
+happens. I think I might have a typo
+somewhere. I let's let's run it and see
+what happens.
+Ah,
+yes. Where is it? We didn't close our
+parenthesis. So, this is our state and
+it's telling us how much data was loaded
+because I ran this before. So, let's
+create a new data set. I would say
+because I ran this before, it recognized
+that the data was already loaded and it
+didn't load it again. So let's do
+another data set events data set
+2. And now we'll see it actually
+loading. As you can see, it actually
+loaded some
+data. Uh specifically this much data to
+these
+tables. And now let's run it again. And
+it shouldn't load any new data unless
+there's some new event. So now it has a
+state
+And now it didn't load it again because
+it knows it was already
+loaded. Okay. Uh so that was it for
+incremental loading and our example. Uh
+I encourage you to try also other
+examples, other uh loading patterns. Uh
+next we will cover SQLSQL copy
+specifics. Uh this is going to be a
+little bit different uh than extracting
+data from API. So this is why we will
+cover it separately.
+Okay, so let's talk about SQL to SQL
+copy specifics. Transferring data
+between SQL databases is a little bit
+different than getting it from an API
+and loading it to a SQL database. And
+it's something that data engineers have
+to do all the time. The main difference
+is that a SQL database is already
+structured. It's already normalized. So
+this means that if we want to get data
+from there and put it into another
+database, we don't need to infer schema.
+We don't need to check types value by
+value. We just know that and we can take
+the whole chunk of data and throw it in
+uh declaring the types in theory. Um so
+this would mean that uh it would be much
+faster and safer actually to load data
+this
+way. So luckily there are a few formats
+that allow us to read data into this
+strongly uh typed format and transfer it
+like that. So one of them is arrow like
+arrow tables. Another one is panda uh
+panda data frames. Um so let's uh do one
+example here and let's have a look how
+that works. So SQL source is built into
+uh DT because it's such a common use
+case. So here we install the DT py MySQL
+and now we can use the pi MySQL
+um driver. So the source is done through
+SQL Alchemy, meaning it's actually
+compatible with most SQL
+sources. And here, as you can see, we're
+using a PI arrow back end. This makes
+things faster. And you can see the data
+was transferred quite quickly. And this
+was about 5,000 rows if I'm not
+mistaken. So that's very quick compared
+to an API. And see, it's just 1.16
+seconds compared to I don't know maybe
+10 seconds we were taking from the
+GitHub API.
+So um basically what this does is it
+just skips normalizing the data. Um and
+we can have a look at the
+documentation to see what uh else we
+have for backends. So we have the
+typical SQL alchemy back end. It will
+just yield
+rows. Then we have pyro uh which we were
+using just now. Pandas you're familiar
+with data frames for sure. Uh they have
+types. So this is why we can use them.
+Connector RX it's uh it basically
+completely skips the SQL alchemy back
+end.
+Um it's very fast but it's not as
+configurable as other
+options. Um yeah and you can find some
+examples here how to use it. Uh as you
+can see basically you declare the back
+end uh when you create your uh SQL
+source. Okay, going back to the
+um
+notebook, let's look at uh also a
+benchmark blog post to understand how
+much different are these uh
+backends. And here basically one of our
+um employees did a benchmark and they
+took DT with connector X back end. So
+it's a specific benchmark. It's a
+specific data set. You can see it's
+quite large. Um and this was DT with
+connector X back end. Very fast uh under
+5 minutes. This is
+um online tool you can use. Uh this is
+DT with SQL alchemy back end as you can
+see very slow by comparison. There's
+other tools you can use and again this
+is uh DT with pandas and pyro back end
+as you can see much faster uh than SQL
+alchemy. So like pandas is three times
+faster because we don't deserialize the
+data anymore. Uh but connector X is
+still faster than uh
+pandas. So let's talk about back
+filling. What is back filling? Sometimes
+you have to load a very large table uh
+like an event log for example from one
+SQL database to another. The problem
+with that is that your infrastructure is
+probably made for loading daily
+increments of data. So if you have to
+load 10 years of data, it will probably
+be too large for your infrastructure.
+That would be like 3,000 times larger.
+So what you can do is chunk your data
+into more manageable chunks because if
+you don't, things can go wrong. For
+example, your uh source database might
+disconnect you after some time. It might
+time out or it has a select buffer. When
+you do select star on a large table, it
+might fill that buffer and kick you out
+or you might lose connection if it takes
+a few days or your runner might run out
+of time time out or something like that.
+So many small chunks are much easier to
+handle. Uh how could we do this uh with
+DT? There is a way that we chunk things,
+but there are multiple ways, right? You
+could, for example, chunk your data into
+a time intervals like days and then you
+could load them in parallel. Here I will
+show you how you can uh chunk your data
+kind of serially. Uh so you can
+uh basically load one chunk after the
+next. So uh I already have this example
+put together. We have a SQL database
+source here uh from this
+um my SQL database and we have an
+incremental load setup and I put set a
+chunk size of 2,00
+uh just so we don't have to run it too
+many times. There are
+4,100 something rows in the source data.
+So this means that three runs should
+load everything.
+So, we have the chunk size of 2,000
+rows. We set a limit of one chunk. Um,
+and then we run the pipeline three
+times. Let's see what
+happens. Um, I'll create here a new data
+set. And we will run the
+pipeline. And as you can see on the
+first run, it took 2,000
+rows, loaded them, then it took
+1,999. And the reason it does this is
+because it basically takes one row twice
+to make sure that there's no like if you
+have the same time stamp twice, if
+you're not taking
+um the interval from both sides, you
+might miss a row. So in this case, it
+would rather overlap and remove the
+overlap than lose a data
+point. And as you can see on the third
+run, it only loaded the remaining
+uh 170 something rows. Um yeah so that
+was it. Now let's talk about slowly
+changing
+dimension. Slowly changing dimension is
+actually a type of
+materialization. It's a loading pattern
+that we use to essentially version the
+data that we have. So um it's similar to
+merge or to replace but we're keeping
+versions of a record. So I prepared here
+a small example uh to help you
+understand what is happening. So we have
+three records and uh we have three
+students and at some point one of them
+will get expelled. So we have this data
+set of students two times. We have it
+the first time around and then we have
+the updated version where uh Draco got
+expelled.
+So now when we run this pipeline with uh
+merge disposition and uh slowly changing
+dimension strategy uh we should
+get so we're loading just the first
+trunk of data. We should get some new
+columns that are basically taking
+telling us oh yeah I need to run
+this. And now I can load my
+data and as you can see we got some new
+columns. uh basically DT valid to valid
+from valid from is basically the time of
+the load right now and valid to is the
+time when this record would get
+invalidated. So now if we load this
+expelled version of uh uh Draco what
+should happen is for his case we should
+have this record being
+invalidated. Um everyone else should
+stay the same because nothing changed
+for them. So uh Draco should get another
+new uh record that says expelled which
+is valid. So basically this record right
+now is valid because it doesn't have an
+expiration date but it will soon uh not
+be like that anymore. So let's run the
+pipeline the second time around. Let's
+see what it looks
+like. So I was telling as I was telling
+you now this record has become invalid.
+Um and we have a new record uh where the
+student is expelled that starts from
+basically the time we just loaded the
+data and we have the invalidation date
+which is also the same time stamp. So
+when do we use slowly changing
+dimension? We typically use this for
+example when we have let's say a
+stateful table like a customers table in
+a source database and sometimes those
+customers might change but we don't have
+a log of changes. So we need to create
+it on our side. Um why is it called
+slowly changing dimension? Why not just
+changing dimension? Well, there's a
+trick to it. The thing is if your data
+changes multiple times between your
+loads, this means you will not capture
+all the changes. You will only capture
+the change from your first extract and
+from your last extract. Which means that
+if you have fast changes, you will not
+be able to track them. So the premise of
+slowly changing dimension expects that
+the data changes less often than you
+loaded. So for example, it could be that
+somebody is changing their address. They
+do that by contacting customer support.
+Customer support has a long response
+time. It doesn't happen very often. So
+then if you capture it once a day, it's
+enough. But if somebody, for example, I
+don't know if it's something like an
+account statement which can update a few
+times a day, this would be the wrong
+approach. Now um in the next section uh
+we will talk about performance tuning.
+Uh so stay tuned for
+that. All right let's talk about
+performance tuning. So my first advice
+on performance tuning is if an a broke
+don't fix it. Why I say this is because
+DT already has sensible defaults. So if
+it's working well don't change it. You
+might end up breaking it. So let's look
+at memory management first. What does it
+do?
+Well, we use generator for sources,
+which means that we can request record
+by record the data from them, buffer it
+into memory, do something with it, and
+then let's say write it to disk. Um, the
+way DT works is we do this both on
+extract and on the normalized step. So,
+this means you can actually control the
+buffer for each of those steps. You can
+either do it separately or um
+together. Uh so I'll show you here in
+the documentation how that
+looks. Um basically this would be like
+your config file and you can decide I
+want for my source data writer to have
+this buffer. Um or I want just for the
+extraction to have this buffer or I want
+just for the normalization to have this
+buffer. I want some other source to have
+this buffer. Uh so you can do pretty
+much whatever you want there.
+Uh why is this important is also because
+when you are writing out the files from
+the normalizer
+um this will determine the file chunk
+size. So what this means is if you want
+for example parquet files with 100
+megabyte file size you will have to
+tweak this buffer so the outputed files
+have round about the size that you want.
+Um and this would essentially enable you
+to have files of a specific size. This
+can be beneficial for reading speeds.
+For example, the default buffer is set
+moderately low 5,000
+items. Basically, the way you can think
+about it, if you have a really tiny
+buffer, it means uh there's a lot of
+overhead, so it will be slower. If you
+have a small buffer or if you have a
+giant buffer, then the overhead
+difference is probably not going to be
+large. So, you might as well keep a
+small buffer. So, this is why we have a
+moderately low one by default.
+So
+basically, you might want to just leave
+it at this. You could increase it. It
+might go a little bit faster, but it's
+not really going to make much of a
+difference. But if you have really tiny
+infrastructure like IoT sensors, you
+might want to decrease
+it. Um, okay. Now, let's look at
+asynchronous requesting. So, how does
+async work?
+Async is kind of like parallelism except
+it's using a single processor thread. So
+uh the way you can imagine it is we have
+HTTP requests and let's say the work
+that happens on our side is we make a
+request that is very fast and then we
+wait we wait for the server to answer.
+We wait for the data to make it over and
+this is very slow. So what we could be
+doing would be to make a request and
+then instead of waiting and doing
+nothing we could make the second request
+we could make the third request and then
+when the first request answer comes we
+can process that answer. So basically we
+don't waste CPU time
+idling. Um when should you use async? I
+would say well it's quite easy to
+leverage with DT. So uh I'll show you
+how to set it. You can do that if you
+want, but keep in mind that when you're
+extracting from APIs, you might reach
+rate limits. So, it might not be very
+helpful depending on what exactly the
+API is. But for example, we had a case
+of a user that was copying a very large
+posgress database from one side to the
+other. And on posgress async helps a lot
+because you're
+basically you have a lot of data that
+you're transferring and you don't want
+to waste time waiting for
+network. So um what happened to I will
+show you the
+blog. So what happened in this case uh
+this was uh yami.eu EU um
+um basically
+uh what's the business model called uh
+sorry basically they have to copy a very
+large
+database and uh what happened to them
+was most SAS vendors have defaults that
+will cost you more money of course
+they're incentivized to do so so what
+happened to them was they were copying
+data on like 15inut syncs CDC with five
+TR and that's quite expensive. But due
+to five trans practices, what happened
+was they added
+[Music]
+um they added a log table that was very
+large and by default Fiverr will decide
+to automatically start copying this in
+full load on every run. So if they have
+a sync happening every 15 minutes, this
+means it's giant table gets synchronized
+fully every 15 minutes. So that's
+extremely expensive and that's what
+happened to them and uh basically they
+decided to stop working with Fiverr at
+that point. Um and Martin their CTO
+looked for open source solutions and uh
+he went for model labs which offers you
+serverless compute and DT.
+um he did async and he was able to
+achieve 10 times faster transfer speed
+uh by transferring his whole database
+and uh almost 100 times cheaper by using
+DT on uh model
+serverless. So that's why you should use
+async uh basically when you have very
+large extractions that you need to
+happen very fast lots of throughput.
+Now, how to set
+it? I'll show you in documentation. It's
+actually very easy. So, if you know how
+to use async in Python, you can just
+define an async function as a resource.
+If you don't know how to do it, you can
+just define a normal function and say
+parallelize true in the resource and
+then it will just work that way. Okay.
+So, now let's talk about parallelism.
+When should you use parallelism and how
+to set it? Well, parallelism first of
+all you have a default and you can have
+parallelism on extract, normalize and
+load and often times the extract and
+load are bottlenecked. So increasing
+parallelism there won't necessarily make
+things better. So it depends on the
+technologies on the source and the
+destination.
+And um increasing parallelism on
+normalization would actually help a lot
+uh typically if you're doing it because
+that's actually the compute heavy part.
+Um so let's look at some
+benchmarks. So here is SQL Alchemy
+benchmark and here we have the default
+which is five workers. And this is why I
+was telling you if it ain't broke don't
+fix it. So total time here is 37
+minutes. you could optimize it, but if
+you could also make it much worse. So, I
+would say, you know, unless you're
+really looking for something specific,
+just leave it. And you can see here that
+the parallelization makes a big
+difference on transform step. It also
+makes um a significant difference on
+load, but not on extract in this
+case. and for um connector X back end
+because here we don't actually have any
+transformation. What is happening is
+transform time is actually increasing
+when we increase uh workers. This seems
+paradoxical but because we're not
+actually doing any transformation here
+then what we see is purely the overhead
+time. So because we have more workers we
+have more chunking and this causes
+basically more overhead. We have a
+little more. So how do you set
+parallelism with the
+pipeline?
+[Music]
+Um so you can set it on extract in the
+resource for normalization and loading.
+You can basically uh declare the workers
+in your uh
+config as you can see here. So uh it's
+uh very easy to leverage. Um you can
+definitely just see what works for you.
+Okay, so we're done with the performance
+tuning section and um next we'll talk
+about loading to data links and
+lakehouses. So let's talk about loading
+to data lakes, lake houses and
+cataloges. Data lakes are a collection
+of files in online storage like S3
+buckets and we call such destinations
+file system because well they act like a
+file system. You can create files, you
+can read files, you can delete files and
+uh DT supports a local file system and
+all major uh storage bucket
+providers. We recommend that when you
+load data to a data lake, you store it
+in bquet format which is a strongly
+structured format. In some cases, you
+can register the loaded data also in a
+catalog afterwards. For example, AWS
+Glue. Uh this enables you to query it
+with available compute engines and for
+table formats uh DT supports iceberg and
+delta um catalog is optional. So why
+would you use data lakes and lakehouses?
+Well a data lake you would use it for
+two reasons. Either you need to store a
+structured data or you want or you have
+some kind of like weekly uh typed data
+and you want to type it structure it
+later. for data warehouses um they only
+store structured tables uh that can be
+modified. So this is very specific use
+cases. You usually use them for
+reporting
+analysis. Um and finally lake houses are
+kind of for both use cases. So they
+provide both uh unstructured file
+storage but also a way to treat uh files
+like tables.
+Um so let's do a step by step and load
+uh parquet uh to local file
+[Music]
+system. Uh so local file system is just
+your local hard drive. Um so let's
+um follow this example. So step one,
+you'd set up a local bucket or a cloud
+directory for storing files. In our
+case, we just need a local folder. Let's
+call it content. This will happen on
+this notebook. We'll take a look at that
+[Music]
+soon. Um, and then we need to define the
+data source. Uh, we've already done that
+uh
+somewhere where it's
+here. Uh, then we need to change
+destination to local file system cuz
+before we were loading to DB and finally
+run the pipeline. So we've changed the
+destination already to file system. Uh
+we've set our bucket URL and now let's
+run
+everything. Okay. You can see that some
+data was loaded. We can take a look at
+data.
+Okay. Here it is.
+You see FS data
+events. Uh yeah. So this is the parket
+file. We can list
+it. As you can see, it's the one that
+just got loaded. And we can look at the
+contents of this parket
+file. As you can see, we can access it
+as a data frame. We could also query it
+using the SQL client, which will then
+spin up a TD DB in memory. Uh so you can
+run your
+queries. Um okay let's take another
+example. Uh let's basically move from
+parquet to local file system to iceberg
+on
+AWSS3. So in this part we will learn two
+new things. Switching from local to
+online storage bucket destination and
+switching from parket file format to
+iceberg table format. So switching from
+local to S3 storage. Um first you need
+to create a bucket. I've already done
+that. Uh then you create AWS
+credentials. I've already done that and
+I've placed them in my
+secrets. Uh then you need to set the S3
+bucket
+URL. I'm doing that over here. And then
+you need to modify destination settings
+in your pipeline. So it's actually like
+iceberg. So let's do that. Uh install
+the necessary dependencies.
+Then um we're basically booting our
+access keys into destination file system
+AWS. Uh we declared the region name. I'm
+not sure if we need it for file system.
+We do for
+Athena.
+Um okay for bucket URL we basically have
+uh this
+bucket and then we uh choose destination
+file system because we're loading uh
+again to file system I have a different
+data set name uh file system s3 iceberg
+data and we changed from loader file
+loader file format so from parquet to
+table format which is iceberg We could
+also switch to delta, but anyway, we
+have iceberg right now. So, let's run
+that. Okay, so that seems to have worked
+just fine. Let's to take a look in our
+um
+bucket. Okay, so this just got copied
+here. Uh as you can see, I don't see my
+time stamp anywhere. It's just now. And
+you can see for example your events
+data. This is an the iceberg basically
+metadata. Okay. Now let's talk about uh
+loading to AWS blue
+catalog. So what does loading to a
+catalog actually mean? So it means uh
+taking your weekly type source data your
+JSON and then typically um you might
+want to clean that up because when you
+put data in a catalog it's kind of like
+a database. So you want flat clean
+tables that are typed. So you don't want
+to put raw data in there. So by using DT
+you can just put uh basically your
+strongly typed data directly in the
+packet and make it available to the
+catalog. So just register the tables. If
+you're not using DT then you'll need to
+do something else to clean the data in
+the
+meantime and then you could access it.
+So as I was saying um to copy data uh to
+cataloging is to copy it to file system
+storage and then tell the catalog where
+the data is available. And the way you'd
+configure it is just as before. So you'd
+have your local bucket URL but now you
+also have a second destination. So now
+we have first we have a destination file
+system but now we also have a
+destination
+Athena. And this is how we configure our
+our pipeline to use this uh these two
+destinations at the same time. We
+basically say that our final destination
+is Athena and our staging is file
+system. Um, I'll get into what we mean
+by staging a little bit later. Um, right
+now just consider that this is where
+your data is stored because the catalog
+doesn't actually hold the data. It only
+holds a reference to the
+data. Um, now let's look how we could uh
+partition our iceberg tables because
+partitioning is relevant um especially
+for reading performance. So delta tables
+use hive style partitioning so you just
+use an existing column while iceberg
+uses hidden partitioning so you could
+use an existing column or something
+else. Um so simple delta example you
+could just uh in the resource
+declaration say that you have table
+format and what columns should be used
+for partition. For iceberg it's a bit
+different because for iceberg you can um
+essentially you can use something else
+for partition and existing data columns.
+So you could pass a bunch of columns or
+you could create a partition on months.
+I'll created that
+um and then this would be used as a
+partition date. So this is kind of like
+a calculated partition.
+Um this is in a way better because it
+allows you to let's say if something
+changes in your source data, you can
+update your definition here. So you
+still have your partition field um
+including the new reality of the data.
+So basically you don't have to migrate
+tables. uh once you set a partition you
+cannot change it though. Okay. So now
+that you understand how you can leverage
+uh ice per delta or various uh things on
+data lakes or data lake houses, let's
+move over to loading to data warehouses
+and MPPPS.
+Now let's talk about loading to data
+warehouses or MPPPS also known as
+massive parallel processing uh
+databases. So differently from data
+lakes or uh lakehouses data warehouses
+are most like a traditional database and
+they are services that use multiple
+machines in a cluster to get work done
+at a large scale. So they shine at
+columnar operations like aggregations um
+which are typical operations in a
+serving or analytics layer. However, due
+to their columnar storage, they are not
+optimal for lateral operations like the
+T and ETL. Um but due to their
+accessibility and scale, they are widely
+used as a compute engine for
+transformations.
+So um one of the things you need to
+understand um about these databases is
+that they usually have a leader node
+that interprets SQL and communicates a
+plan downstream uh to a number of
+compute nodes and there is a slow way of
+loading data for it and a fast way of
+loading data. So the slow way of uh
+loading data would be to pass the data
+to the beer node and now we have a
+single node that can process this data
+and if we press it in SQL format it's
+going to be particularly slow because it
+needs to convert it. So the fast way
+would be to instead of passing SQL data
+to the leader node that we pass entire
+clean data directly to the compute nodes
+and we tell them where or rather we tell
+them where to get it and they take it
+themselves. So basically we this is
+called staging. You stage your data to
+an online destination and then you tell
+the data warehouse where this data is
+and what format it's in. Then the data
+warehouse will tell the compute nodes to
+go and read this data and they will do
+this in parallel which will be much
+faster. So the staging layer is handled
+differently from one vendor to the next.
+And here I will just compare uh BigQuery
+and Red Shift. So for bitquery uh we can
+stage data on our local machine or on a
+bucket but for red shift we're only
+allowed to stage data in a
+bucket. If we want to load data to red
+shift without uh staging it we can still
+do an insert statement. It's just much
+much slower.
+Um, so I was saying it's typically a
+store destination and here are some
+examples of how you would configure it.
+So as you can see just like when we were
+loading to a data catalog essentially
+here it's the same thing. We're putting
+well kind of we're putting data in an
+external place and then we're telling uh
+the database that it can read it from
+here.
+differently from cataloges is that now
+the database will actually read the data
+into the database and convert it into
+its proprietary file format which might
+be
+faster. Um but there are also hybrid
+modes. So for example
+um you could have external tables which
+are essentially something like iceberg
+on storage and you make it available in
+BigQuery and what this does is
+essentially turns BigQuery into
+something more like a catalog. So it
+gives you a way to package compute and
+to access the table data but it doesn't
+actually store the data.
+Um similarly you have external staging
+uh like I was uh telling you about
+liquery uh that basically enables you to
+put your data to be loaded locally um
+and then somehow this ends up uh being
+read into the u bigquery storage without
+going through the leader
+node. So let's uh run this example. Uh I
+prepared it here. Uh first let's install
+requirements. I've
+um already put my credentials in
+here. So BigQuery uh destination
+credentials. Let's just run our function
+to be sure that we have the
+data. And now I'm setting destination
+BigQuery credentials which is just my
+service JSON.
+um into
+environment and I'm running the pipeline
+on
+BigQuery and then we can have a look in
+BigQuery. Okay, data got
+loaded. Not sure if I haven't already
+loaded this data because I was looking
+at it earlier.
+So here I am in
+BigQuery and you can see
+[Music]
+some data here. So you can see
+[Music]
+the data
+preview. As you can see, this is what it
+looks like in our database. And you have
+also the child tables that you could
+join. Uh we also have some different
+tables here. So DT stores metadata like
+this is the incremental state and this
+is tracking what data was loaded. Uh and
+I think this is for the schema version.
+Um yeah so you can also load actually
+the information that you get after
+running a pipeline to get even more
+metadata if you want. Okay. Okay. So now
+that we loaded uh our data to uh
+BigQuery, you can use it there. For
+example, what remains for us is to take
+a look at how we can deploy our
+pipelines. So let's look at some
+deployment and orchestration
+options. Okay, let's talk about
+deploying a pipeline. And first you need
+an environment to deploy to. Uh so if
+you don't have one, one of the easiest
+to get is just GitHub actions. If you
+are using GitHub, you can just use
+GitHub actions. It's a serverless
+uh compute environment that you can spin
+up as you need. Um why should you use
+GitHub actions? Well, because it's
+serverless, it means it's going to be
+very cheap. So um instead of renting the
+machine and uh deploying there, you
+could put it on GitHub actions and it
+will probably be like 10 to 100 times
+cheaper uh just because it's
+serverless. Why you shouldn't go for
+GitHub actions is because it's not
+really made for data engineering. It's
+made for CI runs. So this being said,
+you can run Python scripts on it, but it
+will not be let's say comprehensive for
+data engineering. So you will not have
+easy chaining of uh things like loading
+uh and then I don't know other actions
+like
+transformations or your schedule will
+not be accurate. So for example GitHub
+actions
+um when
+you set a schedule it may or may not
+follow that schedule. So it might
+actually start your pipeline like half
+an hour later. Um what this means is
+that if you're deploying it to run in
+the night, it's perfectly fine. But if
+you have some more strict engineering
+requirements, uh GitHub actions won't
+do. Uh so let's look how we can deploy
+to GitHub actions. It's quite
+straightforward.
+So the first thing that I will do is
+um I'll create a
+repository. I'm just creating an empty
+[Music]
+repository. And now I will create a code
+space on it.
+takes a
+minute, but it's generally pretty
+fast. Okay, so we have our read me in
+here. Let's make a
+plan. First
+install,
+then in it an existing
+pipeline because we just want to
+demonstrate deployment now not writing
+pipeline. Uh deploy to get actions and
+finally
+[Music]
+run. Okay. So first let's install the
+LT. Make my screen a little bigger.
+Let me install the library. After
+that, I think yeah, I will need to
+install DBM
+CLI. I want to load to Dark DB because I
+just want to demonstrate this and not
+set up
+credentials
+and I will also need the
+CLI because we will do some commands
+here. Now I will init the GitHub
+pipeline. So the command is dldd init
+source name destination name and it will
+create some files scaffolding. It will
+basically grab the verified source for
+GitHub and get it to us
+here. So let's look at the pipeline.
+Pipeline has a bunch of pipelines.
+Actually we only really need one. So
+let's comment out the other ones.
+uh since there are multiple pipelines
+here
+um DT will ask us about them later. So
+now that we have the pipeline, let's run
+it once. To do that, I need to set up my
+secrets. So remember this access
+token.
+Um let me copy that
+in. This is a read only access
+token that I will invalidate afterwards.
+So don't uh show your access tokens to
+people in public. Uh this one is
+okay. And now that we have the access
+token, let's run the
+pipeline. Let's go to GitHub pipeline.
+Now I'm running the pipeline because
+once the LD runs the pipeline, it scans
+everything and it creates a trace uh
+like you remember we were expecting this
+trace and this will enable it to do the
+deployment. So now that we've uh done
+this, let's do the deployment command
+and I will double check the docs because
+I don't deploy every
+day and I
+don't remember off the top of my head.
+So we install GitHub CLI. This is a
+deployment command. So DT deploy
+pipeline name where and then the
+schedule. So, let's
+uh copy this in and adjust it to our
+pipeline. Okay.
+So, it's asking if I want
+to paste and let me fix the pipeline
+now.
+It's GitHub pipeline and schedule. This
+means in Chrome language every 30
+minutes. We have
+[Music]
+some dev mode here. Uh this wouldn't
+work in production. So this is why it's
+asking us now. Do you want to change it?
+I don't want to change it. Goes to dark.
+It doesn't matter.
+It's going to do this for all the
+pipelers that have it. And now it's
+asking me which
+ones do I
+want,
+reactions or something else? I want
+reactions with this thing.
+Okay. Um Okay. And now it gives us
+instructions of what to do. So it's
+telling us go to this URL and put in
+your access token. So I will do that
+now. Okay. I went to this place and I
+have repository secrets here and I will
+just paste what it grew.
+Okay. And now we need
+to
+push. Where is up here?
+Let's Okay, so now I'm back in our
+window and it
+says add the files, commit the files,
+push the files, and then it should be
+done.
+Okay. So, let's
+Oops. So, I have a command for this. So,
+I don't want to Okay, I want to end
+everything and not just if Here we go.
+Get add get glit
+everything delete message. Now, we push
+it.
+Um, I will show you how we run it now.
+So, we'll go to GitHub
+ext. And here we have the
+workflow
+net. And we can run it. We could wait.
+Uh, it should trigger it every 30
+minutes. Let's not
+wait. Okay. So, now it should queue up
+this workflow. And this workflow has two
+tasks. One of them checks if the
+pipeline is already running because we
+don't want any collisions and it's not.
+So it will start the pipeline. We can go
+in here and see what
+happens. So as you can see
+it set up an environment. It's
+installing the
+requirements and after it installs the
+requirements, it should just run the
+pipeline. I think that might take for
+seconds. Maybe up to a
+minute. Okay, we can also just come back
+to it later and see what happens. It
+takes too
+long. Finally, it's running it. And that
+was it. Sophie, it uh finished it very
+quickly. Um, as you can see, it loaded
+some data to the local database. Uh, and
+that was it.
+[Music]
+Um, yeah, this is a summary of what it
+looks
+like. You can see
+uh multiple multiple workflows or
+multiple runs would show here. Um, okay.
+Next, we'll uh look at another way of
+deployment.
+Okay, let's talk about deployment to
+Chronab. Um, why am I smiling? I am
+smiling because it brings back memories.
+So, uh,
+specifically orchestrators are actually
+more of a last decade kind of thing, at
+least for data. Um, I would say 10 years
+ago, we didn't have good solutions in
+orchestration. Um maybe some of you know
+Jenkins, but essentially the pattern was
+that you'd just schedule a chronab
+script and that script would be
+generally some kind of entry point in
+which you'd have some kind of let's say
+dependent logic where you'd manage your
+dependencies where you'd have let's say
+multiple entry points if you have
+different
+schedules but uh essentially it's just a
+text file that you manage and let's uh
+talk a little bit about it uh how it
+works. So chrome is actually the utility
+like the application that is running in
+the background and checks if conditions
+are met to run a task. So imagine it
+kind of like a scheduleuler from
+airflow. Uh chron tab is just a chrome
+table and that is basically a file uh
+with your scheduled jobs. The way you
+would schedule a job is basically open
+up your chron tab file. So just each
+user has one, other users have a
+different
+one. Uh you can also have like a
+uh super user chrome tab. And
+essentially what a chrome tab is, it's a
+schedule in this format and then the
+command to execute. And uh here I just
+copied this from GPT because it gave me
+a nice explanation. Um, and typically
+this is just like a shell script and you
+might have more um of your script here.
+So for example, it could be that you're
+logging or it could be that I don't know
+you're doing something else. Um, but
+yeah, this is basically how the schedule
+works. The first uh thing from the end
+is the day of the week uh day,
+month,
+um day of the month, hour and a minute.
+So basically with this syntax we can
+generate almost any pattern. Um you also
+have some special keywords. You might
+recognize some from scheduling and other
+things as well. Um but yeah, there is an
+equivalent you can just use. Um, as I
+was telling you, you might want to log
+what is happening because these scripts
+are running on a server somewhere at
+night and if you don't log, you don't
+know what happened. So, you want to
+create a log
+file. If you work with multiple people
+on the same machine and scheduling
+things together, like maybe you're a
+couple of people and you're uh using the
+same chron tab, maybe you should use the
+pseudo chrome tab. If you do that, you
+need to pay attention to your variables
+and permissions because
+essentially the pseudo chrome tab will
+have permissions to almost everything
+but it won't have your environment
+variables whereas your chrome tab will
+have your environment variables uh but
+not access to everything. So just make
+sure that you know when you schedule it
+maybe test it to make sure if it runs.
+Uh so a normal pattern would be you know
+that you create your jobs and then you
+set your schedule to run in the
+following 5 minutes or something like
+that uh and then you come back later and
+see what happened. Uh so when it
+actually goes out in the night you have
+some certainty that it will run. This is
+not the nicest uh
+workflow but uh it works.
+So what I will do next is demonstrate
+how to do it on a
+VM. So basically I'm on
+a cloud Google
+cloud and I created the VM just for
+this. I already installed Chronab on it
+but I will run through it once more
+anyway. So what I will do is just SSH
+into it and I will uh present you from
+here once it has loaded. Okay. So it's
+been a while since I use Chronab. I
+mentioned this because things are not
+going smoothly. So what I did was I got
+this machine and the first thing I did
+was I checked if I have Chronab
+installed and I do not. Why not? because
+Google machines um Google Cloud has
+something called Google Clouduler which
+is a scheduling service for scheduling
+Google Cloud services. Now it's great
+for scheduling Google Cloud services but
+it's not a Chronab replacement. It
+doesn't do the same thing. So it's
+functionally a replacement here. We want
+to teach
+Chronab. So I installed Chronab. Um, I
+created a Python file with a DLD script
+inside of it and I tried to run it. Now,
+let's see how far I
+got. This is what I have. So, this much
+you could do as well. Just copy a Python
+file with DT inside. Here I have a log
+file because I tried logging uh I I
+tried running um in my Chronab. So, let
+me show you what I have so far.
+cont minus L to uh list and you can see
+I have already scheduled for 9 in the
+morning with Python 3 this script to log
+into this log. Now let me quickly show
+you this
+script. So you can see it's just like
+some producing some random stuff and
+loading it to duct DB.
+Now, let me show you the chrome
+tab. Chrome tag minus E to edit it. And
+here I could edit it, but as you can
+see, all I have this line. So, I'm going
+to exit and show you what's in
+the
+log. So, let's do
+nano log
+file. And as you can see, something is
+not going well. Uh I scheduled this a
+few days ago uh when I was trying it out
+and I didn't realize there's a problem
+but module not found
+uh DLT. So okay, let's install
+DT. Uh
+exit and computer says no. It says if I
+want to install this package, I can do
+it this way. I've already tried this
+way. it didn't work. So if you want uh
+because it's a Debian package. So if you
+want a non Debbian package um you have
+to do a VM. So let's do a VM. Uh I
+haven't done this before. So let's
+hope things work out. So let's just do
+pi
+3. Let's creating a
+v. Okay. Now let's try
+installing dot. And this
+works. And now let's try to
+run our script
+x.py. Okay. Fine.
+I need to install duct
+db. If you're using zshell, you'll have
+to quote
+uh square brackets.
+Okay, now that we have it, we need to
+adjust our chrome tab
+because this is our entire VM path and
+this is basically where Python is. So
+what we need to do is in our chron
+tab we need to replace our Python 3
+location with
+this. So we have USR bin Python. This is
+not good. We need to
+change
+to VM bin Python.
+So, this looks good, I
+think. Okay. And it's taking the script.
+Yeah. Let's see.
+Ah, I messed
+up. Okay, it's
+saved. Now I will exit. I will confirm
+that I saved it correctly. So yes, it
+looks fine. Now I will actually run this
+command.
+Um, let's
+do deactivate. And now let's try to run
+it like
+this.
+Okay. Now let's
+do nano log files to see if we have
+anything new in there.
+And yes, we have new. As you can see,
+the last run actually worked. Cool. So,
+that was it. Uh
+um yeah, so you know, if you want to try
+uh Chrome tab, I hope this makes it easy
+for you and you understand everything
+you need to do about it. As you can see,
+there are some gotchas about your
+credentials, your environment variables,
+your permissions, and so on. But it's
+nothing that you can't quickly get
+through in a few minutes. So um stay
+tuned for the next sections about uh
+advanced
+orchestrators. All right. So let's talk
+about Dagster. What's Dagster? It's
+another orchestrator. We were previously
+talking about GitHub actions and uh
+deploying to Chron. If you're not one of
+those people that uh worked with uh
+really old stuff then probably Dagger is
+for you. Uh so what I mean
+is 10 years ago we used to deploy stuff
+on chronabs. Um 8 years ago uh we used
+to go to airflow. Um now that was 8
+years ago. That's a long time ago. Uh
+people change, attention spans change
+and we have a new generation of
+developers. And if you haven't worked
+with Airflow yet, then Dexter actually
+has something new to offer uh besides a
+basic orchestrator and that is asset
+lineage. So an asset in Dexter is
+essentially a data set. It could be a
+table, it could be a CSV file and
+basically this concept enables you to
+let's say focus on the actual data set
+and understand what is happening to that
+data set. Uh understand the relations
+between data sets instead of focusing on
+task. The problem with focusing on task
+is
+that tasks do not represent data sets.
+They might represent multiple data sets.
+So you might for example load five data
+sets then transform three of them then I
+don't know and the problem is that and
+then you know you have a separate deck
+to transform the fourth and the problem
+is that with that is that you don't
+really understand how they relate
+anymore especially when these things are
+running across different orchestrators.
+Now, Daxter is able to actually wrap
+airflow to kind of have everything uh
+under one central command plane. Um so
+yeah, our team actually likes uh likes
+Dexter because it's easier to work with
+generally. Myself since I've uh used
+lots of
+orchestrators, I don't use orchestrators
+that much. I try to do mostly just local
+development and just have the
+orchestrator as a final logic layer.
+Um, yeah, everyone has their different
+workflows. So, uh, just see what you
+like best. Uh, like I said, our team
+likes Dexter. Um, so I'll just put on my
+Dexter cap and do the demo of how to get
+the DT pipeline on there. So, let me
+share my
+screen. Okay. So I have here my PyCharm
+uh with uh the repo that I used to
+deploy to GitHub actions. So I'm just
+going to
+create a new folder
+here. I was in a non-existing
+folder. I cannot go there.
+Funny. Okay. So now I'm in the
+um example folder and I will create the
+Dexter
+folder and go inside of
+it. Okay, now I will look at my uh
+command cheat sheet. It's very easy
+uh to get started with Dexter. And what
+I really like about it is how easy it is
+to set up locally. So first I will pip
+install it. I've already pip installed
+it but just for the sake of
+demonstration. PIP install Dexter Dexter
+embedded ELT. So just
+uh this one has DT
+inside. So let's just do that.
+Um okay. and our next
+command. Okay, let's hope everything is
+fine.
+Uh, so
+let's confirm we are in the right
+folder. And now let's create a Dra
+project scaffold. We call it G GitHub
+events because we want to deploy our
+GitHub events pipeline.
+And let's see what
+happened. So we have some uh project
+scaffold created here. As you can see,
+this kind of looks like a Python project
+that you can pip
+install. So now I'm going to put my code
+in.
+So I
+create new
+file called GitHub
+resources. I paste my code in here. And
+as you can see what's special about this
+code. Oh, I don't want to load to
+storage. I want to load to DB. So I'll
+get rid of this part.
+So I uh there's something new here and
+that is a DT source. A DT source is just
+a container for resources that allows us
+to package them together and pass
+arguments together for example or reuse
+some arguments or code. So here GitHub
+source is just returning our resource
+that we have here and it's needed by
+Dexter because Dexter will wrap our
+source in its asset definition uh which
+is needed to deploy it.
+Okay, now that we have our code, let's
+um we need to adjust our
+assets. So, paste in my
+code. So, what does this do? So, first
+of all, this wraps the pipeline. The
+pipeline runs the GitHub
+events and here we want duck
+DB. Okay, this looks
+fine. And now we need to go to
+definitions and add
+um our
+[Music]
+definition or a definition.
+So, as you can
+see, this is all we're doing. We're just
+grabbing everything
+DLT.
+Okay. Now, what we're going to do is uh
+remember I was telling you it looks like
+Python project. Well, that's because it
+is a Python project. So, we're going to
+go inside of it.
+And now we run this command. Oops, not
+this
+one. So we install this local
+package name
+dev. This will allow us to run it to
+Daxter.
+Now let's run the Dexter dev. Fingers
+crossed because of
+this this conflicts. I don't want to
+solve them
+now. And these conflicts appeared after
+I recorded Airflow.
+on
+video since I'm reusing the
+environment. Okay, it says it started it
+up. I don't see any errors immediately.
+Okay, so it looks fine. Let me share the
+Dra screen. So basically our um asset
+got
+deployed and uh we can run it if we
+want.
+And yeah, now we have our run ceued. If
+the code runs successfully or not,
+depends on if I made a mistake or not.
+Um, if I put in all the credentials and
+everything. It looks like it's working
+fine. Okay, I will switch back. Uh, logs
+are coming out.
+Um, so yeah, this is it basically for
+the
+um, Dexter and very easy to just try it
+out. So I encourage you to um, if you
+are really nice to them, they might also
+offer you a cap. So you know, just book
+a demo with them and uh, uh, drop them a
+hint. Who knows? Um, next we will talk
+about uh, airflow.
+All right, let's talk about airflow.
+What should you know about airflow?
+First of all, let's talk about when what
+is it? When should you use it? Um a
+little bit of uh history of how it came
+to be. Uh then we'll do a demo and see
+how we can run it, deploy to it. So
+first of all, what is Airflow? It's an
+orchestrator. uh 10 12 years ago we
+didn't really have
+orchestrators and uh we were basically
+just uh putting Python scripts or bash
+scripts in a chron tab and saying what
+should happen in there like run this
+first run this next and
+um that's how we were running our jobs.
+Um now we have orchestrators that let
+you let's say create workflows that say
+how the tasks should run one after the
+other. Um and airflow is probably one of
+the first ones that actually was kind of
+functional. Uh so 8 years ago I believe
+uh I was working on a freelancing
+project and that was the first time I
+encountered airflow. Um the task that I
+had to do was essentially a disaster
+recovery. So like lots of things
+happened throughout the years and they
+had to be consolidated in some clean
+form.
+Um and basically what we were doing we
+were comparing airflow with other
+orchestrators like Ozaban and the nice
+thing to understand is that a workflow
+file like a DAG file from uh Airflow is
+equivalent between orchestrators because
+it's basically just some logic about
+take this task run it then do this thing
+next maybe transfer some
+information. So that being said if you
+start with Airflow and you don't like it
+you can always migrate away. Um why
+should you use airflow? Well, the first
+reason is because everyone is using
+airflow and you should understand how
+that works. Uh so you can work with
+everyone else. Well really not everyone
+is using airflow.
+Um so depend but
+essentially airflow is kind of like a
+standard. Um you will find it a lot. Um
+it's very easy to scale if you are using
+a hosted version and what I mean here is
+we're actually uh using um cloud
+composer from Google cloud uh when we
+want to use airflow and that is because
+the cloud composer hosted version has
+all kinds of things like scaling um cicd
+so it's just better uh it's you don't
+need to manage it yourself anymore
+Um, you can also use hosted versions on
+AWS.
+Um, I've heard it's not as good. I
+haven't used it myself. You can also
+just self-host it if you want. And I
+believe that there might be multiple
+businesses offering hosted versions.
+Um, so who should use Airflow? I would
+say if you're a senior uh person that
+has used airflow before, I don't need to
+explain to you what about it, why you
+should use it. If you're a junior
+person, maybe try using Dexter first
+because that's a different
+paradigm. So, um if you can understand
+that first, I would say then Airflow is
+going to be easier kind of afterwards to
+understand what is happening there. Um
+and also you'll understand what happened
+in the last 10 years of software
+development and kind of like what you'd
+be missing
+um if you go for airflow. Now um that
+being said, let's take a look at how we
+can um run airflow locally and deploy to
+airflow locally.
+So, uh, I
+will show you the documentation that I'm
+looking
+at. So, I'm just going to follow this
+quick start from Airflow. So, basically,
+I will set an air air home airflow home
+folder. And this is where Airflow will
+create all kinds of files. So, you can
+do it in like some generic folder or in
+project folder. I will do it in my
+project folder because this allows me to
+easily it's self-contained. I can just
+delete it if I don't want it
+anymore. Um then I will use this to
+install Airflow. Um there's more
+information here. It will basically get
+the right version for your computer and
+then uh I can run it with Airflow
+standalone. I'll do a few more uh
+configurations in the meantime. So,
+let's switch to my
+[Music]
+PyCharm.
+Okay. So, I actually already have here
+an airflow project that I was presenting
+earlier.
+and I will just reset
+it. So what I mean is I will
+go up on level and now I will delete
+this. Okay. So now let me make
+a airflow
+folder. Now we go in
+there. Now I will make an airflow home
+folder because I want that to be
+separate. And
+now let's do this airflow palm
+export. So I will run this command to
+export airflow home variable with this
+value. Okay. Now I will run the airflow
+installation. So just copy pasting this
+block. I've already installed it
+actually. So this will go very
+fast. Okay. So now it's
+installed and what we need to do is see
+if we can start it.
+Oops. And if it works, it should create
+some scaffolding
+now.
+Yes. So, it's creating databases, roles,
+all that kind of stuff. It will create a
+user for us and give us the credential.
+See, here it
+is. I'll just paste it in here because
+we will need it
+later. Um, in case you miss it, it's
+also
+shared
+here. So, you see this was created
+automatically and we have our password
+here. So, now I will close this. I mean
+airflow
+Okay. So, we're here. Let's create
+um and let's create the pipelines.
+folder
+created.
+[Music]
+Okay. And now let's create our Python
+script.
+Let's call it GitHub
+resources.py.
+And I will copy out the code that I was
+using before.
+Duckly be I need to get my resource that
+I had
+before. I'm using the one from Dexter
+example.
+So just let's do
+this and this is
+twice. Okay. So what I have here is just
+our resource and as you saw before we're
+wrapping it in a source just like
+Dexter and we have a duct DB pipeline.
+And now let's try to uh run this.
+Okay, so we loaded some
+data
+and now we need to create the scaffold
+for the
+deployment. So we need to install the DT
+CLI. I already have it, but I'm just
+going to do it
+anyway. And now
+I will do the DT deployment command. DT
+deploy GitHub source. Now it's called
+GitHub
+resources to airflow
+[Music]
+composer. Okay.
+Now this created a de folder in our
+repository. So um it will always create
+it I think on the top level. Yeah. So
+uh you know it's because this is how you
+typically set up your uh airflow
+ripple. I'm just going to copy my
+pipeline in here cuz it's too I don't
+even know how to import it from
+[Music]
+there. Okay. And now in our DAG
+code we have
+this from git hub resources
+import github source a source and now
+this will import our uh source in here
+and DT should know how to unpack it.
+Here's our destination
+uh duck db. So in case so when we do
+the deploy command to create the
+scaffold DT uses the last run trace. So
+we must have run this pipeline before
+before it can actually do the
+um
+scaffold. So this is why we had a duct
+DB in there but uh for destination but
+here we could have something else right.
+So you could just run it locally on duct
+DP and then in production deploy it to
+BigQuery or Snowflake or whatever.
+Um yeah so this is why we have it here.
+If we had more resources we would
+essentially DT can create a DAG inside.
+So when you say pipeline run you might
+have dependent resources. To give you an
+example of a dependent resource it could
+be that we're requesting user ids from
+one API endpoint like users list and
+then we use this list to do two things.
+One is we request their orders and the
+other is we request their details. So in
+order to not request the user list twice
+once for every resource we actually can
+declare that the resources are dependent
+on each other and then the information
+from um the list resource will be
+stored. So both the other two resources
+can use it. Um this will create a DAG
+inside and this DAG can then be unpacked
+into
+airflow. Now let's see what happens if
+we run
+our airflow standalone. Now it should
+basically see these tags. Oh no wait, it
+won't because I did not uh declare our
+home
+folder. Uh let me see.
+No, I'm sorry. I mean our cordex folder.
+So, we need to declare where that is and
+it's
+here because if we declare the wrong
+thing, it cannot see our DAS. Okay. And
+now we need to start
+airflow and I will use this login. I
+will switch now my
+screen to the local host.
+And this is airflow local host
+now and it doesn't see any
+dice. It will it has to. So it said that
+theuler was not running. And now
+basically airflow will check what tags
+are there and start loading them up.
+Okay, so it just sees this one. This is
+fine. Let's open it. Let's uh look at
+the
+graph. So yeah, it's just one task. But
+essentially, if you had multiple, this
+would be like a complete tag. And you
+can run it if you
+want. And we can see it
+in PyCharm as well as it's
+running. But yeah, now basically Airflow
+will start running
+this. And of course it takes a
+while if
+you were not running locally but you had
+to deploy to cloud composer you would
+also have to add credentials here. So
+like in variables uh we don't have to do
+that for local and you'd also have to
+add Python DT to your requirements when
+you are creating the instance. So you
+have it there and yeah you can see here
+the run was
+successful.
+[Music]
+Um yeah you can see the logs here.
+Yeah, that was it. U so yeah, thank you
+for watching the airflow uh
+[Music]
+part. Hey folks, so we have one more
+chapter and that's how do we generate
+pipelines using a lens and it's totally
+possible and we can do a lot and it's
+not going to replace data engineers
+anytime soon. So don't worry about your
+job rather focus on how you can leverage
+it to build faster. Um so first let's
+try to understand the
+problem.
+What why haven't we created so far a
+pipeline generator that just magically
+creates your pipelines? And the answer
+to that question is because it's really
+hard. It's actually a really hard
+problem and this is also why your job is
+safe at least for now. Um
+specifically let's look at the actual
+problem of building data pipelines and
+this problem is let's say building it if
+you have all the information that's an
+easy problem um and then there's a hard
+problem of actually getting the
+information that you need and to build a
+good data pipeline you need two types of
+information one of it
+is the kind of info you will find in
+documentation and that is like
+pagionation endpoints authentication
+And then there's the kind of information
+that you need that you won't find in
+documentation and that is for example
+that um how do you increment an
+endpoint? How do you load this
+effectively efficiently or how do you
+let's say request a detail endpoint that
+actually needs an ID from another
+endpoint. Stuff like this might not be
+explicit in documentation.
+So this is where let's say a little bit
+of guesswork um a little bit of domain
+knowledge trial and understanding come
+into play to create a really good
+pipeline and I think if we are to
+approach this problem from a
+purely oneot LLM building everything
+it's not easy to solve but if we take
+what the LLM did and just put on the
+finals touches and if we really
+understand how it works then we could
+potentially
+make it
+much easier to take over what the LLM
+did and finish it to basically have a
+really good pipeline really
+quickly. Uh so this was kind of the
+problem definition. Um I will tell you
+now briefly one experiment that we did
+before. So one way to approach this
+problem would be with LLMs. But when we
+experimented like 1 year ago, LLS were
+not ready for this. So, uh we thought,
+okay, well, if you need to fish out 10 p
+pieces of information from
+documentation,
+uh you're going to have a bad time
+because errors will compound. So, what
+we did was we tried to do a
+deterministic LLM free approach. We took
+an open API spec, which is essentially
+all the information that the
+documentation will be generated from. Um
+and we extracted the relevant features
+like the information that is present in
+the documentation and we tried to guess
+the rest and the results were
+reasonable. Uh basically whenever the
+open API spec contained quite a bit of
+information as long as the API was not
+completely innovative uh then uh this
+worked quite well. Now let's look at the
+LLM first approach and how we can do it.
+Um I will show you next how we can work
+to create let's say prompts for the LLMs
+uh to do this work for
+us. All right, let's look at how we can
+turn this theory into something applied
+and I have here a notion page
+um and I'm going to walk you through it.
+So first let's talk about separation of
+concerns. We have extraction, we just
+talked about that. Construction, we
+talked about that too. and memory. We
+didn't talk about that. So, let's
+discuss it briefly. Why do we care about
+memory? Because memory will be the
+source of hallucination. So, if your LLM
+doesn't have access to documentation,
+you could ask it, hey, build me a
+pipeline for this source and see what
+happens. Um, it might completely
+hallucinate or it might do something
+sensible. Um, chances are if you use a
+common API like GitHub, it will know
+what it's about and it can
+do reasonable pipelines because all this
+information is out there in many places.
+But if you use something obscure,
+results will be purely hallucinated,
+which might be fine if the API is
+following most common patterns, but it
+probably won't be.
+So let's look at how we can first of all
+generate an LLM friendly documentation
+to turn our REST API docs into something
+that uh LMS are really good at
+leveraging to be able to build with
+it. So I want to combine our uh rest API
+documentation
+this REST API source with the advanced
+configuration into an LL friendly doc.
+So I will just take everything from
+here
+and give it a prompt to please do that
+from our documentation.
+So, I'm telling it make sure it's rich
+with the examples. Anyway, it knows what
+to do. I'm just doing this because I've
+done it before and it worked well.
+So now I will paste the whole
+documentation
+here TLDDR
+code. Uh, and what it does basically it
+restructures documentation in ways that
+make it really easy for an LLM to beat
+it later. So, basically it breaks
+everything into
+sections.
+Um, these sections are like
+self-explanatory, kind of flat. There
+are hierarchies under them. If uh
+there's like sub
+stuff as you can see it's basically
+breaking down every
+element. Authentication is complex
+enough that it's a topic of its own.
+Pagionation the same.
+I'm just going to wait it out for a
+little bit because I want to use this
+documentation to then uh give it back to
+GPT and tell it uh
+please extract the information that I
+need for this
+Yeah, it's probably going to do some
+examples now
+because apparently it can use that. You
+can chat with GPT basically to ask it,
+hey, how do I create a good prompt? And
+then you can see if that actually
+happened. So this happened. I think it's
+fine. I'll just copy this into our
+document and reuse it.
+I copy
+this
+here. So, I just put them here so I can
+reuse them later.
+Now I'm asking I'm reverse prompting to
+give me this prompt for
+extraction. So please turn this into an
+extraction
+prompt is to extract
+[Music]
+all say
+pars from a non icon to create the rest
+source.
+Uh that's So, sorry about that. I wasn't
+talking. But essentially, you want to
+know, you want it to flag if there's
+something missing and you also want it
+that is a structured JSON format. Uh, so
+like it's easy to read and work with.
+So, let's do that.
+All right. It's going to tell us all the
+fields. So, I love this because it's so
+explicit. It tells
+you, hey, look, everything
+authentication, how does it work? Uh
+headers if necessary, pageionator,
+resource defaults. So, like primary
+keys, right
+dispositions. Let's
+see.
+[Music]
+Um let's giving an example
+output. Do I want to run the extractor
+on an example? Yes, I do.
+Let's save this
+prompt because we will use it later. And
+now let's find some code. I was working
+earlier with pipe
+drive. So let's see if we can
+find some code online.
+Yeah.
+Okay, so this seems to
+be bunch of
+code. A small code base there already
+exists.
+So yes, please try to let's try to
+follow
+this and I'm just going to give it all
+the code I find
+here and see what happens. I honestly
+don't know. I've never done this before.
+I've tried other things.
+[Music]
+Okay, let's see. I have some doubts. I
+know that it doesn't know anything about
+pipe drive really. So, this is why I
+picked
+it or like it knows some things but it's
+quite confused.
+So I think this might
+not be quite
+correct resources. It didn't get it.
+Okay, let's try another one.
+Let's take for
+example I think we can find some
+connector
+here. Pipe drive is common so I expect
+it's in just about any connector
+catalog. We have it too. Um, I'm just
+taking like
+some something
+else. I think this might be it. Yeah,
+this looks
+like something we could use like there's
+some I don't know error bite
+configuration basically. So, let's
+try
+Actually, let me just save this
+document.
+Sorry, my father is
+[Music]
+Ah, totally not it. Let's try
+again. Let's take our font.
+So let's
+see. Let's try then
+Okay, this looks much
+better. This looks right.
+This could be a different
+column. I guess this could work
+[Music]
+too. This is
+correct. So the incremental was done
+correctly or at least extended
+correctly. So yeah, that that worked
+out.
+Uh you know, we could save this for
+later and use it. Uh I would say that's
+uh leave it for now. One of the things I
+think what is missing is
+um
+wait. Yes, this is just
+deals and basically
+The other resources are missing, but I
+guess you could just like make the rest
+of them. And I don't really see where
+are
+the thereabs items deal. Yes, basically
+you could change this to the other end
+points as well to get them as well. Um,
+but yeah, there are also I think some
+that might be full load only uh that are
+missing. So you wouldn't have all the or
+like user details or stuff like
+that. Okay, James, can you just cut this
+short? Uh cuz I don't know what to say,
+but essentially, yeah, cut
+the gap.
+We have this extraction
+prompt. Now let's see how we can uh
+create a build prompt. So let's take our
+extraction
+prompt and tell it in our documentation.
+Okay. So now let's try to create a REST
+API source uh from this with the prompt.
+So let's get the prompt. Uh please make
+sure your view is there.
+and I tell it please uh explicitly use
+that and don't write custom code to
+reinforce I'll give it once more
+the
+documentation. So, I copy the
+sound to refresh its memory.
+So after we get all of these, we'll set
+up cursor and try it there because we
+want to be able to run the pipeline that
+is being built and understand how well
+this works and what we can do
+next. Okay, it gave us our bit prompt.
+And let's just put it in here and review
+it.
+M weird.
+Okay. And now I'm telling it please uh
+try to use the rest API declaratively
+first because if we don't do that and
+GPT really really really likes to um
+write code and it will do that and it
+will ignore our thing and then it's
+going to be really hard to troubleshoot
+because it will do custom
+code. Okay. Okay. So, we give it an
+example and yeah, this should work. Um,
+okay. Next, I'm going to switch to
+cursor and show you how that should be
+set up to make this
+work. All right. So, let's see how we
+can apply that. And what I did so far is
+I installed cursor and I added a few
+things in here. Uh so I have an old pipe
+drive script. Um I have this uh other
+connector from a different framework. Um
+but again this won't have all the
+information because it's part of a
+framework. So it depends on the
+framework how it actually turns these
+YAML into code.
+Um then we
+have actual documentation. So I
+configured this to add
+docs and I added DT hub docs, rest API
+docs uh manually and pipe drive which is
+the pipeline that we'll use and I added
+our two rules one to create rest API and
+one to extract
+features.
+Um, okay. And this one applies to all
+requests
+actually. And this rule is actually an
+old one. Let me fix it. Let's put the
+one that we had
+um that we created
+earlier. Okay, now it has this build
+prompt that we had before with some code
+examples. And now let's try it.
+Um, so I will add the
+documentation and basically because our
+REST API connector is just like a
+config, I won't do the extraction part
+separately because it just you can see
+the same thing in our connector and I'm
+a little bit more familiar with it
+personally.
+So let's get the pipe drives and I think
+our rule is already there. Uh it's
+always
+used and let's add the documentation as
+well just explicitly. I think we don't
+have to do it. It will just
+automatically detect what to use. But
+since I have lots of stuff here, it
+might be get confused. So
+please read the pipe drive docs to
+the
+build. So I'm asking now to create a
+separate pipeline. I have the thing in
+ask mode. That's not good. I actually
+need it to be in agent mode because in
+ask mode it cannot create files.
+Okay. So, this file is now created.
+Um, let's look at
+this. Yeah, this is
+right, I think.
+Yeah, and these are merged, but they
+could be just full load. Basically,
+merge, what this means here is that if a
+record is no longer present in a new
+extract, it won't get deleted. So, it's
+like preserve
+deletes. Okay, let's try to run this.
+I already have a tryon
+key in
+my DT secrets file. Okay. And we already
+have a pipe drive key, but it's looking
+for a different
+name. It's looking for pipe drive API
+token. Fine. It just generated some
+different naming scheme.
+So, let's just put it there and try to
+run it
+again. Okay, something went wrong. So,
+let's give it
+to our agent and see if it can fix
+it. Okay, so maybe that worked.
+It did
+not. Oh, right. Let's try
+to see again. Maybe it works.
+This is VIP coding. So I'm not actually
+coding. I'm just trying to get the LLM
+to call for me. And it looks like it
+worked this
+time. So we got some data out of it as
+you can see. Okay. Now let's try to
+build a different pipeline. So as you
+can see it's possible from the docs as
+well. Uh what happened here was it
+didn't
+um it didn't do all the end points. So
+maybe I can try. Let's see.
+Let's see. So now I'm telling it, hey,
+can you add the rest of the endpoints
+and for incremental, can you use recents
+and do a research a resource like a DT
+hub resource for each entity we can
+request from it? But I don't know if it
+can do it. I don't know if it can
+process a doc. So let's see.
+[Music]
+So let's see what it did. I think it
+added some more entities. Products,
+pipelines, stages,
+users,
+goals, metadata, deal
+fields, and this is custom fields. very
+useful but we don't really load them
+this
+way recent it's trying to get
+everything this is correct says param
+but it should be I
+think yeah this could work but then the
+problem is this resource would return
+all these entities into one single table
+so that wouldn't really work but the
+increment is correct so that's something
+that's something
+um okay
+So now let's try if this could be fixed
+from other data
+sources. Actually no, let's I don't
+think it needs another data source. I
+think this is just a misunderstanding of
+what I want.
+split into many reasons. One for each
+other. So yeah, I mean the naming is not
+great and we need to change it, but now
+it looks
+correct.
+So it's actually really nice, I would
+say. That's quite nice. We don't
+actually even need the other endpoints.
+So, we could just delete them. I'm
+surprised because I was trying this
+earlier and I tried with um GPT. I tried
+also in uh GPT client directly. I also
+tried perplexity and it couldn't process
+the pipe drive doc. So, I wanted to
+basically demonstrate how it won't
+figure out the docs and eventually we
+can figure it out.
+And I guess it didn't because ultimately
+it solved some of the parts by taking
+information from
+responses. So I'm not entirely sure how
+much it solves which way. But I can also
+show you how you can modernize a legacy
+pipeline. So let's do that. Let's tell
+it, hey, look into my other stuff.
+Um,
+um, M. So basically what I want to do
+here is call it like modernization of
+legacy. Um and it should load to iceberg
+if you know to do that because DLT if
+not stick to
+uh DB
+DB. I'm not sure the LM will know how to
+do that because it's kind of like new
+for us.
+Okay, now it found the date the
+files. It found the
+files and I think I just have like deals
+and partners or
+something. All right, it's a few more
+things.
+Okay. So, let's see what
+happened. It
+is This is hallucinated, I
+think, because we don't have a hive
+catalog. And this is how you do it in DT
+plus, not in
+DT. Um, but yeah.
+Let's start to fix that. And let's see
+what else happened.
+Yeah, this is basically some artifacts
+from my legacy stuff because I was
+managing
+schemas in dian Python code
+uh or something like
+that. So this looks good actually.
+Yeah, we have the deals, we have the
+organizations.
+[Music]
+here
+pipelines and we have a way to
+update because yeah we were just we did
+a full load from the other things and
+incrementing from these as far as I
+remember. Yeah. So that works as well. U
+you know so now that you kind of
+understand how to approach this problem,
+how to troubleshoot it, I strongly
+encourage you to vibe code.
+Um you know it only takes you maybe 1
+hour to do an experiment. And I think um
+you'll be so impressed that you would
+really like it. And to be honest, uh I
+think that coding these types of
+pipelines might literally go away not
+too far in the future if we manage to uh
+let's say create good technical systems
+to help us iterate through the rules
+just like we did here manually.
+Um and really I think what we need to
+consider is not just how we do an
+integration
+but how the information that we create
+and capture during this integration can
+be propagated downstream. So we actually
+automate much more than just you know do
+the first step and then repeat
+everything on the transformation and
+then have new logic on the semantic
+layer where we could in theory declare
+lots of the information up front
+generate the rest of the code uh and we
+actually can do that with DTDBT
+generator or DTSQL match generator you
+can look them up
+um and then you know do let's say new
+things or new automations or
+even
+maybe going from here to I have my data
+in the database to modeling can be a
+very interactive and clarative
+experience. But like I said, this can
+only be really if
+we consider the metadata handover from
+the original creation all the way
+downstream. Otherwise, we'll just have
+to repeat this over and over.
+So this is the end of our course and I
+want to leave you with uh three call to
+actions. Um the first one is to keep
+learning. So try to make education a
+constant part of your career. Um what I
+mean is I regularly tell my employees to
+take 20% of their time for learning
+because this makes them better
+professionals. Now, of course, you can
+judge for yourself how much time you
+have to invest, but essentially the more
+you learn, the more effective you become
+and the happier you become because you
+find better ways of doing things so you
+don't have to suffer through all the bad
+practices. My second call to action is
+if you're learning, be social about it
+and encourage others.
+So when you learn something, implement
+it because actually typing it in and
+implementing it makes it real, makes it
+real in your head, makes it happen. This
+is how you learn best. And once you've
+done that, share it with others so
+others can also get motivated and
+understand how you're approaching
+things. Um there's also imposttor
+syndrome. So if others see how simple it
+is to do and what you're actually doing,
+this will encourage them.
+And my final call to action is oh sorry
+and of course tell us if you do any
+personal projects with DT it would be
+cool to reshare them. Um and the final
+call to action is if you want to learn
+more with DT uh we actually have a
+courses repository on our GitHub. So if
+you go to our GitHub organization, you
+can find uh an education repository or
+you can go to our website to events and
+there we have an education newsletter.
+So you can just sign up for that and
+every time we do an educational event,
+you'll get an email. Uh so for example,
+it could be some kind of workshop or it
+could be a course like this one. Um,
+that being said, I thank you for taking
+uh this course, sticking with me all
+throughout, and I hope to see you in
+other educational content.

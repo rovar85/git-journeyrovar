@@ -1,0 +1,916 @@
+https://www.youtube.com/watch?v=EXIgjIBu4EU
+
+In this video, you'll learn how to use
+the pandas library in Python. Now, if
+you're interested at all in data
+science, AI, machine learning, or data
+visualization, pandas is a must-learn.
+And fortunately, in just a short video
+like this, I can teach you almost all of
+the fundamentals that will get you quite
+far. So, with that said, let's get onto
+the computer and let me teach you pandas
+in Python. All right, so I've opened up
+a code editor here. Now, for this video,
+you can use anything that you want, but
+if you want to follow along with me,
+then I'd suggest using something like VS
+Code, Cursor, or potentially PyCharm.
+Now, that's because I'm going to show
+you how to write Pandanda's code from a
+normal Python file and also how to do it
+from something called a Jupyter
+notebook, which is quite useful when
+you're doing data related tasks. Okay,
+so first things first, if we want to
+work with pandas, we do need to install
+that. Now, in order to install pandas,
+you're going to go to your terminal or
+your command prompt and you're going to
+type pip install and then pandas. Now,
+if you're on Mac or Linux, you will need
+to use pip 3 install pandas. So, go
+ahead, run that command and install it.
+You can see in my case, it was already
+installed. Now, in case that's not
+working for you, you can also use a
+virtual environment to install this in.
+If you're familiar with virtual
+environments, you can go ahead and do
+that. One quick way to set one up is to
+use the UV command. This is something
+that you will need to install. So, I'll
+leave a video on screen that explains
+how to install this, but you can type
+uvit and then dot. That's going to
+create a virtual environment in the
+directory that you're currently inside
+of. So what I've done is I've opened a
+new folder here in VS Code and then I've
+typed uit from this pandas tutorial
+folder and then what I can do is type uv
+and then pandas. Now this has added it
+to my virtual environment. And now when
+I want to run my python code I would
+just use uv run and then the name of my
+python file and pandas will be available
+inside of that file. Okay. So I'm going
+to clear the terminal and for now we're
+going to start writing some pandas code.
+Okay, so in order to use pandas, we're
+going to say import pandas as pd. Okay,
+now you don't need to do this as pd, but
+it's common practice that anytime you
+import this module, you import it as pd,
+standing for pandas, because it's a
+little bit shorter and a bit easier for
+you to work with. Now, pandas has two
+main types that we need to understand.
+The first is a dataf frame, which we're
+going to talk about in a second, and the
+next is a series. Okay, a series is
+something like a row or a column. We'll
+discuss that in just one minute. Now,
+whenever you start working with pandas,
+typically the first thing that you're
+going to be doing is loading in some
+data. So, what I've done for this video
+is I've prepared a sample CSV file. CSV
+stands for commaepparated values. Now,
+pandas can work with all types of data,
+but it's common to work with something
+like CSV files or something like Excel
+spreadsheets. And that's because pandas
+is typically very good at representing
+two-dimensional data. So where you have
+some rows and you have some columns. So
+in this case we have a bunch of kind of
+headers right like we have an order ID,
+customer name, product, category,
+quantity, price, etc. And then we have
+all of these values. So we have the
+order ID, the name, laptop, etc. Now we
+can work with this in standard Python
+but pandas makes it a lot easier for us
+to work with this data. So we can load
+in this CSV file and we can also load in
+something like an Excel spreadsheet. And
+oftentimes when you're working with
+large machine learning libraries, it
+will already have Pandanda's data frames
+set up for you or you'll load data into
+those data frames before you pass them
+to your machine learning algorithm.
+Okay, so we have this data. If you want
+to download it, I will leave all of this
+code from the link in the description.
+There'll be a GitHub repository there.
+So you can simply download this and work
+with it for this video. Now in order to
+load in this file what we can do is we
+can say df which stands for dataf frame
+is equal to pd readad_csv
+and then we can read in the orders.csv.
+Okay, so this is going to load the CSV
+file for us and it's going to store it
+in a dataf frame. So what I want to do
+for now is I just want to print out the
+data frame and I want to show you what
+this looks like and we'll continue
+getting into a little bit more
+information. Okay, so from here if I
+want to run my code, I can type uv run
+and then main.py. This is going to run
+my pandas file for me. And you can see
+that it kind of prints out this data
+frame for me. And we get this well like
+table, right? So we have 40 rows and
+nine columns and it gives us all of this
+information. So I just want to show you
+that's kind of what the data frame looks
+like. Right now automatically when we
+load something in with the data frame,
+it's automatically going to assign
+indices to every single row that gets
+loaded in. Now, if you're confused by
+that, don't worry. I'm going to pull up
+a document right now so we can visualize
+what the data frame looks like better.
+And then we'll get into more code. Okay,
+so quick pause. We're going to get into
+it in 1 second after a quick word from
+our sponsor, Postmark. The simplest way
+to ensure your emails always reach your
+users. Look, we've all dealt with
+unreliable email delivery, whether it's
+password resets, notifications, or
+critical order confirmations. Postmark
+solves this by offering lightning fast
+delivery, ensuring your messages arrive
+in seconds, not in minutes. Now, plus
+with separate message streams, your
+transactional emails stay protected from
+marketing email reputation issues thanks
+to dedicated infrastructure. Postmark is
+built by developers for developers. It
+gives you simple, clean APIs that just
+work. It also has a user-friendly API
+explorer and a new MCP server that
+integrates easily with AI tools like
+Cursor, Claude, Bolt, and Lovable. Plus,
+you'll always know exactly what's
+happening to your emails thanks to
+detailed analytics and in-depth
+tracking. If you send any user
+notifications, receipts, shipping
+updates, reminders, or honestly just
+need a reliable email service, you need
+Postmark. They have a delivery rate of
+99% and stellar customer support. Just
+check out their G2. Stop fighting with
+spam filters and start focusing on
+building great features by visiting
+postmarkapp.com/lp/techwithtim
+and use the coupon code techim to get
+20% off any plan for 3 months. Thanks to
+Postmark. Now, let's get back into it.
+All right, so I've just prepared a
+readme file which will also be available
+to download just to make this a little
+bit easier to follow along with. So you
+can see first, what is pandas? Pandas is
+an open source Python library designed
+for data manipulation and analysis. We
+already discussed that. And there's two
+core data structures that we're
+concerned with. Series, which is a 1D
+labeled array, so something like a
+column or maybe a row. And then a dataf
+frame, a 2D labeled data structure, like
+a full spreadsheet or a SQL table. So
+what we just loaded in there and created
+is a data frame. We'll just read the
+definition, which is a two-dimensional
+tabular data structure with labeled rows
+and columns. Think of it like a Python
+native spreadsheet, but much more
+powerful and programmable. Now, a few
+key features you should know. We have
+labelbased indexing, column-wise and
+row-wise operations. That means we can
+do operations on the entire row or the
+entire column. Support for various data
+types. Okay? And then this is extremely
+fast. So, it's built on NumPy in the
+background, which is just a much faster
+kind of C-based library that doesn't use
+all of the built-in Python types. So,
+it's much more performant than simply
+using like a two-dimensional list in
+Python. Now just a few examples quickly
+just to kind of look at the data frame,
+right? So this is an example of manually
+creating a data frame. So what we could
+do is we could have a dictionary. We can
+have some names, ages and countries
+where we have kind of profiles like
+this. We have Alice who's 25 who lives
+in the USA. Bob who's 30 who lives in
+Canada. Charlie 35 lives in UK. And then
+you can see if we print this out, this
+is what the data frame would look like.
+Now the reason why I'm showing you this
+example is because notice we have these
+indices 0 1 and two. So these are kind
+of the indexes of each row. So even
+though we didn't include any indexes
+here, by default when we create a data
+frame, every single row is given this
+index. So the first row is index zero,
+the second row index one, the last row
+index two. Okay, so it's important to
+know that because that's a way that you
+can locate data in a dataf frame. Now,
+in terms of loading a data frame, and
+I'm going to go back into the code and
+show you some examples here. I just want
+to quickly show you what I have here. We
+have kind of three main ways. There's a
+few other ways as well, but these are
+the popular ones. We can load from a CSV
+file, which we've already done. We could
+load from an Excel document, so an XLSX
+document. You could download this from
+Google Sheets, for example, or if you
+have Microsoft Excel, obviously, you
+could just open that. And then you can
+manually create one from a dictionary,
+something like this. You could actually
+have an empty data frame and then
+populate it later. But for now, these
+are kind of the three main ways. Okay,
+so let's close that. Let's go back into
+the code editor and let's start messing
+around with some more pandas operations.
+All right, so first things first, I
+actually don't really want to work in
+sort of inside of sort a normal Python
+file. The reason for that is that this
+isn't really the best way to work with
+pandas because a lot of times when we're
+dealing with pandas, we want to really
+quickly be able to run and execute
+different parts of our code and kind of
+analyze, clean, and interpret data.
+That's really what the point of this
+library is. So what we can do is we can
+open something called a Jupyter
+notebook. Now in order to do that if
+you're working inside of VS Code or any
+VS code fork so something like cursor
+then what you can do is hit control
+shiftp okay or commandshiftp depending
+on your operating system and you can
+type new jupitter notebook okay now in
+order for this to work you do need the
+python extension installed on your
+computer I'm going to show you how you
+get that in one second but for now we're
+going to do this we're going to create a
+new Jupyter notebook you also could just
+make a new file that ends in i pi andb
+okay now I'm going to save this file.
+So, I'll just save it here as notebook.
+All right. And this is where I'm going
+to start writing my Pandas code. Now,
+again, Pandas needs to be installed in
+order for this to work. Now, if you
+don't have the Python extension, you can
+install that by going to the extensions
+paid in extensions pane, sorry, in VS
+Code and simply typing Python and then
+just installing the Python extension.
+So, you can see it's this one right
+here, just Python. Okay, just install
+that and then you should have the
+ability to use Jupyter Notebooks. All
+right. So now what I'm going to do is
+I'm going to again say import pandas as
+pd and I'm going to load in my data
+frame. So I'm going to say df is equal
+to pd readcsv and then read my
+orders.csv. Now the interesting thing
+when we are using the Jupyter notebook
+here is that we have these different
+cells. So you see that I kind of have
+this cell that's created and I can just
+run and execute this cell. So I just
+choose a Python version that I want to
+run it with and now I've loaded in this
+data frame. And then what I can do is I
+can make a new cell below this and I
+could do something like print dataf
+frame and then I can just run this cell
+independently of running this cell. So
+right now my data frame is loaded and
+then if I want to print it I can just
+run this cell and you see it prints out
+and it looks a little bit nicer right
+when it's inside of this Jupyter
+notebook. Okay. So just something to
+note there. You have these different
+cells in order to run the cells. You can
+press here. You can also press here like
+to above uh to execute above execute
+below. You can delete the cells. And
+this is kind of more of like a temporary
+space where it's a little bit easier to
+experiment and mess around with the
+code. And then you can save the output
+and you can see it as you move on to the
+next cell. Now, if you want to clear the
+output, you can just press these three
+dots here and clear the cell outputs.
+Cool. So, let's keep going. All right.
+So, once we load a data frame here,
+there's a few pieces of information that
+we typically want to see. So, the first
+thing we can do is we can look at the
+head of our data frame. Now the head of
+the dataf frame is going to print out
+the first five rows just to show you
+what the data frame looks like. So a lot
+of times you don't want to just view the
+entire data frame. You just want to view
+a little bit of it. So what I can do is
+I can run this here and you'll see that
+it gives me a nice table here with just
+the first five rows. Okay. So we have
+order ID, customer name, product, etc.
+So we can kind of start examining this
+data frame and seeing the different
+information that we have. So head is
+interesting but of course as well as
+head we also have tail. Now tail just
+like head is going to give us the last
+five rows in the data frame. So if we go
+down here you can see we have our last
+five rows. Perfect. Now a few other
+methods that you'll want to be aware of
+are info. So if you use info this will
+give you general information on the data
+frame. So you see hey this is a pandas
+dataf frame. It has 40 entries. It has
+nine data columns and then it tells you
+all of the columns and their types. So
+we have object object object int float
+object object object. Okay. And then it
+gives you kind of the various types
+right here. And the reason why they're
+being represented as objects and not
+strings is because if we look inside of
+our data frame here, we didn't surround
+them inside of quotation marks. We can
+actually change the type of these to be
+strings if we want to. But for right
+now, this is okay. All right. So that's
+info. And then we also have the ability
+to describe. So here, this actually
+generates a table for us. And if we go
+to the method signature, you can see it
+says generate descriptive statistics. So
+it gives us values that summarizes the
+central tendency dispersion and shape of
+the data set's distribution. Okay. And
+it analyzes both numeric and object
+series. All right. Now if you look here
+you can see kind of that information. So
+for the order we have you know 25% 50%
+75% etc. If you've ever taken any type
+of probability class you probably know
+what this means better than I can
+explain it to you. So let's continue.
+All right. So we have df describe and
+then we also have df.c columns. Okay.
+Now if we do columns again it will just
+give us a list of all of these different
+columns here. so we can see what they
+look like. And then lastly, we can do
+index. And if we do dot index, it gives
+us a range here that would allow us to
+step over the data frame. So we would
+start at zero, stop at 40, and step by
+one. Okay, so this is kind of the first
+few things that you're typically going
+to run when you load in a data frame so
+that you can start analyzing this data
+set and understanding what you're
+actually working with. Once you have
+that information, you probably want to
+start pulling out certain rows or
+columns or modifying the data frame,
+which we can do now. So, let's create a
+new cell down here and let's start
+messing around with that. So, if I write
+something like DF and then let's look at
+one of our columns. So, actually, let's
+go up here and go df doc columns. Let's
+run that. Okay. And let's look at maybe
+we want to look at the country or
+something. We can say df country. And
+when we do this, this actually allows us
+to index all of the values that are
+inside of the country column. So this is
+going to return to us something called a
+series. So not a data frame, but a panda
+series, which will include all of the
+values that are in the country column.
+So with your data frame, what's
+interesting is that you can index by the
+row, but you can also index by the
+column. So when I run this, notice now
+that it's going to give me all of the
+different countries, right? And then I
+can start doing some more complex
+operations on here. Now, you notice it
+doesn't print everything out. uh it's
+truncating it because of kind of how
+this is set up, but that's okay. All
+right, so we have DF country. And then
+if we wanted to, right, we could do
+something like maybe print the length of
+this. We could say length of DF country.
+Okay, we could run this. We get 40. I
+could print maybe the set of DF country.
+And then it's going to give me all of
+the unique values that I have inside of
+here and remove any of the other ones.
+And you get the idea. You can start
+doing some pretty cool stuff. Those
+aren't even pandas operations, but
+that's kind of the interesting component
+of being able to reference things here
+by the uh what do you call it? Uh
+column. Now, what's interesting as well
+is that you can actually reference by
+multiple columns. So, what we could do
+is we could put a list inside of here
+and we could reference by the country
+and then maybe we want to get the
+product. Okay. Now, if I run this, you
+see that we now get a new data frame.
+So, when we do this, it doesn't give us
+a series. It actually gives us a data
+frame where we have all of the countries
+and then the associated product that was
+kind of with that order. So you can
+really create some interesting views of
+the data frame here. And this returns
+again a new data frame because we have
+two different entries that we're
+indexing by. If we just do one then
+we're just going to get a series. Okay.
+So that's how you kind of index based on
+the uh what do you call it the columns.
+But if you want to index based on the
+row so you want to get row zero, row
+one, row two etc. then you can use the
+following. Okay, so you can use ILocc.
+Now ILOC stands for index location. At
+least that's what I like to remember it
+by. I'm not sure if that's exactly what
+it means, but for me that makes sense.
+So what I can do is I can say df do
+eyilock zero. And when I do that, it's
+going to give me all of the values for
+the first row or the zeroth row. Okay,
+inside of my data frame. Now I could do
+maybe 10. And now I'm going to access
+the 10th row and I get the values. And
+again, if I wanted to, I could do
+something like list. Okay? And if I do
+list, now it's going to convert this to
+a list for me and give me all of the
+values. Okay? And you can see we have
+these ins, floats, strings, etc. All of
+the stuff. Okay? Because the pandas data
+type is a little bit different than the
+built-in uh Python data type. So you
+just need to be a little bit careful
+when you're kind of using this because
+for example if I do dfilock and then 10
+now if I want right and I try to access
+index zero you see that it actually
+gives me this right so it gives me the
+first value I can access index one gives
+me the second value or alternatively I
+could do something like directly access
+the row value of country and then get
+friends. So this just works a little bit
+differently than the built-in Python
+data type. So I get this row. Then from
+this row I can either access the
+individual values by their index because
+it's kind of represented like a list or
+I can reference it by the column name.
+So I can get the country, I can get
+shipped, etc. Okay, and you guys get the
+idea. All right, so let's keep going
+here and let's get into some filtering.
+Now, I want to just make a note here
+that what I'm about to show you in the
+rest of the video is really just
+scratching the surface of what's
+possible here. Pandas can get very, very
+advanced. That's not the point of this
+video. I just want to give you the
+basics. So if you think I'm missing
+something, it is because I am missing
+something because I'm not going to cover
+the entire library in this short video.
+Okay. So first let's just look at our
+data frame again because maybe I just
+want to see what's in here. So I could
+try to come up with like an interesting
+filter. So I see, okay, I have like
+customer name, product, category. So
+maybe I want to do something like find
+all of the electronics. Let me get rid
+of that. So what I could do is something
+like DF. Okay. And then I'm going to say
+DF and then this is product. Okay. and
+I'm going to say this is equal to and
+then electronics. So what I'm doing is
+I'm actually applying a filter. I'm
+saying all right in my data frame I want
+to look for all of the values that match
+this where the data frame at the column
+product is equal to electronics. So now
+if I do this I get an empty table and
+that's because I meant to go category
+not product. So sorry, let's swap that
+and run. And now you see that we get all
+of the products that are in the
+electronics category. Okay. So we just
+applied a filter there. Now if we wanted
+to we could actually apply multiple
+filters. So I can put this in a set of
+parenthesis. I could put an and
+operator. Okay? So just a single and not
+two like we would in Python. And then I
+could do something like df
+country is equal to maybe USA. So now
+I'm getting all of the electronics that
+are in the USA. So now if I run this you
+see that we only have one entry here.
+Okay. If we can scroll through for some
+reason it's being a bit difficult to
+scroll but you guys get the idea. And
+then this would say USA if we were able
+to scroll over and see that. Actually,
+let's zoom out. And then boom, there you
+go. Okay, we have USA. All right, let's
+do another one. I'll leave that filter
+up. So maybe we want to check if the
+category is electronics or the country
+is USA. Now, if that's the case, then we
+can just use a single pipe operator.
+Okay, this is or. And then if I run this
+now, we get all of the ones where it's
+either electronics or the country is
+USA. So you can see we have this furnace
+where, you know, it's in the USA, but it
+wasn't electronics because we've used
+the ore. So we have and or etc. You can
+use those inside of the filters. Now
+let's do some more filters. So let's do
+something like maybe I don't know the
+quantity greater than a certain amount
+or something. Let me just look at this.
+Okay. So let's go df and then df
+quantity
+is greater than 20. Okay. And then we
+run this. And you can see now we have
+this one. It's the only quantity that
+was greater than 20. Maybe quantity
+greater than two. And then we get all of
+these where the quantity was greater
+than two. And then of course you could
+switch this around. You could say less
+than two. You could say less than or
+equal to two, right? And then you get
+going to get this. You could do not
+equal to two. Then you're going to get
+all the ones that aren't equal to two.
+And you guys get the idea. Okay? So you
+can mess around with these filters quite
+a bit. You can make them quite advanced
+and you can really look through and kind
+of prune this data set down to what you
+really want. All right. So let's keep
+going here and uh let's do some more
+advanced filtering. So that's kind of
+simple. like you're just filtering based
+on columns. But you can also do some
+more complex methods. So for example, we
+could say something like DF and then DF
+and what do we want to do here? Maybe
+this is what the customer name. Let's
+just look at this column. Yes, customer
+name. Okay, so we're going to say
+customer name and we're going to say dot
+string dot starts with and then we can
+uh do something like a. So in this case,
+this is going to give us all of the
+customers names that start with a. And
+you see we pull up all the customers
+that start with A. Okay. Now I believe
+we also have ends with. Let's see. Yeah.
+So ends with. So ends with A as well.
+Run this. We don't get any because it
+would be a lowercase A. So sorry. Let's
+go lowerase. And then you can see all
+the names that end in A. We pull them
+up. Of course, that would apply to any
+other column. What I've done is I've
+used dot string. So I've said, okay,
+customer name. We're looking for the
+string methods. And then we're looking
+at dot ends with. Now there's a few
+other methods that we can do. So for
+example, we could go here. Here we could
+say df country then dot is in and then
+we could specify an array. So we could
+do something like USA you know Sweden
+and maybe Brazil or something. Okay. And
+if we run this then it gives us all of
+the entries where they're in one of
+those countries. Okay. So rather than
+having to write out the complex kind of
+uh what do you call it combined
+condition you can use something like the
+is in operator. And then actually if we
+wanted to reverse this, this is going to
+look a little bit weird, but we can use
+the tilda operator. This is built into
+uh pandas. So this works and this
+essentially reverses this condition. So
+it would say essentially all of the
+countries that are not in this. So if I
+run this now, you see that we get
+anything that is not USA, Sweden or
+Brazil. Now again, there is a lot more
+filtering that you can do. I'm just
+trying to scratch the surface and show
+you a few examples. You kind of get the
+idea of how powerful this is. And now
+let's move on to the next example. Okay,
+so we've looked at a lot of filtering
+and kind of viewing the data, but now I
+want to show you how we can delete data
+and update data because obviously that's
+important. So let's say that we want to
+update a specific row or we want to
+maybe look for a row where Anna here
+exists and we want to update her and
+maybe change, I don't know, the quantity
+or something that she's ordered. Now
+again, there's a lot of ways to do this,
+but I'm going to show you one way. So
+another tool that I've uh not shown you
+yet is called okay or loc. Now loc means
+we're going to locate based on some
+label. Okay, a label being essentially
+any entry that's inside of this row
+rather than the index. So I could do
+something like df.illock and then 39,
+right? And then I'm accessing index 39
+which is Anna. But instead I'm going to
+do something different where maybe I
+don't know that she's at 39 or maybe
+there's multiple Annas. And what I would
+do is I would say df.locate. Okay. and
+I'm going to say df and then I'm going
+to say customer name is equal to and
+then I'm going to paste her name. Okay,
+so what I'm doing is I'm saying all
+right I want to locate the row right
+where the customer name is equal to
+this. So if I run this here boom it
+pulls up a data frame for me. Notice
+it's not just one row it's a data frame
+because there could be multiple here
+where the customer name is equal to
+Anna. Now if I want to change something
+here, what I can do is I can put a comma
+and I can put something like the
+product. Okay. And is it product name or
+is it just product? I think it's just
+product. Okay. And then we can say this
+is equal to Tim. Okay. And if I run this
+now, this actually is going to update
+the row. And then if we want, we can do
+another cell and we can just copy this.
+Okay. And run. And then you'll see the
+product has now changed to Tim. So I've
+located the entry that I want. I've
+specified the column that I want to
+change and then I've just modified it.
+Okay, made it equal to Tim. That's it.
+Again, I know it's a little bit weird
+with the syntax. You kind of need to get
+used to it, but that's how we just
+located this row and then we changed it.
+Now, if we wanted to, we could do
+something like df
+country is equal to USA. Okay? And then
+we could say country and we can make
+this equal to United States. All right.
+Now if I run this, what it's going to do
+is it's going to change all of the
+entries where the country is equal to
+USA to be equal to United States. So now
+again, let's just copy this filter.
+Let's paste it down here and run. And
+there's none that equal USA because we
+changed it. And then if we go United
+States, you can see all of these are now
+equal to United States. And sorry, my
+voice was falling apart there. So I'm
+back. But you get the idea. Okay. So we
+can do kind of these multiple changes.
+Now I could also say where all of the
+countries are equal to USA, I want to
+change something else. I want to change
+the quantity, I want to change the
+product, I want to change the order ID,
+etc., etc. Okay, there's more advanced
+stuff that we can do there. Now, if we
+wanted to as well, so we have United
+States. Now we've kind of made this
+change. What we could do down here is we
+could say something like this. We could
+say DF country is equal to DF. Okay? and
+then country.string.upper.
+Now, if I do this, what it's going to do
+is it's going to say, okay, so we're
+going to take country and we're going to
+make it equal to the dataf frame
+country, but we're going to modify all
+of the values here so that they're
+completely uppercase. So now, if I run
+this, okay, let's wait. Then we go down
+here and we can say like this df
+country. Okay, and when we run this,
+notice that we get United States. Okay.
+And it's in all capitals and everything
+actually is in all capitals because
+we've updated it. So everything is in
+all capitals. So if you want to change
+everything in one of the columns, you
+can kind of do it like this. Again,
+there's multiple ways to do it, but that
+is one way. Cool. All right. Now, a few
+last things that I want to show you.
+Let's say that maybe we want to remove
+some entries from our data frame. So
+what I can do is say something like df
+is equal to df.drop. And then I can drop
+something like 39. Now, if I do that,
+that means I'm going to drop the row
+that's at index 39. So, when I run this,
+okay, that's going to now drop the row.
+So, if I go df.tail
+now, okay, then you're going to see that
+we no longer have row 39 because we
+removed it. So, if you want to remove an
+individual row, you can do it like this
+using df.drop.
+Okay. And sorry, I just needed to reload
+this data frame because I had messed a
+few things up. So, we are back here and
+I'm going to show you a few other things
+that we can do. Okay. So with pandas,
+cleaning data is also something that's
+going to happen quite a bit. Now one
+thing that you'll see a lot of people
+doing commonly is dropping NA tables. So
+they can say dataf frame.rop NA. Now
+what this means is drop anything that
+contains any null values or NA values
+because sometimes you'll load in data
+where you'll have like missing entries.
+So like if you were to run this for
+example, I mean it would remove those.
+In our case, we don't have any NA
+values. So there's no problem. But this
+is a common thing that you're going to
+see to clean data. Okay. Now, another
+thing you might see is something like
+df.fill
+na. So here maybe we're going to say
+okay we want to fill all of the order
+ids that don't exist with just zero.
+Okay. So in this case rather than
+removing it we just fill them with zero.
+And then you would usually specify in
+place equals true. And what that means
+is it's going to actually modify the
+existing data frame not return you a new
+data frame. because here if you don't
+have in place equals to true, this
+actually returns new data frame. This
+modifies the existing data frame. Okay,
+so those are two quick ways that you can
+kind of clean data that you're going to
+see frequently. Again, in our place or
+in our example, they don't really make
+too much sense, but I wanted to show
+them to you. Now, another thing that you
+can do is you can rename columns. So,
+for example, we want to rename a column.
+So, maybe we want to change order ID to
+be order space ID. And then we can say
+in place is equal to true. So, we can
+run this. And then if we go here and we
+print the data frame, you'll see now
+that the order ID has a space between
+it. All right, so let's scroll down.
+Let's make a few more cells. Uh, again,
+so much stuff to cover here, so I'm
+trying to be a little bit selective, but
+I'm going to show you a few other cool
+ways to analyze data. And then that's
+pretty much going to be it. Okay, so
+let's say we want to look at our
+countries, for example. What we can do
+is something like value counts. And
+notice it's showing me a bunch of other
+methods that I could use here, which is
+kind of funny. So there you go, guys.
+you can see just how much stuff actually
+exists inside of pandas. But if I were
+to run this for example, you see now
+that it's going to give me a count of
+every single value that exists inside of
+here. So if you wanted to see, okay, you
+know, how many products are from US, how
+many products are from South Korea, you
+could do something like this and you
+would really quickly kind of get that
+analysis. Now, what we also could do is
+we can group by. Now, if you ever worked
+in SQL before, you probably know what
+this is. But we could do something like
+df dot okay, group by. All right. And
+then we're going to group by the
+country. And then we could do something
+like price
+dot sum. Now, if I run this, what it's
+going to do is it's going to sum the
+total price of all of the products
+grouped by countries. So for Argentina,
+all of the products there, their price
+total together is $22. Colombia 280. And
+you can keep going right all the way
+down to USA, 1265.
+Okay, so that's something interesting
+that you can do. And then also let's
+just do another one. We can do something
+like df dots sort values and then
+something like not that price ascending
+for example. Let's remove this. Of
+course the autocomplete is really being
+quite difficult to deal with here. Okay.
+So let's go here and run this. And then
+you see now they were running this with
+the price ascending and you can kind of
+scroll down and see all of the product
+prices or sorry descending not
+ascending. All right. So that's pretty
+much it. Now look there's so much other
+stuff to cover. Last quick thing I will
+show you is that if you make
+modifications to a dataf frame and you
+want to save it, you can do something
+like df.2
+csv can do, you know, new file.csv.
+And if you want to include the indexes,
+you can say index equals true. If you
+don't, you can say index equals false.
+And then boom, it will create a new file
+for you. So if I run this here, should
+see that we get this new file.csv that
+has all of these new values inside of
+here that we modified from our dataf
+frame. Okay, so I think with that said
+guys, that's going to wrap up this
+video. Again, all of this code will be
+available from the link in the
+description in case you want to check it
+out. There is a lot of stuff you can do
+with pandas. This video could easily be
+7 8 hours long. If you want more pandas
+content, then please let me know and I
+would be happy to make it.
+[Music]

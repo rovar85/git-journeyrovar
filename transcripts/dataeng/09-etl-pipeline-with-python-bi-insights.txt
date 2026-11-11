@@ -1,0 +1,269 @@
+https://www.youtube.com/watch?v=dfouoh9QdUw
+
+[Music]
+hello and welcome one and all in this
+session we will build on from the
+previous two where we installed
+postgresql and sql server we have set up
+both of these environments and restored
+sample databases
+so in this session we will use sql
+server adventureworks database as a
+source and load data into postgresql
+with python be sure to check both of
+these videos out if you want to follow
+along i'll leave the link in the
+description below
+an etl extract transform and load
+pipeline is a fundamental type of
+workflow in data engineering
+the goal is to take data from a source
+it can be an api a database or a file
+and transform this data and then load it
+into a destination database
+we will use python and in particular
+pandas library to build a pipeline
+pandas makes it super easy to perform
+the etl operations the full source code
+is available on github
+an etl pipeline consists of three
+general components
+extract get data from a source in this
+example we'll extract data from sql
+server
+transform
+structure format or clean the data
+depending on your needs or final
+deliverable you can perform all of these
+operations with pandas library
+we won't be spending much time on this
+if you would rather follow the elt or
+extract load approach
+i want to demonstrate how easy it is
+with python to perform extract and load
+and finally load to write the data to
+external destination where it can be
+used by another application or users we
+will load the data to postgres database
+let's do some basic setup in postgres
+before writing etl pipeline
+i have pg admin 4 open and i have a new
+query window open with a script to
+create a database called adventure works
+i'll go ahead and execute the script to
+create this database
+we can refresh the databases folder to
+see if this new database is created
+and if you see adventure works there
+congrats your database is created
+also i'll go ahead and create a user
+called etl with password
+and i'll grant this user permissions on
+the adventureworks database
+we get a success message
+and we should see a new user called etl
+under the login and groups roles
+once we refresh it
+our postgres database is set up
+let's move to sql server and create the
+same user
+this is the script and we are creating
+an etl user along with login
+we are giving necessary permissions to
+connect and read data from
+adventureworks
+dw2019 database
+the etl user is created
+just in fyi i restored the
+adventureworks 2019 database in the sql
+server video that's the normalized
+version so i went ahead and restored the
+dw or the data warehouse version
+following the same steps
+so you can download this database and
+restore it following the same steps
+let's begin coding the etl pipeline in
+python
+i am using pycharm to code this pipeline
+you can use your preferred id or a text
+editor
+as usual we'll import the required
+libraries at the top
+we will need sql alchemy to interact
+with postgres sql
+pi odpc to query the sql server
+pandas to carry out the data extract and
+data load part
+i am importing os module as i have
+stored the username and password in the
+system environment variable
+you can type those in directly if you
+wish but it's a good habit not to hard
+code your credentials in the script and
+store them separately the aim is to
+protect the credentials from being
+exposed in the etl script you can use a
+configuration file or system environment
+variables
+i'll first grab the password from the
+environment variable
+so we can get the password with os dot
+environ
+and by passing in the key for the
+password
+similarly we can get the user id and
+store these in local variables
+i'll also define a variable to store the
+sql server driver
+i am using sql server native client 11
+and if you have been following along the
+channel then you should be familiar with
+it
+otherwise you need to install it on your
+machine
+i'll leave the link in the description
+below
+i'll save the server and the database
+name in the variables as well
+now we are ready to code the extract
+part
+i'll define a function called extract
+let's put our code in a try except block
+first i'll define a source connection
+our source connection is the sql server
+and for this we will use the connect
+method from pi odbc
+and to the connect method we will supply
+the driver which is the sql server
+native client 11
+the server name
+along with the instance since we're
+using the sql server express version it
+has a default instance sql express
+database name
+user id and the password
+this connection is saved in src
+underscore con variable
+we are going to go ahead and create a
+cursor from this connection
+cursor allow python code to execute sql
+command in a database session cursor are
+bound to the connection
+and from the cursor we can invoke the
+execute method
+and supply it the sql script
+i will supply it a script that gets the
+table name from the system schema in sql
+server and i am limiting the number of
+tables to 6 so we don't have to process
+the entire schema
+then we call the fetch all on the cursor
+to get the records
+records are in a list format so we have
+to iterate over them
+so far
+tbl in src underscore tables and then
+within the loop
+i am calling the pandas read sql query
+method
+and in this method i am building a sql
+query with f string
+i'll supply it the tbl with index of
+zero
+so we get the table name as a string
+then we supply the connection to the
+database
+this will correct the data from a table
+and save the result in a data frame
+once we have the data
+then we will call the load method
+which we will code next
+and to this method we will supply the
+data frame and the table name
+in the accept block we print the
+exception
+and finally we close the connection once
+we are done
+we are done with that data extraction
+part
+let's define a load function
+that will load the data in postgres sql
+i'll call the function load and it takes
+two arguments a data frame and table
+name
+we will wrap our code in a try except
+block here as well
+i'll declare a variable for the number
+of rows that we are importing from the
+source
+then we create a connection to postgres
+with sql alchemy create engine
+we supply the user password and the
+server name
+it also requires the port number and the
+database
+we save this into engine variable
+then we display a message how many rows
+we are processing and from which table
+to save the data into postgresql
+we call the 2sql function from pandas
+and supply the table name and to the
+table name we append sdg underscore to
+declare that this is a staging table
+then the engine which is the connection
+to postgres
+and if table exists we supply the
+replace argument
+this technique is called truncate and
+load so it'll erase the data each time
+it runs and reload it into the
+destination table
+next we set the rows imported to the
+data frame length
+and print the success message
+if there are any errors we cache them in
+the exception
+this is all the code required to perform
+extract and load operation from sql
+server to postgres with python
+in essentially 40 lines of code we built
+this process with pandas pandas library
+makes it super easy to perform data
+operations let's call the extract
+function to initiate the whole process
+we'll wrap this in a try except block as
+well
+our code is ready let's save our work
+and give it a try
+i'll open a command prompt and bring pg
+admin up
+let's first expand and refresh the table
+node in our database we don't have any
+tables at the moment
+let's go ahead and execute our code and
+it is extracting and loading the data
+and i'll refresh the table we should see
+new tables in our database now
+i will let the process complete
+this is it our extract and load process
+is complete let's query a table
+confirmed that we have data and the
+query runs successfully and it produces
+results so our etl pipeline successfully
+loaded the data in postgres
+we can compare the number of rows in the
+source and destination to further test
+our work
+but i'll leave that for you
+this is how we built an etl pipeline in
+python
+i hope you enjoyed this session
+now you can schedule the script with
+windows scheduler or with a cron job or
+with another scheduling tool so it runs
+on a schedule and impose the data on
+regular intervals i'll cover how to
+create and schedule etl pipelines with
+apache airflow next this is all for now
+share like and subscribe take care and
+i'll see you in the next video

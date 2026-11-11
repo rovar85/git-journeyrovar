@@ -1,0 +1,6 @@
+https://www.youtube.com/watch?v=tb8gHvYlCFs
+
+Hey there how's going everybody? In this video I gonna take
+ 
+So the requests library allows us to easily make a HTTP request to get information from websites.
+Now, I believe it's the most downloaded Python package and there is good reason for that

@@ -1,0 +1,269 @@
+https://www.youtube.com/watch?v=5NA57Pfpdr4
+
+hey my dear data friends it's Nicola
+from data Mozart today in this video I
+will show you all the ins and outs of
+the parket and Delta file format which
+let's be honest became a de facto
+standard today for storing the data so
+stay
+[Music]
+tuned so what's the deal with par and
+Delta formats with amounts of data
+growing exponential in recent time one
+of the biggest challenges became finding
+the most optimal way to store various
+data flavors unlike in the not so far
+past uh when relational databases were
+considered the only way to go
+organizations now want to perform
+analysis over raw data think of social
+media sentiment analysis audio video
+files and so on which usually couldn't
+be stored in traditional relational way
+uh or storing them in traditional way
+would require significant effort in in
+time which increased the overall time
+for analysis another challenge was to
+somehow stick with a traditional
+approach to have data stored in a
+structured way but without the necessity
+of uh designing complex and timec
+consuming ETL uh operations ETL
+workloads to move this data into the
+Enterprise data warehouse additionally
+what it half of data Professionals in
+your organization are proficient with
+let's say python which is typical for
+data scientists and data engineers and
+the other half like data analysts with
+SQL put you insist that
+pythonistas Versa or would you prefer a
+storage option that can play to the
+strength of your entire uh data team I
+have good news for you something like
+this already exists since 2013 and it's
+called Apachi par before I show you ins
+and outs of the parket file format
+there are at least five main reasons why
+par is considered a de facto standard
+for storing data
+nowadays data compression by applying
+various encoding and compression
+algorithms parquet file provides reduced
+memory
+consumption Coler storage this is of
+Paramount importance in analytic
+workloads their fast data read operation
+is the key requirement but more on that
+later in this video language agnostic as
+already mentioned previously developers
+may use different programming languages
+to manipulate the data in the parquet
+file open source format meaning you are
+not locked with a specific wendor and
+finally support for complex data
+types we've already mentioned that
+parquet is a column based storage format
+however to understand the benefits of
+using the parquet file format we first
+need to draw the line between the row
+based and column based V of storing the
+data in traditional row based storage
+the data is stored as a sequence of rows
+something like this you may screen on
+your screen now now when we are talking
+about analytical scenarios some of the
+common questions that your users may ask
+are how many balls did we sell how many
+user from the USA bought t-shirt what is
+the total amount spent by customer Maria
+Adams how many sales did we have on
+January 2nd to be able ble to answer any
+of these questions the engine must scan
+each and every Row from the beginning to
+the very end so to answer the question
+how many users from the USA both t-shirt
+the engine has to do something like
+this essentially we just need the
+information from two columns product for
+t-shirts and Country for the USA but the
+engine will scan all five columns this
+is not the most efficient solution I
+think think we can agree on that let's
+now examine how the column store works
+as you may assume the approach is quite
+different in this case each column is a
+separate entity meaning each column is
+physically separated from other columns
+going back to our previous business
+question the engine can now scan only
+those columns that are needed by the
+query which are product and country
+while skipping scanning the unnecessary
+columns and in most cases this should
+improve the performance of the
+analytical
+queries okay that's nice but the column
+store existed before parquet and it
+still exists outside of parket as well
+so what is so special about the parket
+format parket is a columnar format that
+stores the data in row groups wait what
+wasn't it enough complicated even before
+this don't worry it's much easier than
+it sounds let's go back to our previous
+example and depict how parquet will
+store the same chunk of data let's stop
+for a moment and explain the
+illustration you see as this is exactly
+the structure of the parquet file I've
+intentionally omitted some additional
+things but we will come soon to explain
+that as well columns are still stored as
+separate units but parquet introduces an
+additional structure called row group
+why is this additional structure so
+important you'll need to wait for an
+answer for a bit
+in online analytical processing
+scenarios we are mainly concerned with
+two concepts projection and
+predicates projection refers to a select
+statement in SQL language which columns
+are needed by the query back to our
+previous example we need only the
+product and Country columns so the
+engine can skip scanning the remaining
+ones predicates refer to the ver clause
+in SQL language which rows satisfy
+criteria defined in the query
+in our case we are interested in
+t-shirts only so the engine can
+completely skip scanning row group two
+where all the values in the product
+column equal socks let's quickly stop
+here as I want you to realize the
+difference between various types of
+storage in terms of the work that needs
+to be performed by the engine roll store
+the engine needs to scan all five
+columns and all six rows column store
+the engine needs to scan two columns and
+all six rows column store with row
+groups the engine needs to scan two
+columns and four
+rows obviously this is an oversimplified
+example with only six rows and five
+columns where you will definitely not
+see any difference in performance
+between these three storage options
+however in real life when you're dealing
+with much larger amounts of data the
+difference becomes more
+evident now the fair question would be
+how parket knows which row group to skip
+or
+scan parquet file contains
+metadata this means every parquet file
+contains data about data information
+such as minimum and maximum values in
+the specific column within the certain
+row group furthermore every parquet file
+contains a footer which keeps the
+information about the format version
+schema information column metadata and
+so on I'll give you one performance tip
+in order to optimize the performance and
+eliminate unnecessary data structures
+such as row groups and columns the
+engine first needs to get familiar with
+the data so it first reads the metadata
+it's not a slow operation but it still
+requires a certain amount of time
+therefore if you're quering the data
+from multiple small parquet files query
+performance can degrade because the
+engine will have to read metadata from
+each file so you should be better off
+merging multiple smaller files into one
+bigger file but still not too big I hear
+you I hear you Nicola what is small and
+what is Big unfortunately there is no
+single golden number here but for
+example Microsoft Azure synapse
+analytics recommends that the individual
+parquet file should be at least a few
+hundred megabytes in size can it be
+better than this yes with data
+compression so we've EXP explained how
+skipping the scan of the unnecessary
+data structures May benefit your queries
+and increase the overall performance but
+it's not only about that remember when I
+told you at the very beginning that one
+of the main advantages of the parquet
+format is the reduced memory footprint
+of the file this is achieved by applying
+various compression
+algorithms there are two main encoding
+types that enable parquet to compress
+the data and Achieve astonishing Savings
+in
+space dictionary encoding parquet
+creates a dictionary of the distinct
+values in the column and afterward
+replaces real values with index values
+from the dictionary going back to our
+example this process looks something
+like this and you might think why this
+overhead when product names are quite
+short right okay but now imagine that
+you stored a detailed description of the
+product such as long arm T-shirt with
+application on the neck and and now
+imagine that you have this product sold
+million times yeah instead of having
+million times repeating value long arm
+blah blah parquet will store only the
+index value integer instead of text run
+length encoding with bid packing when
+your data contains many repeating values
+run length encoding or R abbreviated
+algorithm may bring additional memory
+savings can it be better than this yes
+with a Delta l L file format okay what
+the heck is now Delta Lake format to put
+it in plain English Delta lake is
+nothing else but the parquet format on
+steroids when I say steroids the main
+one is the versioning of parquet files
+it also stores a transaction log to
+enable keeping the track of all changes
+applied to the parquet file this is also
+known as acid compliant
+transactions since it supports not only
+asset transactions but also time
+traveling like roll backs audit trails
+and so on and data manipulation language
+statements such as insert update and
+delete you won't be wrong if you think
+of the Delta Lake as a data warehouse on
+the data lake or data lake house to
+conclude parquet file format is one of
+the most efficient storage options in
+the current data landscape since it
+provides multiple benefits both in terms
+of memory consumption by leveraging
+various compression algorithms items and
+fast query processing by enabling the
+engine to skip scanning unnecessary data
+That's all folks if you enjoy this video
+please click this like button down below
+of course if you want to stay tuned with
+the latest news from data powerbi
+Microsoft fabric uh world then consider
+subscribing to data mozer Channel see
+you soon
+[Music]
+again

@@ -1,0 +1,1241 @@
+https://www.youtube.com/watch?v=qbLc5a9jdXo
+
+Hey everyone, welcome to your REST API
+crash course. My name is Caleb. In this
+video, we're going to talk about
+everything you need to know to get
+started with REST APIs. We're going to
+first talk about the concepts, then
+we're going to talk about how to consume
+an API, and then we're going to build
+our very own API in Python. So, it's a
+lot of useless or it's a lot of useful
+information. So, if you need a reference
+of all this, I created a PDF that you
+guys can get for free with a link in the
+description. So go check that out if you
+just need to like, you know, look at the
+definitions and study or whatever. But
+anyways, we're going to jump in by first
+talking about what a REST API is, why
+you should care, and where this is used
+in software. And if you're watching this
+video and you're not really doing
+anything with software, not really sure
+why you're here, but you can probably
+move on to one of my other videos. So
+which all of my videos are about
+software. So anywh who, API stands for
+application programming interface.
+So, I tried talking and explaining this
+last time I recorded this and it just
+didn't go so well because I cannot talk
+and write very well at the same time.
+Application programming interface. It's
+basically a fancy way to say a way two
+pieces of software can communicate with
+one another. So, if we have this
+software over here, this is some really
+cool software system we built. And here
+is another one. And let's say these are
+built in different programming
+languages. That's where an API is going
+to come in and save the day. It allows
+different applications that aren't built
+exactly the same to communicate. So
+we'll say this one was built in
+Python and this one was built in
+JavaScript. Poor developer. I'm so
+sorry. Well, an API allows us to build
+functionality in this application to
+make a request to this other application
+and then this application can give a
+response back to this application. And
+that is where the API comes in. We're
+building this interface for these pieces
+of software to communicate with one
+another. Now, in general, it's a one-way
+thing. So this app is not going to
+request information from this app and
+get it back. Instead, it's always we
+have a a server and then a client. The
+client consumes information given from
+the server. So this is a very common
+setup you'll see in all of computing.
+The same way when you go to get a
+website, you know, you go to
+youtube.com, you're making a request and
+then that server gives back a response.
+It works exactly the same way with our
+REST API, although instead of getting
+HTML, you're going to get JSON.
+So, JSON is a language or a notation of
+describing information. It's just like
+text and it stands for JavaScript object
+notation. So, it's a way to notate what
+objects look like. But, it doesn't have
+to be done with JavaScript. It's
+actually supported in pretty much every
+language. And this is now the standard
+for APIs. You may run into APIs that use
+XML. However, this is kind of
+old-fashioned and probably not what you
+would want to use going forward. So, I
+would recommend even if you're more
+familiar with XML for some reason to
+learn JSON or JSON. You'll hear both.
+So, JSON's not complicated. Don't feel
+like you have to learn another
+programming language or something. It's
+just a series of key value pairs just
+like an object in JavaScript, hence the
+word JavaScript object notation or like
+a dictionary in Python where you have a
+key and then an associated value. So,
+it's pretty much just an associative
+array. We'll get into what JSON looks
+like and how to use it soon when we go
+build our own API, but don't worry too
+much about that. So JSON is basically
+the the language of communication and
+the API is you know what things we can
+communicate you know maybe you want to
+get a list of users or maybe you want to
+update some comments whatever you want
+to do that's all defined as API end
+points. So, you know, right here where
+we're making that request, that's an
+example of an end
+point. We're going to talk about the
+different types of endpoints that we can
+create. Now, what about this rest thing
+here? Well, that stands for um I think
+representational state transfer. I had
+to look that up a little bit ago because
+I was like represent what was it?
+Anyways, this is the means of
+communication. So, you know, I can talk
+to you in English, but how am I talking
+to you? Am I talking to you over the
+phone? Am I texting you? Am I talking to
+you face to face? Well, that is
+describing how we're communicating. And
+this REST aspect is communicating over
+the web or the
+internet. So, this is all going to be
+done by making requests similar to how
+you would request a website, but instead
+of HTML, you're requesting JSON. just as
+I mentioned earlier. So to make this a
+little bit more concrete, let's go over
+an example of an app I'm working on. So
+I have some software written in
+Python and this is the server software.
+You may also hear it as the backend
+software. And this is the software
+that's going to communicate with a
+database. That's where all of our
+information and data is going to be
+stored. So this talks to the
+database. Now, we want other pieces of
+software to be able to communicate to
+this back-end software, but we don't
+just want them to be able to access
+anything. We don't want to give direct
+access to this database. So, instead, we
+expose different API endpoints. So, an
+example of an API endpoint would be
+forward
+slash and this I haven't described what
+the actual app is for, but forward
+slashdrinks. Now, the actual app is to
+get a list of drinks and be able to rate
+these, you know, like zero to 10 or to
+put them in different categories of how
+good they are. And then you can
+basically keep track of all your
+favorite drinks. It's a little silly,
+but I thought it'd be a fun project. And
+um basically, I I like to drink I don't
+like to drink. I like to drink
+non-alcoholic beverages like LCroy or
+like stevia drinks and energy drinks or
+whatever, but there's so many of them I
+can't keep track of them all. So, I just
+wanted to build a little website to, you
+know, rank them, you know, and instead
+of just getting all of the drinks, you
+might want to get a specific drink. So,
+in this situation, we would pass in an
+ID. So, in this situation, we are
+getting data. And that's one of the
+different methods of APIs. We're going
+to talk about API methods here in a
+minute. But what this means is my
+software that I built over
+here. And in this situation, let's just
+say this is
+JavaScript. I can get all of the drinks
+or a specific drink from my backend
+software just by making a request to
+this web address. Now, you might be
+looking at this like, what? That doesn't
+look like a web address. Well, because
+this is a web server, this is going to
+have either an IP address or a domain
+name. So, let's say I put this up on a
+website, Caleb's favorite
+drinks.com, not a real website to the
+extent of my knowledge, and then forward
+slashdrinks forward slash and then you
+can pass in some ID such as five. Now,
+the actual structure for these URLs and
+what data you want to get that is
+totally up to you. However, there are
+some general standards and I will
+describe why I went with this coming up
+soon. But basically, we have the list of
+data we're trying to get from and then
+we pass in which specific element we
+want. And this will return JSON of all
+the information about that drink. Now,
+oftent times when you have a website,
+you're going to have web pages, you
+know, people can view on their web
+browser or you're going to have the API.
+And often these will be split out into
+two subset applications. So you might
+have calebs
+favoritedrinks.com/drinks5. Or another
+common thing is to have a different
+domain such as
+api.calebsfeddrinks.com. You don't have
+to. You can mix those together. However,
+just for organizational sake, often the
+API is in some separate section, either
+a subdirectory or a subdomain. Now, you
+might look at this setup, as I often do
+when I'm working on applications, and be
+like, why the complexity? Why do you
+need to have two applications and then
+the database? Why don't you just connect
+from this
+application all the way to the database,
+skipping all this junk? Well, obviously
+you can do that. You can do whatever you
+want but this is not always advisable
+for various reasons. The most biggest
+importantest reason of not going from
+the client application directly to the
+database is security specifically if you
+are using JavaScript. Now oftent times
+the client is going to be JavaScript
+because that's used for web pages.
+However, you could also make a console
+application or a mobile application. So,
+it's not always going to be JavaScript,
+but if you go to a website, you can go
+into the developer tools and you can see
+all of this JavaScript or you can
+rightclick and view source and it'll
+have the JavaScript files linked there
+and you can view all of that. So, you
+don't really want to put sensitive
+information on the client here because
+it's all viewable to the person using
+your software, which means they could
+then go to the database themselves
+directly, tinker around, you know, drop
+database, lol. We don't want them doing
+that. So instead, we just expose
+specific things that we want people to
+see, such as the list of drinks, but
+they can't go in there and see
+everybody's user information or people's
+address or any of that. Now, beyond
+security, the other big reason is
+versatility. So, right now, we have one
+front-end application in JavaScript, but
+with this setup, we could very easily
+build a mobile
+application, and yes, this is a cell
+phone. And we could also consume the
+same API. So what happens now is both of
+these front-end applications are sharing
+the same backend which means these are
+always going to have the same data.
+They're going to be
+synchronized. So that is how when you
+have applications on your phone, you can
+go in there and change data and then you
+can go log in on your computer and all
+of that stuff still exists. It's because
+they all share the same backend. So, you
+know, when you're messaging someone on
+social media, well, those messages are
+being sent to a back-end server that
+does all of the processing and all of
+the hard work of the application. And
+that website you're looking at is really
+just a pretty cover to this backend. So,
+you know, JavaScript, maybe your
+application here is in Swift, but
+ultimately we're hiding the back end of
+this application and separating those,
+which brings up the next good point,
+which is modularity. Because the front
+end and the back end are separated and
+we're just defining this consistent way
+to communicate, we can actually swap
+different things out and not necessarily
+break. I say necessarily because you
+know in practice it's it could be
+difficult but in theory you should be
+able to swap out different things
+without breaking other pieces of the
+application. So right now this is
+written in Python but I could be like eh
+I don't really feel like writing in
+Python you know and I decide to upgrade
+to something like Visual Basic and in
+this situation we can expose the same
+exact API endpoint. So, this website and
+this mobile phone app, they don't even
+need to know about those changes to the
+back end because they're still getting
+their list of drinks. That's all they
+care about. They just want their drinks.
+This is great because you can change the
+back end of software without requiring
+an update to the app or requiring a new
+deployment of the website as long as
+you're able to give a consistent
+interface to working with your backend.
+Last reason and then I promise I'll stop
+rambling. Okay, I got a little bit more
+rambling, but basically the last thing I
+wanted to share of why this setup is
+good is interoperability, which I think
+is a word. And basically what I'm saying
+here is that these front-end
+applications, they don't all have to be
+built by you or the front-end
+development team for your company. You
+can actually expose certain endpoints
+such as this one right here, and you
+could make this public.
+So if you make certain endpoints public,
+you don't have to worry about
+authentication or authorization. And in
+that situation, anybody could go ahead
+and create some new app, new and
+improved to consume your API. So you
+know, if I don't like the way Instagram
+looks, I can go create my very own
+Instagram viewer because they have an
+API that can be consumed. Now, sometimes
+you'll still need to get some kind of
+token or some way to authorize saying,
+"Hey, I'm okay to use this API." But a
+lot of the times these APIs are going to
+be publicly available. So, the API we're
+going to consume soon is just a public
+API that anybody can use and it's really
+cool honestly. So, many websites you
+might not even realize have APIs. So,
+for example, if you wanted to do
+something like create a trading bot or
+like a cryptocurrency trading bot, well,
+oftent times different exchanges are
+going to have APIs so you can automate
+different things in code. So, it's not
+always just about making a pretty
+interface, but it might be about
+automation. How can we connect these
+apps and make things happen
+automatically? So, if the thing's not
+public, it might be private, but you can
+still access it. You just need a way to
+verify that it's you and not just
+anybody's going on there and trading
+cryptocurrencies or spending your money.
+So there the authorization aspect of
+this is like a whole another beast. But
+a common thing you often see is OOTH 2.
+That is an authentication technique
+that's fairly common. So if you want to
+look into how to protect your API and
+make you basically have to log in, you
+can look into OOTH. That's o a u t
+h2. Now I want to take a moment to talk
+about the different methods of
+requesting data from the server. So
+we've talked about get and this one's
+pretty simple. It's what's used to
+retrieve data from the server. And these
+are often written in all uppercase
+letters. So you're just like screaming
+like get me this information. All right.
+So get is used to retrieve data.
+I could just say get data but fancy
+here. All right, so there's a few other
+ones you should know about and that is
+post. Post is used to write data. So
+anytime you want to write information to
+the server, you're going to use post.
+And then there is delete. Almost didn't
+use capitals there, but I fixed
+it. And this is used to, you know,
+delete stuff. Now there is another one
+that's pretty common. Why do I always
+write like this way? I don't know. And
+that is put. And this is actually fairly
+confusing if you're new. And the
+difference between post and put is
+pretty gray. And people will even argue
+about which you should use where. Here's
+my opinion. Post should be used to write
+new data. Put should be used to write
+but in this situation, we're going to
+update data.
+So now I want to show you how these
+things correlate to the most popular
+things you have to do with the database
+which is CRUD. So the different things
+you need to do, we need to be able to
+create data, post, read data, get,
+update data, put, and delete data,
+delete. Now, why exactly is there
+confusion between post and put? That's
+what I want to talk about now. Well,
+first let's talk about how post and put
+are generally used. Post is used to add
+a resource. Put is used to replace a
+resource. And that's why it's natural in
+my mind to say you can use put to update
+data and post to add new data. But
+replacing a resource requires some way
+to identify it. And often this is done
+with an ID. So my thoughts are if you're
+doing a post request, you want to add
+data. So you might have the
+address of drinks and you want to add a
+new drink. With put, you're probably
+going to need to identify what resource
+you want to replace. So it might look
+like drinks slash 6005 for an ID. Now,
+with the setup I tend to do, I usually
+don't have this ID value until that's
+that data is already inserted in the
+database with a post. So when you're
+adding new data, you don't know what
+that ID is going to be because that's
+auto incremented in the database. Then
+if you want to update that data, then
+you use the ID. But there's another
+difference and this is more defined in
+the spec of how an API is supposed to
+work and less about pure functionality
+because you're the one who defines the
+functionality. So if you want your API
+to work correctly then you need to make
+sure you implement it in this way and
+that is put is designed to give the same
+result every time if you make the same
+request. So for example if you're
+replacing this drink with a new drink
+you can replace this ID over and over
+again as long as that new one has the
+same exact ID. So, let's say you have a
+grape drink and you replace it with cola
+and then you replace cola again with
+cola and then cola again with cola. No
+matter how many times you do this, the
+same resource exists and it doesn't hurt
+if you accidentally put that request
+numerous times. Post is usually a little
+bit different because that feature or
+capability is not guaranteed. So, what
+that means is if you add a new drink,
+let's say you add cola
+and then you add cola again. Well, in
+this situation, you're not replacing
+anything. So each time you add cola,
+it's making a new record in that table.
+So put is guaranteed to be able to be
+executed numerous times without any kind
+of side effects. Post on the other hand
+is not guaranteed by the spec. And in
+that situation, you could actually have
+duplicate records in the database or you
+could get an error on that second one if
+the drink name is defined to be unique.
+Now, I'm probably going to mess this
+word up, but there's a word to describe
+this. Iden
+potent. It Yeah, I it potent. I don't
+know. So, put is said to be
+this. I'm not even going to try anymore.
+Just whatever that's called. Now, in
+general, I think there's a lot of
+confusion between post and put. And you
+can pretty much do the same behaviors
+with either one. So, I tend to just try
+to stick with post most of the time.
+Even if I'm updating a resource, it you
+can do it with post just the same. You
+can define it however you want. It's
+sort of how with modern HTML, you can
+make a section be a div or you can be a
+little bit more specific and say, "Oh,
+this is a footer." Both kind of give the
+same results. And if you're not using
+footer, right, then you might just make
+things worse. So, a lot of people still
+end up just using divs. So if you're
+using HTML, that's just maybe that kind
+of puts it in perspective. I don't know.
+There's another method, patch, which is
+used to replace different pieces of a
+resource. So maybe you just want to
+update one field. However, in our
+situation, the data we're working with
+is so small that it's pretty much just
+easier to replace it with a new version.
+So that way you don't have to keep track
+of individual changes. However, if
+you're working with very large data, you
+can definitely look into patch. So my
+theory is you basically keep the state
+of an object in the client side
+application and then once you save you
+just send that new state and replace the
+old state in the database. Hopefully
+that makes sense. All right. So let's
+get some practice with APIs by consuming
+an existing API. We're going to take a
+look at Stack Overflow. So all of the
+questions on here, you can get access to
+this information through an API. So we
+can build an application to work with
+Stack Overflow. So to do this, you
+actually go to
+api.stackchange.com and in here you can
+see the documentation for all of this.
+So here's the different API endpoints.
+So we can get the answers, badges,
+comments, posts, which is just a uh
+combination of questions and answers.
+And I'm going to take a look at the
+questions here. So we're going to get
+all of the questions. And here is an
+example of how you would invoke this. So
+you can hit run and you can see in this
+web address there's this question mark
+and then some variables with assigned
+values and then an and sign amperand and
+sort. These are known as query
+parameters and they can be used in this
+situation to modify the results of the
+API. Now, if you want to know how to
+actually invoke this without it running
+it in this little test window, you
+basically just take this address here
+and you would paste it after api.stack
+exchange.com
+uh like so. So, that's what it's going
+to look like. Hitting enter, you get a
+bunch of data here. Not exactly as
+pretty as this, which by the way, this
+is JSON format. So, it's just key value
+pairs. And in the pairs you can have
+arrays or uh you could consider them
+lists if you're more familiar with
+Python. So we have items right here
+which is a list of questions. Each
+question is surrounded by curly braces.
+So there's the opening curly brace and
+it has tags owner bunch of other stuff
+and then it ends. And then we have
+another question which has tags owner a
+bunch of other stuff and it just repeats
+in a list. So what we're going to do is
+we're going to work with this API. So, a
+tool I would recommend you get is called
+Postman. And in here, you can work with
+your APIs and it's just a little bit
+easier because you can customize the
+body and the different headers of your
+requests. And what we're going to do is
+we're just going to take this web
+address
+here and paste it on here. So, we're
+going to have httpapi.stackchange.com
+stack
+exchange.com and then forward
+slashquests and then all that other
+stuff. So hit send and we'll get a
+response sort of like this. So basically
+this is JSON here we have this items and
+then a list of the different questions.
+So let's go ahead and we'll come back to
+Postman later but for now let's take
+this URL and try to work with this in a
+Python script. So, if you need help
+setting up a Python environment, then
+you can check out my beginner Python
+programming all-in-one. However, I'm
+just going to assume you can at least
+get a Python environment set up. And
+we're in a Python file. What we're going
+to do is we're going to need a few
+tools. So, we're going to say import
+requests and import JSON. So, if this is
+your first time working with requests,
+you might need to install it. So what we
+can do is we can open a terminal and say
+pip 3 install requests. All right. So
+now we have requests installed and we
+should be able to make a request to a
+web page by saying
+requests.get and pasting in a web
+address inside of a string here. So
+let's just uh make sure this is nice and
+formatted properly like so. And that's
+going to return a response. So we can
+assign that to a response variable. And
+then what we'll do is we'll just print
+this response and see what we get. And
+you can see we get a response 200 which
+means okay. Now we can actually see the
+data that's returned by running.json as
+a method here. And that's going to give
+us all of the data exactly as we would
+if we requested it in the web browser or
+with Postman. So we got the items and
+then a list of all of the different
+questions. So we can basically zoom in
+on this and instead of just having one
+key value pair where we have items and
+then a giant list, we could actually
+explore items
+specifically by passing
+in items here. So we're going to index
+for items and then run this now. And we
+have just a list now. So we're no longer
+working with the items. we just have a
+list of
+questions. So then what we could do is
+we could iterate over these. So let's
+get rid of this print and we'll say for
+data in items. Or if you want to be more
+specific, you could say for question in
+items. This will be good for now. And
+then what we'll do is we'll just print
+data. And you can just print each one
+individually like so. Or you can be more
+specific and grab something like the
+title, which I know is an attribute of
+it. So running this and you can see here
+are all of the titles. So that's pretty
+cool. So basically that is
+right right here, the title. We're going
+to be grabbing each one of these. So
+every single item in this list. And you
+could also get something like the link
+if you wanted. So we can say print data
+link and now we got a series of question
+and answers and let's just print a space
+just to make it a little bit prettier.
+There we go. So here is the question and
+then here is the link which we can
+control-click to open. And there you go.
+So maybe you could build some kind of
+application to help you find good Stack
+Overflow questions to try to answer
+before anyone else does. So you can be a
+little bit more specific. You know, you
+could go in here and you could check to
+see the answer count. Answer count is
+like two for this one. So maybe maybe
+you only want to print the ones where
+the answer count is zero. So you could
+say if
+data and then ask for the answer
+count is zero, then we want to print the
+data. And just to show you guys that
+it's working, we'll say else print
+skipped. And also just print another
+space at the end. Actually, I'll just uh
+take that out of the loop. There we go.
+So this is our setup now. And we can run
+this. And you can see skipped. And then
+we got a question and then skipped and
+then a question, another question. And
+it seems to be working. So that's how
+you consume an API. Now I want to talk
+about how we can create our own API. So
+what I want to do is X out of this file
+here and we are in a folder API and open
+a terminal which I have one here and we
+can get the
+path. So just make sure you're in that
+directory and we're going to execute a
+sequence of commands in the terminal
+here. So the very first thing is we're
+going to create a virtual environment.
+So to do that you say python
+3-m virtual environment venv and then
+give it a name such
+asveenv and that's going to create a new
+folder in here for your virtual
+directory which I talk about this in my
+uh previous video where we deployed a
+python web app but this is basically to
+isolate the dependencies for this
+specific application. Now what we can do
+is we can activate that by saying source
+and then traveling to it. So it's in the
+uh venv folder
+bin activate. So that is how you
+activate a virtual environment. Then we
+can install our dependencies. pip 3
+install flask and we're also going to
+install pip 3 install flask sql alchemy
+and that's going to be used to work with
+the database. So this is an example of
+an OM which I think is object relational
+mapper and we can output all of our
+dependencies in a file if we want. So we
+can say pip 3 freeze and put this in
+requirements.txt. So, anytime you uh add
+a new dependency, you'll want to do that
+just so all of our requirements are in
+this text file. So, uh whoever uses this
+project in the future can get the
+dependencies. Then we can just create
+our file. So, we'll say application. py
+and that's going to create this
+application. file, which is where we're
+going to do our coding. So, to start
+off, we'll just create a basic flask
+application. So we'll say from flask
+import flask and then we say app is
+flask_ame right there. So that's how we
+set up flask and what we can do now is
+we can make a simple route basically an
+endpoint by saying app.root and giving
+it a path and then we can define a
+method that we want hit when someone
+visits this route. So all we're going to
+do for right now is just return a string
+hello. All right. So let's just make
+sure this is working. So what we can do
+is run our application. To do this,
+we're going to create a few environment
+variables real quick. So flask
+app is application.
+py and the flask environment
+is development. And you're going to need
+to do that anytime you open up your
+terminal. So if you X out of your
+terminal and then reopen it, those are
+going to go away. So you'll need to do
+those again. And then you just say flask
+run. All right. So this is where our
+website's located. And we'll just open
+that. All right. Already made a stupid
+mistake. We don't put the colon here
+just after the uh method. So do a
+refresh. Now this needs to be uppercase.
+There we go. That should be everything.
+All right. All right, we got our app up
+and ready to go. So, the very first
+thing I want to do is make a get
+request. So, we're going to make an app
+to store drinks. So, we'll say app
+route. And the path for this is just
+going to be drinks and we'll say defaf
+get drinks and it's going to return
+something. We'll just say drinks for
+right now. But that's not a thing. So,
+what we need to do is we need to put
+some code here to make it a thing. If
+you want to just test it out for right
+now, what you could do is you could
+return a dictionary. And let's just say
+we got drinks and we'll just put drink
+data for right
+now. So we should be able to save that
+and it'll automatically refresh. And
+then when we refresh our page, well, we
+go to actually forward/drinks and we get
+some data back in JSON. So it's sort of
+working now. We just got to worry about
+connecting to a database. So to do this
+with the object relational mapper, we
+basically define all of the things we
+want to store in our database as models.
+So we're going to create a class. So we
+can do that up here. And all we're going
+to do is we're going to
+say class drink. And for SQL Alchemy, we
+just say DB domodel. So it's going to
+inherit from this. So it's already going
+to have various built-in
+functionalities. And that's how we can
+use it with SQL uh alchemy. So then we
+define the columns and we're going to
+put three of them in here. So we're
+going to have an ID and the way you
+create a column is by saying DB column
+and passing in any attributes of it. So
+it's going to be an
+integer and then we set it as the
+primary key by saying primary key is
+true. Next up we're going to have a name
+which is DB column. And this one is
+going to be a string. So to do that, you
+say db string and you can pass in a max
+length. We'll just say 80. And another
+attribute in here is unique true if you
+want the name to be unique. And you can
+also say nullable is false. So you can't
+have any nulls. And then the last one on
+here we're going to use is description.
+And we'll say dbc
+column. And this is going to be a string
+as well. And we'll just give this 120
+characters. However, I'm not going to
+put any other attributes on the
+description. Now, we want to override
+another method in here and that is
+called the rep re reper method repr for
+uh representation probably. And for this
+we we pass in self which refers to the
+object. So, we can grab the object's
+attributes by saying self dot something.
+So, we're just going to return a string
+and this will be invoked whenever we try
+to print out the the drink in the list.
+So you'll see what I mean here soon. So
+we'll say f to make a parameterized
+string and we can say
+self.name and then maybe you know a
+hyphen and then
+self.escription. All right, cool. So
+that is how we create a model. And what
+we're going to do is we're going to set
+up our database with a table for drinks.
+And to do that the easiest way is to use
+the Python terminal. So what I'm going
+to do is I'm going to quit our server.
+Crl + C and then I'm going to say Python
+3. So that's going to open up the
+interactive mode in Python. And what you
+can do is you can say from application
+import DB. So what we do is we import
+our database from application import
+database. However, all we did is define
+the model. We need to actually make this
+connection to the database in our code
+first before we can reference it. So to
+do that, we're going to go up here and
+say from flasks SQL alchemy imports SQL
+alchemy. So all lowercase and then SQL
+is capital here. Then to get that DB
+variable, we just say DB is an instance
+of SQL Alchemy and we're going to pass
+in our Flask app. So that's the setup
+for SQL Alchemy. The last thing we have
+to do is we need to configure our
+database so we can connect to it. So we
+say
+app.config and we're going to pass in a
+string here. SQL
+alchemy
+database urri. And you don't have to
+have all of this stuff memorized. You
+can find this in the documentation for
+flask fairly uh simply. And then we're
+going to say
+SQLite and then three forward slashes
+data.
+DB. So that's how we say we're going to
+create an SQL light database called
+data. DB in the same directory. And then
+I think this DB variable actually will
+come after this config. So we'll paste
+that there. And there we go. So we
+should be able to X out of the Python
+interactive mode. Restart it. And now
+what we should be able to do is say from
+application which refers to our
+application because we named it
+application.
+py import
+db. Great. We didn't get any errors. We
+did get this warning here uh warning us
+about significant overhead and you can
+change some settings but you really
+don't have to worry about that. So to
+create our tables we say db.createall.
+create all hit enter and you can see it
+actually creates the database as well
+since we didn't have that. Now because
+this is what's known as an object
+relational mapper the way we work with
+our relational database is with objects.
+So if we want to create a new drink we
+create a drink object and we can assign
+it to a variable called drink. And the
+way we pass in data to create a drink is
+we do named parameters. So we can say
+name is grape soda and then a comma
+description
+uh I don't know tastes like grapes maybe
+seems pretty fitting. So that is how we
+create oh and you see when we do this
+name drink is not defined. So anytime we
+want to use something from our file we
+have to import it. So this class drink
+needs imported as well. So from
+application import drink and now we
+should be able to use the up arrow key
+to bring back our previous code. Hit
+enter. And now we have a drink object.
+And you can see it by typing in drink.
+And it says grape soda tastes like
+grapes. And that is where this repr
+method comes in. It basically the name
+hyphen in the description. Now to add it
+to our table, we say db session.add
+add drink and then
+db.ession.comit. And that's an important
+step. Yeah, we want
+DB.Comit, not
+doctor. So, db session
+commit. Now, we should be able to get
+all of our drinks by saying
+drink.query.all. Hit enter. And you can
+see it's a list now with just one
+element, grape soda. So if you wanted to
+add another drink, what we can do is
+just go through that process again. So
+we'll do this one in line. So we'll say
+db session add. And we'll create a
+drink. The name we'll call this one
+cherry. And we'll give it this
+description. And this cherry drink I
+drink tastes exactly like this cherry
+ice cream. So that I used to eat. So it
+tastes like that one ice cream. All
+right. Perfect. Hit enter. and then db
+session.comit. Now let's check
+drink.query.all. Hit enter. And now you
+can see we have multiple elements. We
+have grape soda and cherry. So then we
+can exit and go back to flask. Let's say
+flask run. So we got our server running.
+But now we need to create a way to get
+those drinks inside of this route right
+here. So, it's going to be pretty
+similar to what we did earlier. If I can
+scroll up just a little
+bit. We said
+drinks.query.all. So, let's go ahead and
+do that. In this code right here, we
+will say drinks is equal to
+drink
+query.all. And unfortunately, it's not
+something that we could just put right
+here by saying drinks. That'd be nice.
+Um, but I'll show you what happens. So,
+what we can do is if we refresh this
+page and it says object of type drink is
+not JSON serializable. Uh, I've worked
+around trying to figure out how to make
+this as easy as possible. Uh, I I really
+didn't come up with too many great
+ideas. Um, but here's basically what I
+decided. We're just going to build a
+list. Uh, so we're just going to
+basically write out what the JSON should
+look like. So, we're going to say output
+is just an empty list. From here, what
+we're going to do is we're going to
+iterate through the drinks. So, we'll
+say for drink in drinks and we're going
+to describe what it will look like
+inside of a dictionary. So, the end goal
+is to have a list of dictionaries. So,
+we'll just say drink data is a
+dictionary where name comes
+from
+drink.name and the
+description comes from drink.escription.
+like so. And then once we got that
+dictionary, all we have to do is say
+output.append and pass in drink data. So
+that's going to add that dictionary to
+this list right
+here. And it's going to do that twice.
+One for each drink that's currently in
+in the database. And then what it'll do
+is we'll just say
+drinks and pass in output instead. So
+now we have a nice list of dictionaries
+and that should be serializable. So what
+we can do is do a refresh over here and
+there we go. We have an outer object and
+then key value pairs one key with the
+pair of a list of dictionaries. So a
+very similar format to how the API for
+Stack Overflow looked. Now what I want
+to do is I want to create the ability to
+pass in an ID in here. So, let's say we
+passed in a one and we were able to get
+the first drink. So, let's go ahead and
+build that functionality. I'm going to
+clean up my screen just a little bit
+here because we're not going to need
+this terminal right now. I'm just going
+to shrink that. And I'm going to hide
+our different files on the side there.
+So, what we do now is we create a new
+route. So,
+app.oute. And this is also going to be
+to drinks. and then forward slash and
+you can use less than and greater than
+signs to define a parameter here. So
+that's going to be substituted for a
+specific number. Now a lot of people
+debate on whether this should be plural
+or singular since we're grabbing one
+drink. I decided to do it plural and
+I'll show you why. So I found this stack
+overflow question singular or plural
+name of resource while creating it. And
+this person talks in here and you know
+there's a bunch of different thoughts in
+here about the best way to do it. And as
+I was reading this I looked up at the
+web address and I saw questions plural
+with the ID. So I was like I think I'm
+sold. I'm just going to keep it plural.
+So that is why I decided that. So let's
+go back to our code in here and we're
+going to create a new method. So we'll
+say defaf get drink and this one's going
+to have a parameter ID. So instead of
+having a drinks variable, we're going to
+have a drink variable. And now we're
+just going to get a drink. So to do
+that, we can say
+drink.query.get or
+404. It's kind of a tongue twister
+there. And from here, we can pass in the
+ID. That's going to give us a drink
+object. And then we can just return that
+and build a quick dictionary. So we'll
+say jsonify and we're going to build out
+the JSON. The key is going to be name.
+That's going to come from
+drink.name. And then the second key is
+going to be description and that's going
+to come from
+drink.escription. So dictionaries are
+serializable instantly. You actually
+don't even have to call JSONify here. So
+you can just return
+uh dictionary like so. But sometimes
+you'll need to call
+jsonify if you're not working with a
+dictionary. So I think that should work.
+Let's save and let's go back to our web
+page. And you can see we get one drink
+back. And we can try it again with ID2.
+We get that second drink. And then we
+can try ID3. And we get not found
+because there's not a third drink in
+there. Now I wanted to show you real
+quick. If you go back to ID2 here, you
+can rightclick inspect and get a little
+bit more information about this request.
+So, hitting network and then do a little
+refresh. You can see this request here
+and it's a get request. The response was
+200. Okay. And you can see the content
+type is application JSON. It's a little
+bit different than if you're on a web
+page. What we can do is we can inspect
+on here and go to
+network. Get that first request on here.
+And that's 200. Okay. Also a get, but
+this time the content type is
+text/html. So yeah, just want to call
+that out for you guys. Let's go ahead
+and go back. And now I want to talk a
+little bit about adding a new drink. So
+let's go ahead and create another route
+on here. We'll say
+app.oute. The path is going to be
+drinks. And you can actually have
+another parameter in here which is
+methods and say post which is good to do
+if you're defining for a post request.
+You can put any of the methods in here.
+You could put get or delete or whatever.
+And you can actually condition. So you
+could check to see what method the
+person's requesting. So you could you
+could in theory define all of this in
+one
+method and then you know check to see if
+they're trying to get all the drinks or
+add all of the drinks. However, I like
+to just have a little bit more separate.
+So I put them in separate methods here.
+And we'll just create a separate method.
+So add drink. Now this one's going to be
+a little bit more complicated because we
+actually have to get the request data.
+So when the person calls this, they're
+going to pass in the structure of what a
+drink should look like. So we're going
+to get this by creating a new
+drink. And where are the attributes for
+the drink going to come from? Well, the
+name is going to come from
+request.json. So that's how you can
+access the JSON data that they send.
+It's through
+request.json. And we're going to be
+looking for name. And we're going to do
+the same exact thing for the
+description. And that is going to come
+from
+request.json
+description. There we
+go. Now we can add these by saying
+db.ession.add and pass in the drink
+db.ession. Then what we could do, we can
+return whatever we want. We could say
+successfully added. Um, or you could do
+the ID. So if you wanted to return the
+ID, it's going to look like return ID
+colon drink ID. So that ID attribute is
+going to be added to this drink object.
+So that's pretty convenient. Save that.
+And now let's give it a try. So we'll go
+over to here, but we can't really pass
+in the data for our requests really
+easily. So this is where Postman comes
+in handy. So from here, what we can do
+is we can
+define what a drink should look like in
+JSON inside of the body of our request.
+And then we just set it to post. And
+also, we'll want to update our web
+address. So you can copy that from right
+here. Paste that there. And what we're
+going to do is we're going to give this
+a
+name. Let's zoom in a little bit. What's
+the name going to
+be? Uh we'll call it cola. And then the
+description is
+delicious. All right. So, just check
+everything is right. We got body, raw,
+JSON, post, and the correct web address.
+Hit send. We got an error on line
+42. Let's go back to our code real
+quick. Looks like we might have some
+kind of formatting issue here.
+Unexpected name request. For request to
+work, I think we need to do another
+import from Flask. So, we'll say request
+there. And hopefully that'll do the
+trick. I'm also getting another warning
+down here. I think we need to uh take
+this and move it up a line. It wasn't
+causing any issues, but best practice
+there. All right, let's scroll back down
+in our code. And it looks like we don't
+have any more warnings. So, we will go
+back to Postman and hit send. And it
+looks like uh we're making progress.
+Okay. So the issue here is that we're
+not using the right web address. So we
+need to go to drinks, no forward slash,
+and hit send. So that was nice that that
+worked. And in this situation, it
+returns the ID of three. So now we can
+get all of the drinks. We can still keep
+this body here. We don't have to delete
+that. Hit send. And you can see all the
+drinks there. Or you could pass in the
+ID of three. Hit send and you can get
+that new one. Last thing I want to talk
+about is how to delete a drink. So let's
+go ahead and go back to our code and
+create a new route. We'll say
+app.oute. The path is going to be drinks
+and we're going to take the
+ID so that way we know which drink to
+delete. And then for the methods, we're
+going to say delete. There we go. and
+we'll say defaf delete drink. So for
+this to delete a drink we're going to
+say db
+session delete and pass in the drink
+structure. The best way to get this
+drink structure I thought would just be
+to get it from the database. So we're
+going to create a variable drink and say
+drink.query.get and pass in the ID. So
+I'll take the ID as a parameter from
+this web address. And then after we
+delete, we say
+db.ession.comit. And I was having a
+little bit of an issue. Now in general,
+I haven't done a lot of like error
+checking and different edge cases.
+However, I was getting it where I would
+delete a drink and it wouldn't exist and
+I would get an issue. So I decided just
+to add a little bit of extra casing
+here. So, if drink is none, what we're
+going to do is we're just going to
+return and I'm just going to say
+something like error not found or
+something. Or you could return a 404.
+Just showing some different options
+here. And you know, if that doesn't
+happen, then I'm just going to assume
+everything's good. And we're just going
+to return
+uh we'll say message. And I don't know,
+we'll just say something like yeet.
+There we go. Okay, let's test this one
+out. For this, what we're going to do is
+we're going to do a delete. And we don't
+have to pass in anything with the body
+just to show you guys. I'll delete that
+just to make sure it's clear. We do pass
+in the ID here, however. Hit send and it
+says yeet. If we hit send again, it says
+error not found. So, that is how you do
+the most basic API calls. We have the
+ability to get all the drinks, a
+specific drink, add a drink, or delete a
+drink. I didn't really do anything for
+updating a drink, but a drink is so
+simple. Like, I feel like you could just
+delete a drink and then read it. Or if
+you want to practice, you could try some
+uh put requests here. But that's all I
+got for you guys for the basics of
+creating an API in Python. It's a lot
+more to it, but hopefully that'll get
+you started.
