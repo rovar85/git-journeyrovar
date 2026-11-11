@@ -1,0 +1,26 @@
+{
+  "name": "Agent School",
+  "tagline": "Learn DevOps, cloud, data and AI engineering by doing",
+  "description": "A hands-on course from the first Linux command to Kubernetes, data pipelines and AI agents. Every lesson has commands you can run in the browser, a quiz and interview answers.",
+  "domain": "https://YOUR-DOMAIN",
+  "mode": "free",
+  "price_inr": 49,
+  "free_lessons_per_track": 3,
+  "free_tracks": ["reference"],
+  "exclude_tracks": ["lectures"],
+  "api_base": "",
+  "license_public_jwk": null,
+  "adsense_client": "",
+  "adsense_slot": "",
+  "owner": {
+    "name": "YOUR NAME OR BUSINESS NAME",
+    "email": "YOUR-SUPPORT-EMAIL",
+    "address": "YOUR POSTAL ADDRESS",
+    "country": "India"
+  },
+  "replace": [
+    ["<span>Enterprise Vault examples throughout</span>", "<span>Real recorded output, not screenshots</span>"],
+    ["Connect it to a real task in your own Enterprise Vault work.", "Connect it to a real task in your own work or project."],
+    ["The AI and Python tracks are built from public talks and your own study notes.", "The AI and Python tracks are built from public talks and study notes."]
+  ]
+}

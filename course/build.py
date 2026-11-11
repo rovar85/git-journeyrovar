@@ -13,8 +13,13 @@ import gen_roundups
 src = os.path.join(here, "src")
 rd = lambda p: open(os.path.join(src, p), encoding="utf-8").read()
 tracks = json.loads(rd("tracks.json"))
+EXCLUDE = set(x for x in os.environ.get("COURSE_EXCLUDE", "").split(",") if x)      # tracks left out of a public site build
+OUT = os.environ.get("COURSE_OUT") or os.path.join(here, "index.html")
+SITE_JSON = os.environ.get("COURSE_SITE", "")                                        # public site settings, exposed as window.SITE
 studymaps = json.loads(rd("study/maps.json"))
 gen_roundups.generate(tracks, studymaps, os.path.join(src, "content"))
+tracks = [t for t in tracks if t["id"] not in EXCLUDE]
+studymaps = {k: v for k, v in studymaps.items() if k not in EXCLUDE}
 track_by_id = {t["id"]: t for t in tracks}
 
 fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
@@ -36,6 +41,7 @@ legacy = sorted(glob.glob(os.path.join(src, "ch[0-9][0-9].html")))
 for path in legacy:
     num = int(re.search(r"ch(\d\d)\.html", path).group(1))
     track = "ai" if num <= 14 else "python"
+    if track in EXCLUDE: continue
     counts[track] += 1
     text = expand(open(path, encoding="utf-8").read())
     text = re.sub(r'<section class="chapter" id="(ch\d+)"', rf'<section class="chapter" id="\1" data-track="{track}" data-n="{counts[track]}"', text, count=1)
@@ -65,10 +71,11 @@ import glossary
 out.append("<script>window.CMDREF=" + json.dumps(list(glossary.GLOSSARY.values()), ensure_ascii=False).replace("</", "<\\/") + ";</script>")
 out.append("<script>window.STUDYMAPS=" + json.dumps(studymaps, ensure_ascii=False).replace("</", "<\\/") + ";</script>")
 out.append("<script>window.TRACES=" + rd("traces.json") + ";window.TRACKS=" + json.dumps(tracks) + ";</script>")
+if SITE_JSON: out.append("<script>window.SITE=" + SITE_JSON.replace("</", "<\\/") + ";</script>")
 out.append("<script>\n" + rd("common.js") + "\n</script>")
 for j in sorted(glob.glob(os.path.join(src, "js", "ch[0-9][0-9].js"))) + sorted(glob.glob(os.path.join(src, "js", "w_*.js"))):
     out.append("<script>\n(function(){\n\"use strict\";\nvar $=H.$,$$=H.$$,esc=H.esc;\n" + open(j, encoding="utf-8").read() + "\n})();\n</script>")
 out.append("<script>H.init();</script>")
-open(os.path.join(here, "index.html"), "w", encoding="utf-8").write("\n".join(out))
+open(OUT, "w", encoding="utf-8").write("\n".join(out))
 if mdconv.MISSING: print("commands without a glossary entry:", ", ".join(sorted(mdconv.MISSING)), file=sys.stderr)
 print("built", len(chapter_html), "lessons;", {t["id"]: t["count"] for t in tracks if t["count"]})

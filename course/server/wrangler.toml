@@ -1,0 +1,13 @@
+name = "course-pay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+PRICE_PAISE = "4900"                         # Rs 49.00
+PRODUCT = "course"
+ALLOWED_ORIGIN = "https://YOUR-DOMAIN"       # the site's origin; comma-separate more than one
+
+# Secrets (not in this file):
+#   wrangler secret put RAZORPAY_KEY_ID
+#   wrangler secret put RAZORPAY_KEY_SECRET
+#   wrangler secret put LICENSE_PRIVATE_JWK
