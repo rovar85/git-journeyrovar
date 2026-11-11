@@ -20134,6 +20134,86 @@
   ],
   "key": "abf8f9c7ad09d87a"
  },
+ "start-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ whoami",
+     "o": "student",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/first",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/first",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ pwd",
+     "o": "/home/student/lab/first",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ echo \"My first file\" > note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls",
+     "o": "note.txt",
+     "x": 0
+    },
+    {
+     "c": "$ cat note.txt",
+     "o": "My first file",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cp note.txt copy.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls -l",
+     "o": "total 8\n-rw-r--r-- 1 student student 14 Nov 11 09:44 copy.txt\n-rw-r--r-- 1 student student 14 Nov 11 09:44 note.txt",
+     "x": 0
+    },
+    {
+     "c": "$ rm copy.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls",
+     "o": "note.txt",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cat nots.txt; echo \"exit code: $?\"",
+     "o": "cat: nots.txt: No such file or directory\nexit code: 1",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "69d9aaba21877ca8"
+ },
  "systems-10": {
   "blocks": [
    [

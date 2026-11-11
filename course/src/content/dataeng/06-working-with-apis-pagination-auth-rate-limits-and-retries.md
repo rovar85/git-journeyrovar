@@ -13,7 +13,7 @@ sub: What a REST API is, then a real client against a local API that follows pag
 :::
 
 :::note Before this lesson
-HTTP basics are in [Networking](#networking-1). Videos: [Python Requests Tutorial (Corey Schafer)](https://www.youtube.com/watch?v=tb8gHvYlCFs) and [REST API Crash Course (Caleb Curry)](https://www.youtube.com/watch?v=qbLc5a9jdXo). Retries, back-off and jitter in depth: [Systems 6](#systems-6).
+HTTP basics are in [Networking](#networking-1). Retries, back-off and jitter in depth: [Systems 6](#systems-6).
 :::
 
 ## The idea

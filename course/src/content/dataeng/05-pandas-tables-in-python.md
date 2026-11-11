@@ -13,7 +13,7 @@ sub: Load, inspect, clean, filter, add columns, group, join and pivot a table wi
 :::
 
 :::note Before this lesson
-`pandas` is a separate package: `pip install pandas` on your computer. The browser lab loads it automatically the first time (it needs internet and takes a few seconds). Videos: [Learn Pandas in 30 Minutes (Tech With Tim)](https://www.youtube.com/watch?v=EXIgjIBu4EU) and [Complete Python Pandas Data Science Tutorial (Keith Galli)](https://www.youtube.com/watch?v=2uvysYbKdjM).
+`pandas` is a separate package: `pip install pandas` on your computer. The browser lab loads it automatically the first time (it needs internet and takes a few seconds).
 :::
 
 ## The idea

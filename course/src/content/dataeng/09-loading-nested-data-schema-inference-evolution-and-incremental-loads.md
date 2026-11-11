@@ -12,10 +12,6 @@ sub: Turn nested JSON from an API into parent and child tables, create and evolv
 - say what loading tools (dlt, Airbyte, Fivetran) automate, and what loading data for LLM applications adds
 :::
 
-:::note About the video
-The tenth video on your list is [Data Engineering with Python and AI/LLMs - Data Loading Tutorial (freeCodeCamp.org)](https://www.youtube.com/watch?v=T23Bs75F7ZQ). It was not watched to write this lesson, so this lesson does not claim to follow it. It teaches the general problems of data loading in plain Python so that any loading tool makes sense afterwards.
-:::
-
 ## The idea
 
 APIs return **nested JSON**: an order contains a user object, which contains an address, and a list of items. Databases want **flat tables**. Loading means solving four problems every time:

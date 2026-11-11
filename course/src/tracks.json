@@ -1,210 +1,218 @@
 [
  {
+  "id": "start",
+  "name": "Start here: zero to your first commands",
+  "group": "1 · Start here",
+  "level": "Complete beginner · no experience needed",
+  "blurb": "For people with no technical background. What a computer and the internet really are, your first ten commands in a terminal, how software gets from an idea to its users, the jobs behind it, and which route through this course fits you. About three hours.",
+  "why": "Every other track assumes you know what a server, a file and a terminal are. This one does not."
+ },
+ {
   "id": "linux",
   "name": "Linux",
-  "group": "Foundations",
-  "level": "Beginner to advanced",
+  "group": "2 · Foundations",
+  "level": "Beginner · after Start here",
   "blurb": "The operating system under almost every server, container and cloud. Files, permissions, processes, text tools, scripting, services and troubleshooting.",
   "why": "Every later track assumes you can work in a Linux shell."
  },
  {
   "id": "networking",
   "name": "Linux networking",
-  "group": "Foundations",
-  "level": "Beginner to advanced",
+  "group": "2 · Foundations",
+  "level": "Beginner to intermediate · after Linux",
   "blurb": "IP addressing, DNS, ports, routing, firewalls, packet capture, TLS and a method for finding where a connection breaks.",
   "why": "Most real outages are network problems. This is the skill behind \"SQL is unreachable\"."
  },
  {
   "id": "git",
   "name": "Git",
-  "group": "Foundations",
-  "level": "Beginner to advanced",
+  "group": "2 · Foundations",
+  "level": "Beginner · after Linux lesson 2",
   "blurb": "Track changes, work in branches, undo mistakes and collaborate. The base of every pipeline.",
   "why": "Infrastructure, pipelines and tests all live in Git."
  },
  {
   "id": "python",
   "name": "Python for automation",
-  "group": "Foundations",
-  "level": "Beginner to advanced",
+  "group": "2 · Foundations",
+  "level": "Beginner · your first programming language",
   "blurb": "The coding track: variables to a complete runnable Enterprise Vault diagnostic agent, with a step-through code player.",
   "why": "Glue code, tests and agents are written in Python."
  },
  {
   "id": "docker",
   "name": "Docker",
-  "group": "Build and ship",
-  "level": "Beginner to advanced",
+  "group": "3 · Build and ship",
+  "level": "Beginner to advanced · needs Linux",
   "blurb": "Containers, images, Dockerfiles, volumes, networks, Compose, security and how it all works underneath.",
   "why": "Repeatable test environments and the unit that Kubernetes runs."
  },
  {
   "id": "jenkins",
   "name": "Jenkins and CI/CD",
-  "group": "Build and ship",
-  "level": "Beginner to advanced",
+  "group": "3 · Build and ship",
+  "level": "Beginner to advanced · needs Git and Docker",
   "blurb": "Automate build, test and delivery. Pipelines as code, agents, credentials, test reports and scaling.",
   "why": "Run your regression suite automatically on every change."
  },
  {
   "id": "ansible",
   "name": "Ansible",
-  "group": "Build and ship",
-  "level": "Beginner to advanced",
+  "group": "3 · Build and ship",
+  "level": "Beginner to advanced · needs Linux",
   "blurb": "Configure many machines from one description. Playbooks, idempotency, roles, secrets, and managing Windows.",
   "why": "Make servers (including Windows servers) configured the same way every time."
  },
  {
   "id": "terraform",
   "name": "Terraform",
-  "group": "Build and ship",
-  "level": "Beginner to advanced",
+  "group": "3 · Build and ship",
+  "level": "Beginner to advanced · needs Linux and Git",
   "blurb": "Describe infrastructure as code and let Terraform build it. State, modules, workflows and testing.",
   "why": "Create and destroy whole test labs on demand."
  },
  {
   "id": "kubernetes",
   "name": "Kubernetes",
-  "group": "Run at scale",
-  "level": "Beginner to advanced",
+  "group": "4 · Run in production",
+  "level": "Beginner to advanced · needs Docker",
   "blurb": "Run containers across many machines. Pods, Deployments, Services, storage, security and troubleshooting, then CKA preparation: kubeadm and etcd backup, CRDs and operators, scheduling and networking drills, cluster troubleshooting and a timed practice set.",
   "why": "The standard platform for running container workloads."
  },
  {
   "id": "monitoring",
   "name": "Monitoring and observability",
-  "group": "Run at scale",
-  "level": "Beginner to advanced",
+  "group": "4 · Run in production",
+  "level": "Intermediate · needs Linux and Docker",
   "blurb": "Metrics, logs, traces, alerts and service-level objectives: knowing what your systems are doing.",
   "why": "You cannot fix or improve what you cannot see."
  },
  {
-  "id": "windows",
-  "name": "Windows and PowerShell",
-  "group": "Platforms",
-  "level": "Beginner to advanced",
-  "blurb": "PowerShell, Windows services, event logs, remoting and automation, the world Enterprise Vault runs in.",
-  "why": "Your Enterprise Vault servers are Windows servers."
- },
- {
   "id": "cloud",
   "name": "Cloud fundamentals",
-  "group": "Platforms",
-  "level": "Beginner to intermediate",
+  "group": "4 · Run in production",
+  "level": "Beginner to intermediate · needs Networking",
   "blurb": "Regions, networks, identity, compute, storage and cost on the major clouds.",
   "why": "Labs and environments increasingly live in the cloud."
  },
  {
-  "id": "cloudsenior",
-  "name": "Senior cloud engineer: the 15 interview questions",
-  "group": "Platforms",
-  "level": "Intermediate to expert",
-  "blurb": "One lesson per question: multi-region HA and DR, landing zones, FinOps, networking, IaC at scale, incidents, CI/CD, secrets, SLOs, self-service platforms, migrations and standards, with runnable demos.",
-  "why": "Senior cloud interviews test judgement and trade-offs; each lesson gives the structure of a strong answer, a demo you can run, and follow-up questions."
- },
- {
-  "id": "scenarios",
-  "name": "Interview scenarios: troubleshoot and design (9 questions)",
-  "group": "Platforms",
-  "level": "Intermediate to expert",
-  "blurb": "Terraform drift, cross-namespace networking, stale images, HPA not scaling, multi-repo Terraform dependencies, Pending pods on EKS, zero-downtime deploys, vulnerable dependencies and intermittent microservice failures: concepts, a live reproduction, and the answer an interviewer expects.",
-  "why": "Scenario questions test how you think. Each lesson explains the concepts, lets you reproduce the problem, and ends with a structured model answer."
- },
- {
-  "id": "qbank",
-  "name": "Interview question bank (400+ questions)",
-  "group": "Platforms",
-  "level": "Beginner to expert",
-  "blurb": "Hundreds of real DevOps, SRE and cloud interview questions across Linux, Docker, Kubernetes, CI/CD, Terraform, AWS, GCP/Azure, monitoring, behavioral and shell scripts. Each has a plain-words answer, the details, an example and the sentence to say. Questions this course already answers are linked, not repeated.",
-  "why": "Most interviews are a long list of short questions. This track is the list, answered, with flashcards so it sticks."
- },
- {
-  "id": "systems",
-  "name": "Databases and distributed systems for backend engineers",
-  "group": "Platforms",
-  "level": "Intermediate to expert",
-  "blurb": "Ten topics with runnable models: how a database stores data, indexing and query plans, clocks and consensus, tail latency, retries with backoff and jitter, idempotency, Dynamo-style hashing and quorums, sharding, consistency testing, and design docs. Each pairs with a free paper, lecture or article.",
-  "why": "These are the ideas under every senior backend interview and every serious outage. Each lesson runs code that shows the effect with real numbers."
- },
- {
-  "id": "seniorqa",
-  "name": "Senior DevOps and SRE questions: 20 design and incident answers",
-  "group": "Platforms",
-  "level": "Advanced to expert",
-  "blurb": "Twenty senior questions: multi-region Kubernetes, zero-downtime upgrades, stateful migration, GitOps for 20 teams, a 5-minute pipeline, rollbacks that survive a failed deploy, config drift, Terraform recovery, self-healing, cascading failures and a latency regression. A map shows which are answered elsewhere; the rest have full answers with a runnable model and a 60-second spoken version.",
-  "why": "Senior interviews are open design and incident questions. Each lesson gives the clarifying questions, the structured answer, the trade-offs, follow-ups and the sentence to say."
+  "id": "windows",
+  "name": "Windows and PowerShell",
+  "group": "4 · Run in production",
+  "level": "Beginner to advanced · optional, for Windows servers",
+  "blurb": "PowerShell, Windows services, event logs, remoting and automation, the world Enterprise Vault runs in.",
+  "why": "Your Enterprise Vault servers are Windows servers."
  },
  {
   "id": "dataeng",
   "name": "Data engineering: from beginner to professional",
-  "group": "Platforms",
-  "level": "Beginner to expert",
-  "blurb": "Seventeen lessons in five stages: Python for data and SQL, pandas, APIs and file formats, a real ETL pipeline, loading nested data, star schemas, data quality, orchestration, big data and Spark, streaming, the warehouse and dbt, production practice, then a capstone and the interview. Every lesson runs code, and ten free videos are mapped to the lessons.",
-  "why": "Your list of ten videos covers Python, pandas, APIs, Parquet and ETL. This track makes each of those runnable and adds what a job needs beyond them: SQL, modelling, quality, orchestration, scale and operations."
+  "group": "5 · Data",
+  "level": "Beginner to professional · needs Python basics",
+  "blurb": "Seventeen lessons in five stages: Python for data and SQL, pandas, APIs and file formats, a real ETL pipeline, loading nested data, star schemas, data quality, orchestration, big data and Spark, streaming, the warehouse and dbt, production practice, then a capstone and the interview. Every lesson runs code.",
+  "why": "Data engineering is one of the most hired-for skills. This track takes you from reading a messy file to running production pipelines."
  },
  {
-  "id": "capstone",
-  "name": "Capstone: lab as code",
-  "group": "Put it together",
-  "level": "Advanced",
-  "blurb": "Combine Docker, Ansible, Terraform and a pipeline to build, test and tear down a reproducible lab.",
-  "why": "Where the tools become one workflow."
- },
- {
-  "id": "reference",
-  "name": "Command reference",
-  "group": "Reference",
-  "level": "Look things up",
-  "blurb": "Every command used in this course (searchable), plus a practice bank of self-test questions, scenario exercises and a guide to the devops-exercises repository.",
-  "why": "You do not have to memorise commands. You have to know what exists and when to reach for it."
+  "id": "systems",
+  "name": "Databases and distributed systems for backend engineers",
+  "group": "5 · Data",
+  "level": "Intermediate to expert · needs Python and SQL",
+  "blurb": "Ten topics with runnable models: how a database stores data, indexing and query plans, clocks and consensus, tail latency, retries with backoff and jitter, idempotency, Dynamo-style hashing and quorums, sharding, consistency testing, and design docs. Each pairs with a free paper, lecture or article.",
+  "why": "These are the ideas under every senior backend interview and every serious outage. Each lesson runs code that shows the effect with real numbers."
  },
  {
   "id": "ai",
   "name": "AI and agents",
-  "group": "AI",
-  "level": "Beginner to advanced",
+  "group": "6 · AI",
+  "level": "Beginner to advanced · no coding needed to start",
   "blurb": "How language models work, how to build, test, secure and connect AI agents, ending with an Enterprise Vault diagnostic agent.",
   "why": "The reason this course began."
  },
  {
   "id": "aideep",
   "name": "AI and agents: deep dive",
-  "group": "AI",
-  "level": "Intermediate to expert",
+  "group": "6 · AI",
+  "level": "Intermediate to expert · after AI and agents",
   "blurb": "The same 14 topics again, one level deeper: the maths worked step by step, small real programs you can run, how practitioners do it, common mistakes, and practice questions with answers.",
   "why": "Chapters 1 to 14 give you the map. The deep dive gives you the working knowledge to build, test and defend a design."
  },
  {
-  "id": "lectures",
-  "name": "LLM lectures notebook (CME 295, lectures 1 to 9)",
-  "group": "AI",
-  "level": "Beginner to expert",
-  "blurb": "Nine lessons built from the Stanford CME 295 lecture transcripts: Transformer, variants, LLMs and decoding, training, preference tuning, reasoning (GRPO), RAG and agents, evaluation, and trends, each with runnable code.",
-  "why": "The transcripts you supplied, turned into practice: every concept has a small script you can run and change."
- },
- {
   "id": "aifield",
   "name": "AI field guide: papers, coding agents and resources",
-  "group": "AI",
-  "level": "Intermediate to expert",
+  "group": "6 · AI",
+  "level": "Intermediate to expert · after the deep dive",
   "blurb": "Seven research papers made runnable (reasoning, ReAct, Reflexion, generative agents, RAG), Anthropic's Claude Code and tool-design guidance, agent guides compared, memory, crews and browser agents, and a study map of every resource on your list.",
   "why": "You collected videos, repositories, guides, books, papers and courses. This track turns them into lessons you can run and a plan you can follow."
  },
  {
   "id": "aiinfra",
   "name": "AI infrastructure: GPUs, inference serving and platform engineering",
-  "group": "AI",
-  "level": "Intermediate to expert",
+  "group": "6 · AI",
+  "level": "Intermediate to expert · needs Docker and Kubernetes",
   "blurb": "GPUs and memory, prefill and decode, the KV cache, measuring TTFT and ITL, vLLM and Triton and Dynamo, parallelism, SLOs and autoscaling, GitOps with Argo CD, KEDA, MLflow and Kubeflow, and AI observability with Prometheus, Grafana and OpenTelemetry.",
   "why": "Serving models is where DevOps meets AI: the stack from your roadmap and your tool list, with runnable calculators, simulators and a real GitOps loop."
  },
  {
+  "id": "lectures",
+  "name": "LLM lectures notebook (CME 295, lectures 1 to 9)",
+  "group": "6 · AI",
+  "level": "Intermediate to expert · needs some maths",
+  "blurb": "Nine lessons built from the Stanford CME 295 lecture transcripts: Transformer, variants, LLMs and decoding, training, preference tuning, reasoning (GRPO), RAG and agents, evaluation, and trends, each with runnable code.",
+  "why": "The transcripts you supplied, turned into practice: every concept has a small script you can run and change."
+ },
+ {
+  "id": "capstone",
+  "name": "Capstone: lab as code",
+  "group": "7 · Projects",
+  "level": "Advanced · needs Docker, Ansible and Terraform",
+  "blurb": "Combine Docker, Ansible, Terraform and a pipeline to build, test and tear down a reproducible lab.",
+  "why": "Where the tools become one workflow."
+ },
+ {
+  "id": "qbank",
+  "name": "Interview question bank (400+ questions)",
+  "group": "8 · Interview preparation",
+  "level": "All levels · after the matching track",
+  "blurb": "Hundreds of real DevOps, SRE and cloud interview questions across Linux, Docker, Kubernetes, CI/CD, Terraform, AWS, GCP/Azure, monitoring, behavioral and shell scripts. Each has a plain-words answer, the details, an example and the sentence to say. Questions this course already answers are linked, not repeated.",
+  "why": "Most interviews are a long list of short questions. This track is the list, answered, with flashcards so it sticks."
+ },
+ {
+  "id": "scenarios",
+  "name": "Interview scenarios: troubleshoot and design (9 questions)",
+  "group": "8 · Interview preparation",
+  "level": "Intermediate to expert · needs Kubernetes and Terraform",
+  "blurb": "Terraform drift, cross-namespace networking, stale images, HPA not scaling, multi-repo Terraform dependencies, Pending pods on EKS, zero-downtime deploys, vulnerable dependencies and intermittent microservice failures: concepts, a live reproduction, and the answer an interviewer expects.",
+  "why": "Scenario questions test how you think. Each lesson explains the concepts, lets you reproduce the problem, and ends with a structured model answer."
+ },
+ {
+  "id": "cloudsenior",
+  "name": "Senior cloud engineer: the 15 interview questions",
+  "group": "8 · Interview preparation",
+  "level": "Senior · needs cloud experience",
+  "blurb": "One lesson per question: multi-region HA and DR, landing zones, FinOps, networking, IaC at scale, incidents, CI/CD, secrets, SLOs, self-service platforms, migrations and standards, with runnable demos.",
+  "why": "Senior cloud interviews test judgement and trade-offs; each lesson gives the structure of a strong answer, a demo you can run, and follow-up questions."
+ },
+ {
+  "id": "seniorqa",
+  "name": "Senior DevOps and SRE questions: 20 design and incident answers",
+  "group": "8 · Interview preparation",
+  "level": "Senior · needs production experience",
+  "blurb": "Twenty senior questions: multi-region Kubernetes, zero-downtime upgrades, stateful migration, GitOps for 20 teams, a 5-minute pipeline, rollbacks that survive a failed deploy, config drift, Terraform recovery, self-healing, cascading failures and a latency regression. A map shows which are answered elsewhere; the rest have full answers with a runnable model and a 60-second spoken version.",
+  "why": "Senior interviews are open design and incident questions. Each lesson gives the clarifying questions, the structured answer, the trade-offs, follow-ups and the sentence to say."
+ },
+ {
   "id": "aibank",
   "name": "AI engineering interview bank (460+ questions, 60 incident scenarios)",
-  "group": "AI",
-  "level": "Intermediate to expert",
+  "group": "8 · Interview preparation",
+  "level": "Intermediate to expert · after the AI tracks",
   "blurb": "Questions for the AI engineering interview, by topic: transformers, tokenisation, post-training, inference and serving, GPU memory, RAG, prompting, evaluation, multimodal, agents, MCP and A2A, multi-agent, sandboxes, MLOps, cost, safety, system design, coding and behavioural, plus incident scenarios where you read logs and find the root cause. Answers are folded so you can try first.",
   "why": "AI interviews now mix concepts, debugging, estimation and design. This is the long list, with the wrong answers interviewers hear, and flashcards for the short answers."
+ },
+ {
+  "id": "reference",
+  "name": "Command reference",
+  "group": "Reference",
+  "level": "Look things up at any time",
+  "blurb": "Every command used in this course (searchable), plus a practice bank of self-test questions, scenario exercises and a guide to the devops-exercises repository.",
+  "why": "You do not have to memorise commands. You have to know what exists and when to reach for it."
  }
 ]

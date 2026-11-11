@@ -13,7 +13,7 @@ sub: Row versus column storage, measured on the same 200,000 rows for size, read
 :::
 
 :::note Before this lesson
-This lesson needs `pyarrow` (`pip install pyarrow`). The browser lab does not have it, so run this one on your own computer. Video: [Parquet File Format - Explained to a 5 Year Old! (Data Mozart)](https://www.youtube.com/watch?v=5NA57Pfpdr4).
+This lesson needs `pyarrow` (`pip install pyarrow`). The browser lab does not have it, so run this one on your own computer.
 :::
 
 ## The idea
