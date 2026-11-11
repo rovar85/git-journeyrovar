@@ -10,12 +10,13 @@ sub: Extract daily files, transform and validate them, and load them into a data
 - build a pipeline that loads only new files and can be re-run safely
 - use a transaction so a file loads completely or not at all
 - record what was loaded, count rows, and keep rejects
+- copy tables from one database to another with pandas, using staging tables and a full load
 :::
 
 @widget viz_etl
 
 :::note Before this lesson
-You need [Python for data work](#dataeng-2) and upserts from [lesson 4](#dataeng-4). This lesson uses files and SQLite so that it runs anywhere; the structure is the same with any database.
+You need [Python for data work](#dataeng-4) and upserts from [lesson 6](#dataeng-6). This lesson uses files and SQLite so that it runs anywhere; the structure is the same with any database.
 :::
 
 ## The idea
@@ -26,7 +27,7 @@ You need [Python for data work](#dataeng-2) and upserts from [lesson 4](#dataeng
 2. **Transform:** clean, validate, convert types, join, calculate.
 3. **Load:** write it to the destination (a database or warehouse).
 
-**ELT** swaps the last two: load the raw data first, then transform **inside** the warehouse with SQL. Modern cloud warehouses are powerful and cheap enough that ELT is now the usual choice for analytics ([lesson 15](#dataeng-15)); ETL remains common when data must be cleaned or masked before it lands.
+**ELT** swaps the last two: load the raw data first, then transform **inside** the warehouse with SQL. Modern cloud warehouses are powerful and cheap enough that ELT is now the usual choice for analytics ([lesson 17](#dataeng-17)); ETL remains common when data must be cleaned or masked before it lands.
 
 A script that works once on your laptop is not a pipeline. A **pipeline** runs every day, unattended, and things go wrong: a file is late, the job crashes halfway, someone runs it twice. Three properties make it trustworthy:
 
@@ -121,10 +122,86 @@ Follow the three runs:
 
 The transaction is the subtle part. The data rows and the "this file is loaded" marker are written **together**. Without that, a crash between the two leaves either a file that is loaded but not recorded (it loads again: duplicates, unless you upsert) or recorded but not loaded (data silently missing).
 
+## The other common shape: database to database
+
+The pipeline above reads files. The other everyday job is copying tables from an **application database** into the **warehouse**. With pandas this takes a few lines per table: `read_sql_query` extracts a table into a DataFrame, and `to_sql` loads a DataFrame into a table.
+
+```run
+mkdir -p ~/lab/de/dbcopy && cd ~/lab/de/dbcopy
+cat > dbcopy.py <<'EOF'
+# Extract and load between two databases with pandas: the fastest route to a first working pipeline.
+# Source: an application database. Target: a warehouse. Both are SQLite files here; with SQL Server or PostgreSQL only the connection changes.
+import os, sqlite3
+import pandas as pd
+for f in ("app.db", "warehouse.db"):
+    if os.path.exists(f): os.remove(f)
+src = sqlite3.connect("app.db")
+src.executescript("""
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, country TEXT);
+CREATE TABLE products  (id INTEGER PRIMARY KEY, name TEXT, price REAL);
+CREATE TABLE orders    (id INTEGER PRIMARY KEY, customer_id INTEGER, product_id INTEGER, qty INTEGER, ordered_on TEXT);
+INSERT INTO customers VALUES (1,'Asha','IN'),(2,'Ben','UK'),(3,'Chen','SG');
+INSERT INTO products  VALUES (1,'kettle',30.0),(2,'mug',6.0);
+INSERT INTO orders    VALUES (1,1,1,1,'2026-03-01'),(2,2,2,4,'2026-03-01'),(3,1,2,2,'2026-03-02'),(4,3,1,1,'2026-03-03');
+""")
+src.commit()
+password = os.environ.get("WAREHOUSE_PASSWORD", "(not set: fine for a local file)")       # credentials come from the environment, never from the code
+dst = sqlite3.connect("warehouse.db")
+
+def extract_and_load():
+    tables = [r[0] for r in src.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]   # ask the database which tables exist
+    for t in tables:
+        try:
+            df = pd.read_sql_query(f"SELECT * FROM {t}", src)                    # extract: one table -> one DataFrame
+            df["_loaded_at"] = "2026-03-05T02:00:00Z"                            # a small transform: stamp each row with the load time
+            df.to_sql(f"stg_{t}", dst, if_exists="replace", index=False)         # load into a STAGING table; "replace" = truncate and load
+            print(f"   {t:10} -> stg_{t:10} {len(df)} rows")
+        except Exception as e:
+            print(f"   {t}: FAILED: {e}")                                        # one bad table must not stop the others, but must be visible
+print("run 1:"); extract_and_load()
+src.execute("INSERT INTO orders VALUES (5,2,1,2,'2026-03-04')"); src.execute("UPDATE products SET price = 32.0 WHERE id = 1"); src.commit()
+print("run 2, after the source changed (a new order and a price change):"); extract_and_load()
+
+print("\ncheck: row counts must match between source and target")
+for t in ("customers", "orders", "products"):
+    a = src.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]; b = dst.execute(f"SELECT COUNT(*) FROM stg_{t}").fetchone()[0]
+    print(f"   {t:10} source {a}  target {b}  {'OK' if a == b else 'MISMATCH'}")
+print("\nthe staging tables are raw copies; a transform step then builds what people query:")
+print(pd.read_sql_query("""SELECT c.country, SUM(o.qty * p.price) AS revenue FROM stg_orders o
+                           JOIN stg_customers c ON c.id = o.customer_id JOIN stg_products p ON p.id = o.product_id
+                           GROUP BY c.country ORDER BY revenue DESC""", dst).to_string(index=False))
+print("\nlarge table? read it in chunks so memory stays flat:")
+n = 0
+for chunk in pd.read_sql_query("SELECT * FROM orders", src, chunksize=2): n += 1; print(f"   chunk {n}: {len(chunk)} rows")
+EOF
+python3 dbcopy.py
+```
+
+What to notice:
+
+- **The pipeline asks the source which tables exist** and loops over them, so a new table needs no new code.
+- Each table lands in a **staging table** with the prefix `stg_`. Staging tables are raw copies; nobody reports from them directly. A later transform step builds the tables people query, as the revenue query does.
+- `if_exists="replace"` is a **full load**, also called **truncate and load**: every run throws the target table away and copies the source again. Run 2 picked up the new order (5 rows) and the price change without any logic, which is why revenue for the UK is 88.0. Full loads are simple and self-correcting, and the right choice for small tables. They stop working when a table is too big to copy every night; then you need the incremental methods below.
+- **Each table is in its own `try` / `except`**, so one failing table is reported and the others still load.
+- **Row counts are compared** between source and target at the end. It is the cheapest test there is, and it catches most broken loads.
+- **Credentials come from an environment variable**, not from the script. A password in code ends up in Git, and from there everywhere.
+- For a big table, `chunksize` makes pandas hand over the rows a piece at a time so memory use stays flat.
+
+With real servers only the connection lines change:
+
+```term
+# Example (not run here)
+import os, pyodbc, sqlalchemy
+src = pyodbc.connect(f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER=app-db;DATABASE=shop;UID=etl;PWD={os.environ['SRC_PWD']}")
+dst = sqlalchemy.create_engine(f"postgresql://etl:{os.environ['DST_PWD']}@warehouse:5432/analytics")
+```
+
+Give the pipeline its own database user (here `etl`) with **read-only** rights on the source and write rights only on the staging area. To run it every night, schedule it with `cron` ([Linux 10](#linux-10)) at first, and with an orchestrator when there is more than one job ([lesson 14](#dataeng-14)).
+
 ## Three ways to load incrementally
 
 1. **By file or partition** (as here): track which files or dates are done. Simple and robust. To redo a day, delete that day's data and its marker, then run again (**delete and reload a partition**).
-2. **By high-water mark:** remember the largest `updated_at` loaded and ask the source for newer rows ([lesson 6](#dataeng-6)). Needs a reliable `updated_at` column; it misses hard deletes.
+2. **By high-water mark:** remember the largest `updated_at` loaded and ask the source for newer rows ([lesson 8](#dataeng-8)). Needs a reliable `updated_at` column; it misses hard deletes.
 3. **Change data capture (CDC):** read the source database's change log (tools such as Debezium) to get every insert, update and delete in order. The most complete, and the most to operate.
 
 A **full reload** (replace everything every time) is still the right choice for small tables: it is simple, always correct, and self-healing.
@@ -141,7 +218,7 @@ pipeline/
   tests/          # unit tests for transform, a small end-to-end test
 ```
 
-Keep **transform** functions pure (no file or network access inside them): the same input always gives the same output, so they are easy to test ([lesson 16](#dataeng-16)). Pass the **run date** in as a parameter instead of calling "today" inside the code, so the pipeline can be re-run for any past day ([lesson 12](#dataeng-12)).
+Keep **transform** functions pure (no file or network access inside them): the same input always gives the same output, so they are easy to test ([lesson 18](#dataeng-18)). Pass the **run date** in as a parameter instead of calling "today" inside the code, so the pipeline can be re-run for any past day ([lesson 14](#dataeng-14)).
 
 :::try
 1. Run `python3 etl.py` again without changes and confirm the totals are the same. 2. Edit `orders_2026-03-01.csv` in the `landing` folder after it was loaded: the pipeline does not notice. Use the stored checksum to detect a changed file and reload it. 3. Make the pipeline fail the run if more than 20% of a file's rows are rejected.

@@ -13,7 +13,7 @@ sub: What changes when data no longer fits on one machine, shown with a model of
 :::
 
 :::note Before this lesson
-File formats and partitioned folders are in [lesson 7](#dataeng-7). Sharding and hashing ideas are in [Systems 8](#systems-8) and [Systems 9](#systems-9).
+File formats and partitioned folders are in [lesson 9](#dataeng-9). Sharding and hashing ideas are in [Systems 8](#systems-8) and [Systems 9](#systems-9).
 :::
 
 ## The idea
@@ -126,7 +126,7 @@ What to know:
 | Engines | many (Spark, Trino, DuckDB) | the warehouse's own | many |
 | Risk | becomes a "data swamp" without governance | cost, lock-in | more parts to operate |
 
-Examples: Snowflake, BigQuery and Redshift are warehouses; Databricks popularised the lakehouse; most platforms now offer both styles. The **medallion** layers (bronze, silver, gold) from [lesson 10](#dataeng-10) are how a lakehouse is usually organised.
+Examples: Snowflake, BigQuery and Redshift are warehouses; Databricks popularised the lakehouse; most platforms now offer both styles. The **medallion** layers (bronze, silver, gold) from [lesson 12](#dataeng-12) are how a lakehouse is usually organised.
 
 ## Do you need Spark?
 

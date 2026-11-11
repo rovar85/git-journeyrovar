@@ -5491,6 +5491,84 @@
   "blocks": [
    [
     {
+     "c": "$ mkdir -p ~/lab/de/etl && cd ~/lab/de/etl",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > etl.py <<'EOF'\n> # A small but real ETL pipeline: extract CSV files -> transform -> load into SQLite.\n> # Properties of a production pipeline: incremental (only new files), idempotent (safe to re-run), observable (logs, counts), rejects kept.\n> import csv, sqlite3, logging, sys, hashlib\n> from pathlib import Path\n> logging.basicConfig(level=logging.INFO, format=\"%(levelname)s %(message)s\", stream=sys.stdout)\n> log = logging.getLogger(\"etl\")\n> LANDING, DB = Path(\"landing\"), \"warehouse.db\"\n> \n> def make_source_files():                       # pretend another system drops a file per day\n>     LANDING.mkdir(exist_ok=True)\n>     (LANDING / \"orders_2026-03-01.csv\").write_text(\"order_id,customer,amount\\n1,asha,20.00\\n2,ben,5.00\\n3,chen,abc\\n\")\n>     (LANDING / \"orders_2026-03-02.csv\").write_text(\"order_id,customer,amount\\n4,ben,80.00\\n2,ben,6.00\\n\")   # order 2 corrected\n> \n> def setup(db):\n>     db.executescript(\"\"\"\n>     CREATE TABLE IF NOT EXISTS orders (order_id INTEGER PRIMARY KEY, customer TEXT NOT NULL, amount REAL NOT NULL, source_file TEXT NOT NULL);\n>     CREATE TABLE IF NOT EXISTS rejects (source_file TEXT, line INTEGER, reason TEXT, raw TEXT);\n>     CREATE TABLE IF NOT EXISTS loaded_files (name TEXT PRIMARY KEY, checksum TEXT, rows_ok INTEGER, rows_bad INTEGER);\"\"\")\n> \n> def extract(path):\n>     with open(path, newline=\"\") as f:\n>         for n, row in enumerate(csv.DictReader(f), start=2): yield n, row\n> \n> def transform(row):\n>     return {\"order_id\": int(row[\"order_id\"]), \"customer\": row[\"customer\"].strip().lower(), \"amount\": round(float(row[\"amount\"]), 2)}\n> \n> def run():\n>     db = sqlite3.connect(DB); setup(db)\n>     done = {r[0] for r in db.execute(\"SELECT name FROM loaded_files\")}\n>     new = [p for p in sorted(LANDING.glob(\"orders_*.csv\")) if p.name not in done]\n>     if not new: log.info(\"nothing new to load\")\n>     for path in new:\n>         ok = bad = 0\n>         with db:                                # one transaction per file: all of it loads, or none of it\n>             for line, row in extract(path):\n>                 try:\n>                     r = transform(row)\n>                     db.execute(\"\"\"INSERT INTO orders VALUES (:order_id, :customer, :amount, :f)\n>                                   ON CONFLICT(order_id) DO UPDATE SET customer = excluded.customer, amount = excluded.amount, source_file = excluded.source_file\"\"\", {**r, \"f\": path.name})\n>                     ok += 1\n>                 except (ValueError, KeyError) as e:\n>                     db.execute(\"INSERT INTO rejects VALUES (?,?,?,?)\", (path.name, line, str(e), str(dict(row)))); bad += 1\n>             db.execute(\"INSERT INTO loaded_files VALUES (?,?,?,?)\", (path.name, hashlib.md5(path.read_bytes()).hexdigest(), ok, bad))\n>         log.info(\"loaded %s: %d ok, %d rejected\", path.name, ok, bad)\n>     n, total = db.execute(\"SELECT COUNT(*), ROUND(SUM(amount), 2) FROM orders\").fetchone()\n>     log.info(\"orders table: %d rows, total %.2f; rejects: %d\", n, total, db.execute(\"SELECT COUNT(*) FROM rejects\").fetchone()[0])\n>     return db\n> \n> Path(DB).unlink(missing_ok=True)\n> make_source_files()\n> print(\"== first run ==\"); db = run()\n> print(\"== second run (nothing changed: must do nothing and change nothing) ==\"); db = run()\n> print(\"== a new file arrives ==\"); (LANDING / \"orders_2026-03-03.csv\").write_text(\"order_id,customer,amount\\n5,dee,42.50\\n\"); db = run()\n> print(\"\\nfinal table:\")\n> for row in db.execute(\"SELECT * FROM orders ORDER BY order_id\"): print(\"  \", row)\n> print(\"rejects:\", db.execute(\"SELECT source_file, line, reason FROM rejects\").fetchall())\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 etl.py",
+     "o": "== first run ==\nINFO loaded orders_2026-03-01.csv: 2 ok, 1 rejected\nINFO loaded orders_2026-03-02.csv: 2 ok, 0 rejected\nINFO orders table: 3 rows, total 106.00; rejects: 1\n== second run (nothing changed: must do nothing and change nothing) ==\nINFO nothing new to load\nINFO orders table: 3 rows, total 106.00; rejects: 1\n== a new file arrives ==\nINFO loaded orders_2026-03-03.csv: 1 ok, 0 rejected\nINFO orders table: 4 rows, total 148.50; rejects: 1\n\nfinal table:\n   (1, 'asha', 20.0, 'orders_2026-03-01.csv')\n   (2, 'ben', 6.0, 'orders_2026-03-02.csv')\n   (4, 'ben', 80.0, 'orders_2026-03-02.csv')\n   (5, 'dee', 42.5, 'orders_2026-03-03.csv')\nrejects: [('orders_2026-03-01.csv', 4, \"could not convert string to float: 'abc'\")]",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/dbcopy && cd ~/lab/de/dbcopy",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > dbcopy.py <<'EOF'\n> # Extract and load between two databases with pandas: the fastest route to a first working pipeline.\n> # Source: an application database. Target: a warehouse. Both are SQLite files here; with SQL Server or PostgreSQL only the connection changes.\n> import os, sqlite3\n> import pandas as pd\n> for f in (\"app.db\", \"warehouse.db\"):\n>     if os.path.exists(f): os.remove(f)\n> src = sqlite3.connect(\"app.db\")\n> src.executescript(\"\"\"\n> CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, country TEXT);\n> CREATE TABLE products  (id INTEGER PRIMARY KEY, name TEXT, price REAL);\n> CREATE TABLE orders    (id INTEGER PRIMARY KEY, customer_id INTEGER, product_id INTEGER, qty INTEGER, ordered_on TEXT);\n> INSERT INTO customers VALUES (1,'Asha','IN'),(2,'Ben','UK'),(3,'Chen','SG');\n> INSERT INTO products  VALUES (1,'kettle',30.0),(2,'mug',6.0);\n> INSERT INTO orders    VALUES (1,1,1,1,'2026-03-01'),(2,2,2,4,'2026-03-01'),(3,1,2,2,'2026-03-02'),(4,3,1,1,'2026-03-03');\n> \"\"\")\n> src.commit()\n> password = os.environ.get(\"WAREHOUSE_PASSWORD\", \"(not set: fine for a local file)\")       # credentials come from the environment, never from the code\n> dst = sqlite3.connect(\"warehouse.db\")\n> \n> def extract_and_load():\n>     tables = [r[0] for r in src.execute(\"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name\")]   # ask the database which tables exist\n>     for t in tables:\n>         try:\n>             df = pd.read_sql_query(f\"SELECT * FROM {t}\", src)                    # extract: one table -> one DataFrame\n>             df[\"_loaded_at\"] = \"2026-03-05T02:00:00Z\"                            # a small transform: stamp each row with the load time\n>             df.to_sql(f\"stg_{t}\", dst, if_exists=\"replace\", index=False)         # load into a STAGING table; \"replace\" = truncate and load\n>             print(f\"   {t:10} -> stg_{t:10} {len(df)} rows\")\n>         except Exception as e:\n>             print(f\"   {t}: FAILED: {e}\")                                        # one bad table must not stop the others, but must be visible\n> print(\"run 1:\"); extract_and_load()\n> src.execute(\"INSERT INTO orders VALUES (5,2,1,2,'2026-03-04')\"); src.execute(\"UPDATE products SET price = 32.0 WHERE id = 1\"); src.commit()\n> print(\"run 2, after the source changed (a new order and a price change):\"); extract_and_load()\n> \n> print(\"\\ncheck: row counts must match between source and target\")\n> for t in (\"customers\", \"orders\", \"products\"):\n>     a = src.execute(f\"SELECT COUNT(*) FROM {t}\").fetchone()[0]; b = dst.execute(f\"SELECT COUNT(*) FROM stg_{t}\").fetchone()[0]\n>     print(f\"   {t:10} source {a}  target {b}  {'OK' if a == b else 'MISMATCH'}\")\n> print(\"\\nthe staging tables are raw copies; a transform step then builds what people query:\")\n> print(pd.read_sql_query(\"\"\"SELECT c.country, SUM(o.qty * p.price) AS revenue FROM stg_orders o\n>                            JOIN stg_customers c ON c.id = o.customer_id JOIN stg_products p ON p.id = o.product_id\n>                            GROUP BY c.country ORDER BY revenue DESC\"\"\", dst).to_string(index=False))\n> print(\"\\nlarge table? read it in chunks so memory stays flat:\")\n> n = 0\n> for chunk in pd.read_sql_query(\"SELECT * FROM orders\", src, chunksize=2): n += 1; print(f\"   chunk {n}: {len(chunk)} rows\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 dbcopy.py",
+     "o": "run 1:\n   customers  -> stg_customers  3 rows\n   orders     -> stg_orders     4 rows\n   products   -> stg_products   2 rows\nrun 2, after the source changed (a new order and a price change):\n   customers  -> stg_customers  3 rows\n   orders     -> stg_orders     5 rows\n   products   -> stg_products   2 rows\n\ncheck: row counts must match between source and target\n   customers  source 3  target 3  OK\n   orders     source 5  target 5  OK\n   products   source 2  target 2  OK\n\nthe staging tables are raw copies; a transform step then builds what people query:\ncountry  revenue\n     UK     88.0\n     IN     44.0\n     SG     32.0\n\nlarge table? read it in chunks so memory stays flat:\n   chunk 1: 2 rows\n   chunk 2: 2 rows\n   chunk 3: 1 rows",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "1938dbc6bcb04656"
+ },
+ "dataeng-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/nested && cd ~/lab/de/nested",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > nested.py <<'EOF'\n> # Loading nested JSON from an API into tables: flatten, infer the schema, evolve it when a new field appears, and load incrementally.\n> # Loading tools (for example dlt, Airbyte, Fivetran) automate these four jobs; here they are in plain Python so you can see them.\n> import json, sqlite3\n> PAGE_1 = [{\"id\": 1, \"user\": {\"name\": \"asha\", \"address\": {\"city\": \"Pune\"}}, \"items\": [{\"sku\": \"kettle\", \"qty\": 1}, {\"sku\": \"mug\", \"qty\": 2}], \"updated_at\": \"2026-03-01T10:00\"},\n>           {\"id\": 2, \"user\": {\"name\": \"ben\", \"address\": {\"city\": \"Leeds\"}}, \"items\": [{\"sku\": \"lamp\", \"qty\": 1}], \"updated_at\": \"2026-03-02T09:00\"}]\n> PAGE_2 = [{\"id\": 3, \"user\": {\"name\": \"chen\", \"address\": {\"city\": \"Singapore\"}}, \"items\": [], \"updated_at\": \"2026-03-03T12:00\", \"coupon\": \"SPRING\"},   # a NEW field appears\n>           {\"id\": 2, \"user\": {\"name\": \"ben\", \"address\": {\"city\": \"York\"}}, \"items\": [{\"sku\": \"lamp\", \"qty\": 3}], \"updated_at\": \"2026-03-04T08:00\"}]          # id 2 changed\n> def flatten(obj, prefix=\"\"):\n>     \"\"\"{'user': {'address': {'city': 'Pune'}}} -> {'user__address__city': 'Pune'}; lists become child-table rows.\"\"\"\n>     row, children = {}, {}\n>     for k, v in obj.items():\n>         name = prefix + k\n>         if isinstance(v, dict): r, c = flatten(v, name + \"__\"); row.update(r); children.update(c)\n>         elif isinstance(v, list): children[name] = v\n>         else: row[name] = v\n>     return row, children\n> TYPES = {int: \"INTEGER\", float: \"REAL\", str: \"TEXT\", bool: \"INTEGER\"}\n> db = sqlite3.connect(\":memory:\")\n> def columns(table): return [r[1] for r in db.execute(f\"PRAGMA table_info({table})\")]\n> def load(table, rows, key):\n>     for row in rows:\n>         if not columns(table):\n>             db.execute(f\"CREATE TABLE {table} ({', '.join(f'{c} {TYPES[type(v)]}' for c, v in row.items())}, PRIMARY KEY ({key}))\"); print(f\"   created {table} with columns {list(row)}\")\n>         for c, v in row.items():\n>             if c not in columns(table): db.execute(f\"ALTER TABLE {table} ADD COLUMN {c} {TYPES[type(v)]}\"); print(f\"   schema evolved: added column {table}.{c}\")\n>         cols = list(row)\n>         db.execute(f\"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))}) ON CONFLICT({key}) DO UPDATE SET \" + \", \".join(f\"{c} = excluded.{c}\" for c in cols), list(row.values()))\n> state = {\"last_updated_at\": \"\"}                       # the cursor: the newest change we have already loaded\n> def run(page):\n>     new = [o for o in page if o[\"updated_at\"] > state[\"last_updated_at\"]]\n>     print(f\"   {len(new)} of {len(page)} records are newer than the cursor {state['last_updated_at'] or '(none)'}\")\n>     for order in new:\n>         row, children = flatten(order)\n>         load(\"orders\", [row], \"id\")\n>         db.execute(\"DELETE FROM orders__items WHERE _order_id = ?\", (order[\"id\"],)) if columns(\"orders__items\") else None\n>         load(\"orders__items\", [{\"_order_id\": order[\"id\"], \"_idx\": i, **it} for i, it in enumerate(children.get(\"items\", []))], \"_order_id, _idx\")\n>     if new: state[\"last_updated_at\"] = max(o[\"updated_at\"] for o in new)\n> print(\"load 1:\"); run(PAGE_1)\n> print(\"load 2 (a new field, and a changed record):\"); run(PAGE_2)\n> print(\"load 3 (the same page again: nothing to do):\"); run(PAGE_2)\n> for t in (\"orders\", \"orders__items\"):\n>     print(f\"\\n{t}: {columns(t)}\")\n>     for r in db.execute(f\"SELECT * FROM {t} ORDER BY 1, 2\"): print(\"  \", r)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 nested.py",
+     "o": "load 1:\n   2 of 2 records are newer than the cursor (none)\n   created orders with columns ['id', 'user__name', 'user__address__city', 'updated_at']\n   created orders__items with columns ['_order_id', '_idx', 'sku', 'qty']\nload 2 (a new field, and a changed record):\n   2 of 2 records are newer than the cursor 2026-03-02T09:00\n   schema evolved: added column orders.coupon\nload 3 (the same page again: nothing to do):\n   0 of 2 records are newer than the cursor 2026-03-04T08:00\n\norders: ['id', 'user__name', 'user__address__city', 'updated_at', 'coupon']\n   (1, 'asha', 'Pune', '2026-03-01T10:00', None)\n   (2, 'ben', 'York', '2026-03-04T08:00', None)\n   (3, 'chen', 'Singapore', '2026-03-03T12:00', 'SPRING')\n\norders__items: ['_order_id', '_idx', 'sku', 'qty']\n   (1, 0, 'kettle', 1)\n   (1, 1, 'mug', 2)\n   (2, 0, 'lamp', 3)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/dispo && cd ~/lab/de/dispo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > dispo.py <<'EOF'\n> # The decisions every loader makes, in plain Python and SQLite: write disposition, how to replace safely,\n> # what to do when the schema changes (a schema contract), and how to backfill a big table in chunks.\n> import sqlite3\n> db = sqlite3.connect(\":memory:\")\n> day1 = [(1, \"asha\", 20.0), (2, \"ben\", 5.0)]\n> day2 = [(2, \"ben\", 6.0), (3, \"chen\", 12.0)]              # order 2 was corrected, order 3 is new\n> def rows(t): return db.execute(f\"SELECT * FROM {t} ORDER BY 1, 2\").fetchall()\n> \n> print(\"1) write disposition: what happens to the data already in the table?\")\n> for mode in (\"replace\", \"append\", \"merge\"):\n>     db.execute(f\"DROP TABLE IF EXISTS t_{mode}\"); db.execute(f\"CREATE TABLE t_{mode} (id INTEGER {'PRIMARY KEY' if mode == 'merge' else ''}, customer TEXT, amount REAL)\")\n>     for batch in (day1, day2):\n>         if mode == \"replace\": db.execute(f\"DELETE FROM t_{mode}\")\n>         sql = f\"INSERT INTO t_{mode} VALUES (?,?,?)\" + (\" ON CONFLICT(id) DO UPDATE SET customer = excluded.customer, amount = excluded.amount\" if mode == \"merge\" else \"\")\n>         db.executemany(sql, batch)\n>     note = {\"replace\": \"only the last batch survives: right for small tables reloaded in full\", \"append\": \"everything kept, order 2 appears twice: right for events that never change\", \"merge\": \"one row per key, latest values: right for records that get updated\"}[mode]\n>     print(f\"   {mode:8} {rows('t_' + mode)}\\n            -> {note}\")\n> \n> print(\"\\n2) replacing safely: load into a staging table, check it, then swap\")\n> db.executescript(\"CREATE TABLE report (id INTEGER, amount REAL); INSERT INTO report VALUES (1, 20.0), (2, 5.0);\")\n> def swap_in(new_rows):\n>     db.execute(\"DROP TABLE IF EXISTS report_staging\"); db.execute(\"CREATE TABLE report_staging (id INTEGER, amount REAL)\")\n>     db.executemany(\"INSERT INTO report_staging VALUES (?,?)\", new_rows)\n>     n = db.execute(\"SELECT COUNT(*) FROM report_staging\").fetchone()[0]\n>     if n == 0: return \"staging is empty: REFUSED, the old data stays\"\n>     with db: db.execute(\"DELETE FROM report\"); db.execute(\"INSERT INTO report SELECT * FROM report_staging\")     # one transaction: readers never see an empty table\n>     return f\"swapped in {n} rows\"\n> print(\"   a broken extract returned nothing ->\", swap_in([]), \"| report still has\", len(rows(\"report\")), \"rows\")\n> print(\"   a good extract                    ->\", swap_in([(1, 20.0), (2, 6.0), (3, 12.0)]), \"| report now has\", len(rows(\"report\")), \"rows\")\n> print(\"   (truncate-then-insert is faster, but the table is empty in between and stays empty if the insert fails)\")\n> \n> print(\"\\n3) schema contract: the source sends a new column and a changed type. Four policies:\")\n> KNOWN = {\"id\": int, \"amount\": float}\n> incoming = [{\"id\": 1, \"amount\": 20.0}, {\"id\": 2, \"amount\": 5.0, \"coupon\": \"SPRING\"}, {\"id\": 3, \"amount\": \"12 EUR\"}]\n> def apply(mode):\n>     schema, loaded, log = dict(KNOWN), [], []\n>     for r in incoming:\n>         new_cols = [k for k in r if k not in schema]; bad_types = [k for k in r if k in schema and not isinstance(r[k], schema[k])]\n>         if not new_cols and not bad_types: loaded.append(r); continue\n>         if mode == \"evolve\":\n>             for k in new_cols: schema[k] = type(r[k]); log.append(f\"added column {k}\")\n>             out = dict(r)\n>             for k in bad_types: out[k + \"__v_text\"] = out.pop(k); schema[k + \"__v_text\"] = str; log.append(f\"type change in {k}: kept in a new column {k}__v_text\")\n>             loaded.append(out)\n>         elif mode == \"freeze\": return f\"STOPPED at id {r['id']}: {'new column ' + new_cols[0] if new_cols else 'type change in ' + bad_types[0]}; nothing from this batch is loaded\"\n>         elif mode == \"discard_row\": log.append(f\"dropped row id {r['id']}\")\n>         elif mode == \"discard_value\": loaded.append({k: v for k, v in r.items() if k not in new_cols and k not in bad_types}); log.append(f\"dropped values {new_cols + bad_types} of id {r['id']}\")\n>     return f\"loaded {len(loaded)} rows; \" + \"; \".join(log)\n> for mode in (\"evolve\", \"freeze\", \"discard_row\", \"discard_value\"): print(f\"   {mode:14} {apply(mode)}\")\n> print(\"   evolve suits a raw layer (keep everything, alert a person); freeze suits a table other teams depend on\")\n> \n> print(\"\\n4) backfill: load a large history in chunks, each chunk remembered, so a failure resumes instead of restarting\")\n> history = [(i, f\"2026-01-{1 + i // 4:02d}\") for i in range(1, 22)]                        # 21 events over six days, sorted by time\n> db.execute(\"CREATE TABLE events (id INTEGER PRIMARY KEY, day TEXT)\")\n> cursor, CHUNK, run = \"\", 8, 0\n> while True:\n>     chunk = [e for e in history if e[1] >= cursor][:CHUNK]                                 # >= : re-read the boundary so nothing with the same timestamp is missed\n>     before = db.execute(\"SELECT COUNT(*) FROM events\").fetchone()[0]\n>     db.executemany(\"INSERT OR IGNORE INTO events VALUES (?,?)\", chunk)                     # the overlap is harmless because the load is idempotent\n>     added = db.execute(\"SELECT COUNT(*) FROM events\").fetchone()[0] - before\n>     run += 1; print(f\"   run {run}: read {len(chunk)} rows from {cursor or 'the start'}, {added} new\")\n>     if added == 0: break\n>     cursor = chunk[-1][1]\n> print(\"   loaded\", db.execute(\"SELECT COUNT(*) FROM events\").fetchone()[0], \"of\", len(history), \"events\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 dispo.py",
+     "o": "1) write disposition: what happens to the data already in the table?\n   replace  [(2, 'ben', 6.0), (3, 'chen', 12.0)]\n            -> only the last batch survives: right for small tables reloaded in full\n   append   [(1, 'asha', 20.0), (2, 'ben', 5.0), (2, 'ben', 6.0), (3, 'chen', 12.0)]\n            -> everything kept, order 2 appears twice: right for events that never change\n   merge    [(1, 'asha', 20.0), (2, 'ben', 6.0), (3, 'chen', 12.0)]\n            -> one row per key, latest values: right for records that get updated\n\n2) replacing safely: load into a staging table, check it, then swap\n   a broken extract returned nothing -> staging is empty: REFUSED, the old data stays | report still has 2 rows\n   a good extract                    -> swapped in 3 rows | report now has 3 rows\n   (truncate-then-insert is faster, but the table is empty in between and stays empty if the insert fails)\n\n3) schema contract: the source sends a new column and a changed type. Four policies:\n   evolve         loaded 3 rows; added column coupon; type change in amount: kept in a new column amount__v_text\n   freeze         STOPPED at id 2: new column coupon; nothing from this batch is loaded\n   discard_row    loaded 1 rows; dropped row id 2; dropped row id 3\n   discard_value  loaded 3 rows; dropped values ['coupon'] of id 2; dropped values ['amount'] of id 3\n   evolve suits a raw layer (keep everything, alert a person); freeze suits a table other teams depend on\n\n4) backfill: load a large history in chunks, each chunk remembered, so a failure resumes instead of restarting\n   run 1: read 8 rows from the start, 8 new\n   run 2: read 8 rows from 2026-01-03, 7 new\n   run 3: read 8 rows from 2026-01-04, 4 new\n   run 4: read 6 rows from 2026-01-05, 2 new\n   run 5: read 2 rows from 2026-01-06, 0 new\n   loaded 21 of 21 events",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c840b630df09bc85"
+ },
+ "dataeng-12": {
+  "blocks": [
+   [
+    {
      "c": "$ mkdir -p ~/lab/de/model && cd ~/lab/de/model",
      "o": "",
      "x": 0
@@ -5509,7 +5587,7 @@
   ],
   "key": "9396a338623e79ea"
  },
- "dataeng-11": {
+ "dataeng-13": {
   "blocks": [
    [
     {
@@ -5531,7 +5609,7 @@
   ],
   "key": "277097c3f5382adb"
  },
- "dataeng-12": {
+ "dataeng-14": {
   "blocks": [
    [
     {
@@ -5553,7 +5631,7 @@
   ],
   "key": "4ca2a8a234b53dbf"
  },
- "dataeng-13": {
+ "dataeng-15": {
   "blocks": [
    [
     {
@@ -5568,14 +5646,14 @@
     },
     {
      "c": "$ python3 partition.py",
-     "o": "300,000 rows of (day, customer, amount)\n\n1) query: total for 2026-03-15\n   full scan      read 300,000 rows     7.3 ms\n   one partition  read  10,038 rows     1.8 ms   same answer: True\n\n2) GROUP BY on 8 workers\n   group by day (30 evenly sized keys)\n      rows per worker: [40049, 39821, 40071, 29956, 30041, 29637, 40331, 50094]\n      largest worker has 1.3x the average: the job is as slow as its slowest worker\n   group by customer (one customer has 60% of the rows: SKEW)\n      rows per worker: [14108, 15529, 15038, 14870, 15031, 14906, 195019, 15499]\n      largest worker has 5.2x the average: the job is as slow as its slowest worker\n   group by customer with the hot key salted (2-step aggregation)\n      rows per worker: [36346, 38131, 37682, 37611, 37726, 37576, 36871, 38057]\n      largest worker has 1.0x the average: the job is as slow as its slowest worker\n\n   answer unchanged after salting: True",
+     "o": "300,000 rows of (day, customer, amount)\n\n1) query: total for 2026-03-15\n   full scan      read 300,000 rows     6.8 ms\n   one partition  read  10,038 rows     0.5 ms   same answer: True\n\n2) GROUP BY on 8 workers\n   group by day (30 evenly sized keys)\n      rows per worker: [40049, 39821, 40071, 29956, 30041, 29637, 40331, 50094]\n      largest worker has 1.3x the average: the job is as slow as its slowest worker\n   group by customer (one customer has 60% of the rows: SKEW)\n      rows per worker: [14108, 15529, 15038, 14870, 15031, 14906, 195019, 15499]\n      largest worker has 5.2x the average: the job is as slow as its slowest worker\n   group by customer with the hot key salted (2-step aggregation)\n      rows per worker: [36346, 38131, 37682, 37611, 37726, 37576, 36871, 38057]\n      largest worker has 1.0x the average: the job is as slow as its slowest worker\n\n   answer unchanged after salting: True",
      "x": 0
     }
    ]
   ],
   "key": "33ef0966ef08aaf2"
  },
- "dataeng-14": {
+ "dataeng-16": {
   "blocks": [
    [
     {
@@ -5597,7 +5675,7 @@
   ],
   "key": "4eac1676638199ce"
  },
- "dataeng-15": {
+ "dataeng-17": {
   "blocks": [
    [
     {
@@ -5619,7 +5697,7 @@
   ],
   "key": "651c087c83b25ad6"
  },
- "dataeng-16": {
+ "dataeng-18": {
   "blocks": [
    [
     {
@@ -5642,6 +5720,50 @@
   "key": "5a3887ef36bbf3fc"
  },
  "dataeng-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/basics1 && cd ~/lab/de/basics1",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > basics1.py <<'EOF'\n> # Python essentials, part 1: values, text, collections, decisions and loops, on a small set of messy order records.\n> \n> # --- 1. variables and types ---\n> order_id = 1001                 # int: a whole number\n> amount = 19.99                  # float: a number with a decimal point\n> customer = \"  Asha Rao \"        # str: text (note the stray spaces)\n> paid = True                     # bool: True or False\n> coupon = None                   # None: \"no value here\"\n> print(\"1) types:\", type(order_id).__name__, type(amount).__name__, type(customer).__name__, type(paid).__name__, type(coupon).__name__)\n> \n> # --- 2. type casting: data from files and APIs arrives as text ---\n> raw_amount = \"42.50\"\n> print(\"2) text + text:\", raw_amount + raw_amount, \"| as numbers:\", float(raw_amount) + float(raw_amount), \"| int('7') + 1 =\", int(\"7\") + 1)\n> \n> # --- 3. cleaning text ---\n> clean = customer.strip().lower()\n> print(\"3) cleaned:\", repr(clean), \"| title case:\", clean.title(), \"| replace:\", clean.replace(\" \", \"_\"), \"| starts with 'a':\", clean.startswith(\"a\"))\n> email = \"Asha.Rao@Example.COM\"\n> user, domain = email.lower().split(\"@\")\n> print(\"   split an email:\", user, \"|\", domain, \"| contains 'example':\", \"example\" in domain, \"| length:\", len(email))\n> \n> # --- 4. slicing: text[start:stop:step], counting from 0, stop is not included ---\n> code = \"ORD-2026-03-IN\"\n> print(\"4) first 3:\", code[:3], \"| year:\", code[4:8], \"| last 2:\", code[-2:], \"| reversed:\", code[::-1])\n> \n> # --- 5. f-strings and rounding ---\n> print(f\"5) Order {order_id} for {clean.title()} costs {amount:.2f} (with 18% tax: {amount * 1.18:.2f}); 7 // 2 = {7 // 2}, 7 % 2 = {7 % 2}, 2 ** 10 = {2 ** 10}\")\n> \n> # --- 6. the four collections ---\n> amounts = [19.99, 5.0, 120.0, 5.0]                       # list: ordered, can change, allows duplicates\n> amounts.append(42.5); amounts.sort()\n> point = (18.52, 73.86)                                    # tuple: ordered, cannot change (a fixed record)\n> countries = {\"IN\", \"UK\", \"IN\", \"SG\"}                      # set: no duplicates, no order\n> order = {\"id\": 1001, \"customer\": \"asha\", \"amount\": 19.99} # dict: key -> value (this is what JSON becomes)\n> order[\"status\"] = \"paid\"\n> print(\"6) list:\", amounts, \"| biggest:\", max(amounts), \"| sum:\", sum(amounts), \"| count of 5.0:\", amounts.count(5.0))\n> print(\"   tuple:\", point, \"| set:\", sorted(countries), \"| dict keys:\", list(order), \"| safe lookup of a missing key:\", order.get(\"coupon\", \"none\"))\n> print(\"   set maths: {IN, UK} & {UK, SG} =\", {\"IN\", \"UK\"} & {\"UK\", \"SG\"}, \"| union =\", sorted({\"IN\", \"UK\"} | {\"UK\", \"SG\"}))\n> \n> # --- 7. decisions ---\n> def size(a):\n>     if a >= 100: return \"large\"\n>     elif a >= 20: return \"medium\"\n>     else: return \"small\"\n> print(\"7) sizes:\", [size(a) for a in amounts], \"| and/or/not:\", amount > 10 and paid, amount > 100 or paid, not paid)\n> \n> # --- 8. loops: for, enumerate, continue, break, while ---\n> rows = [\"1001,asha,19.99\", \"1002,ben,\", \"1003,chen,abc\", \"STOP\", \"1004,dee,7.00\"]\n> total = 0\n> for line_no, row in enumerate(rows, start=1):\n>     if row == \"STOP\": print(f\"   line {line_no}: stop marker, leaving the loop (break)\"); break\n>     parts = row.split(\",\")\n>     if parts[2] == \"\": print(f\"   line {line_no}: no amount, skipped (continue)\"); continue\n>     if not parts[2].replace(\".\", \"\").isdigit(): print(f\"   line {line_no}: {parts[2]!r} is not a number, skipped\"); continue\n>     total += float(parts[2])\n> print(\"8) total of the valid rows:\", total)\n> attempts = 0\n> while attempts < 3: attempts += 1\n> print(\"   while loop ran\", attempts, \"times\")\n> \n> # --- 9. comprehensions: build a list, set or dict in one line ---\n> orders = [{\"id\": 1, \"country\": \"IN\", \"amount\": 20.0}, {\"id\": 2, \"country\": \"UK\", \"amount\": 5.0}, {\"id\": 3, \"country\": \"IN\", \"amount\": 35.5}]\n> big = [o[\"id\"] for o in orders if o[\"amount\"] > 10]\n> by_id = {o[\"id\"]: o[\"amount\"] for o in orders}\n> per_country = {}\n> for o in orders: per_country[o[\"country\"]] = per_country.get(o[\"country\"], 0) + o[\"amount\"]\n> print(\"9) ids over 10:\", big, \"| lookup table:\", by_id, \"| total per country:\", per_country)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 basics1.py",
+     "o": "1) types: int float str bool NoneType\n2) text + text: 42.5042.50 | as numbers: 85.0 | int('7') + 1 = 8\n3) cleaned: 'asha rao' | title case: Asha Rao | replace: asha_rao | starts with 'a': True\n   split an email: asha.rao | example.com | contains 'example': True | length: 20\n4) first 3: ORD | year: 2026 | last 2: IN | reversed: NI-30-6202-DRO\n5) Order 1001 for Asha Rao costs 19.99 (with 18% tax: 23.59); 7 // 2 = 3, 7 % 2 = 1, 2 ** 10 = 1024\n6) list: [5.0, 5.0, 19.99, 42.5, 120.0] | biggest: 120.0 | sum: 192.49 | count of 5.0: 2\n   tuple: (18.52, 73.86) | set: ['IN', 'SG', 'UK'] | dict keys: ['id', 'customer', 'amount', 'status'] | safe lookup of a missing key: none\n   set maths: {IN, UK} & {UK, SG} = {'UK'} | union = ['IN', 'SG', 'UK']\n7) sizes: ['small', 'small', 'small', 'medium', 'large'] | and/or/not: True True False\n   line 2: no amount, skipped (continue)\n   line 3: 'abc' is not a number, skipped\n   line 4: stop marker, leaving the loop (break)\n8) total of the valid rows: 19.99\n   while loop ran 3 times\n9) ids over 10: [1, 3] | lookup table: {1: 20.0, 2: 5.0, 3: 35.5} | total per country: {'IN': 55.5, 'UK': 5.0}",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "57d6f0e8d7d91099"
+ },
+ "dataeng-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/basics2 && cd ~/lab/de/basics2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > basics2.py <<'EOF'\n> # Python essentials, part 2: functions, lambda, map/filter/reduce, errors, files, modules and classes.\n> import json, math, os, time\n> from datetime import datetime, timedelta\n> from functools import reduce\n> \n> # --- 1. functions: name a piece of work once, use it many times ---\n> def with_tax(amount, rate=0.18):                 # rate has a default value\n>     \"\"\"Return the amount including tax, rounded to 2 places.\"\"\"\n>     return round(amount * (1 + rate), 2)\n> print(\"1)\", with_tax(100), with_tax(100, 0.05), with_tax(rate=0.2, amount=50))\n> def stats(values): return min(values), max(values), sum(values) / len(values)      # returns three values as a tuple\n> low, high, mean = stats([20, 5, 35])\n> print(\"   min, max, mean:\", low, high, mean)\n> \n> # --- 2. scope: a variable made inside a function stays inside ---\n> rate = 0.18\n> def change(): rate = 0.5; return rate                    # this is a NEW local variable; the outer one is untouched\n> print(\"2) inside:\", change(), \"| outside is still:\", rate)\n> \n> # --- 3. lambda, map, filter, reduce, sorted with a key ---\n> amounts = [20.0, 5.0, 35.5, 80.0]\n> print(\"3) map:\", list(map(lambda a: a * 2, amounts)), \"| filter:\", list(filter(lambda a: a > 10, amounts)), \"| reduce:\", reduce(lambda x, y: x + y, amounts))\n> people = [(\"chen\", 12.0), (\"asha\", 55.5), (\"ben\", 80.0)]\n> print(\"   sorted by amount, biggest first:\", sorted(people, key=lambda p: p[1], reverse=True))\n> print(\"   the same map and filter as a comprehension:\", [a * 2 for a in amounts if a > 10])\n> \n> # --- 4. errors: try / except / else / finally ---\n> def to_number(text):\n>     try:\n>         value = float(text)\n>     except ValueError as e:\n>         print(f\"   could not convert {text!r}: {e}\"); return None\n>     else:\n>         return value                                     # runs only if there was no error\n>     finally:\n>         pass                                             # always runs: the place to close files and connections\n> print(\"4)\", to_number(\"42.5\"), to_number(\"abc\"))\n> try: {\"id\": 1}[\"amount\"]\n> except KeyError as e: print(\"   KeyError for a missing dictionary key:\", e)\n> try: 10 / 0\n> except ZeroDivisionError as e: print(\"   ZeroDivisionError:\", e)\n> def check(amount):\n>     if amount < 0: raise ValueError(\"amount must not be negative\")      # raise your own error\n>     return amount\n> try: check(-5)\n> except ValueError as e: print(\"   raised on purpose:\", e)\n> \n> # --- 5. files: 'with' closes the file even if an error happens ---\n> with open(\"orders.txt\", \"w\", encoding=\"utf-8\") as f: f.write(\"1001,asha,19.99\\n1002,ben,5.00\\n\")\n> with open(\"orders.txt\", \"a\", encoding=\"utf-8\") as f: f.write(\"1003,chen,12.00\\n\")          # \"a\" appends, \"w\" overwrites\n> with open(\"orders.txt\", encoding=\"utf-8\") as f: lines = [line.strip() for line in f]\n> print(\"5) read\", len(lines), \"lines; last:\", lines[-1])\n> with open(\"order.json\", \"w\") as f: json.dump({\"id\": 1001, \"items\": [\"kettle\", \"mug\"]}, f)\n> with open(\"order.json\") as f: print(\"   JSON file back as a dict:\", json.load(f))\n> \n> # --- 6. modules: code other people wrote, brought in with import ---\n> start = time.perf_counter(); time.sleep(0.05); took = time.perf_counter() - start\n> now = datetime(2026, 3, 5, 14, 30)\n> print(\"6) math:\", math.sqrt(144), math.ceil(4.1), math.floor(4.9), \"| slept about\", round(took, 2), \"s\")\n> print(\"   dates:\", now.strftime(\"%Y-%m-%d\"), \"| a week earlier:\", (now - timedelta(days=7)).date(), \"| weekday:\", now.strftime(\"%A\"))\n> print(\"   os:\", os.path.basename(\"/data/raw/orders.csv\"), \"| exists:\", os.path.exists(\"orders.txt\"), \"| env var with a default:\", os.environ.get(\"DB_PASSWORD\", \"not set\"))\n> \n> # --- 7. classes: data and the functions that work on it, kept together ---\n> class Source:\n>     company = \"Shop Ltd\"                                  # class attribute: shared by every object\n>     def __init__(self, name, path):                       # constructor: runs when an object is created\n>         self.name = name; self.path = path; self.rows_read = 0     # instance attributes: belong to this object\n>     def read(self): self.rows_read += 3; return f\"{self.name}: read 3 rows from {self.path}\"\n>     def describe(self): return f\"{type(self).__name__}({self.name}), {self.rows_read} rows so far\"\n> class ApiSource(Source):                                  # inheritance: an ApiSource IS a Source, with something extra\n>     def __init__(self, name, url, token):\n>         super().__init__(name, url); self._token = token\n>     def read(self): self.rows_read += 5; return f\"{self.name}: fetched 5 rows from {self.path} with a token ending ...{self._token[-3:]}\"\n>     @property\n>     def has_token(self): return bool(self._token)         # a read-only \"getter\"\n>     @staticmethod\n>     def page_url(base, page): return f\"{base}?page={page}\"       # a helper that needs no object\n> sources = [Source(\"orders_file\", \"landing/orders.csv\"), ApiSource(\"payments_api\", \"https://api.example.com/payments\", \"tok_abc123\")]\n> print(\"7)\")\n> for s in sources: print(\"  \", s.read()); print(\"  \", s.describe())\n> print(\"   class attribute:\", sources[0].company, \"| property:\", sources[1].has_token, \"| static method:\", ApiSource.page_url(\"https://api.example.com/payments\", 2))\n> print(\"   isinstance(api, Source):\", isinstance(sources[1], Source))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 basics2.py",
+     "o": "1) 118.0 105.0 60.0\n   min, max, mean: 5 35 20.0\n2) inside: 0.5 | outside is still: 0.18\n3) map: [40.0, 10.0, 71.0, 160.0] | filter: [20.0, 35.5, 80.0] | reduce: 140.5\n   sorted by amount, biggest first: [('ben', 80.0), ('asha', 55.5), ('chen', 12.0)]\n   the same map and filter as a comprehension: [40.0, 71.0, 160.0]\n   could not convert 'abc': could not convert string to float: 'abc'\n4) 42.5 None\n   KeyError for a missing dictionary key: 'amount'\n   ZeroDivisionError: division by zero\n   raised on purpose: amount must not be negative\n5) read 3 lines; last: 1003,chen,12.00\n   JSON file back as a dict: {'id': 1001, 'items': ['kettle', 'mug']}\n6) math: 12.0 5 4 | slept about 0.05 s\n   dates: 2026-03-05 | a week earlier: 2026-02-26 | weekday: Thursday\n   os: orders.csv | exists: True | env var with a default: not set\n7)\n   orders_file: read 3 rows from landing/orders.csv\n   Source(orders_file), 3 rows so far\n   payments_api: fetched 5 rows from https://api.example.com/payments with a token ending ...123\n   ApiSource(payments_api), 5 rows so far\n   class attribute: Shop Ltd | property: True | static method: https://api.example.com/payments?page=2\n   isinstance(api, Source): True",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "bef4c913ae72a074"
+ },
+ "dataeng-4": {
   "blocks": [
    [
     {
@@ -5670,7 +5792,7 @@
   ],
   "key": "fc94f8d979f50446"
  },
- "dataeng-3": {
+ "dataeng-5": {
   "blocks": [
    [
     {
@@ -5692,7 +5814,7 @@
   ],
   "key": "c57235b7125d05d5"
  },
- "dataeng-4": {
+ "dataeng-6": {
   "blocks": [
    [
     {
@@ -5714,7 +5836,7 @@
   ],
   "key": "d323dd95da070a65"
  },
- "dataeng-5": {
+ "dataeng-7": {
   "blocks": [
    [
     {
@@ -5729,14 +5851,31 @@
     },
     {
      "c": "$ python3 pd1.py",
-     "o": "1) inspect: shape (7, 5) | missing values per column: {'order_id': 0, 'customer': 0, 'amount': 1, 'status': 0, 'ordered_at': 0}\n order_id customer  amount status          ordered_at\n     1001     asha   19.99   paid 2026-03-01 09:15:00\n     1002     Ben     5.00   paid 2026-03-01 10:02:00\n     1003     asha     NaN   paid 2026-03-02 08:00:00\n\n2) after cleaning: 5 rows\n\n3) paid orders over 10:\n order_id customer  amount\n     1001     asha   19.99\n     1005      dee   42.50\n     1006     asha   61.00\n\n4) group by customer:\ncustomer  orders  revenue  biggest\n    asha       2    80.99     61.0\n     dee       1    42.50     42.5\n     ben       1     5.00      5.0\n\n5) left join with customers (dee has no match, so country is missing):\n order_id customer country    _merge\n     1001     asha      IN      both\n     1002      ben      UK      both\n     1004     chen      SG      both\n     1005      dee     NaN left_only\n     1006     asha      IN      both\n\n6) pivot: revenue by day and status\nstatus        paid  refunded\nday                         \n2026-03-01   24.99       0.0\n2026-03-02    0.00     120.0\n2026-03-03  103.50       0.0\n\n7) vectorised operations beat Python loops: loop 17.3 ms, column operation 1.4 ms\nsaved orders_clean.csv with 5 rows",
+     "o": "1) inspect: shape (7, 5) | missing values per column: {'order_id': 0, 'customer': 0, 'amount': 1, 'status': 0, 'ordered_at': 0}\n order_id customer  amount status          ordered_at\n     1001     asha   19.99   paid 2026-03-01 09:15:00\n     1002     Ben     5.00   paid 2026-03-01 10:02:00\n     1003     asha     NaN   paid 2026-03-02 08:00:00\n\n2) after cleaning: 5 rows\n\n3) paid orders over 10:\n order_id customer  amount\n     1001     asha   19.99\n     1005      dee   42.50\n     1006     asha   61.00\n\n4) group by customer:\ncustomer  orders  revenue  biggest\n    asha       2    80.99     61.0\n     dee       1    42.50     42.5\n     ben       1     5.00      5.0\n\n5) left join with customers (dee has no match, so country is missing):\n order_id customer country    _merge\n     1001     asha      IN      both\n     1002      ben      UK      both\n     1004     chen      SG      both\n     1005      dee     NaN left_only\n     1006     asha      IN      both\n\n6) pivot: revenue by day and status\nstatus        paid  refunded\nday                         \n2026-03-01   24.99       0.0\n2026-03-02    0.00     120.0\n2026-03-03  103.50       0.0\n\n7) vectorised operations beat Python loops: loop 21.9 ms, column operation 1.1 ms\nsaved orders_clean.csv with 5 rows",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/pd2 && cd ~/lab/de/pd2",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pd2.py <<'EOF'\n> # pandas, second sitting: selecting with loc/iloc, text and date tools, combining tables, and calculations across rows.\n> import io\n> import pandas as pd\n> sales = pd.read_csv(io.StringIO(\"\"\"day,store,item,units,price\n> 2026-03-01,Pune,espresso,30,2.5\n> 2026-03-01,Pune,latte,22,3.5\n> 2026-03-01,Leeds,espresso,18,2.5\n> 2026-03-02,Pune,espresso,35,2.5\n> 2026-03-02,Pune,latte,,3.5\n> 2026-03-02,Leeds,latte,12,3.5\n> 2026-03-03,Pune,espresso,41,2.5\n> 2026-03-03,Leeds,espresso,20,2.5\n> 2026-03-03,Leeds,latte,15,3.5\n> \"\"\"), parse_dates=[\"day\"])\n> \n> print(\"1) loc selects by LABEL and condition, iloc by POSITION\")\n> print(sales.loc[sales[\"store\"] == \"Leeds\", [\"day\", \"item\", \"units\"]].to_string(index=False))\n> print(\"   iloc[0:2, 0:3] ->\", sales.iloc[0:2, 0:3].values.tolist()[1][1:], \"| single cell with at:\", sales.at[0, \"item\"])\n> \n> print(\"\\n2) sort, count and distinct values\")\n> print(\"   top 2 by units:\", sales.sort_values(\"units\", ascending=False).head(2)[[\"store\", \"item\", \"units\"]].values.tolist())\n> print(\"   value_counts:\", sales[\"item\"].value_counts().to_dict(), \"| unique stores:\", sales[\"store\"].unique().tolist(), \"| nunique:\", sales[\"item\"].nunique())\n> \n> print(\"\\n3) three more ways to filter\")\n> print(\"   isin:\", len(sales[sales[\"store\"].isin([\"Pune\", \"Delhi\"])]), \"rows | str.contains:\", len(sales[sales[\"item\"].str.contains(\"press\")]), \"rows | query:\", len(sales.query(\"units > 20 and store == 'Pune'\")), \"rows\")\n> \n> print(\"\\n4) missing values: three honest choices\")\n> print(\"   drop:\", len(sales.dropna()), \"rows left | fill with 0:\", sales[\"units\"].fillna(0).tolist()[4], \"| interpolate between neighbours:\", sales[\"units\"].interpolate().tolist()[4])\n> sales[\"units\"] = sales[\"units\"].fillna(sales.groupby(\"item\")[\"units\"].transform(\"mean\")).round(0)\n> print(\"   chosen here: fill with the average for that item ->\", sales.at[4, \"units\"])\n> \n> print(\"\\n5) new columns, renaming, types and dates\")\n> sales = sales.assign(revenue=sales[\"units\"] * sales[\"price\"]).rename(columns={\"units\": \"cups\"}).astype({\"cups\": \"int64\"})\n> sales[\"weekday\"] = sales[\"day\"].dt.day_name(); sales[\"month\"] = sales[\"day\"].dt.strftime(\"%Y-%m\")\n> print(sales.head(3).to_string(index=False))\n> \n> print(\"\\n6) apply runs a Python function per value (flexible but slow); prefer column maths when it exists\")\n> sales[\"band\"] = sales[\"revenue\"].apply(lambda r: \"high\" if r >= 80 else \"normal\")\n> print(\"   bands:\", sales[\"band\"].value_counts().to_dict())\n> \n> print(\"\\n7) group with several aggregations, then a pivot table with totals\")\n> print(sales.groupby(\"store\").agg(cups=(\"cups\", \"sum\"), revenue=(\"revenue\", \"sum\"), best_sale=(\"revenue\", \"max\")).to_string())\n> print(sales.pivot_table(index=\"store\", columns=\"item\", values=\"cups\", aggfunc=\"sum\", margins=True, margins_name=\"total\").to_string())\n> \n> print(\"\\n8) combine tables: concat stacks them, merge joins them\")\n> march4 = pd.DataFrame({\"day\": pd.to_datetime([\"2026-03-04\"]), \"store\": [\"Pune\"], \"item\": [\"latte\"], \"cups\": [28], \"price\": [3.5]})\n> both = pd.concat([sales[[\"day\", \"store\", \"item\", \"cups\", \"price\"]], march4], ignore_index=True)\n> managers = pd.DataFrame({\"store\": [\"Pune\", \"Leeds\"], \"manager\": [\"Meera\", \"Tom\"]})\n> print(\"   after concat:\", len(both), \"rows | after merge:\", both.merge(managers, on=\"store\", how=\"left\", validate=\"many_to_one\")[[\"store\", \"manager\"]].drop_duplicates().values.tolist())\n> \n> print(\"\\n9) calculations across rows, per store: running total, change from the previous day, 2-day average, rank\")\n> daily = sales.groupby([\"store\", \"day\"], as_index=False)[\"revenue\"].sum().sort_values([\"store\", \"day\"])\n> g = daily.groupby(\"store\")[\"revenue\"]\n> daily = daily.assign(running=g.cumsum(), change=g.diff(), avg_2d=g.transform(lambda s: s.rolling(2).mean()), rank=g.rank(ascending=False).astype(int))\n> print(daily.assign(day=daily[\"day\"].dt.strftime(\"%m-%d\")).to_string(index=False))\n> \n> print(\"\\n10) save and reload: CSV loses the types, so say them again when reading\")\n> daily.to_csv(\"daily.csv\", index=False)\n> print(\"   day column read back plainly:\", pd.read_csv(\"daily.csv\")[\"day\"].dtype, \"| with parse_dates:\", pd.read_csv(\"daily.csv\", parse_dates=[\"day\"])[\"day\"].dtype)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pd2.py",
+     "o": "1) loc selects by LABEL and condition, iloc by POSITION\n       day     item  units\n2026-03-01 espresso   18.0\n2026-03-02    latte   12.0\n2026-03-03 espresso   20.0\n2026-03-03    latte   15.0\n   iloc[0:2, 0:3] -> ['Pune', 'latte'] | single cell with at: espresso\n\n2) sort, count and distinct values\n   top 2 by units: [['Pune', 'espresso', 41.0], ['Pune', 'espresso', 35.0]]\n   value_counts: {'espresso': 5, 'latte': 4} | unique stores: ['Pune', 'Leeds'] | nunique: 2\n\n3) three more ways to filter\n   isin: 5 rows | str.contains: 5 rows | query: 4 rows\n\n4) missing values: three honest choices\n   drop: 8 rows left | fill with 0: 0.0 | interpolate between neighbours: 23.5\n   chosen here: fill with the average for that item -> 16.0\n\n5) new columns, renaming, types and dates\n       day store     item  cups  price  revenue weekday   month\n2026-03-01  Pune espresso    30    2.5     75.0  Sunday 2026-03\n2026-03-01  Pune    latte    22    3.5     77.0  Sunday 2026-03\n2026-03-01 Leeds espresso    18    2.5     45.0  Sunday 2026-03\n\n6) apply runs a Python function per value (flexible but slow); prefer column maths when it exists\n   bands: {'normal': 7, 'high': 2}\n\n7) group with several aggregations, then a pivot table with totals\n       cups  revenue  best_sale\nstore                          \nLeeds    65    189.5       52.5\nPune    144    398.0      102.5\nitem   espresso  latte  total\nstore                        \nLeeds        38     27     65\nPune        106     38    144\ntotal       144     65    209\n\n8) combine tables: concat stacks them, merge joins them\n   after concat: 10 rows | after merge: [['Pune', 'Meera'], ['Leeds', 'Tom']]\n\n9) calculations across rows, per store: running total, change from the previous day, 2-day average, rank\nstore   day  revenue  running  change  avg_2d  rank\nLeeds 03-01     45.0     45.0     NaN     NaN     2\nLeeds 03-02     42.0     87.0    -3.0   43.50     3\nLeeds 03-03    102.5    189.5    60.5   72.25     1\n Pune 03-01    152.0    152.0     NaN     NaN     1\n Pune 03-02    143.5    295.5    -8.5  147.75     2\n Pune 03-03    102.5    398.0   -41.0  123.00     3\n\n10) save and reload: CSV loses the types, so say them again when reading\n   day column read back plainly: str | with parse_dates: datetime64[us]",
      "x": 0
     }
    ]
   ],
-  "key": "8039a727d9fba8be"
+  "key": "2864bec21f6cfea0"
  },
- "dataeng-6": {
+ "dataeng-8": {
   "blocks": [
    [
     {
@@ -5754,12 +5893,46 @@
      "o": "1) a request without the right token fails fast (no retry):\n   HTTP 401: missing or wrong token\n\n2) full load: follow next_page until it is null; survive a 429 and a 503\n   page 1: 5 records\n      HTTP 429 on attempt 1; waiting 0.2 s then retrying\n   page 2: 5 records\n      HTTP 503 on attempt 1; waiting 0.1 s then retrying\n   page 3: 5 records\n   page 4: 5 records\n   page 5: 3 records\n   fetched 23 records in 8 HTTP calls; ids 1..23; unique ids: 23\n\n3) incremental load: ask only for records changed since 2026-03-06\n   page 1: 1 records\n   fetched 1 new record(s): [{'id': 24, 'amount': 99, 'updated_at': '2026-03-09'}]",
      "x": 0
     }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/crud && cd ~/lab/de/crud",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > crud.py <<'EOF'\n> # Build a small REST API yourself, then call every method on it: GET (read), POST (create), PUT (update), DELETE (remove).\n> # Standard library only so it runs anywhere; the same API in Flask is shown in the lesson.\n> import json, threading, urllib.request, urllib.error\n> from http.server import BaseHTTPRequestHandler, HTTPServer\n> DRINKS = {1: {\"id\": 1, \"name\": \"Masala chai\", \"price\": 20}, 2: {\"id\": 2, \"name\": \"Filter coffee\", \"price\": 25}}\n> class Api(BaseHTTPRequestHandler):\n>     def log_message(self, *a): pass\n>     def send(self, code, body=None):\n>         data = json.dumps(body).encode() if body is not None else b\"\"\n>         self.send_response(code); self.send_header(\"Content-Type\", \"application/json\"); self.send_header(\"Content-Length\", str(len(data))); self.end_headers(); self.wfile.write(data)\n>     def body(self): return json.loads(self.rfile.read(int(self.headers.get(\"Content-Length\", 0))) or b\"{}\")\n>     def drink_id(self):                                  # /drinks/2 -> 2 ; /drinks -> None\n>         parts = self.path.strip(\"/\").split(\"/\")\n>         return int(parts[1]) if len(parts) == 2 and parts[1].isdigit() else None\n>     def do_GET(self):\n>         if self.path == \"/drinks\": return self.send(200, {\"drinks\": list(DRINKS.values())})\n>         d = DRINKS.get(self.drink_id()); return self.send(200, d) if d else self.send(404, {\"error\": \"no such drink\"})\n>     def do_POST(self):\n>         b = self.body()\n>         if \"name\" not in b or \"price\" not in b: return self.send(400, {\"error\": \"name and price are required\"})\n>         new_id = max(DRINKS) + 1; DRINKS[new_id] = {\"id\": new_id, \"name\": b[\"name\"], \"price\": b[\"price\"]}\n>         self.send(201, DRINKS[new_id])                   # 201 Created\n>     def do_PUT(self):\n>         i = self.drink_id()\n>         if i not in DRINKS: return self.send(404, {\"error\": \"no such drink\"})\n>         DRINKS[i].update(self.body()); self.send(200, DRINKS[i])\n>     def do_DELETE(self):\n>         i = self.drink_id()\n>         if i not in DRINKS: return self.send(404, {\"error\": \"no such drink\"})\n>         del DRINKS[i]; self.send(204)                    # 204 No Content: done, nothing to send back\n> server = HTTPServer((\"127.0.0.1\", 0), Api); threading.Thread(target=server.serve_forever, daemon=True).start()\n> BASE = f\"http://127.0.0.1:{server.server_port}\"\n> def call(method, path, payload=None):\n>     req = urllib.request.Request(BASE + path, method=method, data=json.dumps(payload).encode() if payload else None, headers={\"Content-Type\": \"application/json\"})\n>     try:\n>         with urllib.request.urlopen(req, timeout=5) as r: text = r.read().decode(); code = r.status\n>     except urllib.error.HTTPError as e: text = e.read().decode(); code = e.code\n>     print(f\"{method:6} {path:10} -> {code}  {text}\")\n> call(\"GET\", \"/drinks\")                                           # read the whole collection\n> call(\"GET\", \"/drinks/2\")                                         # read one item: the id is part of the path\n> call(\"POST\", \"/drinks\", {\"name\": \"Lassi\", \"price\": 30})          # create: the new item is in the request body\n> call(\"PUT\", \"/drinks/3\", {\"price\": 35})                          # update item 3\n> call(\"PUT\", \"/drinks/3\", {\"price\": 35})                          # the same PUT again changes nothing more: PUT is idempotent\n> call(\"POST\", \"/drinks\", {\"name\": \"Lassi\"})                       # a bad request: price is missing\n> call(\"DELETE\", \"/drinks/1\")                                      # remove\n> call(\"GET\", \"/drinks/1\")                                         # it is gone\n> call(\"GET\", \"/drinks\")\n> server.shutdown()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 crud.py",
+     "o": "GET    /drinks    -> 200  {\"drinks\": [{\"id\": 1, \"name\": \"Masala chai\", \"price\": 20}, {\"id\": 2, \"name\": \"Filter coffee\", \"price\": 25}]}\nGET    /drinks/2  -> 200  {\"id\": 2, \"name\": \"Filter coffee\", \"price\": 25}\nPOST   /drinks    -> 201  {\"id\": 3, \"name\": \"Lassi\", \"price\": 30}\nPUT    /drinks/3  -> 200  {\"id\": 3, \"name\": \"Lassi\", \"price\": 35}\nPUT    /drinks/3  -> 200  {\"id\": 3, \"name\": \"Lassi\", \"price\": 35}\nPOST   /drinks    -> 400  {\"error\": \"name and price are required\"}\nDELETE /drinks/1  -> 204  \nGET    /drinks/1  -> 404  {\"error\": \"no such drink\"}\nGET    /drinks    -> 200  {\"drinks\": [{\"id\": 2, \"name\": \"Filter coffee\", \"price\": 25}, {\"id\": 3, \"name\": \"Lassi\", \"price\": 35}]}",
+     "x": 0
+    }
    ]
   ],
-  "key": "7036895f33a9aee0"
+  "key": "1ca4a77f9d064b00"
  },
- "dataeng-7": {
+ "dataeng-9": {
   "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/de/enc && cd ~/lab/de/enc",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > enc.py <<'EOF'\n> # How a column file saves work and space, on six rows you can check by hand. (No libraries: this is the idea inside Parquet.)\n> rows = [(\"T-Shirt\", \"USA\", 30), (\"T-Shirt\", \"UK\", 28), (\"T-Shirt\", \"USA\", 31),      # row group 1\n>         (\"Socks\", \"USA\", 5), (\"Socks\", \"UK\", 6), (\"Socks\", \"DE\", 5)]                # row group 2\n> COLS = [\"product\", \"country\", \"price\"]; N_COLS_IN_REAL_TABLE = 5                    # imagine two more columns we never need\n> print(\"question: how many T-Shirts were bought from the USA?   (needs 2 of the 5 columns)\\n\")\n> print(f\"row store                  : reads {len(rows)} rows x {N_COLS_IN_REAL_TABLE} columns = {len(rows) * N_COLS_IN_REAL_TABLE} values\")\n> print(f\"column store               : reads {len(rows)} rows x 2 columns = {len(rows) * 2} values   (projection: only the columns in SELECT)\")\n> groups = [rows[:3], rows[3:]]\n> stats = [{\"product_min\": min(r[0] for r in g), \"product_max\": max(r[0] for r in g)} for g in groups]\n> read = 0\n> for i, (g, s) in enumerate(zip(groups, stats), 1):\n>     keep = s[\"product_min\"] <= \"T-Shirt\" <= s[\"product_max\"]\n>     print(f\"   row group {i}: product from {s['product_min']!r} to {s['product_max']!r} -> {'read' if keep else 'SKIP (cannot contain T-Shirt)'}\")\n>     if keep: read += len(g)\n> print(f\"column store with row groups: reads {read} rows x 2 columns = {read * 2} values    (predicate: the WHERE filter, checked against min/max)\")\n> print(\"answer:\", sum(1 for p, c, _ in rows if p == \"T-Shirt\" and c == \"USA\"))\n> \n> print(\"\\ndictionary encoding of the product column (store each distinct value once, then small numbers):\")\n> column = [\"Long-sleeve T-shirt with a print on the neck\"] * 6 + [\"Wool socks\"] * 4\n> dictionary = {v: i for i, v in enumerate(dict.fromkeys(column))}\n> codes = [dictionary[v] for v in column]\n> print(\"   dictionary:\", dictionary, \"\\n   column becomes:\", codes)\n> plain = sum(len(v) for v in column); packed = sum(len(v) for v in dictionary) + len(codes)\n> print(f\"   {plain} characters as text -> about {packed} (dictionary + one small number per row)\")\n> def rle(values):\n>     out = []\n>     for v in values:\n>         if out and out[-1][0] == v: out[-1][1] += 1\n>         else: out.append([v, 1])\n>     return out\n> print(\"run-length encoding of those numbers (value, how many times in a row):\", rle(codes))\n> print(\"   which is why SORTED data compresses better: the same values sit next to each other\")\n> shuffled = [0, 1, 0, 0, 1, 0, 1, 0, 1, 0]\n> print(\"   the same values unsorted:\", rle(shuffled), \"->\", len(rle(shuffled)), \"runs instead of\", len(rle(codes)))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 enc.py",
+     "o": "question: how many T-Shirts were bought from the USA?   (needs 2 of the 5 columns)\n\nrow store                  : reads 6 rows x 5 columns = 30 values\ncolumn store               : reads 6 rows x 2 columns = 12 values   (projection: only the columns in SELECT)\n   row group 1: product from 'T-Shirt' to 'T-Shirt' -> read\n   row group 2: product from 'Socks' to 'Socks' -> SKIP (cannot contain T-Shirt)\ncolumn store with row groups: reads 3 rows x 2 columns = 6 values    (predicate: the WHERE filter, checked against min/max)\nanswer: 2\n\ndictionary encoding of the product column (store each distinct value once, then small numbers):\n   dictionary: {'Long-sleeve T-shirt with a print on the neck': 0, 'Wool socks': 1} \n   column becomes: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]\n   304 characters as text -> about 64 (dictionary + one small number per row)\nrun-length encoding of those numbers (value, how many times in a row): [[0, 6], [1, 4]]\n   which is why SORTED data compresses better: the same values sit next to each other\n   the same values unsorted: [[0, 1], [1, 1], [0, 2], [1, 1], [0, 1], [1, 1], [0, 1], [1, 1], [0, 1]] -> 9 runs instead of 2",
+     "x": 0
+    }
+   ],
    [
     {
      "c": "$ mkdir -p ~/lab/de/formats && cd ~/lab/de/formats",
@@ -5773,56 +5946,12 @@
     },
     {
      "c": "$ python3 formats.py",
-     "o": "file                        size\norders.csv               10.18 MB\norders.jsonl             25.18 MB\norders.parquet            2.95 MB\norders_zstd.parquet       1.98 MB\n\nquestion: what is the total amount? (needs ONE column out of six)\n   CSV: must parse every column of every row         312.8 ms   total = 50,085,079.08\n   JSON Lines: same, plus repeated field names       390.1 ms   total = 50,085,079.08\n   Parquet: reads only the 'amount' column            30.3 ms   total = 50,085,079.08\n\ninside the Parquet file: 200,000 rows, 10 row groups, 6 columns; the schema travels with the data:\n   order_id: int64, customer_id: int64, country: string, amount: double, day: string, note: string\n   row group 0, column 'day': min=2026-03-01, max=2026-03-03  <- statistics let a reader skip whole row groups\n\nfilter day = 2026-03-15 with predicate pushdown: 6,666 rows returned in 3.1 ms (row groups for other days are skipped)\n\ncolumn sizes inside the file (compressed):\n   order_id       1176.9 kB\n   customer_id     522.4 kB\n   country          76.3 kB\n   amount         1169.2 kB\n   day               1.2 kB\n   note              1.1 kB",
+     "o": "file                        size\norders.csv               10.18 MB\norders.jsonl             25.18 MB\norders.parquet            2.95 MB\norders_zstd.parquet       1.98 MB\n\nquestion: what is the total amount? (needs ONE column out of six)\n   CSV: must parse every column of every row         326.5 ms   total = 50,085,079.08\n   JSON Lines: same, plus repeated field names       438.5 ms   total = 50,085,079.08\n   Parquet: reads only the 'amount' column            29.0 ms   total = 50,085,079.08\n\ninside the Parquet file: 200,000 rows, 10 row groups, 6 columns; the schema travels with the data:\n   order_id: int64, customer_id: int64, country: string, amount: double, day: string, note: string\n   row group 0, column 'day': min=2026-03-01, max=2026-03-03  <- statistics let a reader skip whole row groups\n\nfilter day = 2026-03-15 with predicate pushdown: 6,666 rows returned in 1.6 ms (row groups for other days are skipped)\n\ncolumn sizes inside the file (compressed):\n   order_id       1176.9 kB\n   customer_id     522.4 kB\n   country          76.3 kB\n   amount         1169.2 kB\n   day               1.2 kB\n   note              1.1 kB",
      "x": 0
     }
    ]
   ],
-  "key": "f8053efd34a1da0b"
- },
- "dataeng-8": {
-  "blocks": [
-   [
-    {
-     "c": "$ mkdir -p ~/lab/de/etl && cd ~/lab/de/etl",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat > etl.py <<'EOF'\n> # A small but real ETL pipeline: extract CSV files -> transform -> load into SQLite.\n> # Properties of a production pipeline: incremental (only new files), idempotent (safe to re-run), observable (logs, counts), rejects kept.\n> import csv, sqlite3, logging, sys, hashlib\n> from pathlib import Path\n> logging.basicConfig(level=logging.INFO, format=\"%(levelname)s %(message)s\", stream=sys.stdout)\n> log = logging.getLogger(\"etl\")\n> LANDING, DB = Path(\"landing\"), \"warehouse.db\"\n> \n> def make_source_files():                       # pretend another system drops a file per day\n>     LANDING.mkdir(exist_ok=True)\n>     (LANDING / \"orders_2026-03-01.csv\").write_text(\"order_id,customer,amount\\n1,asha,20.00\\n2,ben,5.00\\n3,chen,abc\\n\")\n>     (LANDING / \"orders_2026-03-02.csv\").write_text(\"order_id,customer,amount\\n4,ben,80.00\\n2,ben,6.00\\n\")   # order 2 corrected\n> \n> def setup(db):\n>     db.executescript(\"\"\"\n>     CREATE TABLE IF NOT EXISTS orders (order_id INTEGER PRIMARY KEY, customer TEXT NOT NULL, amount REAL NOT NULL, source_file TEXT NOT NULL);\n>     CREATE TABLE IF NOT EXISTS rejects (source_file TEXT, line INTEGER, reason TEXT, raw TEXT);\n>     CREATE TABLE IF NOT EXISTS loaded_files (name TEXT PRIMARY KEY, checksum TEXT, rows_ok INTEGER, rows_bad INTEGER);\"\"\")\n> \n> def extract(path):\n>     with open(path, newline=\"\") as f:\n>         for n, row in enumerate(csv.DictReader(f), start=2): yield n, row\n> \n> def transform(row):\n>     return {\"order_id\": int(row[\"order_id\"]), \"customer\": row[\"customer\"].strip().lower(), \"amount\": round(float(row[\"amount\"]), 2)}\n> \n> def run():\n>     db = sqlite3.connect(DB); setup(db)\n>     done = {r[0] for r in db.execute(\"SELECT name FROM loaded_files\")}\n>     new = [p for p in sorted(LANDING.glob(\"orders_*.csv\")) if p.name not in done]\n>     if not new: log.info(\"nothing new to load\")\n>     for path in new:\n>         ok = bad = 0\n>         with db:                                # one transaction per file: all of it loads, or none of it\n>             for line, row in extract(path):\n>                 try:\n>                     r = transform(row)\n>                     db.execute(\"\"\"INSERT INTO orders VALUES (:order_id, :customer, :amount, :f)\n>                                   ON CONFLICT(order_id) DO UPDATE SET customer = excluded.customer, amount = excluded.amount, source_file = excluded.source_file\"\"\", {**r, \"f\": path.name})\n>                     ok += 1\n>                 except (ValueError, KeyError) as e:\n>                     db.execute(\"INSERT INTO rejects VALUES (?,?,?,?)\", (path.name, line, str(e), str(dict(row)))); bad += 1\n>             db.execute(\"INSERT INTO loaded_files VALUES (?,?,?,?)\", (path.name, hashlib.md5(path.read_bytes()).hexdigest(), ok, bad))\n>         log.info(\"loaded %s: %d ok, %d rejected\", path.name, ok, bad)\n>     n, total = db.execute(\"SELECT COUNT(*), ROUND(SUM(amount), 2) FROM orders\").fetchone()\n>     log.info(\"orders table: %d rows, total %.2f; rejects: %d\", n, total, db.execute(\"SELECT COUNT(*) FROM rejects\").fetchone()[0])\n>     return db\n> \n> Path(DB).unlink(missing_ok=True)\n> make_source_files()\n> print(\"== first run ==\"); db = run()\n> print(\"== second run (nothing changed: must do nothing and change nothing) ==\"); db = run()\n> print(\"== a new file arrives ==\"); (LANDING / \"orders_2026-03-03.csv\").write_text(\"order_id,customer,amount\\n5,dee,42.50\\n\"); db = run()\n> print(\"\\nfinal table:\")\n> for row in db.execute(\"SELECT * FROM orders ORDER BY order_id\"): print(\"  \", row)\n> print(\"rejects:\", db.execute(\"SELECT source_file, line, reason FROM rejects\").fetchall())\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ python3 etl.py",
-     "o": "== first run ==\nINFO loaded orders_2026-03-01.csv: 2 ok, 1 rejected\nINFO loaded orders_2026-03-02.csv: 2 ok, 0 rejected\nINFO orders table: 3 rows, total 106.00; rejects: 1\n== second run (nothing changed: must do nothing and change nothing) ==\nINFO nothing new to load\nINFO orders table: 3 rows, total 106.00; rejects: 1\n== a new file arrives ==\nINFO loaded orders_2026-03-03.csv: 1 ok, 0 rejected\nINFO orders table: 4 rows, total 148.50; rejects: 1\n\nfinal table:\n   (1, 'asha', 20.0, 'orders_2026-03-01.csv')\n   (2, 'ben', 6.0, 'orders_2026-03-02.csv')\n   (4, 'ben', 80.0, 'orders_2026-03-02.csv')\n   (5, 'dee', 42.5, 'orders_2026-03-03.csv')\nrejects: [('orders_2026-03-01.csv', 4, \"could not convert string to float: 'abc'\")]",
-     "x": 0
-    }
-   ]
-  ],
-  "key": "a337984905ce75e6"
- },
- "dataeng-9": {
-  "blocks": [
-   [
-    {
-     "c": "$ mkdir -p ~/lab/de/nested && cd ~/lab/de/nested",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ cat > nested.py <<'EOF'\n> # Loading nested JSON from an API into tables: flatten, infer the schema, evolve it when a new field appears, and load incrementally.\n> # Loading tools (for example dlt, Airbyte, Fivetran) automate these four jobs; here they are in plain Python so you can see them.\n> import json, sqlite3\n> PAGE_1 = [{\"id\": 1, \"user\": {\"name\": \"asha\", \"address\": {\"city\": \"Pune\"}}, \"items\": [{\"sku\": \"kettle\", \"qty\": 1}, {\"sku\": \"mug\", \"qty\": 2}], \"updated_at\": \"2026-03-01T10:00\"},\n>           {\"id\": 2, \"user\": {\"name\": \"ben\", \"address\": {\"city\": \"Leeds\"}}, \"items\": [{\"sku\": \"lamp\", \"qty\": 1}], \"updated_at\": \"2026-03-02T09:00\"}]\n> PAGE_2 = [{\"id\": 3, \"user\": {\"name\": \"chen\", \"address\": {\"city\": \"Singapore\"}}, \"items\": [], \"updated_at\": \"2026-03-03T12:00\", \"coupon\": \"SPRING\"},   # a NEW field appears\n>           {\"id\": 2, \"user\": {\"name\": \"ben\", \"address\": {\"city\": \"York\"}}, \"items\": [{\"sku\": \"lamp\", \"qty\": 3}], \"updated_at\": \"2026-03-04T08:00\"}]          # id 2 changed\n> def flatten(obj, prefix=\"\"):\n>     \"\"\"{'user': {'address': {'city': 'Pune'}}} -> {'user__address__city': 'Pune'}; lists become child-table rows.\"\"\"\n>     row, children = {}, {}\n>     for k, v in obj.items():\n>         name = prefix + k\n>         if isinstance(v, dict): r, c = flatten(v, name + \"__\"); row.update(r); children.update(c)\n>         elif isinstance(v, list): children[name] = v\n>         else: row[name] = v\n>     return row, children\n> TYPES = {int: \"INTEGER\", float: \"REAL\", str: \"TEXT\", bool: \"INTEGER\"}\n> db = sqlite3.connect(\":memory:\")\n> def columns(table): return [r[1] for r in db.execute(f\"PRAGMA table_info({table})\")]\n> def load(table, rows, key):\n>     for row in rows:\n>         if not columns(table):\n>             db.execute(f\"CREATE TABLE {table} ({', '.join(f'{c} {TYPES[type(v)]}' for c, v in row.items())}, PRIMARY KEY ({key}))\"); print(f\"   created {table} with columns {list(row)}\")\n>         for c, v in row.items():\n>             if c not in columns(table): db.execute(f\"ALTER TABLE {table} ADD COLUMN {c} {TYPES[type(v)]}\"); print(f\"   schema evolved: added column {table}.{c}\")\n>         cols = list(row)\n>         db.execute(f\"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))}) ON CONFLICT({key}) DO UPDATE SET \" + \", \".join(f\"{c} = excluded.{c}\" for c in cols), list(row.values()))\n> state = {\"last_updated_at\": \"\"}                       # the cursor: the newest change we have already loaded\n> def run(page):\n>     new = [o for o in page if o[\"updated_at\"] > state[\"last_updated_at\"]]\n>     print(f\"   {len(new)} of {len(page)} records are newer than the cursor {state['last_updated_at'] or '(none)'}\")\n>     for order in new:\n>         row, children = flatten(order)\n>         load(\"orders\", [row], \"id\")\n>         db.execute(\"DELETE FROM orders__items WHERE _order_id = ?\", (order[\"id\"],)) if columns(\"orders__items\") else None\n>         load(\"orders__items\", [{\"_order_id\": order[\"id\"], \"_idx\": i, **it} for i, it in enumerate(children.get(\"items\", []))], \"_order_id, _idx\")\n>     if new: state[\"last_updated_at\"] = max(o[\"updated_at\"] for o in new)\n> print(\"load 1:\"); run(PAGE_1)\n> print(\"load 2 (a new field, and a changed record):\"); run(PAGE_2)\n> print(\"load 3 (the same page again: nothing to do):\"); run(PAGE_2)\n> for t in (\"orders\", \"orders__items\"):\n>     print(f\"\\n{t}: {columns(t)}\")\n>     for r in db.execute(f\"SELECT * FROM {t} ORDER BY 1, 2\"): print(\"  \", r)\n> EOF",
-     "o": "",
-     "x": 0
-    },
-    {
-     "c": "$ python3 nested.py",
-     "o": "load 1:\n   2 of 2 records are newer than the cursor (none)\n   created orders with columns ['id', 'user__name', 'user__address__city', 'updated_at']\n   created orders__items with columns ['_order_id', '_idx', 'sku', 'qty']\nload 2 (a new field, and a changed record):\n   2 of 2 records are newer than the cursor 2026-03-02T09:00\n   schema evolved: added column orders.coupon\nload 3 (the same page again: nothing to do):\n   0 of 2 records are newer than the cursor 2026-03-04T08:00\n\norders: ['id', 'user__name', 'user__address__city', 'updated_at', 'coupon']\n   (1, 'asha', 'Pune', '2026-03-01T10:00', None)\n   (2, 'ben', 'York', '2026-03-04T08:00', None)\n   (3, 'chen', 'Singapore', '2026-03-03T12:00', 'SPRING')\n\norders__items: ['_order_id', '_idx', 'sku', 'qty']\n   (1, 0, 'kettle', 1)\n   (1, 1, 'mug', 2)\n   (2, 0, 'lamp', 3)",
-     "x": 0
-    }
-   ]
-  ],
-  "key": "abffed6c0dbfbf06"
+  "key": "6cf3a987d46b44e4"
  },
  "docker-1": {
   "blocks": [

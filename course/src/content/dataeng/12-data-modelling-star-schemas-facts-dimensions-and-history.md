@@ -13,7 +13,7 @@ sub: Why analytics tables are shaped differently from application tables, how to
 :::
 
 :::note Before this lesson
-You need joins from [lesson 3](#dataeng-3). How a database stores and indexes data is in [Systems 2](#systems-2).
+You need joins from [lesson 5](#dataeng-5). How a database stores and indexes data is in [Systems 2](#systems-2).
 :::
 
 ## The idea
@@ -92,7 +92,7 @@ Type 1 for corrections (a typo in a name); type 2 where the business asks "as it
 
 ## The date dimension
 
-A table with one row per day and columns such as weekday, month, quarter, fiscal year, is-holiday. It looks trivial and is very useful: it makes "sales by weekday" a simple join, and joining facts to it **fills missing days**, which fixes the moving-average problem from [lesson 4](#dataeng-4).
+A table with one row per day and columns such as weekday, month, quarter, fiscal year, is-holiday. It looks trivial and is very useful: it makes "sales by weekday" a simple join, and joining facts to it **fills missing days**, which fixes the moving-average problem from [lesson 6](#dataeng-6).
 
 ## Layers: raw, clean, modelled
 

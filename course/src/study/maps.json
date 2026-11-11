@@ -2373,67 +2373,69 @@
   "hops": [
    {
     "label": "Path",
-    "text": "The five stages, the ten videos and how to study.",
+    "text": "The five stages and how to study.",
     "lessons": [
      1
     ]
    },
    {
     "label": "Languages",
-    "text": "Python to read messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts.",
+    "text": "Python from variables to classes, then reading messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts.",
     "lessons": [
      2,
      3,
-     4
+     4,
+     5,
+     6
     ]
    },
    {
     "label": "Get and store",
     "text": "pandas for tables in memory, APIs with pagination and retries, Parquet for analytics.",
     "lessons": [
-     5,
-     6,
-     7
-    ]
-   },
-   {
-    "label": "Pipeline",
-    "text": "Incremental, idempotent, observable loads; nested data and schema evolution.",
-    "lessons": [
+     7,
      8,
      9
     ]
    },
    {
-    "label": "Model and trust",
-    "text": "Facts, dimensions and history; checks on every load; write, audit, publish.",
+    "label": "Pipeline",
+    "text": "Incremental, idempotent, observable loads; write dispositions, schema contracts and backfills.",
     "lessons": [
      10,
      11
     ]
    },
    {
+    "label": "Model and trust",
+    "text": "Facts, dimensions and history; checks on every load; write, audit, publish.",
+    "lessons": [
+     12,
+     13
+    ]
+   },
+   {
     "label": "Run",
     "text": "A DAG with retries, re-runs and backfills, parameterised by date.",
     "lessons": [
-     12
+     14
     ]
    },
    {
     "label": "Scale",
     "text": "Partitions, shuffles and skew; logs, offsets and windows; the warehouse, ELT and dbt.",
     "lessons": [
-     13,
-     14,
-     15
+     15,
+     16,
+     17
     ]
    },
    {
     "label": "Professional",
     "text": "Tests, containers, CI, monitoring, cost and privacy; the capstone and the interview.",
     "lessons": [
-     16,
-     17
+     18,
+     19
     ]
    }
   ],

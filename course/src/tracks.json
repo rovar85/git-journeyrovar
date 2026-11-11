@@ -107,8 +107,8 @@
   "id": "dataeng",
   "name": "Data engineering: from beginner to professional",
   "group": "5 · Data",
-  "level": "Beginner to professional · needs Python basics",
-  "blurb": "Seventeen lessons in five stages: Python for data and SQL, pandas, APIs and file formats, a real ETL pipeline, loading nested data, star schemas, data quality, orchestration, big data and Spark, streaming, the warehouse and dbt, production practice, then a capstone and the interview. Every lesson runs code.",
+  "level": "Beginner to professional · starts from zero",
+  "blurb": "Nineteen lessons in five stages: Python from the first variable to classes, SQL, pandas, APIs and file formats, a real ETL pipeline, loading strategies, star schemas, data quality, orchestration, big data and Spark, streaming, the warehouse and dbt, production practice, then a capstone and the interview. Every lesson runs code.",
   "why": "Data engineering is one of the most hired-for skills. This track takes you from reading a messy file to running production pipelines."
  },
  {

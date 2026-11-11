@@ -28,15 +28,15 @@ Data engineering sits between software engineering and analytics: you write code
 
 ## The five stages
 
-**Stage 1. Foundations (lessons 2 to 4).** Python for files and data, then SQL. SQL is the language of the job; most interviews are won or lost on it.
+**Stage 1. Foundations (lessons 2 to 6).** Python from the first variable to classes, Python for messy files, then SQL. SQL is the language of the job; most interviews are won or lost on it.
 
-**Stage 2. Getting and storing data (lessons 5 to 7).** pandas for tables in memory, APIs for getting data from other systems, and file formats (CSV, JSON, Parquet).
+**Stage 2. Getting and storing data (lessons 7 to 9).** pandas for tables in memory, APIs for getting data from other systems (and building a small one yourself), and file formats (CSV, JSON, Parquet).
 
-**Stage 3. Building pipelines (lessons 8 to 12).** A real extract-transform-load pipeline that is incremental and safe to re-run, loading nested data, data modelling (star schema), data quality checks, and orchestration (scheduling, retries, backfills).
+**Stage 3. Building pipelines (lessons 10 to 14).** A real extract-transform-load pipeline that is incremental and safe to re-run, loading strategies for nested and changing data, data modelling (star schema), data quality checks, and orchestration (scheduling, retries, backfills).
 
-**Stage 4. Scale (lessons 13 to 15).** How big-data engines work (partitions, shuffles, Spark, the lakehouse), streaming (Kafka ideas), and the warehouse with ELT and dbt.
+**Stage 4. Scale (lessons 15 to 17).** How big-data engines work (partitions, shuffles, Spark, the lakehouse), streaming (Kafka ideas), and the warehouse with ELT and dbt.
 
-**Stage 5. Professional practice (lessons 16 and 17).** Running pipelines in production (tests, containers, CI, monitoring, cost, privacy), then a capstone project, a portfolio and the interview.
+**Stage 5. Professional practice (lessons 18 and 19).** Running pipelines in production (tests, containers, CI, monitoring, cost, privacy), then a capstone project, a portfolio and the interview.
 
 A realistic pace for someone with a job or studies: **one lesson every two or three evenings**, about three to four months for the whole path, plus the capstone.
 
@@ -44,26 +44,28 @@ A realistic pace for someone with a job or studies: **one lesson every two or th
 
 | Lesson | Topic |
 |---|---|
-| [2](#dataeng-2) | Python for data work: files, CSV, JSON, dates, errors |
-| [3](#dataeng-3) | SQL from zero |
-| [4](#dataeng-4) | SQL for data engineers: windows, CTEs, de-duplication, upserts |
-| [5](#dataeng-5) | pandas |
-| [6](#dataeng-6) | Working with APIs |
-| [7](#dataeng-7) | File formats: CSV, JSON, Parquet |
-| [8](#dataeng-8) | Build an ETL pipeline |
-| [9](#dataeng-9) | Loading nested data: schema inference, evolution, incremental loads |
-| [10](#dataeng-10) | Data modelling: star schema and history |
-| [11](#dataeng-11) | Data quality and testing |
-| [12](#dataeng-12) | Orchestration: DAGs, retries, backfills |
-| [13](#dataeng-13) | Big data: partitions, shuffles, Spark, the lakehouse |
-| [14](#dataeng-14) | Streaming: logs, offsets, windows |
-| [15](#dataeng-15) | The warehouse, ELT and dbt |
-| [16](#dataeng-16) | Production: tests, containers, CI, monitoring, cost, privacy |
-| [17](#dataeng-17) | Capstone, portfolio and interview |
+| [2](#dataeng-2) | Python essentials 1: values, text, collections, decisions and loops |
+| [3](#dataeng-3) | Python essentials 2: functions, errors, files, modules and classes |
+| [4](#dataeng-4) | Python for data work: files, CSV, JSON, dates and errors |
+| [5](#dataeng-5) | SQL from zero: select, filter, group and join |
+| [6](#dataeng-6) | SQL for data engineers: CTEs, window functions, de-duplication and upserts |
+| [7](#dataeng-7) | pandas: tables in Python |
+| [8](#dataeng-8) | Working with APIs: pagination, authentication, rate limits and retries |
+| [9](#dataeng-9) | File formats: CSV, JSON and Parquet |
+| [10](#dataeng-10) | Build an ETL pipeline: incremental, idempotent and observable |
+| [11](#dataeng-11) | Loading nested data: flattening, schema inference, schema evolution and incremental loads |
+| [12](#dataeng-12) | Data modelling: star schemas, facts, dimensions and history |
+| [13](#dataeng-13) | Data quality: checks, tests and contracts |
+| [14](#dataeng-14) | Orchestration: DAGs, schedules, retries and backfills |
+| [15](#dataeng-15) | Big data: partitions, shuffles, Spark and the lakehouse |
+| [16](#dataeng-16) | Streaming: logs, offsets, windows and late data |
+| [17](#dataeng-17) | The warehouse, ELT and dbt: the modern data stack |
+| [18](#dataeng-18) | Production practice: tests, containers, CI, monitoring, cost and privacy |
+| [19](#dataeng-19) | Capstone, portfolio and the data engineering interview |
 
 ## What you already have in this course
 
-- **New to all of this?** Do [Start here](#start-1) first. **New to programming?** Do the [Python track](#ch15): variables, lists, dictionaries, loops, functions, errors and classes.
+- **New to all of this?** Do [Start here](#start-1) first. Lessons 2 and 3 of this track teach Python from the first variable; the [Python track](#ch15) covers the same ground more slowly, with a step-by-step code player.
 - **The terminal and files:** [Linux](#linux-1). **Version control:** [Git](#git-1). Every data team uses both daily.
 - **Containers and cloud:** [Docker](#docker-1) and [Cloud](#cloud-1); pipelines are shipped as containers and run on cloud services.
 - **How databases work inside, indexes, replication:** [Databases and distributed systems](#systems-1).
@@ -77,7 +79,7 @@ A realistic pace for someone with a job or studies: **one lesson every two or th
 4. **Explain it** out loud in two sentences. The "what to say" boxes become flashcards in the round-up.
 
 :::note What runs where
-Lessons use Python's standard library (including SQLite) wherever possible, so they run in the browser lab. Lesson 5 needs `pandas` (the lab loads it on first use, which needs internet). Lesson 6 starts a small local web server and lesson 7 needs `pyarrow`; the browser lab cannot do those two, so run them on your own computer after `pip install pyarrow`. Tools such as Spark, Kafka, Airflow, dbt and cloud warehouses are explained with small runnable models, and their real commands are shown as "Example (not run here)".
+Lessons use Python's standard library (including SQLite) wherever possible, so they run in the browser lab. Lesson 7 needs `pandas` (the lab loads it on first use, which needs internet). Lesson 8 starts small local web servers and lesson 9 needs `pyarrow`; the browser lab cannot do those two, so run them on your own computer after `pip install pyarrow`. Tools such as Spark, Kafka, Airflow, dbt and cloud warehouses are explained with small runnable models, and their real commands are shown as "Example (not run here)".
 :::
 
 :::recap

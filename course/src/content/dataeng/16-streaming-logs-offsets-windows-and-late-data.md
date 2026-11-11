@@ -15,7 +15,7 @@ sub: Batch versus streaming, how a Kafka-style log keeps order with partitions a
 @widget viz_kafka
 
 :::note Before this lesson
-Idempotency is explained in [Systems 7](#systems-7) and upserts in [lesson 4](#dataeng-4).
+Idempotency is explained in [Systems 7](#systems-7) and upserts in [lesson 6](#dataeng-6).
 :::
 
 ## The idea
@@ -122,7 +122,7 @@ revenue.writeStream.outputMode("update").option("checkpointLocation", "s3://lake
 ```
 
 - **Processing engines:** Apache Flink (true streaming, strong state handling), Spark Structured Streaming (micro-batches, same API as batch), Kafka Streams and ksqlDB (inside the Kafka ecosystem).
-- **Change data capture (CDC):** Debezium reads a database's change log into Kafka, giving a stream of every insert, update and delete ([lesson 8](#dataeng-8)).
+- **Change data capture (CDC):** Debezium reads a database's change log into Kafka, giving a stream of every insert, update and delete ([lesson 10](#dataeng-10)).
 - **Schema registry:** producers and consumers agree on the event schema (Avro or Protobuf) and its allowed changes, so a producer cannot break consumers.
 - **Checkpoint:** the engine saves offsets and state, so it restarts where it stopped.
 

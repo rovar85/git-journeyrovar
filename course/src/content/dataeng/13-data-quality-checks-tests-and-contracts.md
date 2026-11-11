@@ -96,7 +96,7 @@ A common pattern is **write, audit, publish**: write the new data to a staging t
 - **Before publishing:** reconciliation and business rules ("revenue is never negative").
 - **Continuously:** freshness and volume monitors with alerts.
 
-Tools you will meet: **dbt tests** (unique, not_null, accepted_values, relationships, written next to the models; [lesson 15](#dataeng-15)), **Great Expectations** and **Soda** (check suites in Python or YAML), **Pydantic** or **Pandera** (validate records and DataFrames in code), and **data observability** products that learn normal volume and freshness and alert on anomalies.
+Tools you will meet: **dbt tests** (unique, not_null, accepted_values, relationships, written next to the models; [lesson 17](#dataeng-17)), **Great Expectations** and **Soda** (check suites in Python or YAML), **Pydantic** or **Pandera** (validate records and DataFrames in code), and **data observability** products that learn normal volume and freshness and alert on anomalies.
 
 ```term
 # Example (not run here): the same checks as dbt tests
@@ -119,7 +119,7 @@ Most data problems start upstream: an application team renames a column or chang
 
 ## Testing the code as well as the data
 
-Data checks test **today's data**. **Unit tests** test **your logic** with small, fixed inputs, before deployment ([lesson 16](#dataeng-16)). You need both: unit tests catch bugs in transformations; data checks catch surprises in the input.
+Data checks test **today's data**. **Unit tests** test **your logic** with small, fixed inputs, before deployment ([lesson 18](#dataeng-18)). You need both: unit tests catch bugs in transformations; data checks catch surprises in the input.
 
 :::try
 1. Add a check that `day` is a valid date and is not in the future. 2. Add a referential check: every `customer` must exist in a list of known customers. 3. Change the decision so that the load continues with the clean rows when at least 50% pass, and say in the output which mode was used.

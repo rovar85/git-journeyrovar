@@ -73,7 +73,7 @@ The kinds of test a data project needs:
 |---|---|---|
 | Unit | one transformation, fixed input | every commit |
 | Integration | the pipeline end to end on a small sample database | every pull request |
-| Data quality | today's data ([lesson 11](#dataeng-11)) | every run |
+| Data quality | today's data ([lesson 13](#dataeng-13)) | every run |
 | Contract | the source still matches the agreed schema | producer's and consumer's CI |
 | Regression / diff | new version of a model gives the same result as the old, except where intended | before deploying a change |
 
@@ -114,9 +114,9 @@ Operate it like an on-call engineer: **alerts go to an owner** and say what is a
 
 ## 4. Reliability by design
 
-- **Idempotent, incremental, atomic** tasks ([lesson 8](#dataeng-8)), parameterised by date ([lesson 12](#dataeng-12)).
+- **Idempotent, incremental, atomic** tasks ([lesson 10](#dataeng-10)), parameterised by date ([lesson 14](#dataeng-14)).
 - **Keep raw data**, so anything can be rebuilt.
-- **Backward-compatible schema changes:** add columns; do not rename or remove without a migration period ([lesson 9](#dataeng-9)).
+- **Backward-compatible schema changes:** add columns; do not rename or remove without a migration period ([lesson 11](#dataeng-11)).
 - **Capacity:** know which step breaks first when data doubles.
 - **Backups and recovery:** time travel or snapshots for tables; a tested restore.
 

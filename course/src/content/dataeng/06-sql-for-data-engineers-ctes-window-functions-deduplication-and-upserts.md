@@ -13,7 +13,7 @@ sub: The SQL patterns used in every pipeline and asked in every interview, each 
 :::
 
 :::note Before this lesson
-You need [SQL basics](#dataeng-3). How a database executes a query and why an index helps is in [Systems 3](#systems-3).
+You need [SQL basics](#dataeng-5). How a database executes a query and why an index helps is in [Systems 3](#systems-3).
 :::
 
 ## The idea
@@ -78,7 +78,7 @@ What each query teaches:
 2. **Running total.** `SUM(amount) OVER (PARTITION BY customer ORDER BY day)`: asha goes 20, 55, 65. All rows are still there.
 3. **`LAG`** reads the previous row: asha's change is 15 then -25. The first row has no previous row, so the result is NULL. `RANK` orders inside the group.
 4. **Top N per group.** Number the rows inside each group, then keep `rn = 1` (or `rn <= 3`).
-5. **Moving average.** `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` is the current row and the two before it. Careful: there is no row for 2026-03-02, so this is an average over 3 **rows**, not 3 calendar days. To average over days you first need one row per day (join to a date table, see [lesson 10](#dataeng-10)).
+5. **Moving average.** `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` is the current row and the two before it. Careful: there is no row for 2026-03-02, so this is an average over 3 **rows**, not 3 calendar days. To average over days you first need one row per day (join to a date table, see [lesson 12](#dataeng-12)).
 6. **Upsert.** `INSERT ... ON CONFLICT(id) DO UPDATE` inserts new ids and updates existing ones. Order 4 was updated to 85, and ids 1, 2, 3, 6 were inserted. Run it again and the table is identical. An operation that gives the same result when repeated is **idempotent**, and it is what makes a pipeline safe to re-run after a failure.
 
 ## ROW_NUMBER, RANK or DENSE_RANK?

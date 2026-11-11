@@ -13,7 +13,7 @@ sub: Why cron is not enough, how an orchestrator runs tasks in dependency order 
 :::
 
 :::note Before this lesson
-Scheduling with cron is in [Linux 10](#linux-10); idempotent loads are in [lesson 8](#dataeng-8).
+Scheduling with cron is in [Linux 10](#linux-10); idempotent loads are in [lesson 10](#dataeng-10).
 :::
 
 ## The idea
@@ -90,7 +90,7 @@ What happened:
 
 ## Rules for tasks
 
-1. **Idempotent:** a retry or re-run must not duplicate data ([lesson 8](#dataeng-8)).
+1. **Idempotent:** a retry or re-run must not duplicate data ([lesson 10](#dataeng-10)).
 2. **Parameterised by the data interval** (the run date), never by the clock.
 3. **Atomic:** a task either completes or leaves no partial output.
 4. **Small enough to retry**, large enough to mean something: "extract orders", not "do everything".

@@ -13,7 +13,7 @@ sub: Read a messy file one row at a time, clean and validate each row, keep the 
 :::
 
 :::note Before this lesson
-You need basic Python: variables, lists, dictionaries, loops and functions. If those are new, do the [Python track](#ch15) first.
+You need the Python from [lesson 2](#dataeng-2) and [lesson 3](#dataeng-3): variables, collections, loops, functions and error handling.
 :::
 
 ## The idea

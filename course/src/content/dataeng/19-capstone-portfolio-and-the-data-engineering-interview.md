@@ -16,19 +16,19 @@ sub: One end-to-end project built in six milestones from the lessons of this tra
 
 Build it in a Git repository, one milestone at a time. Each milestone reuses a lesson's code; the work is joining them into one system.
 
-**Milestone 1. Ingest (lessons 2, 6, 9).** Write an extractor that pulls orders from an API with pagination, retries and an `updated_at` cursor, and stores the **raw** responses as JSON Lines in `data/raw/orders/day=YYYY-MM-DD/`. Use the local API from [lesson 6](#dataeng-6), or a free public API of your choice. Add a second source: a customers CSV.
+**Milestone 1. Ingest (lessons 4, 8, 11).** Write an extractor that pulls orders from an API with pagination, retries and an `updated_at` cursor, and stores the **raw** responses as JSON Lines in `data/raw/orders/day=YYYY-MM-DD/`. Use the local API from [lesson 8](#dataeng-8), or a free public API of your choice. Add a second source: a customers CSV.
 
-**Milestone 2. Store (lesson 7).** Convert raw files to **Parquet**, partitioned by day, in `data/clean/`. Record the row counts.
+**Milestone 2. Store (lesson 9).** Convert raw files to **Parquet**, partitioned by day, in `data/clean/`. Record the row counts.
 
-**Milestone 3. Load and model (lessons 4, 8, 10).** Load into a database (SQLite or DuckDB locally; PostgreSQL in Docker if you want more realism). Build `dim_customer` (type 2), `dim_date`, `dim_product` and `fact_sales`. Loads are **incremental and idempotent**: running the pipeline twice changes nothing.
+**Milestone 3. Load and model (lessons 6, 10, 12).** Load into a database (SQLite or DuckDB locally; PostgreSQL in Docker if you want more realism). Build `dim_customer` (type 2), `dim_date`, `dim_product` and `fact_sales`. Loads are **incremental and idempotent**: running the pipeline twice changes nothing.
 
-**Milestone 4. Transform and test (lessons 11, 15).** Write the transformations as SQL models with staging, intermediate and mart layers (real dbt with the DuckDB adapter, or the mini runner from [lesson 15](#dataeng-15)). Add tests: unique and not-null keys, accepted values, relationships, a reconciliation of the mart total against the raw total, and a freshness check.
+**Milestone 4. Transform and test (lessons 13, 17).** Write the transformations as SQL models with staging, intermediate and mart layers (real dbt with the DuckDB adapter, or the mini runner from [lesson 17](#dataeng-17)). Add tests: unique and not-null keys, accepted values, relationships, a reconciliation of the mart total against the raw total, and a freshness check.
 
-**Milestone 5. Orchestrate (lesson 12).** One command runs everything for a given date: `python -m pipeline.run --date 2026-03-05`. Tasks run in dependency order with retries; a failed quality check stops publishing. Add a backfill command for a date range. (Optional: the same DAG in Airflow or Dagster.)
+**Milestone 5. Orchestrate (lesson 14).** One command runs everything for a given date: `python -m pipeline.run --date 2026-03-05`. Tasks run in dependency order with retries; a failed quality check stops publishing. Add a backfill command for a date range. (Optional: the same DAG in Airflow or Dagster.)
 
-**Milestone 6. Make it production-shaped (lesson 16).** Unit tests, a `Dockerfile`, a CI workflow that runs linters and tests on every push, structured logs with row counts, masked personal data, and a README.
+**Milestone 6. Make it production-shaped (lesson 18).** Unit tests, a `Dockerfile`, a CI workflow that runs linters and tests on every push, structured logs with row counts, masked personal data, and a README.
 
-**Stretch goals:** a dashboard on the mart (Metabase, Streamlit or a notebook); a streaming path where events go through a queue and a consumer upserts them ([lesson 14](#dataeng-14)); deployment to a cloud free tier with Terraform ([Terraform](#terraform-1)); a document-loading pipeline for an LLM application ([lesson 9](#dataeng-9)).
+**Stretch goals:** a dashboard on the mart (Metabase, Streamlit or a notebook); a streaming path where events go through a queue and a consumer upserts them ([lesson 16](#dataeng-16)); deployment to a cloud free tier with Terraform ([Terraform](#terraform-1)); a document-loading pipeline for an LLM application ([lesson 11](#dataeng-11)).
 
 ### The README an interviewer wants
 
@@ -54,7 +54,7 @@ The move from each level to the next is less about new tools and more about **sc
 
 ### 1. SQL (always)
 
-Expect joins, aggregation, window functions, de-duplication, top N per group, running totals, gaps and sessions, and "find what is wrong with this query". Practise by writing the query, then checking row counts. Lessons [3](#dataeng-3) and [4](#dataeng-4) cover the patterns.
+Expect joins, aggregation, window functions, de-duplication, top N per group, running totals, gaps and sessions, and "find what is wrong with this query". Practise by writing the query, then checking row counts. Lessons [5](#dataeng-5) and [6](#dataeng-6) cover the patterns.
 
 :::answer Find the second highest amount per customer.
 `WITH r AS (SELECT *, DENSE_RANK() OVER (PARTITION BY customer ORDER BY amount DESC) AS rk FROM orders) SELECT customer, amount FROM r WHERE rk = 2;` Use `DENSE_RANK` so ties for first place do not hide the second value; say what you return when a customer has only one amount (no row).
@@ -70,11 +70,11 @@ The joined table is not unique on the join key, so each order row matched severa
 
 ### 2. Python
 
-Parsing and cleaning files, dictionaries and grouping, generators, error handling, simple algorithms, and calling an API. Lessons [2](#dataeng-2) and [6](#dataeng-6). Say your assumptions, write small functions, and test with an edge case before you say you are done.
+Parsing and cleaning files, dictionaries and grouping, generators, error handling, simple algorithms, and calling an API. Lessons [4](#dataeng-4) and [8](#dataeng-8). Say your assumptions, write small functions, and test with an edge case before you say you are done.
 
 ### 3. Data modelling
 
-"Design the tables for a ride-sharing app's analytics." State the grain first, then facts, dimensions, keys, history and the top three queries the model must answer. [Lesson 10](#dataeng-10).
+"Design the tables for a ride-sharing app's analytics." State the grain first, then facts, dimensions, keys, history and the top three queries the model must answer. [Lesson 12](#dataeng-12).
 
 ### 4. System design
 

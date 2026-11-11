@@ -22,7 +22,58 @@ A **row-based** file (CSV, JSON Lines, Avro) stores one whole record after anoth
 
 A **column-based** file (Parquet, ORC) stores all values of column 1 together, then all of column 2, and so on. Analytics questions usually touch a few columns of many rows ("total amount per day"), so a column file lets the reader **skip the columns it does not need** (column pruning). Values in one column are similar, so they **compress** well. And the file keeps **statistics** (min and max per block), so a reader can skip blocks that cannot match a filter (**predicate pushdown**).
 
-## Run it
+## See the idea on six rows
+
+Before measuring real files, here is the whole idea small enough to check by hand. Two words first: **projection** is which columns a query needs (the `SELECT` list), and a **predicate** is which rows it wants (the `WHERE` condition). A column file can skip work on both.
+
+```run
+mkdir -p ~/lab/de/enc && cd ~/lab/de/enc
+cat > enc.py <<'EOF'
+# How a column file saves work and space, on six rows you can check by hand. (No libraries: this is the idea inside Parquet.)
+rows = [("T-Shirt", "USA", 30), ("T-Shirt", "UK", 28), ("T-Shirt", "USA", 31),      # row group 1
+        ("Socks", "USA", 5), ("Socks", "UK", 6), ("Socks", "DE", 5)]                # row group 2
+COLS = ["product", "country", "price"]; N_COLS_IN_REAL_TABLE = 5                    # imagine two more columns we never need
+print("question: how many T-Shirts were bought from the USA?   (needs 2 of the 5 columns)\n")
+print(f"row store                  : reads {len(rows)} rows x {N_COLS_IN_REAL_TABLE} columns = {len(rows) * N_COLS_IN_REAL_TABLE} values")
+print(f"column store               : reads {len(rows)} rows x 2 columns = {len(rows) * 2} values   (projection: only the columns in SELECT)")
+groups = [rows[:3], rows[3:]]
+stats = [{"product_min": min(r[0] for r in g), "product_max": max(r[0] for r in g)} for g in groups]
+read = 0
+for i, (g, s) in enumerate(zip(groups, stats), 1):
+    keep = s["product_min"] <= "T-Shirt" <= s["product_max"]
+    print(f"   row group {i}: product from {s['product_min']!r} to {s['product_max']!r} -> {'read' if keep else 'SKIP (cannot contain T-Shirt)'}")
+    if keep: read += len(g)
+print(f"column store with row groups: reads {read} rows x 2 columns = {read * 2} values    (predicate: the WHERE filter, checked against min/max)")
+print("answer:", sum(1 for p, c, _ in rows if p == "T-Shirt" and c == "USA"))
+
+print("\ndictionary encoding of the product column (store each distinct value once, then small numbers):")
+column = ["Long-sleeve T-shirt with a print on the neck"] * 6 + ["Wool socks"] * 4
+dictionary = {v: i for i, v in enumerate(dict.fromkeys(column))}
+codes = [dictionary[v] for v in column]
+print("   dictionary:", dictionary, "\n   column becomes:", codes)
+plain = sum(len(v) for v in column); packed = sum(len(v) for v in dictionary) + len(codes)
+print(f"   {plain} characters as text -> about {packed} (dictionary + one small number per row)")
+def rle(values):
+    out = []
+    for v in values:
+        if out and out[-1][0] == v: out[-1][1] += 1
+        else: out.append([v, 1])
+    return out
+print("run-length encoding of those numbers (value, how many times in a row):", rle(codes))
+print("   which is why SORTED data compresses better: the same values sit next to each other")
+shuffled = [0, 1, 0, 0, 1, 0, 1, 0, 1, 0]
+print("   the same values unsorted:", rle(shuffled), "->", len(rle(shuffled)), "runs instead of", len(rle(codes)))
+EOF
+python3 enc.py
+```
+
+- A **row store** must read every value of every row: 30 values to answer a question about two columns.
+- A **column store** reads only the two columns it needs: 12 values. That is projection.
+- Parquet also cuts the rows into **row groups** and stores the minimum and maximum of each column per group. Row group 2 contains only "Socks", so it cannot contain a T-Shirt and is **skipped without being read**: 6 values. That is predicate pushdown. The information about each group lives in the file's **footer** (its metadata), which a reader loads first.
+- **Dictionary encoding** stores each distinct value once and replaces it in the column with a small number: 304 characters shrink to about 64.
+- **Run-length encoding** then stores "0 six times, 1 four times" instead of ten numbers. The same values unsorted need 9 runs instead of 2, which is why **sorting data before writing it makes files smaller and filters faster**.
+
+## Measure it on real files
 
 The script writes the same 200,000 orders as CSV, JSON Lines and Parquet, then answers the same question from each.
 
@@ -96,12 +147,12 @@ A common layout: **land raw data as it arrives** (JSON or CSV), then **convert t
 
 ## Table formats: Delta Lake, Iceberg, Hudi
 
-A folder of Parquet files is not yet a table: two writers can clash, a reader can see a half-written set of files, and you cannot update or delete a row. **Table formats** add a transaction log on top of Parquet files and give you **ACID transactions, updates and deletes (MERGE), schema evolution and time travel** (query the table as it was yesterday). That combination, cheap files in object storage that behave like warehouse tables, is called a **lakehouse** ([lesson 13](#dataeng-13)).
+A folder of Parquet files is not yet a table: two writers can clash, a reader can see a half-written set of files, and you cannot update or delete a row. **Table formats** add a transaction log on top of Parquet files and give you **ACID transactions, updates and deletes (MERGE), schema evolution and time travel** (query the table as it was yesterday). That combination, cheap files in object storage that behave like warehouse tables, is called a **lakehouse** ([lesson 15](#dataeng-15)).
 
 ## Practical rules
 
 - **Partition** large datasets by a column you filter on (usually the date): `orders/day=2026-03-15/part-0.parquet`. Readers skip whole folders.
-- **Avoid many tiny files.** Thousands of 10 kB files are slow to list and open; aim for files of roughly 100 MB to 1 GB and compact small ones.
+- **Avoid many tiny files.** A reader must open every file and read its footer before it can skip anything, so thousands of 10 kB files are slow. Aim for files of roughly 100 MB to 1 GB and compact small ones.
 - **Sort** by a commonly filtered column before writing, so the min/max statistics are selective.
 - **snappy** is fast with moderate compression; **zstd** is smaller with a little more CPU.
 - Do not edit Parquet by hand; rewrite the file or use a table format.

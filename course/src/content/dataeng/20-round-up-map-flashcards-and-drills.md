@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 17 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 19 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -26,14 +26,14 @@ Open the whole toolkit any time from the **Study** button at the top: [Method](#
 
 Follow one record through a data platform. Each hop has one idea that decides whether the number on the dashboard is right and on time.
 
-1. **Path**: The five stages, the ten videos and how to study. Lessons: [1](#dataeng-1).
-2. **Languages**: Python to read messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts. Lessons: [2](#dataeng-2), [3](#dataeng-3), [4](#dataeng-4).
-3. **Get and store**: pandas for tables in memory, APIs with pagination and retries, Parquet for analytics. Lessons: [5](#dataeng-5), [6](#dataeng-6), [7](#dataeng-7).
-4. **Pipeline**: Incremental, idempotent, observable loads; nested data and schema evolution. Lessons: [8](#dataeng-8), [9](#dataeng-9).
-5. **Model and trust**: Facts, dimensions and history; checks on every load; write, audit, publish. Lessons: [10](#dataeng-10), [11](#dataeng-11).
-6. **Run**: A DAG with retries, re-runs and backfills, parameterised by date. Lessons: [12](#dataeng-12).
-7. **Scale**: Partitions, shuffles and skew; logs, offsets and windows; the warehouse, ELT and dbt. Lessons: [13](#dataeng-13), [14](#dataeng-14), [15](#dataeng-15).
-8. **Professional**: Tests, containers, CI, monitoring, cost and privacy; the capstone and the interview. Lessons: [16](#dataeng-16), [17](#dataeng-17).
+1. **Path**: The five stages and how to study. Lessons: [1](#dataeng-1).
+2. **Languages**: Python from variables to classes, then reading messy files safely; SQL to ask and transform: joins, windows, de-duplication, upserts. Lessons: [2](#dataeng-2), [3](#dataeng-3), [4](#dataeng-4), [5](#dataeng-5), [6](#dataeng-6).
+3. **Get and store**: pandas for tables in memory, APIs with pagination and retries, Parquet for analytics. Lessons: [7](#dataeng-7), [8](#dataeng-8), [9](#dataeng-9).
+4. **Pipeline**: Incremental, idempotent, observable loads; write dispositions, schema contracts and backfills. Lessons: [10](#dataeng-10), [11](#dataeng-11).
+5. **Model and trust**: Facts, dimensions and history; checks on every load; write, audit, publish. Lessons: [12](#dataeng-12), [13](#dataeng-13).
+6. **Run**: A DAG with retries, re-runs and backfills, parameterised by date. Lessons: [14](#dataeng-14).
+7. **Scale**: Partitions, shuffles and skew; logs, offsets and windows; the warehouse, ELT and dbt. Lessons: [15](#dataeng-15), [16](#dataeng-16), [17](#dataeng-17).
+8. **Professional**: Tests, containers, CI, monitoring, cost and privacy; the capstone and the interview. Lessons: [18](#dataeng-18), [19](#dataeng-19).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/dataeng), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 

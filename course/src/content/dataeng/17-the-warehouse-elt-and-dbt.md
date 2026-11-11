@@ -13,12 +13,12 @@ sub: How a cloud warehouse stores and bills, why transformations moved into SQL,
 :::
 
 :::note Before this lesson
-You need [advanced SQL](#dataeng-4), [data modelling](#dataeng-10) and [data quality](#dataeng-11).
+You need [advanced SQL](#dataeng-6), [data modelling](#dataeng-12) and [data quality](#dataeng-13).
 :::
 
 ## The idea
 
-A **cloud data warehouse** (Snowflake, BigQuery, Amazon Redshift, Azure Synapse, Databricks SQL) is a database built for analytics: **columnar storage** ([lesson 7](#dataeng-7)), **massively parallel** query execution ([lesson 13](#dataeng-13)), and **storage separated from compute**, so you can store everything cheaply and pay for processing only when queries run.
+A **cloud data warehouse** (Snowflake, BigQuery, Amazon Redshift, Azure Synapse, Databricks SQL) is a database built for analytics: **columnar storage** ([lesson 9](#dataeng-9)), **massively parallel** query execution ([lesson 15](#dataeng-15)), and **storage separated from compute**, so you can store everything cheaply and pay for processing only when queries run.
 
 Because the warehouse is so capable, the pattern changed from ETL to **ELT**: load the raw data first, then transform it **inside the warehouse with SQL**. The pieces around it are often called the **modern data stack**:
 
@@ -117,7 +117,7 @@ Key ideas:
 - **Layers:** `staging` (one model per source table: rename, cast, clean), `intermediate` (joins and logic), `marts` (facts, dimensions and aggregates for a business area).
 - **Materialisations:** `view` (no storage, computed on read), `table` (rebuilt each run), `incremental` (only new rows are processed), `ephemeral` (inlined).
 - **Incremental models** process only new data; they need a reliable filter column and a `unique_key` for merging. A periodic `--full-refresh` repairs drift.
-- **Tests** ([lesson 11](#dataeng-11)) and **snapshots** (type 2 history, [lesson 10](#dataeng-10)) are built in.
+- **Tests** ([lesson 13](#dataeng-13)) and **snapshots** (type 2 history, [lesson 12](#dataeng-12)) are built in.
 - **Environments:** each developer builds into their own schema; CI builds changed models and runs tests on every pull request; production runs on a schedule.
 
 ## What you pay for, and how to pay less
@@ -138,7 +138,7 @@ Cost investigation as a method is in [Scenarios 11](#scenarios-11).
 
 ## Serving and governance
 
-- **Access control:** roles, not people; least privilege; column masking and row-level security for sensitive data ([lesson 16](#dataeng-16)).
+- **Access control:** roles, not people; least privilege; column masking and row-level security for sensitive data ([lesson 18](#dataeng-18)).
 - **A semantic layer / metrics definitions:** "revenue" defined once, so two dashboards cannot disagree.
 - **A catalogue:** who owns a table, what the columns mean, how fresh it is, where it comes from.
 
