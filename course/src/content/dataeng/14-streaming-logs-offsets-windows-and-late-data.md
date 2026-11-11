@@ -12,6 +12,8 @@ sub: Batch versus streaming, how a Kafka-style log keeps order with partitions a
 - explain event time, tumbling windows, watermarks and late events
 :::
 
+@widget viz_kafka
+
 :::note Before this lesson
 Idempotency is explained in [Systems 7](#systems-7) and upserts in [lesson 4](#dataeng-4).
 :::

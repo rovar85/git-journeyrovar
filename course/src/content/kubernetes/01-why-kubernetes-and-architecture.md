@@ -12,6 +12,8 @@ sub: What problem Kubernetes solves, and the parts of a cluster you will meet ev
 - use `kubectl` to look around a real cluster
 :::
 
+@widget viz_k8s
+
 ## The problem
 
 With Docker on one machine you can run a few containers. At real scale new questions appear:

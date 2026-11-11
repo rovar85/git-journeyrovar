@@ -11,6 +11,8 @@ sub: A layer-by-layer method, plus what HTTPS certificates really are.
 - create a certificate and understand what TLS verifies
 :::
 
+@widget viz_request
+
 ## The checklist
 
 When "it is not working", walk up the layers, stop at the first failure:

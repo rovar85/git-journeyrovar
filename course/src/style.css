@@ -393,3 +393,57 @@ html:has(body.lab-open){scroll-padding-bottom:44vh}
 details.ans{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:6px 14px;margin:12px 0}
 details.ans>summary{cursor:pointer;font-weight:700;color:var(--accent);padding:6px 0}
 details.ans[open]>summary{margin-bottom:8px}
+
+/* ---- progress panel, toasts, certificate ---- */
+.gp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
+.gp-cell{display:flex;flex-direction:column;gap:4px;background:var(--surface2);border-radius:10px;padding:12px;min-width:0}
+.gp-cell>span{font-size:.9rem}
+.gp-cell small{color:var(--muted);font-size:.78rem;line-height:1.3}
+.gp-num{font-family:var(--f-display);font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.gp-num small{font-size:1rem;color:var(--muted)}
+.pbar.wide{display:block;width:100%}
+.gp-week{display:flex;gap:4px}
+.gp-week i{flex:1;height:22px;border-radius:5px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-style:normal}
+.gp-week i em{font-style:normal;font-size:.68rem;color:var(--muted)}
+.gp-week i.some{background:var(--accent-soft)}
+.gp-week i.full{background:var(--good-soft);border-color:var(--good)}
+.gp-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.bdg{font-size:.78rem;padding:3px 9px;border-radius:999px;border:1px dashed var(--line);color:var(--muted)}
+.bdg.on{border-style:solid;border-color:var(--good);background:var(--good-soft);color:var(--ink);font-weight:700}
+@media (max-width:760px){.gp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:90;pointer-events:none;width:max-content;max-width:calc(100vw - 32px)}
+.toast{background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:.92rem;font-weight:700;box-shadow:0 6px 22px rgba(0,0,0,.25);animation:toast-in .25s ease-out;transition:opacity .4s, transform .4s}
+.toast.out{opacity:0;transform:translateY(8px)}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+.cert-ov{position:fixed;inset:0;background:rgba(10,18,17,.72);z-index:95;overflow:auto;padding:16px}
+.cert-box{max-width:860px;margin:0 auto}
+.cert-ctl{background:var(--surface);border-radius:10px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.cert-ctl input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:0;width:16em;max-width:100%}
+.cert{background:#FFFDF6;color:#1B2630;border-radius:6px;padding:14px}
+.cert-in{border:3px double #1B5BD1;padding:38px 24px;text-align:center}
+.cert-in p{margin:.5rem 0}
+.cert-brand{font-family:var(--f-hand);font-size:1.6rem;color:#B5342B}
+.cert-in h2{font-family:var(--f-display);font-size:2rem;margin:.3rem 0 1rem}
+.cert-who{font-family:var(--f-display);font-size:2.1rem;font-weight:800;border-bottom:1px solid #9AA7B0;display:inline-block;padding:0 24px 4px;overflow-wrap:anywhere}
+.cert-track{font-family:var(--f-display);font-size:1.3rem;font-weight:700}
+.cert-date{margin-top:1.2rem !important}
+.cert-note{font-size:.75rem;color:#5A6872;margin-top:1.6rem !important}
+@media print{
+  body.printing-cert>*:not(.cert-ov){display:none !important}
+  body.printing-cert .cert-ov{position:static;background:none;padding:0}
+  body.printing-cert .cert-ctl{display:none}
+}
+
+/* ---- animated explainers ---- */
+.viz .viz-stage{background:linear-gradient(180deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--line);border-radius:10px;overflow-x:auto;overflow-y:hidden}
+.viz canvas{display:block}
+.viz-cap{font-size:1.02rem;font-weight:700;margin:12px 0 6px;min-height:3.2em}
+.viz-info{font-size:.9rem;margin:8px 0 0}
+.viz-steps{margin:10px 0 0;padding:0;list-style:none;font-size:.86rem}
+.viz-steps li{margin:2px 0}
+.viz-steps button{all:unset;display:block;cursor:pointer;color:var(--muted);line-height:1.4;padding-left:1.5em;text-indent:-1.5em}
+.viz-steps button span{display:inline-block;width:1.5em;text-indent:0}
+.viz-steps button:hover{color:var(--ink)}
+.viz-steps button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.viz-steps button.on{color:var(--ink);font-weight:700}

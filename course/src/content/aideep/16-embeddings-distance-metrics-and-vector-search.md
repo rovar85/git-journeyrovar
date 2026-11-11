@@ -12,6 +12,8 @@ sub: What an embedding is, why cosine, dot product and Euclidean distance rank d
 - choose between a vector library, a vector database and "add vectors to the database I already have"
 :::
 
+@widget viz_rag
+
 :::note Already covered elsewhere
 Chunking, BM25, a first vector search and recall@k are in [Deep dive 6](#aideep-6). The transformer that produces embeddings is in [Deep dive 2](#aideep-2). This lesson is about the vector part itself: the distance maths and the index.
 :::

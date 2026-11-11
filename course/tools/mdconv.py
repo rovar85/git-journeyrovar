@@ -200,6 +200,8 @@ def blocks(text, ctx):
                 buf.append(lines[i]); i += 1
             i += 1
             body = "\n".join(buf)
+            if info == "quiz":                       # accept a fenced quiz as well as a :::quiz block
+                ctx.quizzes.extend(render_quiz(body)); continue
             if info == "run":
                 idx = len(ctx.runs); ctx.runs.append(body)
                 out.append(f"@@RUN{idx}@@")

@@ -12,6 +12,8 @@ sub: What continuous integration and delivery mean, how Jenkins is built, and yo
 - use the Jenkins REST API
 :::
 
+@widget viz_cicd
+
 ## What CI/CD is
 
 Before CI, teams combined code rarely, and "integration day" was a painful surprise. **Continuous Integration (CI)** means every change is merged to a shared branch often and **automatically built and tested**, so problems are found within minutes. **Continuous Delivery** extends it: every good build is automatically prepared and could go to production at the push of a button. **Continuous Deployment** pushes every passing change to production with no button.

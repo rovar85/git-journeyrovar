@@ -401,7 +401,7 @@ function decorateCode(){
 }
 /* ---------------- challenges: Start / Check / Show a solution ---------------- */
 function chDone(id){ try{ return localStorage.getItem("agentschool-ch-" + id) === "1"; }catch(e){ return false; } }
-function chMark(id){ try{ localStorage.setItem("agentschool-ch-" + id, "1"); }catch(e){} }
+function chMark(id){ var had = null; try{ had = localStorage.getItem("agentschool-ch-" + id); localStorage.setItem("agentschool-ch-" + id, "1"); }catch(e){} if(had === null && H.gameChallenge) H.gameChallenge(); }
 function decorateChallenges(){
   document.querySelectorAll(".challenge").forEach(function(box){
     if(box.dataset.wired) return; box.dataset.wired = "1";

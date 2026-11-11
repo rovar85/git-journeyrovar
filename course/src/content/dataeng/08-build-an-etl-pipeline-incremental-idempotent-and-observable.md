@@ -12,6 +12,8 @@ sub: Extract daily files, transform and validate them, and load them into a data
 - record what was loaded, count rows, and keep rejects
 :::
 
+@widget viz_etl
+
 :::note Before this lesson
 You need [Python for data work](#dataeng-2) and upserts from [lesson 4](#dataeng-4). Video: [How to build an ETL pipeline with Python (BI Insights Inc)](https://www.youtube.com/watch?v=dfouoh9QdUw), which moves data from SQL Server to PostgreSQL; this lesson uses files and SQLite so that it runs anywhere, and the structure is the same.
 :::
