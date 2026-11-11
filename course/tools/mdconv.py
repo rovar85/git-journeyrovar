@@ -234,7 +234,7 @@ def blocks(text, ctx):
             elif kind == "answer":
                 out.append('<details class="ans"><summary>' + inline(title or "Show answer") + '</summary>' + "".join(blocks(inner, ctx)) + "</details>")
             elif kind == "goals":
-                out.append(f'<div class="goals"><b>{inline(title or "By the end of this lesson you can:")}</b>' + "".join(blocks(inner, ctx)) + "</div>")
+                out.append(f'<div class="goals"><b>{inline(title or "After this lesson you will be able to:")}</b>' + "".join(blocks(inner, ctx)) + "</div>")
             elif kind == "recap":
                 out.append(f'<div class="recap"><h3>{inline(title or "In plain words")}</h3>' + "".join(blocks(inner, ctx)) + "</div>")
             elif kind == "try":
@@ -308,7 +308,7 @@ def convert(path, track_id, track_name, number):
            f'data-road="{html.escape(title, quote=True)}" data-sub="{html.escape(meta.get("sub", ""), quote=True)}">'
            f'<header class="chapter-head"><span class="hand">{html.escape(track_name)} · Lesson {number}</span><h2>{inline(title)}</h2></header>'
            + "\n".join(final) +
-           f'<div class="quiz" data-quiz="{lesson_id}"><h3>Check yourself</h3><div class="score" hidden></div></div>'
+           f'<div class="quiz" data-quiz="{lesson_id}"><h3>Quick check: did it stick?</h3><div class="score" hidden></div></div>'
            + labsetup_html(lesson_id, ctx.setup)
            + (f'<script type="application/json" class="quizdata" data-for="{lesson_id}">{json.dumps(ctx.quizzes)}</script>' if ctx.quizzes else "")
            + "</section>")

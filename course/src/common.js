@@ -230,7 +230,7 @@ window.H = (function(){
             $$("button",ch)[q.a].classList.add("right");
             if(oi===q.a){got++;fb.textContent="Correct. "+q.f}else{b.classList.add("wrong");fb.textContent="Not quite. "+q.f}
             fb.hidden=false;
-            if(done===qs.length){score.hidden=false;score.textContent="You got "+got+" of "+qs.length+(got===qs.length?". Excellent, on to the next lesson!":". Re-read the parts behind the ones you missed, then continue.");H.store("agentschool-"+id,String(got));refreshMarks()}
+            if(done===qs.length){score.hidden=false;score.textContent="You got "+got+" of "+qs.length+(got===qs.length?". Perfect score. Next lesson!":". Have another look at the ones you missed, then keep going.");H.store("agentschool-"+id,String(got));refreshMarks()}
           });
           ch.appendChild(b);
         });

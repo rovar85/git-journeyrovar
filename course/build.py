@@ -24,9 +24,8 @@ track_by_id = {t["id"]: t for t in tracks}
 
 fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
          '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-         '<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400'
-         '&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Caveat:wght@600'
-         '&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">')
+         '<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@700;800;900'
+         '&family=Red+Hat+Mono:wght@400;600&family=Red+Hat+Text:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">')
 
 def expand(text):
     def sub(m):

@@ -51,15 +51,18 @@ def head(title, desc, path, depth=0, extra=""):
     return (f'<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>{E(title)}</title>\n'
             f'<meta name="description" content="{E(desc)}">\n<link rel="canonical" href="{E(DOMAIN + "/" + path)}">\n'
             f'<meta property="og:title" content="{E(title)}">\n<meta property="og:description" content="{E(desc)}">\n<meta property="og:type" content="website">\n<meta property="og:url" content="{E(DOMAIN + "/" + path)}">\n<meta property="og:image" content="{E(DOMAIN)}/icon-512.png">\n'
-            f'<link rel="manifest" href="{b}manifest.webmanifest">\n<meta name="theme-color" content="#1B5BD1">\n<link rel="icon" href="{b}icon.svg" type="image/svg+xml">\n<link rel="apple-touch-icon" href="{b}icon-192.png">\n{fonts}\n{extra}</head>\n')
+            f'<link rel="manifest" href="{b}manifest.webmanifest">\n<meta name="theme-color" content="#4A3AFF">\n<link rel="icon" href="{b}icon.svg" type="image/svg+xml">\n<link rel="apple-touch-icon" href="{b}icon-192.png">\n{fonts}\n{extra}</head>\n')
 open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(
     head(f'{cfg["name"]}: {cfg["tagline"]}', cfg["description"], "") .replace("</head>", f"<style>{css}</style>\n</head>") + "<body>\n" + body + "\n</body>\n</html>\n")
 open(os.path.join(out, "assets", "site.css"), "w", encoding="utf-8").write(css + """
 /* static lesson pages */
 .chapter[hidden]{display:block}
 .static .quiz,.static .lab[data-widget],.static .lab-run,.static .study-loop,.static .notes-box{display:none}
-.cta{position:sticky;top:0;z-index:20;background:var(--accent);color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:700}
-.cta a{background:#fff;color:#1B5BD1;border-radius:8px;padding:6px 14px;text-decoration:none}
+.cta{position:sticky;top:0;z-index:20;margin-inline:-16px;background:var(--hero-bg);color:var(--hero-ink);padding:10px 16px;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;font-family:var(--f-display);font-weight:800;border-bottom:2px solid var(--edge)}
+.cta a{background:var(--sun);color:#12173A;border:2px solid #000319;border-radius:11px;padding:6px 16px;text-decoration:none;box-shadow:0 3px 0 #000319}
+.cta a:hover{transform:translateY(-1px)}
+.static .chapter{border-top:0;margin-top:18px;padding-top:18px}
+@media (max-width:560px){.cta span{display:none}}
 .crumbs{font-size:.9rem;margin:18px 0 0}
 .lessonlist{columns:2 320px;padding-left:1.2rem}
 .lessonlist li{margin:.25rem 0;break-inside:avoid}
@@ -94,12 +97,12 @@ for l in lessons:
     nav = '<nav class="pn">' + (f'<a href="{b}{sibs[k-1]["url"]}">← {E(sibs[k-1]["title"])}</a>' if k else f'<a href="{b}learn/">← All lessons</a>') + (f'<a class="nx" href="{b}{sibs[k+1]["url"]}">{E(sibs[k+1]["title"])} →</a>' if k + 1 < len(sibs) else "") + "</nav>"
     ld = json.dumps({"@context": "https://schema.org", "@type": "LearningResource", "name": l["title"], "description": l["sub"], "isPartOf": {"@type": "Course", "name": tname[l["track"]], "provider": {"@type": "Organization", "name": cfg["name"]}}, "inLanguage": "en", "isAccessibleForFree": free(l), "url": DOMAIN + "/" + l["url"]}).replace("</", "<\\/")
     page = (head(f'{l["title"]} | {cfg["name"]}', l["sub"] or l["title"], l["url"], 3, f'<link rel="stylesheet" href="{b}assets/site.css">\n<script type="application/ld+json">{ld}</script>\n{adsnip}\n')
-            + f'<body class="static">\n<div class="cta"><span>Run the code, take the quiz and track your progress</span><a href="{b}index.html#{l["id"]}">Open this lesson in the interactive app</a></div>\n<div class="wrap">\n'
+            + f'<body class="static">\n<div class="cta"><span>Reading is half of it. Run this lesson in a live terminal.</span><a href="{b}index.html#{l["id"]}">Open the live lab →</a></div>\n<div class="wrap">\n'
             + f'<p class="crumbs"><a href="{b}index.html">{E(cfg["name"])}</a> › <a href="{b}learn/#{l["track"]}">{E(tname[l["track"]])}</a></p>\n<section class="chapter" id="{l["id"]}">{inner}{adslot}{nav}</section>\n{footer(b)}\n</div>\n</body>\n</html>\n')
     d = os.path.join(out, l["url"]); os.makedirs(d, exist_ok=True); open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(page)
 idx = "".join(f'<h2 id="{t["id"]}">{E(t["name"])}</h2><p>{E(t["blurb"])}</p><ol class="lessonlist">' + "".join(f'<li><a href="../{l["url"]}">{E(l["title"])}</a></li>' for l in by_track.get(t["id"], [])) + "</ol>" for t in tracks if by_track.get(t["id"]))
 os.makedirs(os.path.join(out, "learn"), exist_ok=True)
-open(os.path.join(out, "learn", "index.html"), "w", encoding="utf-8").write(head(f'All lessons | {cfg["name"]}', f'Every lesson of {cfg["name"]}, by track.', "learn/", 1, '<link rel="stylesheet" href="../assets/site.css">\n') + f'<body class="static"><div class="cta"><span>{E(cfg["tagline"])}</span><a href="../index.html">Open the interactive app</a></div><div class="wrap"><h1 style="margin-top:28px">All lessons</h1>{idx}{footer("../")}</div></body></html>')
+open(os.path.join(out, "learn", "index.html"), "w", encoding="utf-8").write(head(f'All lessons | {cfg["name"]}', f'Every lesson of {cfg["name"]}, by track.', "learn/", 1, '<link rel="stylesheet" href="../assets/site.css">\n') + f'<body class="static"><div class="cta"><span>{E(cfg["tagline"])}</span><a href="../index.html">Start learning →</a></div><div class="wrap"><h1 style="margin-top:28px">All lessons</h1>{idx}{footer("../")}</div></body></html>')
 
 # ---- 3. information and legal pages (templates: have them reviewed before taking payments) -------------------------------------
 O = cfg["owner"]; price = cfg.get("price_inr", 49)
@@ -131,13 +134,13 @@ def png(size):                                             # a plain icon drawn 
         px.append(0)
         for x in range(size):
             if glyph(x, y): px += b"\xff\xff\xff\xff"
-            elif inside_round(x, y, int(size * 0.18)): px += bytes((27, 91, 209, 255))
+            elif inside_round(x, y, int(size * 0.18)): px += bytes((74, 58, 255, 255))
             else: px += b"\x00\x00\x00\x00"
     chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(bytes(px), 9)) + chunk(b"IEND", b"")
 for s in (192, 512): open(os.path.join(out, f"icon-{s}.png"), "wb").write(png(s))
-open(os.path.join(out, "icon.svg"), "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="2.9" fill="#1B5BD1"/><path d="M3.6 4.6 7.4 8 3.6 11.4" fill="none" stroke="#fff" stroke-width="1.44" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="10.6" width="3.5" height="1.3" fill="#fff"/></svg>')
-json.dump({"name": cfg["name"], "short_name": cfg["name"][:12], "description": cfg["description"], "start_url": "./index.html", "scope": "./", "display": "standalone", "background_color": "#F2F5F4", "theme_color": "#1B5BD1",
+open(os.path.join(out, "icon.svg"), "w").write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="2.9" fill="#4A3AFF"/><path d="M3.6 4.6 7.4 8 3.6 11.4" fill="none" stroke="#fff" stroke-width="1.44" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="10.6" width="3.5" height="1.3" fill="#fff"/></svg>')
+json.dump({"name": cfg["name"], "short_name": cfg["name"][:12], "description": cfg["description"], "start_url": "./index.html", "scope": "./", "display": "standalone", "background_color": "#F3F5FC", "theme_color": "#4A3AFF",
            "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]},
           open(os.path.join(out, "manifest.webmanifest"), "w"), indent=1)
 open(os.path.join(out, "sw.js"), "w").write("""// Offline support. The app shell is cached on first visit; later visits load from the cache and refresh it in the background.

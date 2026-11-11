@@ -19,7 +19,6 @@
     "country": "India"
   },
   "replace": [
-    ["<span>Enterprise Vault examples throughout</span>", "<span>Real recorded output, not screenshots</span>"],
     ["Connect it to a real task in your own Enterprise Vault work.", "Connect it to a real task in your own work or project."],
     ["The AI and Python tracks are built from public talks and your own study notes.", "The AI and Python tracks are built from public talks and study notes."]
   ]
