@@ -28,10 +28,10 @@ Whatever job you want, begin here, in this order:
 |---|---|
 | **DevOps engineer** | [Networking](#networking-1) → [Docker](#docker-1) → [Jenkins and CI/CD](#jenkins-1) → [Ansible](#ansible-1) → [Terraform](#terraform-1) → [Kubernetes](#kubernetes-1) → [Monitoring](#monitoring-1) → [Cloud](#cloud-1) → [Capstone](#capstone-1) |
 | **Cloud or platform engineer** | [Networking](#networking-1) → [Cloud](#cloud-1) → [Terraform](#terraform-1) → [Docker](#docker-1) → [Kubernetes](#kubernetes-1) → [Monitoring](#monitoring-1) → [Senior cloud questions](#cloudsenior-1) |
-| **Data engineer** | [Data engineering](#dataeng-1) (all of it) → [Docker](#docker-1) → [Databases and distributed systems](#systems-1) → [Cloud](#cloud-1) |
+| **Data engineer** | [Data engineering](#dataeng-1) (all of it) → [SQL practice](#sqlprac-1) → [Docker](#docker-1) → [Databases and distributed systems](#systems-1) → [Cloud](#cloud-1) |
 | **AI engineer** | [AI and agents](#ch1) → [AI deep dive](#aideep-1) → [Docker](#docker-1) → [AI infrastructure](#aiinfra-1) → [AI field guide](#aifield-1) |
 
-When you start applying for jobs, use the interview tracks: the [question bank](#qbank-1), the [incident scenarios](#scenarios-1), and for experienced roles the [senior DevOps questions](#seniorqa-1) and the [AI interview bank](#aibank-1).
+When you start applying for jobs, use the interview tracks: [SQL practice](#sqlprac-1), the [question bank](#qbank-1), the [incident scenarios](#scenarios-1), and for experienced roles the [senior DevOps questions](#seniorqa-1) and the [AI interview bank](#aibank-1).
 
 Not sure? Take the DevOps route. It is the broadest, and its skills are used in all the others.
 
@@ -43,7 +43,7 @@ Not sure? Take the DevOps route. It is the broadest, and its skills are used in 
 | 2. Foundations | Linux, Networking, Git, Python | stage 1 |
 | 3. Build and ship | Docker, Jenkins, Ansible, Terraform | Linux and Git |
 | 4. Run in production | Kubernetes, Monitoring, Cloud, Windows and PowerShell | Docker; Networking helps |
-| 5. Data | Data engineering, Databases and distributed systems | Python |
+| 5. Data | Data engineering, SQL practice, Databases and distributed systems | Python |
 | 6. AI | AI and agents, deep dive, field guide, infrastructure | Python for the later ones |
 | 7. Projects | Capstone | stages 2 to 4 |
 | 8. Interview preparation | question banks, scenarios, senior questions | the tracks they ask about |

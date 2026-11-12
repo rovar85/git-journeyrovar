@@ -133,6 +133,10 @@ A window function calculates over a set of related rows but keeps every row, whi
 An idempotent operation gives the same result whether it runs once or many times. Pipelines fail and get retried, so loads must be idempotent: I use upserts or MERGE on a key, or delete-and-reload a whole partition, instead of plain inserts that would duplicate rows on a retry.
 :::
 
+## Practise
+
+The [SQL practice track](#sqlprac-1) has 70 graded problems on these patterns, each with a checker that tells you whether your answer is right.
+
 :::recap
 - **CTEs** make long SQL readable; **window functions** add per-group calculations without collapsing rows.
 - **Keep the latest:** `ROW_NUMBER() OVER (PARTITION BY key ORDER BY updated DESC) = 1`.

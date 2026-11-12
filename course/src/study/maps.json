@@ -2484,6 +2484,113 @@
    "Do milestone 1 of the capstone today."
   ]
  },
+ "sqlprac": {
+  "title": "One SQL answer, from the question to a checked result",
+  "intro": "Every SQL problem is solved the same way: name the grain, look at the data, build the query in steps, check the edges, check the result.",
+  "hops": [
+   {
+    "label": "Practise",
+    "text": "The shop database, the query runner and the checker; a method for any problem.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Rows and columns",
+    "text": "SELECT, WHERE, ORDER BY, LIMIT; IN, BETWEEN, LIKE, IS NULL.",
+    "lessons": [
+     2
+    ]
+   },
+   {
+    "label": "Summaries",
+    "text": "GROUP BY, HAVING, CASE and conditional aggregation.",
+    "lessons": [
+     3
+    ]
+   },
+   {
+    "label": "Combining",
+    "text": "Inner, left, anti and self joins; avoid fan-out by aggregating first.",
+    "lessons": [
+     4
+    ]
+   },
+   {
+    "label": "Steps",
+    "text": "Subqueries, EXISTS, CTEs and recursive CTEs.",
+    "lessons": [
+     5
+    ]
+   },
+   {
+    "label": "Across rows",
+    "text": "ROW_NUMBER, RANK, running totals, LAG, moving averages, top N per group.",
+    "lessons": [
+     6
+    ]
+   },
+   {
+    "label": "Messy values",
+    "text": "Dates, text, COALESCE, pivots and NULL traps.",
+    "lessons": [
+     7
+    ]
+   },
+   {
+    "label": "Interview patterns",
+    "text": "Nth highest, duplicates, gaps and islands, retention, median, year to date.",
+    "lessons": [
+     8
+    ]
+   },
+   {
+    "label": "Changing data",
+    "text": "INSERT, UPDATE, DELETE, upserts, summary tables and query plans.",
+    "lessons": [
+     9
+    ]
+   },
+   {
+    "label": "Under pressure",
+    "text": "Six mixed problems against the clock.",
+    "lessons": [
+     10
+    ]
+   }
+  ],
+  "tips": [
+   "Say what one row of the answer represents before writing anything.",
+   "Check the row count after every join.",
+   "Ties, NULLs and groups with zero are where most wrong answers come from.",
+   "Write long queries as CTE steps and run each step on its own.",
+   "Try for ten minutes before opening a hint, and write your own answer before reading a solution."
+  ],
+  "docs": [
+   {
+    "label": "SQLite: SELECT",
+    "url": "https://www.sqlite.org/lang_select.html"
+   },
+   {
+    "label": "SQLite: window functions",
+    "url": "https://www.sqlite.org/windowfunctions.html"
+   },
+   {
+    "label": "PostgreSQL tutorial",
+    "url": "https://www.postgresql.org/docs/current/tutorial.html"
+   },
+   {
+    "label": "SQLite: date and time functions",
+    "url": "https://www.sqlite.org/lang_datefunc.html"
+   }
+  ],
+  "round2": [
+   "Redo every problem you needed the solution for, a day later, without looking.",
+   "Solve 8.4 (three days in a row) and 6.3 (top earner per department) from a blank file in under ten minutes each.",
+   "Rewrite 5.4 with a window function instead of a correlated subquery.",
+   "Pick any three problems and explain your solution out loud as if to an interviewer."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

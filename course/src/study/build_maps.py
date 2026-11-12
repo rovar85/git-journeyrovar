@@ -631,6 +631,37 @@ M["dataeng"] = dict(
  ],
 )
 
+M["sqlprac"] = dict(
+ title="One SQL answer, from the question to a checked result",
+ intro="Every SQL problem is solved the same way: name the grain, look at the data, build the query in steps, check the edges, check the result.",
+ hops=[
+  H("Practise", "The shop database, the query runner and the checker; a method for any problem.", 1),
+  H("Rows and columns", "SELECT, WHERE, ORDER BY, LIMIT; IN, BETWEEN, LIKE, IS NULL.", 2),
+  H("Summaries", "GROUP BY, HAVING, CASE and conditional aggregation.", 3),
+  H("Combining", "Inner, left, anti and self joins; avoid fan-out by aggregating first.", 4),
+  H("Steps", "Subqueries, EXISTS, CTEs and recursive CTEs.", 5),
+  H("Across rows", "ROW_NUMBER, RANK, running totals, LAG, moving averages, top N per group.", 6),
+  H("Messy values", "Dates, text, COALESCE, pivots and NULL traps.", 7),
+  H("Interview patterns", "Nth highest, duplicates, gaps and islands, retention, median, year to date.", 8),
+  H("Changing data", "INSERT, UPDATE, DELETE, upserts, summary tables and query plans.", 9),
+  H("Under pressure", "Six mixed problems against the clock.", 10),
+ ],
+ tips=[
+  "Say what one row of the answer represents before writing anything.",
+  "Check the row count after every join.",
+  "Ties, NULLs and groups with zero are where most wrong answers come from.",
+  "Write long queries as CTE steps and run each step on its own.",
+  "Try for ten minutes before opening a hint, and write your own answer before reading a solution.",
+ ],
+ docs=[D("SQLite: SELECT", "https://www.sqlite.org/lang_select.html"), D("SQLite: window functions", "https://www.sqlite.org/windowfunctions.html"), D("PostgreSQL tutorial", "https://www.postgresql.org/docs/current/tutorial.html"), D("SQLite: date and time functions", "https://www.sqlite.org/lang_datefunc.html")],
+ round2=[
+  "Redo every problem you needed the solution for, a day later, without looking.",
+  "Solve 8.4 (three days in a row) and 6.3 (top earner per department) from a blank file in under ten minutes each.",
+  "Rewrite 5.4 with a window function instead of a correlated subquery.",
+  "Pick any three problems and explain your solution out loud as if to an interviewer.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

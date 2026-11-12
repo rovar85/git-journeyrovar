@@ -112,6 +112,14 @@
   "why": "Data engineering is one of the most hired-for skills. This track takes you from reading a messy file to running production pipelines."
  },
  {
+  "id": "sqlprac",
+  "name": "SQL practice: 70 problems with an answer checker",
+  "group": "5 · Data",
+  "level": "Beginner to advanced · after Data engineering lessons 5 and 6",
+  "blurb": "Seventy graded problems on one realistic shop database: filtering, grouping, joins, subqueries and CTEs, window functions, dates and text, interview classics (duplicates, streaks, retention, medians), changing data and indexes, and a timed mock interview. Every problem has a hint, a model solution with real output, and a checker that tells you whether your own answer is right.",
+  "why": "SQL is in almost every data, analyst and backend interview. Reading about it is not enough: this is the practice, with instant feedback."
+ },
+ {
   "id": "systems",
   "name": "Databases and distributed systems for backend engineers",
   "group": "5 · Data",

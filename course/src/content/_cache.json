@@ -20263,6 +20263,1685 @@
   ],
   "key": "abf8f9c7ad09d87a"
  },
+ "sqlprac-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ ls",
+     "o": "answers.json\ncheck.py\nmake_db.py\nq.py\nshop.db",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py \"SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name\"",
+     "o": "name       \n-----------\ncustomers  \nemployees  \nlogins     \norder_items\norders     \npayments   \nproducts   \n(7 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py \"SELECT * FROM customers LIMIT 4\"",
+     "o": "customer_id | name       | email             | city      | country   | signup_date | referred_by\n------------+------------+-------------------+-----------+-----------+-------------+------------\n1           | Asha Rao   | asha@example.com  | Pune      | India     | 2025-11-03  | NULL       \n2           | Ben Carter | ben@example.co.uk | Leeds     | UK        | 2025-11-20  | NULL       \n3           | Chen Wei   | chen@example.sg   | Singapore | Singapore | 2025-12-02  | 1          \n4           | Divya Nair | divya@example.com | Kochi     | India     | 2025-12-15  | 1          \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py \"SELECT * FROM orders LIMIT 4\"",
+     "o": "order_id | customer_id | order_date | status   \n---------+-------------+------------+----------\n1        | 7           | 2026-01-02 | returned \n2        | 7           | 2026-01-18 | delivered\n3        | 3           | 2026-01-09 | delivered\n4        | 8           | 2026-01-21 | delivered\n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py \"SELECT * FROM order_items LIMIT 4\"",
+     "o": "order_id | product_id | quantity | unit_price\n---------+------------+----------+-----------\n1        | 7          | 2        | 25.00     \n2        | 8          | 4        | 12.00     \n2        | 3          | 1        | 45.00     \n3        | 6          | 3        | 18.00     \n(4 rows)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > my.sql <<'EOF'\n> SELECT COUNT(*) FROM orders;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py my.sql",
+     "o": "COUNT(*)\n--------\n42      \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.3 my.sql",
+     "o": "NOT YET  1.3: right number of rows and columns, but some values differ",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.3 \"SELECT COUNT(*) FROM customers\"",
+     "o": "PASS  1.3: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s1_1.sql <<'EOF'\n> SELECT * FROM products;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s1_1.sql",
+     "o": "product_id | name         | category   | price | launched_on\n-----------+--------------+------------+-------+------------\n1          | Steel kettle | Kitchen    | 30.00 | 2025-06-01 \n2          | Clay mug     | Kitchen    | 6.50  | 2025-06-01 \n3          | Desk lamp    | Home       | 45.00 | 2025-08-15 \n4          | Cotton throw | Home       | 28.00 | 2025-09-10 \n5          | Notebook A5  | Stationery | 4.00  | 2025-06-01 \n6          | Fountain pen | Stationery | 18.00 | 2025-10-01 \n7          | Yoga mat     | Fitness    | 25.00 | 2025-11-01 \n8          | Water bottle | Fitness    | 12.00 | 2026-01-15 \n9          | Tea sampler  | Grocery    | 15.00 | 2026-02-01 \n10         | Spice set    | Grocery    | 22.00 | 2026-04-01 \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.1 s1_1.sql",
+     "o": "PASS  1.1: 10 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s1_2.sql <<'EOF'\n> SELECT name, category, price\n> FROM products;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s1_2.sql",
+     "o": "name         | category   | price\n-------------+------------+------\nSteel kettle | Kitchen    | 30.00\nClay mug     | Kitchen    | 6.50 \nDesk lamp    | Home       | 45.00\nCotton throw | Home       | 28.00\nNotebook A5  | Stationery | 4.00 \nFountain pen | Stationery | 18.00\nYoga mat     | Fitness    | 25.00\nWater bottle | Fitness    | 12.00\nTea sampler  | Grocery    | 15.00\nSpice set    | Grocery    | 22.00\n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.2 s1_2.sql",
+     "o": "PASS  1.2: 10 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s1_3.sql <<'EOF'\n> SELECT COUNT(*) AS customers\n> FROM customers;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s1_3.sql",
+     "o": "customers\n---------\n12       \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.3 s1_3.sql",
+     "o": "PASS  1.3: 1 rows, all correct",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "02487fb802dec565"
+ },
+ "sqlprac-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_1.sql <<'EOF'\n> WITH u AS (\n>   SELECT p.category, p.name, SUM(i.quantity) AS units\n>   FROM order_items i\n>   JOIN products p ON p.product_id = i.product_id\n>   GROUP BY p.product_id\n> )\n> SELECT category, name, units\n> FROM (\n>   SELECT * , RANK() OVER (PARTITION BY category ORDER BY units DESC) AS r\n>   FROM u\n> )\n> WHERE r = 1\n> ORDER BY category, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_1.sql",
+     "o": "category   | name         | units\n-----------+--------------+------\nFitness    | Water bottle | 17   \nGrocery    | Tea sampler  | 14   \nHome       | Cotton throw | 31   \nKitchen    | Clay mug     | 23   \nStationery | Fountain pen | 19   \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.1 s10_1.sql",
+     "o": "PASS  10.1: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_2.sql <<'EOF'\n> WITH d AS (\n>   SELECT customer_id, COUNT(*) AS n\n>   FROM orders\n>   WHERE status = 'delivered'\n>   GROUP BY customer_id\n> )\n> SELECT SUM(CASE WHEN n > 1 THEN 1 ELSE 0 END) AS repeat_customers, ROUND(100.0 * SUM(CASE WHEN n > 1 THEN 1 ELSE 0 END) / COUNT(*), 1) AS repeat_pct\n> FROM d;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_2.sql",
+     "o": "repeat_customers | repeat_pct\n-----------------+-----------\n8                | 80.00     \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.2 s10_2.sql",
+     "o": "PASS  10.2: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_3.sql <<'EOF'\n> WITH rev AS (\n>   SELECT o.customer_id, SUM(i.quantity * i.unit_price) AS revenue\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   WHERE o.status = 'delivered'\n>   GROUP BY o.customer_id\n> )\n> SELECT r.name, COUNT(c.customer_id) AS referred, ROUND(COALESCE(SUM(rev.revenue), 0), 2) AS referred_revenue\n> FROM customers c\n> JOIN customers r ON r.customer_id = c.referred_by\n> LEFT JOIN rev ON rev.customer_id = c.customer_id\n> GROUP BY r.customer_id, r.name\n> ORDER BY referred DESC, r.name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_3.sql",
+     "o": "name       | referred | referred_revenue\n-----------+----------+-----------------\nAsha Rao   | 2        | 895.00          \nBen Carter | 2        | 715.50          \nChen Wei   | 1        | 282.00          \nDivya Nair | 1        | 227.00          \nFarhan Ali | 1        | 0.00            \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.3 s10_3.sql",
+     "o": "PASS  10.3: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_4.sql <<'EOF'\n> WITH t AS (\n>   SELECT order_id, SUM(quantity * unit_price) AS total\n>   FROM order_items\n>   GROUP BY order_id\n> )\n> SELECT o.order_id, o.status, ROUND(t.total, 2) AS total, ROUND(p.amount, 2) AS paid\n> FROM orders o\n> JOIN t ON t.order_id = o.order_id\n> LEFT JOIN payments p ON p.order_id = o.order_id\n> WHERE o.status = 'delivered' AND (p.payment_id IS NULL OR ABS(p.amount - t.total) > 0.01)\n> ORDER BY o.order_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_4.sql",
+     "o": "order_id | status    | total  | paid \n---------+-----------+--------+------\n13       | delivered | 294.00 | NULL \n24       | delivered | 36.00  | 31.00\n(2 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.4 s10_4.sql",
+     "o": "PASS  10.4: 2 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_5.sql <<'EOF'\n> WITH RECURSIVE days(day) AS (\n>   SELECT '2026-03-01'\n>   UNION ALL\n>   SELECT date(day, '+1 day')\n>   FROM days\n>   WHERE day < '2026-03-10'\n> )\n> SELECT d.day, COUNT(DISTINCT l.customer_id) AS active_7d\n> FROM days d\n> LEFT JOIN logins l ON l.login_date BETWEEN date(d.day, '-6 days') AND d.day\n> GROUP BY d.day\n> ORDER BY d.day;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_5.sql",
+     "o": "day        | active_7d\n-----------+----------\n2026-03-01 | 3        \n2026-03-02 | 4        \n2026-03-03 | 5        \n2026-03-04 | 5        \n2026-03-05 | 6        \n2026-03-06 | 6        \n2026-03-07 | 7        \n2026-03-08 | 6        \n2026-03-09 | 6        \n2026-03-10 | 6        \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.5 s10_5.sql",
+     "o": "PASS  10.5: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_6.sql <<'EOF'\n> SELECT name, dept, salary, ROUND(dept_avg) AS dept_avg\n> FROM (\n>   SELECT name, dept, salary, AVG(salary) OVER (PARTITION BY dept) AS dept_avg\n>   FROM employees\n> )\n> WHERE salary > dept_avg\n> ORDER BY dept, salary DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s10_6.sql",
+     "o": "name       | dept        | salary | dept_avg \n-----------+-------------+--------+----------\nTom Hughes | Engineering | 180000 | 130600.00\nLena Vogel | Engineering | 135000 | 130600.00\nSara Khan  | Sales       | 150000 | 107500.00\nKen Ito    | Support     | 70000  | 66000.00 \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.6 s10_6.sql",
+     "o": "PASS  10.6: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "200e64e44222303d"
+ },
+ "sqlprac-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_1.sql <<'EOF'\n> SELECT name, city\n> FROM customers\n> WHERE country = 'India';\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_1.sql",
+     "o": "name       | city     \n-----------+----------\nAsha Rao   | Pune     \nDivya Nair | Kochi    \nFarhan Ali | Mumbai   \nHari Menon | Bengaluru\nJay Patel  | Ahmedabad\nJay Patel  | Ahmedabad\nKiran Das  | Kolkata  \n(7 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.1 s2_1.sql",
+     "o": "PASS  2.1: 7 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_2.sql <<'EOF'\n> SELECT name, price\n> FROM products\n> ORDER BY price;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_2.sql",
+     "o": "name         | price\n-------------+------\nNotebook A5  | 4.00 \nClay mug     | 6.50 \nWater bottle | 12.00\nTea sampler  | 15.00\nFountain pen | 18.00\nSpice set    | 22.00\nYoga mat     | 25.00\nCotton throw | 28.00\nSteel kettle | 30.00\nDesk lamp    | 45.00\n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.2 s2_2.sql",
+     "o": "PASS  2.2: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_3.sql <<'EOF'\n> SELECT name, price\n> FROM products\n> ORDER BY price DESC\n> LIMIT 3;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_3.sql",
+     "o": "name         | price\n-------------+------\nDesk lamp    | 45.00\nSteel kettle | 30.00\nCotton throw | 28.00\n(3 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.3 s2_3.sql",
+     "o": "PASS  2.3: 3 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_4.sql <<'EOF'\n> SELECT name, price\n> FROM products\n> WHERE price BETWEEN 10 AND 30\n> ORDER BY price;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_4.sql",
+     "o": "name         | price\n-------------+------\nWater bottle | 12.00\nTea sampler  | 15.00\nFountain pen | 18.00\nSpice set    | 22.00\nYoga mat     | 25.00\nCotton throw | 28.00\nSteel kettle | 30.00\n(7 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.4 s2_4.sql",
+     "o": "PASS  2.4: 7 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_5.sql <<'EOF'\n> SELECT name, country\n> FROM customers\n> WHERE country IN ('UK', 'Germany');\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_5.sql",
+     "o": "name         | country\n-------------+--------\nBen Carter   | UK     \nEmma Fischer | Germany\nIsla Brown   | UK     \n(3 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.5 s2_5.sql",
+     "o": "PASS  2.5: 3 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_6.sql <<'EOF'\n> SELECT name\n> FROM customers\n> WHERE city IS NULL;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_6.sql",
+     "o": "name     \n---------\nGrace Lee\n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.6 s2_6.sql",
+     "o": "PASS  2.6: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_7.sql <<'EOF'\n> SELECT name\n> FROM products\n> WHERE LOWER(name) LIKE '%te%';\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_7.sql",
+     "o": "name        \n------------\nSteel kettle\nNotebook A5 \nWater bottle\nTea sampler \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.7 s2_7.sql",
+     "o": "PASS  2.7: 4 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_8.sql <<'EOF'\n> SELECT DISTINCT country\n> FROM customers\n> ORDER BY country;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_8.sql",
+     "o": "country  \n---------\nGermany  \nIndia    \nSingapore\nUK       \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.8 s2_8.sql",
+     "o": "PASS  2.8: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_9.sql <<'EOF'\n> SELECT order_id, order_date, status\n> FROM orders\n> WHERE status <> 'delivered' AND order_date >= '2026-01-01' AND order_date < '2026-04-01'\n> ORDER BY order_date;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s2_9.sql",
+     "o": "order_id | order_date | status   \n---------+------------+----------\n1        | 2026-01-02 | returned \n9        | 2026-02-07 | cancelled\n8        | 2026-02-27 | pending  \n(3 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.9 s2_9.sql",
+     "o": "PASS  2.9: 3 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4bfc9ed367f40446"
+ },
+ "sqlprac-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_1.sql <<'EOF'\n> SELECT status, COUNT(*) AS orders\n> FROM orders\n> GROUP BY status\n> ORDER BY orders DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_1.sql",
+     "o": "status    | orders\n----------+-------\ndelivered | 29    \npending   | 9     \nreturned  | 3     \ncancelled | 1     \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.1 s3_1.sql",
+     "o": "PASS  3.1: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_2.sql <<'EOF'\n> SELECT MIN(price) AS lowest, MAX(price) AS highest, ROUND(AVG(price), 2) AS average\n> FROM products;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_2.sql",
+     "o": "lowest | highest | average\n-------+---------+--------\n4.00   | 45.00   | 20.55  \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.2 s3_2.sql",
+     "o": "PASS  3.2: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_3.sql <<'EOF'\n> SELECT country, COUNT(*) AS customers\n> FROM customers\n> GROUP BY country\n> ORDER BY customers DESC, country;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_3.sql",
+     "o": "country   | customers\n----------+----------\nIndia     | 7        \nSingapore | 2        \nUK        | 2        \nGermany   | 1        \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.3 s3_3.sql",
+     "o": "PASS  3.3: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_4.sql <<'EOF'\n> SELECT product_id, ROUND(SUM(quantity * unit_price), 2) AS revenue\n> FROM order_items\n> GROUP BY product_id\n> ORDER BY revenue DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_4.sql",
+     "o": "product_id | revenue\n-----------+--------\n3          | 1035.00\n4          | 868.00 \n1          | 570.00 \n7          | 375.00 \n6          | 342.00 \n9          | 210.00 \n8          | 204.00 \n2          | 149.50 \n5          | 72.00  \n(9 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.4 s3_4.sql",
+     "o": "PASS  3.4: 9 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_5.sql <<'EOF'\n> SELECT customer_id, COUNT(*) AS orders\n> FROM orders\n> GROUP BY customer_id\n> HAVING COUNT(*) >= 5\n> ORDER BY orders DESC, customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_5.sql",
+     "o": "customer_id | orders\n------------+-------\n3           | 8     \n5           | 8     \n2           | 6     \n8           | 6     \n7           | 5     \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.5 s3_5.sql",
+     "o": "PASS  3.5: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_6.sql <<'EOF'\n> SELECT customer_id, COUNT(*) AS orders, SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered\n> FROM orders\n> GROUP BY customer_id\n> ORDER BY customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_6.sql",
+     "o": "customer_id | orders | delivered\n------------+--------+----------\n1           | 2      | 2        \n2           | 6      | 3        \n3           | 8      | 6        \n4           | 1      | 1        \n5           | 8      | 6        \n7           | 5      | 2        \n8           | 6      | 4        \n9           | 2      | 2        \n10          | 2      | 1        \n11          | 2      | 2        \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.6 s3_6.sql",
+     "o": "PASS  3.6: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_7.sql <<'EOF'\n> SELECT name, price, CASE WHEN price < 15 THEN 'budget' WHEN price < 30 THEN 'mid' ELSE 'premium' END AS band\n> FROM products\n> ORDER BY price;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_7.sql",
+     "o": "name         | price | band   \n-------------+-------+--------\nNotebook A5  | 4.00  | budget \nClay mug     | 6.50  | budget \nWater bottle | 12.00 | budget \nTea sampler  | 15.00 | mid    \nFountain pen | 18.00 | mid    \nSpice set    | 22.00 | mid    \nYoga mat     | 25.00 | mid    \nCotton throw | 28.00 | mid    \nSteel kettle | 30.00 | premium\nDesk lamp    | 45.00 | premium\n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.7 s3_7.sql",
+     "o": "PASS  3.7: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_8.sql <<'EOF'\n> SELECT p.category, SUM(i.quantity) AS units, ROUND(100.0 * SUM(i.quantity) / (\n>   SELECT SUM(quantity)\n>   FROM order_items\n> ), 1) AS pct\n> FROM order_items i\n> JOIN products p ON p.product_id = i.product_id\n> GROUP BY p.category\n> ORDER BY pct DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s3_8.sql",
+     "o": "category   | units | pct  \n-----------+-------+------\nHome       | 54    | 30.20\nKitchen    | 42    | 23.50\nStationery | 37    | 20.70\nFitness    | 32    | 17.90\nGrocery    | 14    | 7.80 \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.8 s3_8.sql",
+     "o": "PASS  3.8: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "95af170863575ca7"
+ },
+ "sqlprac-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_1.sql <<'EOF'\n> SELECT o.order_id, c.name, o.order_date\n> FROM orders o\n> JOIN customers c ON c.customer_id = o.customer_id\n> ORDER BY o.order_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_1.sql",
+     "o": "order_id | name         | order_date\n---------+--------------+-----------\n1        | Grace Lee    | 2026-01-02\n2        | Grace Lee    | 2026-01-18\n3        | Chen Wei     | 2026-01-09\n4        | Hari Menon   | 2026-01-21\n5        | Asha Rao     | 2026-01-05\n6        | Ben Carter   | 2026-01-21\n7        | Jay Patel    | 2026-01-17\n8        | Emma Fischer | 2026-02-27\n9        | Grace Lee    | 2026-02-07\n10       | Jay Patel    | 2026-02-21\n11       | Emma Fischer | 2026-02-20\n12       | Chen Wei     | 2026-02-24\n13       | Chen Wei     | 2026-02-20\n14       | Emma Fischer | 2026-02-08\n15       | Ben Carter   | 2026-03-01\n16       | Isla Brown   | 2026-03-13\n17       | Isla Brown   | 2026-03-09\n18       | Emma Fischer | 2026-03-28\n19       | Divya Nair   | 2026-03-07\n20       | Jay Patel    | 2026-03-23\n21       | Hari Menon   | 2026-03-02\n22       | Chen Wei     | 2026-04-02\n23       | Emma Fischer | 2026-04-22\n24       | Chen Wei     | 2026-04-26\n25       | Chen Wei     | 2026-04-06\n26       | Emma Fischer | 2026-04-02\n27       | Emma Fischer | 2026-04-06\n28       | Chen Wei     | 2026-04-10\n29       | Ben Carter   | 2026-05-02\n30       | Grace Lee    | 2026-05-09\n31       | Ben Carter   | 2026-05-06\n32       | Hari Menon   | 2026-05-21\n33       | Asha Rao     | 2026-05-09\n34       | Hari Menon   | 2026-05-05\n35       | Grace Lee    | 2026-05-19\n36       | Emma Fischer | 2026-06-11\n37       | Jay Patel    | 2026-06-09\n38       | Hari Menon   | 2026-06-05\n39       | Ben Carter   | 2026-06-13\n40       | Ben Carter   | 2026-06-07\n41       | Chen Wei     | 2026-06-13\n42       | Hari Menon   | 2026-06-03\n(42 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.1 s4_1.sql",
+     "o": "PASS  4.1: 42 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_2.sql <<'EOF'\n> SELECT i.order_id, p.name, i.quantity, i.quantity * i.unit_price AS line_total\n> FROM order_items i\n> JOIN products p ON p.product_id = i.product_id\n> WHERE i.order_id = 1;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_2.sql",
+     "o": "order_id | name     | quantity | line_total\n---------+----------+----------+-----------\n1        | Yoga mat | 2        | 50.00     \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.2 s4_2.sql",
+     "o": "PASS  4.2: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_3.sql <<'EOF'\n> SELECT c.name\n> FROM customers c\n> LEFT JOIN orders o ON o.customer_id = c.customer_id\n> WHERE o.order_id IS NULL;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_3.sql",
+     "o": "name      \n----------\nFarhan Ali\nKiran Das \n(2 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.3 s4_3.sql",
+     "o": "PASS  4.3: 2 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_4.sql <<'EOF'\n> SELECT p.name\n> FROM products p\n> LEFT JOIN order_items i ON i.product_id = p.product_id\n> WHERE i.product_id IS NULL;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_4.sql",
+     "o": "name     \n---------\nSpice set\n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.4 s4_4.sql",
+     "o": "PASS  4.4: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_5.sql <<'EOF'\n> SELECT c.name, COUNT(o.order_id) AS orders\n> FROM customers c\n> LEFT JOIN orders o ON o.customer_id = c.customer_id\n> GROUP BY c.customer_id, c.name\n> ORDER BY orders DESC, c.name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_5.sql",
+     "o": "name         | orders\n-------------+-------\nChen Wei     | 8     \nEmma Fischer | 8     \nBen Carter   | 6     \nHari Menon   | 6     \nGrace Lee    | 5     \nAsha Rao     | 2     \nIsla Brown   | 2     \nJay Patel    | 2     \nJay Patel    | 2     \nDivya Nair   | 1     \nFarhan Ali   | 0     \nKiran Das    | 0     \n(12 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.5 s4_5.sql",
+     "o": "PASS  4.5: 12 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_6.sql <<'EOF'\n> SELECT e.name, m.name AS manager\n> FROM employees e\n> LEFT JOIN employees m ON m.emp_id = e.manager_id\n> ORDER BY e.name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_6.sql",
+     "o": "name         | manager   \n-------------+-----------\nArjun Shah   | Tom Hughes\nKen Ito      | Meera Iyer\nLena Vogel   | Tom Hughes\nMeera Iyer   | NULL      \nNina Roy     | Sara Khan \nOmar Aziz    | Sara Khan \nPriya Sen    | Sara Khan \nRavi Kumar   | Tom Hughes\nSara Khan    | Meera Iyer\nTom Hughes   | Meera Iyer\nVikram Joshi | Ravi Kumar\nZoe Martin   | Ken Ito   \n(12 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.6 s4_6.sql",
+     "o": "PASS  4.6: 12 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_7.sql <<'EOF'\n> SELECT c.country, ROUND(SUM(i.quantity * i.unit_price), 2) AS revenue\n> FROM customers c\n> JOIN orders o ON o.customer_id = c.customer_id\n> JOIN order_items i ON i.order_id = o.order_id\n> WHERE o.status = 'delivered'\n> GROUP BY c.country\n> ORDER BY revenue DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_7.sql",
+     "o": "country   | revenue\n----------+--------\nSingapore | 1042.00\nIndia     | 981.00 \nUK        | 446.00 \nGermany   | 419.00 \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.7 s4_7.sql",
+     "o": "PASS  4.7: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_8.sql <<'EOF'\n> SELECT t.order_id, ROUND(t.items_total, 2) AS items_total, ROUND(p.amount, 2) AS paid\n> FROM (\n>   SELECT order_id, SUM(quantity * unit_price) AS items_total\n>   FROM order_items\n>   GROUP BY order_id\n> ) t\n> JOIN payments p ON p.order_id = t.order_id\n> ORDER BY t.order_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s4_8.sql",
+     "o": "order_id | items_total | paid  \n---------+-------------+-------\n1        | 50.00       | 50.00 \n2        | 93.00       | 93.00 \n3        | 249.00      | 249.00\n4        | 15.00       | 15.00 \n5        | 25.00       | 25.00 \n6        | 28.00       | 28.00 \n7        | 171.00      | 171.00\n10       | 202.00      | 202.00\n11       | 16.00       | 16.00 \n12       | 16.00       | 16.00 \n14       | 18.00       | 18.00 \n15       | 15.00       | 15.00 \n16       | 165.00      | 165.00\n17       | 131.50      | 131.50\n18       | 62.00       | 62.00 \n19       | 135.00      | 135.00\n20       | 58.00       | 58.00 \n21       | 84.00       | 84.00 \n22       | 50.00       | 50.00 \n23       | 181.00      | 181.00\n24       | 36.00       | 31.00 \n25       | 109.00      | 109.00\n26       | 36.00       | 36.00 \n27       | 106.00      | 106.00\n28       | 56.00       | 56.00 \n29       | 54.50       | 54.50 \n31       | 106.50      | 106.50\n32       | 18.00       | 18.00 \n33       | 163.00      | 163.00\n34       | 110.00      | 110.00\n35       | 189.00      | 189.00\n(31 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.8 s4_8.sql",
+     "o": "PASS  4.8: 31 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "1e617a9b91ef5b93"
+ },
+ "sqlprac-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_1.sql <<'EOF'\n> SELECT name, price\n> FROM products\n> WHERE price > (\n>   SELECT AVG(price)\n>   FROM products\n> )\n> ORDER BY price;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_1.sql",
+     "o": "name         | price\n-------------+------\nSpice set    | 22.00\nYoga mat     | 25.00\nCotton throw | 28.00\nSteel kettle | 30.00\nDesk lamp    | 45.00\n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.1 s5_1.sql",
+     "o": "PASS  5.1: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_2.sql <<'EOF'\n> SELECT name\n> FROM customers\n> WHERE customer_id IN (\n>   SELECT customer_id\n>   FROM orders\n>   WHERE status IN ('cancelled', 'returned')\n> );\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_2.sql",
+     "o": "name      \n----------\nBen Carter\nChen Wei  \nGrace Lee \n(3 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.2 s5_2.sql",
+     "o": "PASS  5.2: 3 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_3.sql <<'EOF'\n> SELECT p.name\n> FROM products p\n> WHERE EXISTS (\n>   SELECT 1\n>   FROM order_items i\n>   WHERE i.product_id = p.product_id AND i.quantity = 4\n> );\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_3.sql",
+     "o": "name        \n------------\nClay mug    \nDesk lamp   \nCotton throw\nNotebook A5 \nYoga mat    \nWater bottle\nTea sampler \n(7 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.3 s5_3.sql",
+     "o": "PASS  5.3: 7 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_4.sql <<'EOF'\n> SELECT p.name, p.category, p.price, ROUND((\n>   SELECT AVG(x.price)\n>   FROM products x\n>   WHERE x.category = p.category\n> ), 2) AS category_avg\n> FROM products p\n> ORDER BY p.name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_4.sql",
+     "o": "name         | category   | price | category_avg\n-------------+------------+-------+-------------\nClay mug     | Kitchen    | 6.50  | 18.25       \nCotton throw | Home       | 28.00 | 36.50       \nDesk lamp    | Home       | 45.00 | 36.50       \nFountain pen | Stationery | 18.00 | 11.00       \nNotebook A5  | Stationery | 4.00  | 11.00       \nSpice set    | Grocery    | 22.00 | 18.50       \nSteel kettle | Kitchen    | 30.00 | 18.25       \nTea sampler  | Grocery    | 15.00 | 18.50       \nWater bottle | Fitness    | 12.00 | 18.50       \nYoga mat     | Fitness    | 25.00 | 18.50       \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.4 s5_4.sql",
+     "o": "PASS  5.4: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_5.sql <<'EOF'\n> WITH order_totals AS (\n>   SELECT order_id, SUM(quantity * unit_price) AS total\n>   FROM order_items\n>   GROUP BY order_id\n> )\n> SELECT order_id, ROUND(total, 2) AS total\n> FROM order_totals\n> ORDER BY total DESC, order_id\n> LIMIT 5;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_5.sql",
+     "o": "order_id | total \n---------+-------\n13       | 294.00\n3        | 249.00\n10       | 202.00\n35       | 189.00\n23       | 181.00\n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.5 s5_5.sql",
+     "o": "PASS  5.5: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_6.sql <<'EOF'\n> WITH spend AS (\n>   SELECT o.customer_id, SUM(i.quantity * i.unit_price) AS spent\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   WHERE o.status = 'delivered'\n>   GROUP BY o.customer_id\n> )\n> SELECT c.name, ROUND(s.spent, 2) AS spent\n> FROM spend s\n> JOIN customers c ON c.customer_id = s.customer_id\n> WHERE s.spent > (\n>   SELECT AVG(spent)\n>   FROM spend\n> )\n> ORDER BY spent DESC;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_6.sql",
+     "o": "name         | spent \n-------------+-------\nChen Wei     | 760.00\nEmma Fischer | 419.00\nIsla Brown   | 296.50\n(3 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.6 s5_6.sql",
+     "o": "PASS  5.6: 3 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_7.sql <<'EOF'\n> WITH RECURSIVE team(emp_id, name, level) AS (\n>   SELECT emp_id, name, 1\n>   FROM employees\n>   WHERE manager_id = 2\n>   UNION ALL\n>   SELECT e.emp_id, e.name, t.level + 1\n>   FROM employees e\n>   JOIN team t ON e.manager_id = t.emp_id\n> )\n> SELECT name, level\n> FROM team\n> ORDER BY level, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s5_7.sql",
+     "o": "name         | level\n-------------+------\nArjun Shah   | 1    \nLena Vogel   | 1    \nRavi Kumar   | 1    \nVikram Joshi | 2    \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.7 s5_7.sql",
+     "o": "PASS  5.7: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e76134049cf1913a"
+ },
+ "sqlprac-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_1.sql <<'EOF'\n> SELECT name, price, ROW_NUMBER() OVER (ORDER BY price DESC) AS row_num\n> FROM products\n> ORDER BY row_num;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_1.sql",
+     "o": "name         | price | row_num\n-------------+-------+--------\nDesk lamp    | 45.00 | 1      \nSteel kettle | 30.00 | 2      \nCotton throw | 28.00 | 3      \nYoga mat     | 25.00 | 4      \nSpice set    | 22.00 | 5      \nFountain pen | 18.00 | 6      \nTea sampler  | 15.00 | 7      \nWater bottle | 12.00 | 8      \nClay mug     | 6.50  | 9      \nNotebook A5  | 4.00  | 10     \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.1 s6_1.sql",
+     "o": "PASS  6.1: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_2.sql <<'EOF'\n> SELECT name, salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk\n> FROM employees\n> ORDER BY rnk, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_2.sql",
+     "o": "name         | salary | rnk\n-------------+--------+----\nMeera Iyer   | 250000 | 1  \nTom Hughes   | 180000 | 2  \nSara Khan    | 150000 | 3  \nLena Vogel   | 135000 | 4  \nArjun Shah   | 120000 | 5  \nRavi Kumar   | 120000 | 5  \nVikram Joshi | 98000  | 6  \nOmar Aziz    | 95000  | 7  \nPriya Sen    | 95000  | 7  \nNina Roy     | 90000  | 8  \nKen Ito      | 70000  | 9  \nZoe Martin   | 62000  | 10 \n(12 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.2 s6_2.sql",
+     "o": "PASS  6.2: 12 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_3.sql <<'EOF'\n> SELECT dept, name, salary\n> FROM (\n>   SELECT dept, name, salary, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS r\n>   FROM employees\n> )\n> WHERE r = 1\n> ORDER BY dept, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_3.sql",
+     "o": "dept        | name       | salary\n------------+------------+-------\nEngineering | Tom Hughes | 180000\nLeadership  | Meera Iyer | 250000\nSales       | Sara Khan  | 150000\nSupport     | Ken Ito    | 70000 \n(4 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.3 s6_3.sql",
+     "o": "PASS  6.3: 4 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_4.sql <<'EOF'\n> WITH t AS (\n>   SELECT o.order_id, o.order_date, SUM(i.quantity * i.unit_price) AS total\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   WHERE o.customer_id = 3\n>   GROUP BY o.order_id, o.order_date\n> )\n> SELECT order_id, order_date, ROUND(total, 2) AS total, ROUND(SUM(total) OVER (ORDER BY order_date, order_id), 2) AS running\n> FROM t\n> ORDER BY order_date, order_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_4.sql",
+     "o": "order_id | order_date | total  | running\n---------+------------+--------+--------\n3        | 2026-01-09 | 249.00 | 249.00 \n13       | 2026-02-20 | 294.00 | 543.00 \n12       | 2026-02-24 | 16.00  | 559.00 \n22       | 2026-04-02 | 50.00  | 609.00 \n25       | 2026-04-06 | 109.00 | 718.00 \n28       | 2026-04-10 | 56.00  | 774.00 \n24       | 2026-04-26 | 36.00  | 810.00 \n41       | 2026-06-13 | 4.00   | 814.00 \n(8 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.4 s6_4.sql",
+     "o": "PASS  6.4: 8 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_5.sql <<'EOF'\n> WITH m AS (\n>   SELECT strftime('%Y-%m', o.order_date) AS month, SUM(i.quantity) AS units\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   GROUP BY month\n> )\n> SELECT month, units, units - LAG(units) OVER (ORDER BY month) AS change\n> FROM m\n> ORDER BY month;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_5.sql",
+     "o": "month   | units | change\n--------+-------+-------\n2026-01 | 23    | NULL  \n2026-02 | 33    | 10    \n2026-03 | 34    | 1     \n2026-04 | 29    | -5    \n2026-05 | 37    | 8     \n2026-06 | 23    | -14   \n(6 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.5 s6_5.sql",
+     "o": "PASS  6.5: 6 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_6.sql <<'EOF'\n> SELECT name, category, price, ROUND(100.0 * price / SUM(price) OVER (PARTITION BY category), 1) AS pct_of_category\n> FROM products\n> ORDER BY category, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_6.sql",
+     "o": "name         | category   | price | pct_of_category\n-------------+------------+-------+----------------\nWater bottle | Fitness    | 12.00 | 32.40          \nYoga mat     | Fitness    | 25.00 | 67.60          \nSpice set    | Grocery    | 22.00 | 59.50          \nTea sampler  | Grocery    | 15.00 | 40.50          \nCotton throw | Home       | 28.00 | 38.40          \nDesk lamp    | Home       | 45.00 | 61.60          \nClay mug     | Kitchen    | 6.50  | 17.80          \nSteel kettle | Kitchen    | 30.00 | 82.20          \nFountain pen | Stationery | 18.00 | 81.80          \nNotebook A5  | Stationery | 4.00  | 18.20          \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.6 s6_6.sql",
+     "o": "PASS  6.6: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_7.sql <<'EOF'\n> WITH m AS (\n>   SELECT strftime('%Y-%m', o.order_date) AS month, SUM(i.quantity * i.unit_price) AS revenue\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   WHERE o.status = 'delivered'\n>   GROUP BY month\n> )\n> SELECT month, ROUND(revenue, 2) AS revenue, ROUND(AVG(revenue) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS avg_3m\n> FROM m\n> ORDER BY month;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_7.sql",
+     "o": "month   | revenue | avg_3m\n--------+---------+-------\n2026-01 | 581.00  | 581.00\n2026-02 | 546.00  | 563.50\n2026-03 | 650.50  | 592.50\n2026-04 | 524.00  | 573.50\n2026-05 | 586.50  | 587.00\n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.7 s6_7.sql",
+     "o": "PASS  6.7: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_8.sql <<'EOF'\n> SELECT DISTINCT customer_id, MIN(order_date) OVER w AS first_order, MAX(order_date) OVER w AS latest_order, COUNT(*) OVER w AS orders\n> FROM orders\n> WINDOW w AS (PARTITION BY customer_id)\n> ORDER BY customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s6_8.sql",
+     "o": "customer_id | first_order | latest_order | orders\n------------+-------------+--------------+-------\n1           | 2026-01-05  | 2026-05-09   | 2     \n2           | 2026-01-21  | 2026-06-13   | 6     \n3           | 2026-01-09  | 2026-06-13   | 8     \n4           | 2026-03-07  | 2026-03-07   | 1     \n5           | 2026-02-08  | 2026-06-11   | 8     \n7           | 2026-01-02  | 2026-05-19   | 5     \n8           | 2026-01-21  | 2026-06-05   | 6     \n9           | 2026-03-09  | 2026-03-13   | 2     \n10          | 2026-02-21  | 2026-06-09   | 2     \n11          | 2026-01-17  | 2026-03-23   | 2     \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.8 s6_8.sql",
+     "o": "PASS  6.8: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0f3b715ca99c30e0"
+ },
+ "sqlprac-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_1.sql <<'EOF'\n> SELECT UPPER(name) AS name, LOWER(SUBSTR(email, INSTR(email, '@') + 1)) AS domain\n> FROM customers\n> WHERE email IS NOT NULL\n> ORDER BY name, domain;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_1.sql",
+     "o": "name         | domain       \n-------------+--------------\nASHA RAO     | example.com  \nBEN CARTER   | example.co.uk\nCHEN WEI     | example.sg   \nDIVYA NAIR   | example.com  \nEMMA FISCHER | example.de   \nFARHAN ALI   | example.com  \nGRACE LEE    | example.sg   \nHARI MENON   | example.com  \nISLA BROWN   | example.co.uk\nJAY PATEL    | example.com  \nJAY PATEL    | example.com  \n(11 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.1 s7_1.sql",
+     "o": "PASS  7.1: 11 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_2.sql <<'EOF'\n> SELECT name, COALESCE(city, 'unknown') AS city\n> FROM customers\n> ORDER BY name, city;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_2.sql",
+     "o": "name         | city     \n-------------+----------\nAsha Rao     | Pune     \nBen Carter   | Leeds    \nChen Wei     | Singapore\nDivya Nair   | Kochi    \nEmma Fischer | Berlin   \nFarhan Ali   | Mumbai   \nGrace Lee    | unknown  \nHari Menon   | Bengaluru\nIsla Brown   | London   \nJay Patel    | Ahmedabad\nJay Patel    | Ahmedabad\nKiran Das    | Kolkata  \n(12 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.2 s7_2.sql",
+     "o": "PASS  7.2: 12 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_3.sql <<'EOF'\n> SELECT CAST(strftime('%w', order_date) AS INTEGER) AS weekday, COUNT(*) AS orders\n> FROM orders\n> GROUP BY weekday\n> ORDER BY weekday;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_3.sql",
+     "o": "weekday | orders\n--------+-------\n0       | 5     \n1       | 6     \n2       | 4     \n3       | 5     \n4       | 4     \n5       | 8     \n6       | 10    \n(7 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.3 s7_3.sql",
+     "o": "PASS  7.3: 7 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_4.sql <<'EOF'\n> SELECT o.order_id, CAST(julianday(p.paid_on) - julianday(o.order_date) AS INTEGER) AS days_to_pay\n> FROM orders o\n> JOIN payments p ON p.order_id = o.order_id\n> ORDER BY o.order_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_4.sql",
+     "o": "order_id | days_to_pay\n---------+------------\n1        | 0          \n2        | 0          \n3        | 0          \n4        | 2          \n5        | 2          \n6        | 1          \n7        | 0          \n10       | 1          \n11       | 2          \n12       | 2          \n14       | 0          \n15       | 0          \n16       | 1          \n17       | 0          \n18       | 0          \n19       | 2          \n20       | 2          \n21       | 0          \n22       | 1          \n23       | 0          \n24       | 0          \n25       | 0          \n26       | 2          \n27       | 1          \n28       | 1          \n29       | 0          \n31       | 1          \n32       | 2          \n33       | 2          \n34       | 1          \n35       | 1          \n(31 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.4 s7_4.sql",
+     "o": "PASS  7.4: 31 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_5.sql <<'EOF'\n> SELECT name, signup_date, (CAST(strftime('%Y', '2026-06-30') AS INTEGER) - CAST(strftime('%Y', signup_date) AS INTEGER)) * 12 + CAST(strftime('%m', '2026-06-30') AS INTEGER) - CAST(strftime('%m', signup_date) AS INTEGER) AS months\n> FROM customers\n> ORDER BY signup_date, name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_5.sql",
+     "o": "name         | signup_date | months\n-------------+-------------+-------\nAsha Rao     | 2025-11-03  | 7     \nBen Carter   | 2025-11-20  | 7     \nChen Wei     | 2025-12-02  | 6     \nDivya Nair   | 2025-12-15  | 6     \nEmma Fischer | 2026-01-05  | 5     \nFarhan Ali   | 2026-01-11  | 5     \nGrace Lee    | 2026-01-30  | 5     \nHari Menon   | 2026-02-08  | 4     \nIsla Brown   | 2026-02-21  | 4     \nJay Patel    | 2026-03-04  | 3     \nJay Patel    | 2026-03-04  | 3     \nKiran Das    | 2026-03-19  | 3     \n(12 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.5 s7_5.sql",
+     "o": "PASS  7.5: 12 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_6.sql <<'EOF'\n> SELECT p.category, SUM(CASE WHEN strftime('%m', o.order_date) = '01' THEN i.quantity ELSE 0 END) AS jan, SUM(CASE WHEN strftime('%m', o.order_date) = '02' THEN i.quantity ELSE 0 END) AS feb, SUM(CASE WHEN strftime('%m', o.order_date) = '03' THEN i.quantity ELSE 0 END) AS mar\n> FROM order_items i\n> JOIN orders o ON o.order_id = i.order_id\n> JOIN products p ON p.product_id = i.product_id\n> WHERE o.order_date < '2026-04-01'\n> GROUP BY p.category\n> ORDER BY p.category;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_6.sql",
+     "o": "category   | jan | feb | mar\n-----------+-----+-----+----\nFitness    | 7   | 2   | 3  \nGrocery    | 2   | 0   | 7  \nHome       | 9   | 12  | 9  \nKitchen    | 0   | 9   | 10 \nStationery | 5   | 10  | 5  \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.6 s7_6.sql",
+     "o": "PASS  7.6: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_7.sql <<'EOF'\n> SELECT COUNT(*) AS not_referred_by_1\n> FROM customers\n> WHERE referred_by IS NULL OR referred_by <> 1;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s7_7.sql",
+     "o": "not_referred_by_1\n-----------------\n10               \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.7 s7_7.sql",
+     "o": "PASS  7.7: 1 rows, all correct",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d70812f82cacd811"
+ },
+ "sqlprac-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_1.sql <<'EOF'\n> SELECT MAX(salary) AS second_highest\n> FROM employees\n> WHERE salary < (\n>   SELECT MAX(salary)\n>   FROM employees\n> );\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_1.sql",
+     "o": "second_highest\n--------------\n180000        \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.1 s8_1.sql",
+     "o": "PASS  8.1: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_2.sql <<'EOF'\n> SELECT LOWER(email) AS email, COUNT(*) AS customers\n> FROM customers\n> WHERE email IS NOT NULL\n> GROUP BY LOWER(email)\n> HAVING COUNT(*) > 1;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_2.sql",
+     "o": "email           | customers\n----------------+----------\njay@example.com | 2        \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.2 s8_2.sql",
+     "o": "PASS  8.2: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_3.sql <<'EOF'\n> SELECT customer_id, name\n> FROM (\n>   SELECT customer_id, name, ROW_NUMBER() OVER (PARTITION BY LOWER(email) ORDER BY customer_id) AS rn\n>   FROM customers\n>   WHERE email IS NOT NULL\n> )\n> WHERE rn = 1\n> ORDER BY customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_3.sql",
+     "o": "customer_id | name        \n------------+-------------\n1           | Asha Rao    \n2           | Ben Carter  \n3           | Chen Wei    \n4           | Divya Nair  \n5           | Emma Fischer\n6           | Farhan Ali  \n7           | Grace Lee   \n8           | Hari Menon  \n9           | Isla Brown  \n10          | Jay Patel   \n(10 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.3 s8_3.sql",
+     "o": "PASS  8.3: 10 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_4.sql <<'EOF'\n> WITH d AS (\n>   SELECT DISTINCT customer_id, login_date\n>   FROM logins\n>   WHERE login_date BETWEEN '2026-03-01' AND '2026-03-31'\n> ),\n> g AS (\n>   SELECT customer_id, login_date, julianday(login_date) - ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY login_date) AS grp\n>   FROM d\n> )\n> SELECT DISTINCT customer_id\n> FROM g\n> GROUP BY customer_id, grp\n> HAVING COUNT(*) >= 3;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_4.sql",
+     "o": "customer_id\n-----------\n1          \n3          \n4          \n6          \n9          \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.4 s8_4.sql",
+     "o": "PASS  8.4: 5 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_5.sql <<'EOF'\n> WITH d AS (\n>   SELECT DISTINCT customer_id, login_date\n>   FROM logins\n>   WHERE login_date BETWEEN '2026-03-01' AND '2026-03-31'\n> ),\n> g AS (\n>   SELECT customer_id, julianday(login_date) - ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY login_date) AS grp\n>   FROM d\n> ),\n> runs AS (\n>   SELECT customer_id, COUNT(*) AS len\n>   FROM g\n>   GROUP BY customer_id, grp\n> )\n> SELECT customer_id, MAX(len) AS longest_streak\n> FROM runs\n> GROUP BY customer_id\n> ORDER BY longest_streak DESC, customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_5.sql",
+     "o": "customer_id | longest_streak\n------------+---------------\n3           | 5             \n1           | 4             \n6           | 4             \n9           | 4             \n4           | 3             \n2           | 1             \n5           | 1             \n8           | 1             \n(8 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.5 s8_5.sql",
+     "o": "PASS  8.5: 8 rows, all correct, in the right order",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_6.sql <<'EOF'\n> WITH mar AS (\n>   SELECT DISTINCT customer_id\n>   FROM logins\n>   WHERE login_date LIKE '2026-03-%'\n> ),\n> apr AS (\n>   SELECT DISTINCT customer_id\n>   FROM logins\n>   WHERE login_date LIKE '2026-04-%'\n> )\n> SELECT COUNT(*) AS march_users, COUNT(a.customer_id) AS returned_in_april, ROUND(100.0 * COUNT(a.customer_id) / COUNT(*), 1) AS retention_pct\n> FROM mar m\n> LEFT JOIN apr a ON a.customer_id = m.customer_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_6.sql",
+     "o": "march_users | returned_in_april | retention_pct\n------------+-------------------+--------------\n8           | 4                 | 50.00        \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.6 s8_6.sql",
+     "o": "PASS  8.6: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_7.sql <<'EOF'\n> WITH r AS (\n>   SELECT price, ROW_NUMBER() OVER (ORDER BY price) AS rn, COUNT(*) OVER () AS n\n>   FROM products\n> )\n> SELECT AVG(price) AS median_price\n> FROM r\n> WHERE rn IN ((n + 1) / 2, (n + 2) / 2);\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_7.sql",
+     "o": "median_price\n------------\n20.00       \n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.7 s8_7.sql",
+     "o": "PASS  8.7: 1 rows, all correct",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_8.sql <<'EOF'\n> WITH m AS (\n>   SELECT strftime('%Y-%m', o.order_date) AS month, SUM(i.quantity * i.unit_price) AS revenue\n>   FROM orders o\n>   JOIN order_items i ON i.order_id = o.order_id\n>   WHERE o.status = 'delivered'\n>   GROUP BY month\n> )\n> SELECT month, ROUND(revenue, 2) AS revenue, ROUND(SUM(revenue) OVER (ORDER BY month), 2) AS ytd, CASE WHEN revenue = MAX(revenue) OVER () THEN 'yes' ELSE 'no' END AS best\n> FROM m\n> ORDER BY month;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s8_8.sql",
+     "o": "month   | revenue | ytd     | best\n--------+---------+---------+-----\n2026-01 | 581.00  | 581.00  | no  \n2026-02 | 546.00  | 1127.00 | no  \n2026-03 | 650.50  | 1777.50 | yes \n2026-04 | 524.00  | 2301.50 | no  \n2026-05 | 586.50  | 2888.00 | no  \n(5 rows)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.8 s8_8.sql",
+     "o": "PASS  8.8: 5 rows, all correct, in the right order",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d09b3691070b8e97"
+ },
+ "sqlprac-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_1.sql <<'EOF'\n> INSERT INTO products(product_id, name, category, price, launched_on)\n> VALUES (11, 'Bamboo tray', 'Kitchen', 14.5, '2026-06-01');\n> SELECT COUNT(*) AS kitchen_products\n> FROM products\n> WHERE category = 'Kitchen';\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.1 s9_1.sql",
+     "o": "PASS  9.1: 1 rows, all correct",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_1.sql",
+     "o": "kitchen_products\n----------------\n3               \n(1 row)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_2.sql <<'EOF'\n> UPDATE products\n> SET price = ROUND(price * 1.1, 2)\n> WHERE category = 'Fitness';\n> SELECT name, price\n> FROM products\n> WHERE category = 'Fitness'\n> ORDER BY name;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.2 s9_2.sql",
+     "o": "PASS  9.2: 2 rows, all correct, in the right order",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_2.sql",
+     "o": "name         | price\n-------------+------\nWater bottle | 13.20\nYoga mat     | 27.50\n(2 rows)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_3.sql <<'EOF'\n> DELETE\n> FROM order_items\n> WHERE order_id IN (\n>   SELECT order_id\n>   FROM orders\n>   WHERE status = 'cancelled'\n> );\n> DELETE\n> FROM orders\n> WHERE status = 'cancelled';\n> SELECT COUNT(*) AS orders_left\n> FROM orders;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.3 s9_3.sql",
+     "o": "PASS  9.3: 1 rows, all correct",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_3.sql",
+     "o": "orders_left\n-----------\n41         \n(1 row)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_4.sql <<'EOF'\n> INSERT INTO products(product_id, name, category, price, launched_on)\n> VALUES (2, 'Clay mug', 'Kitchen', 7.0, '2025-06-01'), (12, 'Steel tiffin', 'Kitchen', 19.0, '2026-06-15')\n> ON CONFLICT(product_id) DO UPDATE\n> SET name = excluded.name, category = excluded.category, price = excluded.price;\n> SELECT product_id, name, price\n> FROM products\n> WHERE product_id IN (2, 12)\n> ORDER BY product_id;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.4 s9_4.sql",
+     "o": "PASS  9.4: 2 rows, all correct, in the right order",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_4.sql",
+     "o": "product_id | name         | price\n-----------+--------------+------\n2          | Clay mug     | 7.00 \n12         | Steel tiffin | 19.00\n(2 rows)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_5.sql <<'EOF'\n> CREATE TABLE monthly_revenue AS\n> SELECT strftime('%Y-%m', o.order_date) AS month, SUM(i.quantity * i.unit_price) AS revenue\n> FROM orders o\n> JOIN order_items i ON i.order_id = o.order_id\n> WHERE o.status = 'delivered'\n> GROUP BY month;\n> SELECT month, ROUND(revenue, 2) AS revenue\n> FROM monthly_revenue\n> ORDER BY month;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.5 s9_5.sql",
+     "o": "PASS  9.5: 5 rows, all correct, in the right order",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_5.sql",
+     "o": "month   | revenue\n--------+--------\n2026-01 | 581.00 \n2026-02 | 546.00 \n2026-03 | 650.50 \n2026-04 | 524.00 \n2026-05 | 586.50 \n(5 rows)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sql",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 make_db.py > /dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py \"EXPLAIN QUERY PLAN SELECT * FROM orders WHERE customer_id = 3\"",
+     "o": "id | parent | notused | detail     \n---+--------+---------+------------\n2  | 0      | 0       | SCAN orders\n(1 row)",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_6.sql <<'EOF'\n> CREATE INDEX idx_orders_customer ON orders(customer_id);\n> EXPLAIN QUERY PLAN\n> SELECT * FROM orders\n> WHERE customer_id = 3;\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 q.py s9_6.sql",
+     "o": "id | parent | notused | detail                                                       \n---+--------+---------+--------------------------------------------------------------\n3  | 0      | 0       | SEARCH orders USING INDEX idx_orders_customer (customer_id=?)\n(1 row)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fd065551abfd1a79"
+ },
  "start-3": {
   "blocks": [
    [

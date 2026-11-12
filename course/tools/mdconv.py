@@ -300,9 +300,8 @@ def convert(path, track_id, track_name, number):
     parts = blocks(body, ctx)
     rendered = runner.run_lesson(lesson_id, ctx.setup, ctx.runs) if ctx.runs else []
     final = []
-    for p in parts:
-        m = re.fullmatch(r"@@RUN(\d+)@@", p)
-        final.append(term_html(rendered[int(m.group(1))], "real", lesson_id) if m else p)
+    for p in parts:                                  # run blocks may also sit inside folded answers, so replace them anywhere
+        final.append(re.sub(r"@@RUN(\d+)@@", lambda m: term_html(rendered[int(m.group(1))], "real", lesson_id), p))
     title = meta.get("title", f"Lesson {number}")
     sec = (f'<section class="chapter" id="{lesson_id}" data-track="{track_id}" data-n="{number}" data-title="{html.escape(number_label(number) + " · " + meta.get("short", title), quote=True)}" '
            f'data-road="{html.escape(title, quote=True)}" data-sub="{html.escape(meta.get("sub", ""), quote=True)}">'
