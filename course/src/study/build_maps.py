@@ -662,6 +662,37 @@ M["sqlprac"] = dict(
  ],
 )
 
+M["dsa"] = dict(
+ title="One coding question, from the brute force to a checked fast answer",
+ intro="Every coding question follows the same route: understand it, work an example, state the brute force, remove the repeated work with the right structure, code it, then test and state the complexity.",
+ hops=[
+  H("Method", "The checker, Big-O, the cost of Python operations, and six steps for any problem.", 1),
+  H("Lists", "Hash map of what you have seen, two pointers, running best, prefix sums.", 2),
+  H("Lookups", "Counter, defaultdict, canonical keys, sets for runs, prefix sums with a map.", 3),
+  H("Windows", "Fixed and variable sliding windows; two pointers on sorted data.", 4),
+  H("Order of work", "Stacks, monotonic stacks and queues.", 5),
+  H("Order of data", "Sorting, binary search on values and on answers, heaps.", 6),
+  H("Nodes", "Linked lists, trees, recursion, depth-first and breadth-first traversal.", 7),
+  H("Connections", "BFS, shortest paths, topological sort, Dijkstra.", 8),
+  H("Smaller problems", "Dynamic programming tables and backtracking.", 9),
+  H("Practice round", "Sessions, top per group, validation, k-way merge, an LRU cache.", 10),
+ ],
+ tips=[
+  "Say the brute force and its Big-O before optimising.",
+  "Ask about input size: it tells you which complexity is needed.",
+  "Test the empty input, one item, duplicates and negatives before saying you are done.",
+  "Most speed-ups come from a dictionary, sorting, two pointers, a window, a stack, a heap or a table.",
+  "State the time and memory complexity at the end, unprompted.",
+ ],
+ docs=[D("Python: time complexity of built-in operations", "https://wiki.python.org/moin/TimeComplexity"), D("Python: collections", "https://docs.python.org/3/library/collections.html"), D("Python: heapq", "https://docs.python.org/3/library/heapq.html"), D("Python: bisect", "https://docs.python.org/3/library/bisect.html")],
+ round2=[
+  "Redo every problem you needed the solution for, a day later, from a blank file.",
+  "Solve 4.2, 5.2 and 8.3 in under 15 minutes each while talking out loud.",
+  "Write 9.3 top-down with functools.lru_cache, then compare with the table version.",
+  "Implement the LRU cache of 10.5 without OrderedDict, using a dict and a doubly linked list.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

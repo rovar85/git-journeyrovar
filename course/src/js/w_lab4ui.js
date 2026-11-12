@@ -170,6 +170,13 @@ function loadPython(){
   return state.py.promise;
 }
 function enc(s){ return new TextEncoder().encode(s); }
+/* Files that are not valid UTF-8 (SQLite databases, Parquet, images) are kept in the shell as base64 behind a marker,
+   so they pass between the shell and Python byte for byte. */
+var BIN = "\u0000b64\u0000";
+function toB64(u8){ var s = "", CH = 32768; for(var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
+function fromB64(t){ var s = atob(t), u = new Uint8Array(s.length); for(var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+function fileBytes(data){ return (typeof data === "string" && data.indexOf(BIN) === 0) ? fromB64(data.slice(BIN.length)) : enc(data); }
+function fileText(u8){ try{ return new TextDecoder("utf-8", {fatal: true}).decode(u8); }catch(e){ return BIN + toB64(u8); } }
 function mirrorToPy(sh, py){
   var FS = py.FS;
   function rmtree(p){ try{ var st = FS.stat(p); if(FS.isDir(st.mode)){ FS.readdir(p).forEach(function(n){ if(n !== "." && n !== "..") rmtree(p + "/" + n); }); if(p !== "/tmp") FS.rmdir(p); } else FS.unlink(p); }catch(e){} }
@@ -178,7 +185,7 @@ function mirrorToPy(sh, py){
     try{ var parts = r.split("/").filter(Boolean), cur = ""; parts.forEach(function(x){ cur += "/" + x; try{ FS.mkdir(cur); }catch(e){} }); }catch(e){}
     var rn; try{ rn = sh.fs.get(r, "/", null, true); }catch(e){ return; }
     (function rec(n, p){
-      if(n.t === "d") n.kids.forEach(function(v, k){ var q = p + "/" + k; if(v.t === "d"){ try{ FS.mkdir(q); }catch(e){} rec(v, q); } else if(v.t === "f"){ try{ FS.writeFile(q, enc(v.data)); }catch(e){} } });
+      if(n.t === "d") n.kids.forEach(function(v, k){ var q = p + "/" + k; if(v.t === "d"){ try{ FS.mkdir(q); }catch(e){} rec(v, q); } else if(v.t === "f"){ try{ FS.writeFile(q, fileBytes(v.data)); }catch(e){} } });
     })(rn, r);
   });
 }
@@ -193,7 +200,7 @@ function mirrorFromPy(sh, py){
         seen[q] = 1;
         if(FS.isDir(st.mode)){ if(!sh.fs.exists(q, "/", null)){ try{ sh.fs.mkdirp(q, "/", null, 0); var d = sh.fs.get(q, "/", null, true); d.uid = sh.user.uid; d.gid = sh.user.gid; d.mode = 493; }catch(e){} } rec(q); }
         else if(FS.isFile(st.mode)){
-          var data; try{ data = new TextDecoder("utf-8").decode(FS.readFile(q)); }catch(e){ return; }
+          var data; try{ data = fileText(FS.readFile(q)); }catch(e){ return; }
           var ex = sh.fs.lookup(q, "/", null, true).node;
           if(ex){ if(ex.data !== data){ ex.data = data; ex.mtime = sh.fs.tick(); } }
           else { var nn = sh.fs.writeFile(q, data, "/", null, false, 0); nn.uid = sh.user.uid; nn.gid = sh.user.gid; nn.mode = 420; }
@@ -253,6 +260,7 @@ L.python = async function(args, io){
       "    else:",
       "        import types",
       "        _mod = types.ModuleType('__main__'); sys.modules['__main__'] = _mod",
+      "        if _lab_mode == 'file': _mod.__file__ = os.path.abspath(_lab_script)",
       "        exec(compile(_lab_code, _lab_script if _lab_mode == 'file' else '<string>', 'exec'), _mod.__dict__)",
       "except SystemExit as e:",
       "    _rc = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)",

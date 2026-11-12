@@ -2591,6 +2591,113 @@
    "Pick any three problems and explain your solution out loud as if to an interviewer."
   ]
  },
+ "dsa": {
+  "title": "One coding question, from the brute force to a checked fast answer",
+  "intro": "Every coding question follows the same route: understand it, work an example, state the brute force, remove the repeated work with the right structure, code it, then test and state the complexity.",
+  "hops": [
+   {
+    "label": "Method",
+    "text": "The checker, Big-O, the cost of Python operations, and six steps for any problem.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Lists",
+    "text": "Hash map of what you have seen, two pointers, running best, prefix sums.",
+    "lessons": [
+     2
+    ]
+   },
+   {
+    "label": "Lookups",
+    "text": "Counter, defaultdict, canonical keys, sets for runs, prefix sums with a map.",
+    "lessons": [
+     3
+    ]
+   },
+   {
+    "label": "Windows",
+    "text": "Fixed and variable sliding windows; two pointers on sorted data.",
+    "lessons": [
+     4
+    ]
+   },
+   {
+    "label": "Order of work",
+    "text": "Stacks, monotonic stacks and queues.",
+    "lessons": [
+     5
+    ]
+   },
+   {
+    "label": "Order of data",
+    "text": "Sorting, binary search on values and on answers, heaps.",
+    "lessons": [
+     6
+    ]
+   },
+   {
+    "label": "Nodes",
+    "text": "Linked lists, trees, recursion, depth-first and breadth-first traversal.",
+    "lessons": [
+     7
+    ]
+   },
+   {
+    "label": "Connections",
+    "text": "BFS, shortest paths, topological sort, Dijkstra.",
+    "lessons": [
+     8
+    ]
+   },
+   {
+    "label": "Smaller problems",
+    "text": "Dynamic programming tables and backtracking.",
+    "lessons": [
+     9
+    ]
+   },
+   {
+    "label": "Practice round",
+    "text": "Sessions, top per group, validation, k-way merge, an LRU cache.",
+    "lessons": [
+     10
+    ]
+   }
+  ],
+  "tips": [
+   "Say the brute force and its Big-O before optimising.",
+   "Ask about input size: it tells you which complexity is needed.",
+   "Test the empty input, one item, duplicates and negatives before saying you are done.",
+   "Most speed-ups come from a dictionary, sorting, two pointers, a window, a stack, a heap or a table.",
+   "State the time and memory complexity at the end, unprompted."
+  ],
+  "docs": [
+   {
+    "label": "Python: time complexity of built-in operations",
+    "url": "https://wiki.python.org/moin/TimeComplexity"
+   },
+   {
+    "label": "Python: collections",
+    "url": "https://docs.python.org/3/library/collections.html"
+   },
+   {
+    "label": "Python: heapq",
+    "url": "https://docs.python.org/3/library/heapq.html"
+   },
+   {
+    "label": "Python: bisect",
+    "url": "https://docs.python.org/3/library/bisect.html"
+   }
+  ],
+  "round2": [
+   "Redo every problem you needed the solution for, a day later, from a blank file.",
+   "Solve 4.2, 5.2 and 8.3 in under 15 minutes each while talking out loud.",
+   "Write 9.3 top-down with functools.lru_cache, then compare with the table version.",
+   "Implement the LRU cache of 10.5 without OrderedDict, using a dict and a doubly linked list."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

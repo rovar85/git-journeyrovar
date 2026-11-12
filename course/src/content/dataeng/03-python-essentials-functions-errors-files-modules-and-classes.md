@@ -219,6 +219,10 @@ An instance attribute is set on self, usually in the constructor, and belongs to
 Map applies a function to every item, filter keeps the items for which a function returns true, and reduce combines all items into a single value. In plain Python I usually prefer comprehensions and built-ins like sum, but the same three ideas are how distributed engines such as Spark process data in parallel.
 :::
 
+## Practise
+
+When these feel comfortable, the [coding interviews track](#dsa-1) has 46 graded problems that build on exactly these tools.
+
 :::recap
 - **Functions** name a piece of work: parameters in, `return` out; variables inside stay inside (**scope**).
 - **lambda**, **map**, **filter**, **reduce**, `sorted(key=...)`: small functions applied to collections.

@@ -176,6 +176,14 @@
   "why": "Where the tools become one workflow."
  },
  {
+  "id": "dsa",
+  "name": "Coding interviews in Python: data structures and algorithms",
+  "group": "8 · Interview preparation",
+  "level": "Beginner to advanced · after Python essentials",
+  "blurb": "Forty-six graded problems in ten lessons: Big-O, arrays and strings, hashing, sliding windows, stacks and queues, binary search and heaps, linked lists and trees, graphs, dynamic programming and backtracking, and a data-flavoured mock interview. Each problem has a hint, a model solution, and a checker that runs test cases and a large input to catch slow solutions.",
+  "why": "Most developer and data-engineering interviews include a coding round. This is the practice, with instant feedback on both correctness and speed."
+ },
+ {
   "id": "qbank",
   "name": "Interview question bank (400+ questions)",
   "group": "8 · Interview preparation",

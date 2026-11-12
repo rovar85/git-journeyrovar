@@ -7579,6 +7579,855 @@
   ],
   "key": "5a978f82ad284613"
  },
+ "dsa-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/dsa/bigo && cd ~/lab/dsa/bigo",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > bigo.py <<'EOF'\n> import time\n> def pairs(nums):                       # compare every pair: O(n^2)\n>     for i in range(len(nums)):\n>         for j in range(i + 1, len(nums)):\n>             if nums[i] == nums[j]: return True\n>     return False\n> def with_set(nums):                    # remember what we have seen: O(n)\n>     seen = set()\n>     for x in nums:\n>         if x in seen: return True\n>         seen.add(x)\n>     return False\n> print(f\"{'n':>7} {'pairs O(n^2)':>14} {'set O(n)':>10}\")\n> for n in (500, 1000, 2000, 4000):\n>     nums = list(range(n))              # no duplicates: the worst case, every comparison is made\n>     t = time.perf_counter(); pairs(nums); a = time.perf_counter() - t\n>     t = time.perf_counter(); with_set(nums); b = time.perf_counter() - t\n>     print(f\"{n:>7} {a * 1000:>11.1f} ms {b * 1000:>7.2f} ms\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 bigo.py",
+     "o": "      n   pairs O(n^2)   set O(n)\n    500         2.8 ms    0.05 ms\n   1000        10.9 ms    0.05 ms\n   2000        41.6 ms    0.21 ms\n   4000       168.3 ms    0.25 ms",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s1_1.py <<'EOF'\n> def solve(nums):\n>     total = 0\n>     for x in nums:\n>         total += x\n>     return total\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.1 s1_1.py",
+     "o": "ok   4 of 4 tests correct\nPASS 1.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s1_2.py <<'EOF'\n> def solve(nums):\n>     seen = set()\n>     for x in nums:\n>         if x in seen:\n>             return True\n>         seen.add(x)\n>     return False\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 1.2 s1_2.py",
+     "o": "ok   4 of 4 tests correct\nok   large input of 200,000 items in 0.07 s\nPASS 1.2",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "83b85744abebf28b"
+ },
+ "dsa-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_1.py <<'EOF'\n> def solve(events):\n>     last, sessions = {}, {}\n>     for user, minute in events:\n>         if user not in last or minute - last[user] > 30:\n>             sessions[user] = sessions.get(user, 0) + 1\n>         last[user] = minute\n>     return sessions\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.1 s10_1.py",
+     "o": "ok   4 of 4 tests correct\nPASS 10.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_2.py <<'EOF'\n> from collections import defaultdict\n> \n> def solve(orders):\n>     totals = defaultdict(float)\n>     for customer, country, amount in orders:\n>         totals[(country, customer)] += amount\n>     best = {}\n>     for (country, customer), total in totals.items():\n>         if country not in best or (-total, customer) < (-best[country][1], best[country][0]):\n>             best[country] = (customer, total)\n>     return {country: customer for country, (customer, total) in best.items()}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.2 s10_2.py",
+     "o": "ok   3 of 3 tests correct\nPASS 10.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_3.py <<'EOF'\n> def clean(r):\n>     if not isinstance(r.get(\"id\"), int):\n>         raise ValueError(\"id must be an integer\")\n>     email = str(r.get(\"email\") or \"\").strip().lower()\n>     if \"@\" not in email:\n>         raise ValueError(\"bad email\")\n>     amount = float(r.get(\"amount\"))    # raises ValueError or TypeError for bad input\n>     if amount < 0:\n>         raise ValueError(\"negative amount\")\n>     return {\"id\": r[\"id\"], \"email\": email, \"amount\": amount}\n> \n> def solve(rows):\n>     good, rejected = [], []\n>     for r in rows:\n>         try:\n>             good.append(clean(r))\n>         except (ValueError, TypeError):\n>             rejected.append(r.get(\"id\"))\n>     return [good, rejected]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.3 s10_3.py",
+     "o": "ok   3 of 3 tests correct\nPASS 10.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_4.py <<'EOF'\n> import heapq\n> \n> def solve(lists):\n>     heap = [(lst[0], i, 0) for i, lst in enumerate(lists) if lst]\n>     heapq.heapify(heap)\n>     out = []\n>     while heap:\n>         value, i, j = heapq.heappop(heap)\n>         out.append(value)\n>         if j + 1 < len(lists[i]):\n>             heapq.heappush(heap, (lists[i][j + 1], i, j + 1))\n>     return out\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.4 s10_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 10.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s10_5.py <<'EOF'\n> from collections import OrderedDict\n> \n> def solve(capacity, ops):\n>     cache = OrderedDict()\n>     results = []\n>     for op in ops:\n>         if op[0] == \"get\":\n>             key = op[1]\n>             if key in cache:\n>                 cache.move_to_end(key)          # now the most recently used\n>                 results.append(cache[key])\n>             else:\n>                 results.append(-1)\n>         else:\n>             _, key, value = op\n>             cache[key] = value\n>             cache.move_to_end(key)\n>             if len(cache) > capacity:\n>                 cache.popitem(last=False)       # drop the least recently used\n>     return results\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 10.5 s10_5.py",
+     "o": "ok   3 of 3 tests correct\nPASS 10.5",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "022aefe401ac1767"
+ },
+ "dsa-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_1.py <<'EOF'\n> def solve(nums, target):\n>     seen = {}                          # number -> its position\n>     for i, x in enumerate(nums):\n>         need = target - x\n>         if need in seen:\n>             return [seen[need], i]\n>         seen[x] = i\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.1 s2_1.py",
+     "o": "ok   5 of 5 tests correct\nok   large input of 60,000 items in 0.03 s\nPASS 2.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_2.py <<'EOF'\n> def solve(s):\n>     i, j = 0, len(s) - 1\n>     while i < j:\n>         if not s[i].isalnum():\n>             i += 1\n>         elif not s[j].isalnum():\n>             j -= 1\n>         elif s[i].lower() != s[j].lower():\n>             return False\n>         else:\n>             i += 1\n>             j -= 1\n>     return True\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.2 s2_2.py",
+     "o": "ok   6 of 6 tests correct\nPASS 2.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_3.py <<'EOF'\n> def solve(prices):\n>     lowest = float(\"inf\")\n>     best = 0\n>     for p in prices:\n>         lowest = min(lowest, p)\n>         best = max(best, p - lowest)\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.3 s2_3.py",
+     "o": "ok   5 of 5 tests correct\nok   large input of 200,000 items in 0.06 s\nPASS 2.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_4.py <<'EOF'\n> def solve(nums):\n>     nums = list(nums)                  # work on a copy\n>     write = 0\n>     for x in nums:\n>         if x != 0:\n>             nums[write] = x\n>             write += 1\n>     for k in range(write, len(nums)):\n>         nums[k] = 0\n>     return nums\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.4 s2_4.py",
+     "o": "ok   5 of 5 tests correct\nPASS 2.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_5.py <<'EOF'\n> def solve(nums, queries):\n>     prefix = [0]\n>     for x in nums:\n>         prefix.append(prefix[-1] + x)\n>     return [prefix[r + 1] - prefix[l] for l, r in queries]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.5 s2_5.py",
+     "o": "ok   3 of 3 tests correct\nPASS 2.5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s2_6.py <<'EOF'\n> def solve(nums):\n>     n = len(nums)\n>     out = [1] * n\n>     left = 1\n>     for i in range(n):                 # out[i] = product of nums[0..i-1]\n>         out[i] = left\n>         left *= nums[i]\n>     right = 1\n>     for i in range(n - 1, -1, -1):     # multiply in the product of nums[i+1..]\n>         out[i] *= right\n>         right *= nums[i]\n>     return out\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 2.6 s2_6.py",
+     "o": "ok   4 of 4 tests correct\nPASS 2.6",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "4ad9ef26246371e7"
+ },
+ "dsa-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_1.py <<'EOF'\n> from collections import Counter\n> \n> def solve(a, b):\n>     return Counter(a) == Counter(b)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.1 s3_1.py",
+     "o": "ok   5 of 5 tests correct\nPASS 3.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_2.py <<'EOF'\n> from collections import Counter\n> \n> def solve(s):\n>     counts = Counter(s)\n>     for i, ch in enumerate(s):\n>         if counts[ch] == 1:\n>             return i\n>     return -1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.2 s3_2.py",
+     "o": "ok   5 of 5 tests correct\nok   large input of 200,000 items in 0.01 s\nPASS 3.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_3.py <<'EOF'\n> from collections import defaultdict\n> \n> def solve(words):\n>     groups = defaultdict(list)          # a dict that starts every new key with an empty list\n>     for w in words:\n>         groups[\"\".join(sorted(w))].append(w)\n>     return list(groups.values())\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.3 s3_3.py",
+     "o": "ok   4 of 4 tests correct\nPASS 3.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_4.py <<'EOF'\n> from collections import Counter\n> \n> def solve(nums, k):\n>     counts = Counter(nums)\n>     ranked = sorted(counts, key=lambda x: (-counts[x], x))\n>     return ranked[:k]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.4 s3_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 3.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_5.py <<'EOF'\n> def solve(nums):\n>     values = set(nums)\n>     best = 0\n>     for x in values:\n>         if x - 1 not in values:        # x starts a run\n>             length = 1\n>             while x + length in values:\n>                 length += 1\n>             best = max(best, length)\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.5 s3_5.py",
+     "o": "ok   5 of 5 tests correct\nok   large input of 200,000 items in 0.08 s\nPASS 3.5",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s3_6.py <<'EOF'\n> from collections import defaultdict\n> \n> def solve(nums, k):\n>     seen = defaultdict(int)            # running sum -> how many times it has appeared\n>     seen[0] = 1                        # the empty prefix\n>     total = count = 0\n>     for x in nums:\n>         total += x\n>         count += seen[total - k]\n>         seen[total] += 1\n>     return count\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 3.6 s3_6.py",
+     "o": "ok   5 of 5 tests correct\nok   large input of 100,000 items in 0.03 s\nPASS 3.6",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "fac58ce00df12c1b"
+ },
+ "dsa-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_1.py <<'EOF'\n> def solve(nums, k):\n>     window = sum(nums[:k])\n>     best = window\n>     for i in range(k, len(nums)):\n>         window += nums[i] - nums[i - k]\n>         best = max(best, window)\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.1 s4_1.py",
+     "o": "ok   4 of 4 tests correct\nok   large input of 200,000 items in 0.06 s\nPASS 4.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_2.py <<'EOF'\n> def solve(s):\n>     last = {}                          # character -> last position seen\n>     left = best = 0\n>     for right, ch in enumerate(s):\n>         if ch in last and last[ch] >= left:\n>             left = last[ch] + 1        # jump past the earlier copy\n>         last[ch] = right\n>         best = max(best, right - left + 1)\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.2 s4_2.py",
+     "o": "ok   6 of 6 tests correct\nok   large input of 200,000 items in 0.03 s\nPASS 4.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_3.py <<'EOF'\n> def solve(heights):\n>     i, j = 0, len(heights) - 1\n>     best = 0\n>     while i < j:\n>         best = max(best, min(heights[i], heights[j]) * (j - i))\n>         if heights[i] < heights[j]:\n>             i += 1\n>         else:\n>             j -= 1\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.3 s4_3.py",
+     "o": "ok   4 of 4 tests correct\nok   large input of 200,000 items in 0.07 s\nPASS 4.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_4.py <<'EOF'\n> def solve(nums):\n>     nums = sorted(nums)\n>     out = []\n>     for i in range(len(nums) - 2):\n>         if i > 0 and nums[i] == nums[i - 1]:\n>             continue                   # same first number as before: skip\n>         lo, hi = i + 1, len(nums) - 1\n>         while lo < hi:\n>             s = nums[i] + nums[lo] + nums[hi]\n>             if s < 0:\n>                 lo += 1\n>             elif s > 0:\n>                 hi -= 1\n>             else:\n>                 out.append([nums[i], nums[lo], nums[hi]])\n>                 lo += 1\n>                 while lo < hi and nums[lo] == nums[lo - 1]:\n>                     lo += 1\n>     return out\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.4 s4_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 4.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s4_5.py <<'EOF'\n> from collections import Counter\n> \n> def solve(s, t):\n>     if not t:\n>         return \"\"\n>     need = Counter(t)\n>     missing = len(t)                   # characters still missing from the window\n>     left = 0\n>     best = (float(\"inf\"), 0, 0)\n>     for right, ch in enumerate(s):\n>         if need[ch] > 0:\n>             missing -= 1\n>         need[ch] -= 1\n>         while missing == 0:            # window holds everything: try to shrink it\n>             if right - left + 1 < best[0]:\n>                 best = (right - left + 1, left, right + 1)\n>             need[s[left]] += 1\n>             if need[s[left]] > 0:\n>                 missing += 1\n>             left += 1\n>     return s[best[1]:best[2]] if best[0] != float(\"inf\") else \"\"\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 4.5 s4_5.py",
+     "o": "ok   6 of 6 tests correct\nPASS 4.5",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "771fd37597ee4a8c"
+ },
+ "dsa-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_1.py <<'EOF'\n> def solve(s):\n>     pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n>     stack = []\n>     for ch in s:\n>         if ch in pairs:\n>             if not stack or stack.pop() != pairs[ch]:\n>                 return False\n>         else:\n>             stack.append(ch)\n>     return not stack                   # anything left open is unbalanced\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.1 s5_1.py",
+     "o": "ok   6 of 6 tests correct\nPASS 5.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_2.py <<'EOF'\n> def solve(temps):\n>     answer = [0] * len(temps)\n>     waiting = []                       # positions, temperatures decreasing from bottom to top\n>     for i, t in enumerate(temps):\n>         while waiting and temps[waiting[-1]] < t:\n>             j = waiting.pop()\n>             answer[j] = i - j\n>         waiting.append(i)\n>     return answer\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.2 s5_2.py",
+     "o": "ok   4 of 4 tests correct\nok   large input of 200,000 items in 0.05 s\nPASS 5.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_3.py <<'EOF'\n> def solve(tokens):\n>     stack = []\n>     for tok in tokens:\n>         if tok in \"+-*/\" and len(tok) == 1:\n>             b = stack.pop()\n>             a = stack.pop()\n>             if tok == \"+\":\n>                 stack.append(a + b)\n>             elif tok == \"-\":\n>                 stack.append(a - b)\n>             elif tok == \"*\":\n>                 stack.append(a * b)\n>             else:\n>                 stack.append(int(a / b))   # truncate toward zero, unlike // for negatives\n>         else:\n>             stack.append(int(tok))\n>     return stack[0]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.3 s5_3.py",
+     "o": "ok   4 of 4 tests correct\nPASS 5.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s5_4.py <<'EOF'\n> from collections import deque\n> \n> def solve(jobs, rate):\n>     queue = deque([name, pages] for name, pages in jobs)\n>     done, minute = [], 0\n>     while queue:\n>         minute += 1\n>         capacity = rate\n>         while queue and capacity > 0:\n>             job = queue[0]\n>             used = min(capacity, job[1])\n>             job[1] -= used\n>             capacity -= used\n>             if job[1] == 0:\n>                 done.append([job[0], minute])\n>                 queue.popleft()\n>     return done\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 5.4 s5_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 5.4",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "70fd9401cd663110"
+ },
+ "dsa-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_1.py <<'EOF'\n> def solve(nums, target):\n>     lo, hi = 0, len(nums) - 1\n>     while lo <= hi:\n>         mid = (lo + hi) // 2\n>         if nums[mid] == target:\n>             return mid\n>         if nums[mid] < target:\n>             lo = mid + 1\n>         else:\n>             hi = mid - 1\n>     return -1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.1 s6_1.py",
+     "o": "ok   6 of 6 tests correct\nPASS 6.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_2.py <<'EOF'\n> def solve(n, is_bad):\n>     lo, hi = 1, n\n>     while lo < hi:\n>         mid = (lo + hi) // 2\n>         if is_bad(mid):\n>             hi = mid                   # mid could be the first bad one\n>         else:\n>             lo = mid + 1\n>     return lo\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.2 s6_2.py",
+     "o": "ok   5 of 5 tests correct\nPASS 6.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_3.py <<'EOF'\n> def solve(intervals):\n>     out = []\n>     for start, end in sorted(intervals):\n>         if out and start <= out[-1][1]:\n>             out[-1][1] = max(out[-1][1], end)\n>         else:\n>             out.append([start, end])\n>     return out\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.3 s6_3.py",
+     "o": "ok   5 of 5 tests correct\nPASS 6.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s6_4.py <<'EOF'\n> import heapq\n> \n> def solve(nums, k):\n>     heap = []\n>     for x in nums:\n>         heapq.heappush(heap, x)\n>         if len(heap) > k:\n>             heapq.heappop(heap)        # drop the smallest: the heap keeps the k largest\n>     return heap[0]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 6.4 s6_4.py",
+     "o": "ok   4 of 4 tests correct\nok   large input of 200,000 items in 0.07 s\nPASS 6.4",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "c9e436b620e07986"
+ },
+ "dsa-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_1.py <<'EOF'\n> def solve(head):\n>     prev, cur = None, head\n>     while cur:\n>         nxt = cur.next                 # remember where to go next\n>         cur.next = prev                # turn the arrow around\n>         prev, cur = cur, nxt\n>     return prev\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.1 s7_1.py",
+     "o": "ok   4 of 4 tests correct\nPASS 7.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_2.py <<'EOF'\n> def solve(head):\n>     slow = fast = head\n>     while fast and fast.next:\n>         slow = slow.next\n>         fast = fast.next.next\n>         if slow is fast:\n>             return True\n>     return False\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.2 s7_2.py",
+     "o": "ok   5 of 5 tests correct\nPASS 7.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_3.py <<'EOF'\n> def solve(root):\n>     if root is None:\n>         return 0\n>     return 1 + max(solve(root.left), solve(root.right))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.3 s7_3.py",
+     "o": "ok   4 of 4 tests correct\nPASS 7.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_4.py <<'EOF'\n> from collections import deque\n> \n> def solve(root):\n>     if root is None:\n>         return []\n>     levels, queue = [], deque([root])\n>     while queue:\n>         level = []\n>         for _ in range(len(queue)):    # exactly the nodes of this level\n>             node = queue.popleft()\n>             level.append(node.val)\n>             if node.left:\n>                 queue.append(node.left)\n>             if node.right:\n>                 queue.append(node.right)\n>         levels.append(level)\n>     return levels\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.4 s7_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 7.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s7_5.py <<'EOF'\n> def solve(root, low=float(\"-inf\"), high=float(\"inf\")):\n>     if root is None:\n>         return True\n>     if not (low < root.val < high):\n>         return False\n>     return solve(root.left, low, root.val) and solve(root.right, root.val, high)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 7.5 s7_5.py",
+     "o": "ok   5 of 5 tests correct\nPASS 7.5",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e1f81c140c2ac825"
+ },
+ "dsa-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_1.py <<'EOF'\n> from collections import deque\n> \n> def solve(grid):\n>     rows, cols = len(grid), len(grid[0]) if grid else 0\n>     seen = set()\n>     islands = 0\n>     for r in range(rows):\n>         for c in range(cols):\n>             if grid[r][c] == \"1\" and (r, c) not in seen:\n>                 islands += 1\n>                 queue = deque([(r, c)])\n>                 seen.add((r, c))\n>                 while queue:\n>                     y, x = queue.popleft()\n>                     for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):\n>                         if 0 <= ny < rows and 0 <= nx < cols and grid[ny][nx] == \"1\" and (ny, nx) not in seen:\n>                             seen.add((ny, nx))\n>                             queue.append((ny, nx))\n>     return islands\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.1 s8_1.py",
+     "o": "ok   4 of 4 tests correct\nPASS 8.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_2.py <<'EOF'\n> from collections import deque\n> \n> def solve(grid):\n>     rows, cols = len(grid), len(grid[0])\n>     if grid[0][0] == \"#\" or grid[-1][-1] == \"#\":\n>         return -1\n>     dist = {(0, 0): 0}\n>     queue = deque([(0, 0)])\n>     while queue:\n>         y, x = queue.popleft()\n>         if (y, x) == (rows - 1, cols - 1):\n>             return dist[(y, x)]\n>         for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):\n>             if 0 <= ny < rows and 0 <= nx < cols and grid[ny][nx] == \".\" and (ny, nx) not in dist:\n>                 dist[(ny, nx)] = dist[(y, x)] + 1\n>                 queue.append((ny, nx))\n>     return -1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.2 s8_2.py",
+     "o": "ok   4 of 4 tests correct\nPASS 8.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_3.py <<'EOF'\n> from collections import deque\n> \n> def solve(n, deps):\n>     after = [[] for _ in range(n)]     # b -> tasks that wait for b\n>     waiting = [0] * n                  # task -> number of unfinished prerequisites\n>     for a, b in deps:\n>         after[b].append(a)\n>         waiting[a] += 1\n>     ready = deque(t for t in range(n) if waiting[t] == 0)\n>     order = []\n>     while ready:\n>         t = ready.popleft()\n>         order.append(t)\n>         for nxt in after[t]:\n>             waiting[nxt] -= 1\n>             if waiting[nxt] == 0:\n>                 ready.append(nxt)\n>     return order if len(order) == n else []\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.3 s8_3.py",
+     "o": "ok   4 of 4 tests correct\nPASS 8.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s8_4.py <<'EOF'\n> import heapq\n> \n> def solve(n, roads):\n>     graph = [[] for _ in range(n)]\n>     for a, b, cost in roads:\n>         graph[a].append((b, cost))\n>         graph[b].append((a, cost))\n>     best = {0: 0}\n>     heap = [(0, 0)]\n>     while heap:\n>         cost, place = heapq.heappop(heap)\n>         if place == n - 1:\n>             return cost\n>         if cost > best.get(place, float(\"inf\")):\n>             continue                   # an outdated, more expensive entry\n>         for nxt, c in graph[place]:\n>             new = cost + c\n>             if new < best.get(nxt, float(\"inf\")):\n>                 best[nxt] = new\n>                 heapq.heappush(heap, (new, nxt))\n>     return -1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 8.4 s8_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 8.4",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "7f76c1d35641dc42"
+ },
+ "dsa-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_1.py <<'EOF'\n> def solve(n):\n>     a, b = 1, 1                        # ways to reach step 0 and step 1\n>     for _ in range(n - 1):\n>         a, b = b, a + b\n>     return b if n > 0 else 1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.1 s9_1.py",
+     "o": "ok   5 of 5 tests correct\nPASS 9.1",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_2.py <<'EOF'\n> def solve(money):\n>     take_prev, best = 0, 0             # best up to two houses back, best up to the previous house\n>     for m in money:\n>         take_prev, best = best, max(best, take_prev + m)\n>     return best\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.2 s9_2.py",
+     "o": "ok   5 of 5 tests correct\nPASS 9.2",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_3.py <<'EOF'\n> def solve(coins, amount):\n>     INF = amount + 1\n>     best = [0] + [INF] * amount\n>     for a in range(1, amount + 1):\n>         for c in coins:\n>             if c <= a and best[a - c] + 1 < best[a]:\n>                 best[a] = best[a - c] + 1\n>     return best[amount] if best[amount] != INF else -1\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.3 s9_3.py",
+     "o": "ok   5 of 5 tests correct\nPASS 9.3",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_4.py <<'EOF'\n> def solve(nums):\n>     out = []\n>     def build(i, chosen):\n>         if i == len(nums):\n>             out.append(list(chosen))\n>             return\n>         build(i + 1, chosen)           # without nums[i]\n>         chosen.append(nums[i])\n>         build(i + 1, chosen)           # with nums[i]\n>         chosen.pop()                   # undo the choice: that is the \"back\" in backtracking\n>     build(0, [])\n>     return out\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.4 s9_4.py",
+     "o": "ok   4 of 4 tests correct\nPASS 9.4",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/dsa",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > s9_5.py <<'EOF'\n> def solve(a, b):\n>     prev = [0] * (len(b) + 1)\n>     for ch in a:\n>         cur = [0]\n>         for j, other in enumerate(b, 1):\n>             cur.append(prev[j - 1] + 1 if ch == other else max(prev[j], cur[j - 1]))\n>         prev = cur\n>     return prev[-1]\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 check.py 9.5 s9_5.py",
+     "o": "ok   5 of 5 tests correct\nPASS 9.5",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9c5a4cc62c49c21f"
+ },
  "git-1": {
   "blocks": [
    [

@@ -31,7 +31,7 @@ Whatever job you want, begin here, in this order:
 | **Data engineer** | [Data engineering](#dataeng-1) (all of it) → [SQL practice](#sqlprac-1) → [Docker](#docker-1) → [Databases and distributed systems](#systems-1) → [Cloud](#cloud-1) |
 | **AI engineer** | [AI and agents](#ch1) → [AI deep dive](#aideep-1) → [Docker](#docker-1) → [AI infrastructure](#aiinfra-1) → [AI field guide](#aifield-1) |
 
-When you start applying for jobs, use the interview tracks: [SQL practice](#sqlprac-1), the [question bank](#qbank-1), the [incident scenarios](#scenarios-1), and for experienced roles the [senior DevOps questions](#seniorqa-1) and the [AI interview bank](#aibank-1).
+When you start applying for jobs, use the interview tracks: [coding interviews in Python](#dsa-1), [SQL practice](#sqlprac-1), the [question bank](#qbank-1), the [incident scenarios](#scenarios-1), and for experienced roles the [senior DevOps questions](#seniorqa-1) and the [AI interview bank](#aibank-1).
 
 Not sure? Take the DevOps route. It is the broadest, and its skills are used in all the others.
 
