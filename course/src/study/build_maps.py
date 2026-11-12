@@ -693,6 +693,35 @@ M["dsa"] = dict(
  ],
 )
 
+M["sysdesign"] = dict(
+ title="One request through a large system, and the pattern that protects each hop",
+ intro="Follow a request from the user to the data and back. At each hop one pattern decides whether the system stays fast and available as it grows.",
+ hops=[
+  H("Frame it", "Requirements, estimates, API, data model, design, deep dives, trade-offs.", 1),
+  H("Front door", "Stateless services behind a load-aware balancer; rate limits and a gateway at the edge.", 2, 6),
+  H("Fast reads", "Caches at every layer; cache-aside, TTL with jitter, stampede protection.", 3),
+  H("Data", "Replicas for reads, partitions for writes, the right store for each shape.", 4),
+  H("Slow work", "Queues, competing consumers, dead letters, the outbox.", 5),
+  H("Consistency across services", "CQRS read models, event sourcing, sagas with compensation.", 7),
+  H("Staying up", "Availability maths, redundancy, timeouts, breakers, graceful degradation.", 8),
+  H("Put together", "A URL shortener and a social feed, step by step.", 9, 10),
+ ],
+ tips=[
+  "Ask about scale before drawing a single box.",
+  "Do the arithmetic out loud: per day to per second, item size to storage.",
+  "For every component, say what happens when it fails.",
+  "Name one trade-off for every choice you make.",
+  "Finish with what you would monitor.",
+ ],
+ docs=[D("Azure Architecture Center: cloud design patterns", "https://learn.microsoft.com/en-us/azure/architecture/patterns/"), D("AWS Well-Architected Framework", "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"), D("The System Design Primer", "https://github.com/donnemartin/system-design-primer"), D("Google SRE book", "https://sre.google/sre-book/table-of-contents/")],
+ round2=[
+  "Design a chat application in 40 minutes using the seven steps, then compare with lessons 5 and 10.",
+  "Redo the estimates of lesson 1 for 100 million daily users and say what changes in the design.",
+  "Change the load balancer model to 95% load and explain the result.",
+  "List the dependencies of a product page and write what the page does without each one.",
+ ],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

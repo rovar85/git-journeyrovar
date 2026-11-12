@@ -2698,6 +2698,101 @@
    "Implement the LRU cache of 10.5 without OrderedDict, using a dict and a doubly linked list."
   ]
  },
+ "sysdesign": {
+  "title": "One request through a large system, and the pattern that protects each hop",
+  "intro": "Follow a request from the user to the data and back. At each hop one pattern decides whether the system stays fast and available as it grows.",
+  "hops": [
+   {
+    "label": "Frame it",
+    "text": "Requirements, estimates, API, data model, design, deep dives, trade-offs.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Front door",
+    "text": "Stateless services behind a load-aware balancer; rate limits and a gateway at the edge.",
+    "lessons": [
+     2,
+     6
+    ]
+   },
+   {
+    "label": "Fast reads",
+    "text": "Caches at every layer; cache-aside, TTL with jitter, stampede protection.",
+    "lessons": [
+     3
+    ]
+   },
+   {
+    "label": "Data",
+    "text": "Replicas for reads, partitions for writes, the right store for each shape.",
+    "lessons": [
+     4
+    ]
+   },
+   {
+    "label": "Slow work",
+    "text": "Queues, competing consumers, dead letters, the outbox.",
+    "lessons": [
+     5
+    ]
+   },
+   {
+    "label": "Consistency across services",
+    "text": "CQRS read models, event sourcing, sagas with compensation.",
+    "lessons": [
+     7
+    ]
+   },
+   {
+    "label": "Staying up",
+    "text": "Availability maths, redundancy, timeouts, breakers, graceful degradation.",
+    "lessons": [
+     8
+    ]
+   },
+   {
+    "label": "Put together",
+    "text": "A URL shortener and a social feed, step by step.",
+    "lessons": [
+     9,
+     10
+    ]
+   }
+  ],
+  "tips": [
+   "Ask about scale before drawing a single box.",
+   "Do the arithmetic out loud: per day to per second, item size to storage.",
+   "For every component, say what happens when it fails.",
+   "Name one trade-off for every choice you make.",
+   "Finish with what you would monitor."
+  ],
+  "docs": [
+   {
+    "label": "Azure Architecture Center: cloud design patterns",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/"
+   },
+   {
+    "label": "AWS Well-Architected Framework",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+   },
+   {
+    "label": "The System Design Primer",
+    "url": "https://github.com/donnemartin/system-design-primer"
+   },
+   {
+    "label": "Google SRE book",
+    "url": "https://sre.google/sre-book/table-of-contents/"
+   }
+  ],
+  "round2": [
+   "Design a chat application in 40 minutes using the seven steps, then compare with lessons 5 and 10.",
+   "Redo the estimates of lesson 1 for 100 million daily users and say what changes in the design.",
+   "Change the load balancer model to 95% load and explain the result.",
+   "List the dependencies of a product page and write what the page does without each one."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

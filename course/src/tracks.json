@@ -120,6 +120,14 @@
   "why": "SQL is in almost every data, analyst and backend interview. Reading about it is not enough: this is the practice, with instant feedback."
  },
  {
+  "id": "sysdesign",
+  "name": "System design: patterns and walkthroughs",
+  "group": "5 · Data",
+  "level": "Intermediate · after Networking and SQL basics",
+  "blurb": "Ten lessons: how to answer a design question and estimate load, load balancing, caching, replicas and partitions, queues and the outbox pattern, rate limiting and gateways, CQRS, event sourcing and sagas, reliability patterns and anti-patterns, then two full designs: a URL shortener and a social feed. Every pattern comes with a small simulation you can run.",
+  "why": "System design rounds decide senior offers for developers, DevOps and data engineers. This track gives you the building blocks and a structure for using them."
+ },
+ {
   "id": "systems",
   "name": "Databases and distributed systems for backend engineers",
   "group": "5 · Data",

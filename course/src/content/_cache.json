@@ -22871,6 +22871,226 @@
   ],
   "key": "69d9aaba21877ca8"
  },
+ "sysdesign-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > estimate.py <<'EOF'\n> # Back-of-the-envelope estimation for a design interview: from users to requests per second, storage and bandwidth.\n> def human(n, unit=\"\"):\n>     for s, f in ((\"P\", 1e15), (\"T\", 1e12), (\"G\", 1e9), (\"M\", 1e6), (\"k\", 1e3)):\n>         if n >= f: return f\"{n / f:.1f} {s}{unit}\"\n>     return f\"{n:.0f} {unit}\"\n> DAY = 86400\n> def estimate(name, daily_users, actions_per_user, read_write_ratio, bytes_per_write, years=5, peak_factor=3):\n>     writes_day = daily_users * actions_per_user\n>     reads_day = writes_day * read_write_ratio\n>     wps, rps = writes_day / DAY, reads_day / DAY\n>     storage = writes_day * bytes_per_write * 365 * years\n>     print(f\"{name}\")\n>     print(f\"   writes: {human(writes_day)} a day = {wps:,.0f} per second on average, about {wps * peak_factor:,.0f} at peak (x{peak_factor})\")\n>     print(f\"   reads : {human(reads_day)} a day = {rps:,.0f} per second on average, about {rps * peak_factor:,.0f} at peak\")\n>     print(f\"   storage over {years} years: {human(storage, 'B')}   (before replication; x3 copies = {human(storage * 3, 'B')})\")\n>     print(f\"   read bandwidth at peak: {human(rps * peak_factor * bytes_per_write, 'B')}/s\\n\")\n> estimate(\"URL shortener: 10 M daily users, 1 new link each per 10 days, 100 reads per write, 500 bytes per link\", 10e6, 0.1, 100, 500)\n> estimate(\"Chat app: 50 M daily users, 40 messages each, 1 read per write (each message delivered once), 200 bytes\", 50e6, 40, 1, 200)\n> estimate(\"Photo sharing: 20 M daily users, 2 uploads each, 50 views per upload, 2 MB per photo\", 20e6, 2, 50, 2e6)\n> print(\"Numbers worth remembering:\")\n> for k, v in [(\"seconds in a day\", \"86,400 (round to 100,000)\"), (\"1 million requests a day\", \"about 12 per second\"), (\"1 billion requests a day\", \"about 12,000 per second\"),\n>              (\"memory read\", \"about 100 ns\"), (\"SSD random read\", \"about 100 us\"), (\"same-region network round trip\", \"about 0.5 ms\"), (\"cross-continent round trip\", \"about 150 ms\")]:\n>     print(f\"   {k:32} {v}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 estimate.py",
+     "o": "URL shortener: 10 M daily users, 1 new link each per 10 days, 100 reads per write, 500 bytes per link\n   writes: 1.0 M a day = 12 per second on average, about 35 at peak (x3)\n   reads : 100.0 M a day = 1,157 per second on average, about 3,472 at peak\n   storage over 5 years: 912.5 GB   (before replication; x3 copies = 2.7 TB)\n   read bandwidth at peak: 1.7 MB/s\n\nChat app: 50 M daily users, 40 messages each, 1 read per write (each message delivered once), 200 bytes\n   writes: 2.0 G a day = 23,148 per second on average, about 69,444 at peak (x3)\n   reads : 2.0 G a day = 23,148 per second on average, about 69,444 at peak\n   storage over 5 years: 730.0 TB   (before replication; x3 copies = 2.2 PB)\n   read bandwidth at peak: 13.9 MB/s\n\nPhoto sharing: 20 M daily users, 2 uploads each, 50 views per upload, 2 MB per photo\n   writes: 40.0 M a day = 463 per second on average, about 1,389 at peak (x3)\n   reads : 2.0 G a day = 23,148 per second on average, about 69,444 at peak\n   storage over 5 years: 146.0 PB   (before replication; x3 copies = 438.0 PB)\n   read bandwidth at peak: 138.9 GB/s\n\nNumbers worth remembering:\n   seconds in a day                 86,400 (round to 100,000)\n   1 million requests a day         about 12 per second\n   1 billion requests a day         about 12,000 per second\n   memory read                      about 100 ns\n   SSD random read                  about 100 us\n   same-region network round trip   about 0.5 ms\n   cross-continent round trip       about 150 ms",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "adb609db058e36f9"
+ },
+ "sysdesign-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > feed.py <<'EOF'\n> # A social feed: fan-out on write (push) versus fan-out on read (pull), and the hybrid used for very popular accounts.\n> users = {\"normal\": 1_000_000, \"celebrity\": 10}\n> followers = {\"normal\": 200, \"celebrity\": 5_000_000}\n> posts_per_day = {\"normal\": 1, \"celebrity\": 5}\n> feed_reads_per_user_day = 20\n> writes_push = sum(users[k] * posts_per_day[k] * followers[k] for k in users)\n> reads_pull_queries = (users[\"normal\"]) * feed_reads_per_user_day * 200\n> print(\"Work per day for 1 M normal users (200 followers, 1 post a day) and 10 celebrities (5 M followers, 5 posts a day):\\n\")\n> print(f\"push (write each post into every follower's feed): {writes_push:,.0f} feed inserts a day; reading a feed is 1 lookup\")\n> print(f\"   of which celebrities: {users['celebrity'] * posts_per_day['celebrity'] * followers['celebrity']:,} inserts, each post waiting for 5 M writes\")\n> print(f\"pull (build the feed when it is read):              {reads_pull_queries:,.0f} post lookups a day (200 accounts merged per read)\")\n> hybrid_writes = users[\"normal\"] * posts_per_day[\"normal\"] * followers[\"normal\"]\n> print(f\"hybrid (push for normal accounts, pull celebrities at read time): {hybrid_writes:,} inserts, plus merging up to a few celebrity timelines per read\")\n> print(\"\\nRule: push when reads vastly outnumber writes and follower counts are small; pull for accounts with huge audiences.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 feed.py",
+     "o": "Work per day for 1 M normal users (200 followers, 1 post a day) and 10 celebrities (5 M followers, 5 posts a day):\n\npush (write each post into every follower's feed): 450,000,000 feed inserts a day; reading a feed is 1 lookup\n   of which celebrities: 250,000,000 inserts, each post waiting for 5 M writes\npull (build the feed when it is read):              4,000,000,000 post lookups a day (200 accounts merged per read)\nhybrid (push for normal accounts, pull celebrities at read time): 200,000,000 inserts, plus merging up to a few celebrity timelines per read\n\nRule: push when reads vastly outnumber writes and follower counts are small; pull for accounts with huge audiences.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d28a46307aa4eb38"
+ },
+ "sysdesign-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > lb.py <<'EOF'\n> # Load balancing at 80% load: 8 servers, each handles one request at a time; most requests are quick, a few are slow.\n> import random\n> SERVERS, N = 8, 40000\n> def simulate(pick, seed=5):\n>     rnd = random.Random(seed)\n>     free_at = [0.0] * SERVERS                  # when each server finishes its queued work\n>     queued = [[] for _ in range(SERVERS)]      # finish times of requests still waiting or running, per server\n>     waits = []\n>     t = 0.0\n>     for i in range(N):\n>         t += rnd.expovariate(32)               # 32 requests per second arrive at random\n>         for q in queued: q[:] = [e for e in q if e > t]\n>         outstanding = [len(q) for q in queued]\n>         k = pick(i, outstanding, rnd)\n>         dur = 0.1 if rnd.random() < 0.9 else 1.1   # average 0.2 s: 8 servers can do 40 per second, so 32 is 80% load\n>         start = max(t, free_at[k]); free_at[k] = start + dur; queued[k].append(free_at[k])\n>         waits.append(start - t)\n>     waits.sort()\n>     return sum(waits) / N * 1000, waits[int(N * 0.99)] * 1000\n> algos = [(\"random\", lambda i, o, r: r.randrange(SERVERS)),\n>          (\"round robin\", lambda i, o, r: i % SERVERS),\n>          (\"two random choices\", lambda i, o, r: min(r.randrange(SERVERS), r.randrange(SERVERS), key=lambda s: o[s])),\n>          (\"least outstanding requests\", lambda i, o, r: o.index(min(o)))]\n> print(f\"{'algorithm':28} {'average wait':>13} {'p99 wait':>10}\")\n> for name, f in algos:\n>     avg, p99 = simulate(f); print(f\"{name:28} {avg:10.0f} ms {p99:7.0f} ms\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 lb.py",
+     "o": "algorithm                     average wait   p99 wait\nrandom                             1289 ms    7285 ms\nround robin                         843 ms    4645 ms\ntwo random choices                  356 ms    2161 ms\nleast outstanding requests          127 ms    1273 ms",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "06f323266dc47e95"
+ },
+ "sysdesign-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > cache.py <<'EOF'\n> # Cache-aside with a time-to-live: hit ratio, database load and latency, then what happens when a popular key expires.\n> import random\n> random.seed(3)\n> KEYS = 10000\n> weights = [1 / (k + 1) for k in range(KEYS)]                 # a few keys are very popular (a Zipf-like spread)\n> total_w = sum(weights); cum = []; acc = 0\n> for w in weights: acc += w / total_w; cum.append(acc)\n> import bisect\n> def key(): return bisect.bisect_left(cum, random.random())\n> def run(cache_size, n=50000):\n>     cache, hits = {}, 0\n>     order = []\n>     for _ in range(n):\n>         k = key()\n>         if k in cache:\n>             hits += 1; order.remove(k); order.append(k)       # LRU bookkeeping (fine for a model)\n>         else:\n>             cache[k] = True; order.append(k)\n>             if len(cache) > cache_size: del cache[order.pop(0)]\n>     return hits / n\n> DB_MS, CACHE_MS = 20, 1\n> print(f\"{'cache holds':>12} {'hit ratio':>10} {'DB queries per 1000 requests':>30} {'average latency':>16}\")\n> for size in (0, 100, 500, 2000):\n>     h = run(size) if size else 0.0\n>     print(f\"{size:>8} keys {h:>9.0%} {1000 * (1 - h):>24.0f} {h * CACHE_MS + (1 - h) * DB_MS:>13.1f} ms\")\n> print(\"\\nA popular key expires while 500 requests per second ask for it, and a database read takes 200 ms:\")\n> print(\"   without protection:\", int(500 * 0.2), \"requests miss at the same moment and all hit the database (a cache stampede)\")\n> print(\"   with a lock or 'single flight': 1 request rebuilds the value, the other\", int(500 * 0.2) - 1, \"wait for it or get the stale value\")\n> print(\"   with early refresh (renew before expiry, plus random jitter on the TTL): 0 misses\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 cache.py",
+     "o": " cache holds  hit ratio   DB queries per 1000 requests  average latency\n       0 keys        0%                     1000          20.0 ms\n     100 keys       39%                      612          12.6 ms\n     500 keys       59%                      409           8.8 ms\n    2000 keys       76%                      244           5.6 ms\n\nA popular key expires while 500 requests per second ask for it, and a database read takes 200 ms:\n   without protection: 100 requests miss at the same moment and all hit the database (a cache stampede)\n   with a lock or 'single flight': 1 request rebuilds the value, the other 99 wait for it or get the stale value\n   with early refresh (renew before expiry, plus random jitter on the TTL): 0 misses",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d6663c6b4aa286f7"
+ },
+ "sysdesign-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > replica.py <<'EOF'\n> # Read replicas: more read capacity, but replication lag means a user may not see their own change.\n> LAG_MS = 300                                   # how far the replica is behind the primary\n> primary, replica, pending = {}, {}, []         # pending = changes still travelling to the replica\n> def write(t, k, v): primary[k] = v; pending.append((t + LAG_MS, k, v))\n> def tick(t):\n>     for item in [p for p in pending if p[0] <= t]: replica[item[1]] = item[2]; pending.remove(item)\n> def read(t, k, policy, last_write=None):\n>     tick(t)\n>     if policy == \"replica\": return replica.get(k)\n>     if policy == \"read-your-writes\" and last_write is not None and t - last_write < 1000: return primary.get(k)   # recent writer: read the primary\n>     return replica.get(k) if policy != \"primary\" else primary.get(k)\n> write(0, \"bio\", \"old bio\"); tick(1000)\n> write(1000, \"bio\", \"NEW bio\")                  # the user saves their profile at t = 1000 ms ...\n> for policy in (\"replica\", \"read-your-writes\", \"primary\"):\n>     seen = read(1050, \"bio\", policy, last_write=1000)  # ... and the page reloads 50 ms later\n>     print(f\"{policy:17} -> the user sees {seen!r}\")\n> tick(1400); print(f\"after {LAG_MS} ms the replica catches up: {replica['bio']!r}\")\n> print(\"\\nCapacity: one primary handles 5,000 reads/s; each replica adds 5,000. Writes still all go to the primary.\")\n> for r in (0, 2, 4): print(f\"   primary + {r} replicas: {5000 * (1 + r):,} reads/s, writes unchanged\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 replica.py",
+     "o": "replica           -> the user sees 'old bio'\nread-your-writes  -> the user sees 'NEW bio'\nprimary           -> the user sees 'NEW bio'\nafter 300 ms the replica catches up: 'NEW bio'\n\nCapacity: one primary handles 5,000 reads/s; each replica adds 5,000. Writes still all go to the primary.\n   primary + 0 replicas: 5,000 reads/s, writes unchanged\n   primary + 2 replicas: 15,000 reads/s, writes unchanged\n   primary + 4 replicas: 25,000 reads/s, writes unchanged",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "07d2ccf3fb96346c"
+ },
+ "sysdesign-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > queue.py <<'EOF'\n> # A work queue between a busy front end and slower workers: backlog, waiting time, and adding consumers.\n> def run(arrivals_per_s, workers, seconds_per_job, minutes=10, burst=None):\n>     backlog, worst, served = 0.0, 0.0, 0.0\n>     capacity = workers / seconds_per_job\n>     for m in range(minutes * 60):\n>         rate = arrivals_per_s * (3 if burst and burst[0] <= m < burst[1] else 1)\n>         backlog += rate\n>         done = min(backlog, capacity); backlog -= done; served += done\n>         worst = max(worst, backlog)\n>     return capacity, worst, backlog, worst / capacity\n> print(f\"{'situation':54} {'capacity/s':>10} {'max backlog':>12} {'left at end':>12} {'worst wait':>11}\")\n> cases = [(\"steady 80 jobs/s, 10 workers x 0.1 s per job\", (80, 10, 0.1)),\n>          (\"burst: 3x traffic for 2 minutes, same 10 workers\", (80, 10, 0.1, 10, (120, 240))),\n>          (\"same burst, 25 workers\", (80, 25, 0.1, 10, (120, 240))),\n>          (\"steady 120 jobs/s on 10 workers: arrivals above capacity\", (120, 10, 0.1))]\n> for name, a in cases:\n>     cap, worst, left, wait = run(*a)\n>     print(f\"{name:54} {cap:>10.0f} {worst:>12,.0f} {left:>12,.0f} {wait:>9.0f} s\")\n> print(\"\\nThe queue absorbs a burst (users get a fast 'accepted' answer), then drains. But if arrivals stay above capacity the\")\n> print(\"backlog grows without limit: watch queue depth and age of the oldest message, and scale consumers on them.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 queue.py",
+     "o": "situation                                              capacity/s  max backlog  left at end  worst wait\nsteady 80 jobs/s, 10 workers x 0.1 s per job                  100            0            0         0 s\nburst: 3x traffic for 2 minutes, same 10 workers              100       16,800        9,600       168 s\nsame burst, 25 workers                                        250            0            0         0 s\nsteady 120 jobs/s on 10 workers: arrivals above capacity        100       12,000       12,000       120 s\n\nThe queue absorbs a burst (users get a fast 'accepted' answer), then drains. But if arrivals stay above capacity the\nbacklog grows without limit: watch queue depth and age of the oldest message, and scale consumers on them.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "7f3dc909d48b1b85"
+ },
+ "sysdesign-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > ratelimit.py <<'EOF'\n> # Three rate limiters, the same traffic: 10 requests per second allowed per client.\n> def token_bucket(times, rate=10, burst=10):\n>     tokens, last, out = burst, 0.0, []\n>     for t in times:\n>         tokens = min(burst, tokens + (t - last) * rate); last = t\n>         if tokens >= 1: tokens -= 1; out.append(True)\n>         else: out.append(False)\n>     return out\n> def fixed_window(times, limit=10):\n>     counts, out = {}, []\n>     for t in times:\n>         w = int(t); counts[w] = counts.get(w, 0) + 1; out.append(counts[w] <= limit)\n>     return out\n> def sliding_log(times, limit=10):\n>     log, out = [], []\n>     for t in times:\n>         log = [x for x in log if x > t - 1]\n>         if len(log) < limit: log.append(t); out.append(True)\n>         else: out.append(False)\n>     return out\n> # 20 requests in the last 0.2 s of second 0 and 20 in the first 0.2 s of second 1: a burst that straddles a window edge\n> times = [0.8 + i * 0.01 for i in range(20)] + [1.0 + i * 0.01 for i in range(20)] + [3 + i * 0.1 for i in range(10)]\n> print(f\"{'limiter':16} {'allowed':>8} {'in the 0.4 s around t=1':>26}\")\n> for name, f in ((\"fixed window\", fixed_window), (\"sliding log\", sliding_log), (\"token bucket\", token_bucket)):\n>     ok = f(times); around = sum(1 for t, a in zip(times, ok) if a and 0.8 <= t < 1.2)\n>     print(f\"{name:16} {sum(ok):>5}/{len(times)} {around:>18} allowed\")\n> print(\"\\nThe fixed window lets 20 through in 0.4 s (10 at the end of one window, 10 at the start of the next): twice the limit.\")\n> print(\"The sliding log is exact but stores every timestamp. The token bucket is cheap (two numbers per client) and allows\")\n> print(\"controlled bursts up to the bucket size. Answer rejected requests with HTTP 429 and a Retry-After header.\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ratelimit.py",
+     "o": "limiter           allowed    in the 0.4 s around t=1\nfixed window        30/50                 20 allowed\nsliding log         20/50                 10 allowed\ntoken bucket        23/50                 13 allowed\n\nThe fixed window lets 20 through in 0.4 s (10 at the end of one window, 10 at the start of the next): twice the limit.\nThe sliding log is exact but stores every timestamp. The token bucket is cheap (two numbers per client) and allows\ncontrolled bursts up to the bucket size. Answer rejected requests with HTTP 429 and a Retry-After header.",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "402779e7f2c0a330"
+ },
+ "sysdesign-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > events.py <<'EOF'\n> # Event sourcing and a saga: store what happened, rebuild state from it, and undo a multi-step order when one step fails.\n> events = []\n> def emit(kind, **data): events.append({\"seq\": len(events) + 1, \"kind\": kind, **data})\n> emit(\"AccountOpened\", acct=\"A1\", owner=\"asha\"); emit(\"Deposited\", acct=\"A1\", amount=100)\n> emit(\"Withdrew\", acct=\"A1\", amount=30); emit(\"Deposited\", acct=\"A1\", amount=50); emit(\"Withdrew\", acct=\"A1\", amount=70)\n> def balance(upto=None):\n>     b = 0\n>     for e in events:\n>         if upto and e[\"seq\"] > upto: break\n>         b += e.get(\"amount\", 0) * (1 if e[\"kind\"] == \"Deposited\" else -1 if e[\"kind\"] == \"Withdrew\" else 0)\n>     return b\n> print(\"1) event sourcing: the log is the truth; state is a fold over it\")\n> for e in events: print(f\"   {e['seq']} {e['kind']:14} {e.get('amount', '')}\")\n> print(f\"   balance now: {balance()} | balance after event 3 (time travel): {balance(3)}\")\n> print(\"   a read model (CQRS) is a separate table kept up to date from the same events, shaped for queries\\n\")\n> def saga(fail_at=None):\n>     steps = [(\"reserve stock\", \"release stock\"), (\"charge card\", \"refund card\"), (\"book courier\", \"cancel courier\")]\n>     done, log = [], []\n>     for i, (do, undo) in enumerate(steps):\n>         if i == fail_at: log.append(f\"FAIL  {do}\"); break\n>         log.append(f\"ok    {do}\"); done.append(undo)\n>     else:\n>         return log + [\"order confirmed\"]\n>     for undo in reversed(done): log.append(f\"undo  {undo}\")\n>     return log + [\"order cancelled, every completed step compensated\"]\n> print(\"2) saga: each service commits its own step; a failure runs compensating steps in reverse order\")\n> for line in saga(): print(\"   \" + line)\n> print(\"   -- the courier booking fails:\")\n> for line in saga(fail_at=2): print(\"   \" + line)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 events.py",
+     "o": "1) event sourcing: the log is the truth; state is a fold over it\n   1 AccountOpened  \n   2 Deposited      100\n   3 Withdrew       30\n   4 Deposited      50\n   5 Withdrew       70\n   balance now: 50 | balance after event 3 (time travel): 70\n   a read model (CQRS) is a separate table kept up to date from the same events, shaped for queries\n\n2) saga: each service commits its own step; a failure runs compensating steps in reverse order\n   ok    reserve stock\n   ok    charge card\n   ok    book courier\n   order confirmed\n   -- the courier booking fails:\n   ok    reserve stock\n   ok    charge card\n   FAIL  book courier\n   undo  refund card\n   undo  release stock\n   order cancelled, every completed step compensated",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d50c40e7f09207d7"
+ },
+ "sysdesign-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > rel.py <<'EOF'\n> # Availability arithmetic: parts in a chain multiply their downtime; redundant copies multiply their chances of all failing.\n> def down_minutes(a): return (1 - a) * 365 * 24 * 60\n> def chain(*parts):\n>     a = 1.0\n>     for p in parts: a *= p\n>     return a\n> def parallel(p, copies):\n>     return 1 - (1 - p) ** copies\n> print(f\"{'design':64} {'availability':>12} {'down per year':>14}\")\n> rows = [(\"one server, 99.5%\", 0.995),\n>         (\"load balancer 99.99% -> app 99.5% -> database 99.9% (a chain)\", chain(0.9999, 0.995, 0.999)),\n>         (\"the same chain, with 3 app servers behind the balancer\", chain(0.9999, parallel(0.995, 3), 0.999)),\n>         (\"... and a database standby with automatic failover (2 copies)\", chain(0.9999, parallel(0.995, 3), parallel(0.999, 2))),\n>         (\"... plus 2 more services called in sequence, each 99.9%\", chain(0.9999, parallel(0.995, 3), parallel(0.999, 2), 0.999, 0.999))]\n> for name, a in rows: print(f\"{name:64} {a:>11.3%} {down_minutes(a):>10,.0f} min\")\n> print(\"\\nEvery service you call synchronously multiplies in; redundancy only helps if failures are independent.\")\n> for target in (0.99, 0.999, 0.9999, 0.99999): print(f\"   {target:.3%} allows {down_minutes(target):,.0f} minutes of downtime a year ({down_minutes(target) / 12:,.1f} a month)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 rel.py",
+     "o": "design                                                           availability  down per year\none server, 99.5%                                                    99.500%      2,628 min\nload balancer 99.99% -> app 99.5% -> database 99.9% (a chain)        99.391%      3,203 min\nthe same chain, with 3 app servers behind the balancer               99.890%        578 min\n... and a database standby with automatic failover (2 copies)        99.990%         53 min\n... plus 2 more services called in sequence, each 99.9%              99.790%      1,104 min\n\nEvery service you call synchronously multiplies in; redundancy only helps if failures are independent.\n   99.000% allows 5,256 minutes of downtime a year (438.0 a month)\n   99.900% allows 526 minutes of downtime a year (43.8 a month)\n   99.990% allows 53 minutes of downtime a year (4.4 a month)\n   99.999% allows 5 minutes of downtime a year (0.4 a month)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0160cf28809a5158"
+ },
+ "sysdesign-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sd && cd ~/lab/sd",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > shortener.py <<'EOF'\n> # A URL shortener's core: ids from a counter encoded in base 62, short-code length versus capacity, and a read path with a cache.\n> import string\n> ALPHABET = string.digits + string.ascii_lowercase + string.ascii_uppercase      # 62 characters\n> def encode(n):\n>     s = \"\"\n>     while True:\n>         n, r = divmod(n, 62); s = ALPHABET[r] + s\n>         if n == 0: return s\n> def decode(s):\n>     n = 0\n>     for ch in s: n = n * 62 + ALPHABET.index(ch)\n>     return n\n> print(\"1) codes from a counter (no collisions, no lookups to check for duplicates)\")\n> for n in (1, 61, 62, 3843, 3844, 56_800_235_583, 3_521_614_606_207):\n>     print(f\"   id {n:>17,} -> {encode(n):>8}  -> back to {decode(encode(n)):,}\")\n> print(\"\\n2) how many links each code length can hold\")\n> for L in (5, 6, 7, 8):\n>     print(f\"   {L} characters: {62 ** L:>22,} codes   at 1 M new links a day, lasts {62 ** L / 1e6 / 365:,.0f} years\")\n> print(\"   a sequential counter makes codes guessable; mix the bits (or add a random offset per shard) if links must not be enumerable\")\n> store = {}; cache = {}; hits = misses = 0\n> def shorten(url, _c=[100000]): _c[0] += 1; code = encode(_c[0]); store[code] = url; return code\n> def resolve(code):\n>     global hits, misses\n>     if code in cache: hits += 1; return cache[code]\n>     misses += 1; url = store.get(code); cache[code] = url; return url\n> codes = [shorten(f\"https://example.com/article/{i}\") for i in range(5)]\n> for c in codes * 20: resolve(c)\n> print(f\"\\n3) 100 redirects for 5 links: {misses} database reads, {hits} served from the cache (hot links stay in memory)\")\n> print(f\"   a redirect answers 301 (permanent, browsers cache it: fewer requests, no click counts) or 302 (temporary: every click reaches you)\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 shortener.py",
+     "o": "1) codes from a counter (no collisions, no lookups to check for duplicates)\n   id                 1 ->        1  -> back to 1\n   id                61 ->        Z  -> back to 61\n   id                62 ->       10  -> back to 62\n   id             3,843 ->       ZZ  -> back to 3,843\n   id             3,844 ->      100  -> back to 3,844\n   id    56,800,235,583 ->   ZZZZZZ  -> back to 56,800,235,583\n   id 3,521,614,606,207 ->  ZZZZZZZ  -> back to 3,521,614,606,207\n\n2) how many links each code length can hold\n   5 characters:            916,132,832 codes   at 1 M new links a day, lasts 3 years\n   6 characters:         56,800,235,584 codes   at 1 M new links a day, lasts 156 years\n   7 characters:      3,521,614,606,208 codes   at 1 M new links a day, lasts 9,648 years\n   8 characters:    218,340,105,584,896 codes   at 1 M new links a day, lasts 598,192 years\n   a sequential counter makes codes guessable; mix the bits (or add a random offset per shard) if links must not be enumerable\n\n3) 100 redirects for 5 links: 5 database reads, 95 served from the cache (hot links stay in memory)\n   a redirect answers 301 (permanent, browsers cache it: fewer requests, no click counts) or 302 (temporary: every click reaches you)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "b609139a5a9069d8"
+ },
  "systems-10": {
   "blocks": [
    [
