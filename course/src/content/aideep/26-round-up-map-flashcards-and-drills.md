@@ -15,7 +15,7 @@ roundup: true
 
 ## 1. The loop, for this track
 
-1. **Gather (fast pass).** Go through lessons 1 to 21 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
+1. **Gather (fast pass).** Go through lessons 1 to 25 quickly: read the goals and the recap, run the commands, skim the rest. Use the **notes box** at the top of each lesson to dump what you learn and what confuses you.
 2. **Refine.** Turn the notes into a map and cards (section 2 and section 3). Draw the map from memory first, then compare.
 3. **Drill.** Work the flashcards (section 3), then the **Your turn** tasks and quizzes in each lesson.
 4. **Round 2.** Run it again only on what is left (section 6): long scenarios, new tools, edge cases, odd details.
@@ -38,6 +38,10 @@ The deep-dive companions: each lesson opens one hop of the AI map with runnable 
 10. **Frameworks**: LangChain chains, structured output and tools; LangGraph state, memory, human-in-the-loop, supervisors. Lessons: [17](#aideep-17), [18](#aideep-18).
 11. **Platforms and measurement**: Azure AI Foundry and AWS Bedrock concepts; RAG metrics and guardrails in code. Lessons: [19](#aideep-19), [20](#aideep-20).
 12. **Projects**: A post generator, a support bot and a multi-agent planner, with tests. Lessons: [21](#aideep-21).
+13. **Agent middleware**: Hooks before and after the model and around tools: summarise, limit, redact, approve. Lessons: [22](#aideep-22).
+14. **Beyond chunks**: Vectorless (tree-index) RAG that navigates a document like a reader. Lessons: [23](#aideep-23).
+15. **Long tasks**: Deep agents: a to-do plan, a file system and sub-agents with their own context. Lessons: [24](#aideep-24).
+16. **Gateways**: One door to every model: routing, fallbacks, caching, budgets, cost logs. Lessons: [25](#aideep-25).
 
 **Do this now:** [open the sketch pad for this track](#study/maps/aideep), draw the path from memory, then reveal the map and fix what you missed. Paper or an iPad canvas works just as well. The map is a scaffold for recall: every topic in this track should hang from one of these hops.
 

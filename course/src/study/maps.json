@@ -1757,6 +1757,34 @@
     "lessons": [
      21
     ]
+   },
+   {
+    "label": "Agent middleware",
+    "text": "Hooks before and after the model and around tools: summarise, limit, redact, approve.",
+    "lessons": [
+     22
+    ]
+   },
+   {
+    "label": "Beyond chunks",
+    "text": "Vectorless (tree-index) RAG that navigates a document like a reader.",
+    "lessons": [
+     23
+    ]
+   },
+   {
+    "label": "Long tasks",
+    "text": "Deep agents: a to-do plan, a file system and sub-agents with their own context.",
+    "lessons": [
+     24
+    ]
+   },
+   {
+    "label": "Gateways",
+    "text": "One door to every model: routing, fallbacks, caching, budgets, cost logs.",
+    "lessons": [
+     25
+    ]
    }
   ],
   "tips": [
