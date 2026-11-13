@@ -726,6 +726,24 @@ M["sysdesign"] = dict(
  ],
 )
 
+M["secops"] = dict(
+ title="One web shop, attacked and defended layer by layer",
+ intro="Follow a single shop from design to an incident: model the threats, protect the logins and data, keep code and dependencies clean, lock down the infrastructure, gate every change, then detect and respond.",
+ hops=[
+  H("Think like an attacker", "CIA, threat vs vulnerability vs risk, STRIDE, least privilege, defence in depth.", 1),
+  H("Protect identities", "Salted slow hashes, MFA, tokens, authorisation on every request.", 2, 5),
+  H("Protect data", "Hashes, symmetric and public-key encryption, signatures, certificates, TLS.", 3),
+  H("Protect the code", "Injection fixes, SAST with Bandit, human review of what scanners miss.", 4, 8),
+  H("Protect the inputs", "Secrets out of code and history; dependencies, typosquats, hashes, SBOMs, signing.", 6, 7),
+  H("Protect the platform", "Policy as code for Dockerfiles, Pods and cloud plans.", 9),
+  H("Gate every change", "One CI gate with reviewed, expiring exceptions.", 10),
+  H("Detect and respond", "Log detections, timelines, the incident lifecycle, interview answers.", 11),
+ ],
+ tips=["Run the attack first, then the fix, and say in one sentence why the fix works.", "Keep a list of every control with the threat it stops.", "Re-run the pipeline lesson after changing any earlier script.", "Only ever test systems you own or have written permission to test.", "For interviews, practise the four answers in the last lesson out loud."],
+ docs=[D("OWASP Top 10", "https://owasp.org/Top10/"), D("OWASP Cheat Sheet Series", "https://cheatsheetseries.owasp.org/"), D("NIST SP 800-63B (passwords)", "https://pages.nist.gov/800-63-3/sp800-63b.html"), D("SLSA", "https://slsa.dev/"), D("NIST SP 800-61 (incident handling)", "https://csrc.nist.gov/pubs/sp/800/61/r3/final")],
+ round2=["Threat model an app you use with STRIDE and rank five risks.", "Explain salting and slow hashing to a non-technical friend.", "Find and fix an IDOR in a small API you write.", "Add a new rule to each scanner in this track and a test case that triggers it.", "Write the incident timeline for a leaked cloud key."],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

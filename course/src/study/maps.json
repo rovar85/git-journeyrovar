@@ -2821,6 +2821,107 @@
    "List the dependencies of a product page and write what the page does without each one."
   ]
  },
+ "secops": {
+  "title": "One web shop, attacked and defended layer by layer",
+  "intro": "Follow a single shop from design to an incident: model the threats, protect the logins and data, keep code and dependencies clean, lock down the infrastructure, gate every change, then detect and respond.",
+  "hops": [
+   {
+    "label": "Think like an attacker",
+    "text": "CIA, threat vs vulnerability vs risk, STRIDE, least privilege, defence in depth.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Protect identities",
+    "text": "Salted slow hashes, MFA, tokens, authorisation on every request.",
+    "lessons": [
+     2,
+     5
+    ]
+   },
+   {
+    "label": "Protect data",
+    "text": "Hashes, symmetric and public-key encryption, signatures, certificates, TLS.",
+    "lessons": [
+     3
+    ]
+   },
+   {
+    "label": "Protect the code",
+    "text": "Injection fixes, SAST with Bandit, human review of what scanners miss.",
+    "lessons": [
+     4,
+     8
+    ]
+   },
+   {
+    "label": "Protect the inputs",
+    "text": "Secrets out of code and history; dependencies, typosquats, hashes, SBOMs, signing.",
+    "lessons": [
+     6,
+     7
+    ]
+   },
+   {
+    "label": "Protect the platform",
+    "text": "Policy as code for Dockerfiles, Pods and cloud plans.",
+    "lessons": [
+     9
+    ]
+   },
+   {
+    "label": "Gate every change",
+    "text": "One CI gate with reviewed, expiring exceptions.",
+    "lessons": [
+     10
+    ]
+   },
+   {
+    "label": "Detect and respond",
+    "text": "Log detections, timelines, the incident lifecycle, interview answers.",
+    "lessons": [
+     11
+    ]
+   }
+  ],
+  "tips": [
+   "Run the attack first, then the fix, and say in one sentence why the fix works.",
+   "Keep a list of every control with the threat it stops.",
+   "Re-run the pipeline lesson after changing any earlier script.",
+   "Only ever test systems you own or have written permission to test.",
+   "For interviews, practise the four answers in the last lesson out loud."
+  ],
+  "docs": [
+   {
+    "label": "OWASP Top 10",
+    "url": "https://owasp.org/Top10/"
+   },
+   {
+    "label": "OWASP Cheat Sheet Series",
+    "url": "https://cheatsheetseries.owasp.org/"
+   },
+   {
+    "label": "NIST SP 800-63B (passwords)",
+    "url": "https://pages.nist.gov/800-63-3/sp800-63b.html"
+   },
+   {
+    "label": "SLSA",
+    "url": "https://slsa.dev/"
+   },
+   {
+    "label": "NIST SP 800-61 (incident handling)",
+    "url": "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+   }
+  ],
+  "round2": [
+   "Threat model an app you use with STRIDE and rank five risks.",
+   "Explain salting and slow hashing to a non-technical friend.",
+   "Find and fix an IDOR in a small API you write.",
+   "Add a new rule to each scanner in this track and a test case that triggers it.",
+   "Write the incident timeline for a leaked cloud key."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",

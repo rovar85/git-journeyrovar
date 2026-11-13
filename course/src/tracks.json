@@ -104,6 +104,14 @@
   "why": "Your Enterprise Vault servers are Windows servers."
  },
  {
+  "id": "secops",
+  "name": "Security and DevSecOps",
+  "group": "4 · Run in production",
+  "level": "Beginner to professional · after Linux and Python",
+  "blurb": "Eleven lessons: how attackers think and how to rank risk, passwords and hashing, cryptography with openssl, injection, authentication and access control, secrets, the software supply chain, code scanning with Bandit, container and cloud policies, a security gate in CI, and detecting and responding to an attack. Each lesson attacks a deliberately weak example, then fixes it.",
+  "why": "Every DevOps, cloud and developer role now owns security in its pipeline. These are the checks interviewers ask about and the mistakes behind real breaches."
+ },
+ {
   "id": "dataeng",
   "name": "Data engineering: from beginner to professional",
   "group": "5 · Data",
