@@ -3768,6 +3768,338 @@
   ],
   "key": "4b5dad6f09b088f0"
  },
+ "aws-1": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a1_start.py <<'EOF'\n> # Your first AWS calls with the Python SDK (boto3). moto plays AWS here, inside this process:\n> # no account, no cost. Remove the two moto lines and the same code talks to a real account.\n> import boto3\n> from moto import mock_aws\n> with mock_aws():\n>     session = boto3.Session(region_name=\"ap-south-1\")          # Mumbai; pick the region closest to your users\n>     who = session.client(\"sts\").get_caller_identity()\n>     print(\"account:\", who[\"Account\"], \"| identity:\", who[\"Arn\"])\n>     regions = sorted(r[\"RegionName\"] for r in session.client(\"ec2\").describe_regions()[\"Regions\"])\n>     print(len(regions), \"regions, for example:\", [r for r in regions if r.startswith(\"ap-\")][:6])\n>     zones = session.client(\"ec2\").describe_availability_zones()[\"AvailabilityZones\"]\n>     print(\"zones in ap-south-1:\", [z[\"ZoneName\"] for z in zones])\n> \n>     # a monthly budget with an e-mail alert at 80%: the first thing to create in a new account\n>     budgets = session.client(\"budgets\", region_name=\"us-east-1\")\n>     budgets.create_budget(AccountId=who[\"Account\"],\n>         Budget={\"BudgetName\": \"monthly-10-usd\", \"BudgetLimit\": {\"Amount\": \"10\", \"Unit\": \"USD\"},\n>                 \"TimeUnit\": \"MONTHLY\", \"BudgetType\": \"COST\"},\n>         NotificationsWithSubscribers=[{\"Notification\": {\"NotificationType\": \"ACTUAL\", \"ComparisonOperator\": \"GREATER_THAN\",\n>                                                          \"Threshold\": 80, \"ThresholdType\": \"PERCENTAGE\"},\n>                                        \"Subscribers\": [{\"SubscriptionType\": \"EMAIL\", \"Address\": \"you@example.com\"}]}])\n>     b = budgets.describe_budgets(AccountId=who[\"Account\"])[\"Budgets\"][0]\n>     print(\"budget:\", b[\"BudgetName\"], b[\"BudgetLimit\"][\"Amount\"], b[\"BudgetLimit\"][\"Unit\"], b[\"TimeUnit\"])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a1_start.py",
+     "o": "account: 123456789012 | identity: arn:aws:sts::123456789012:user/moto\n38 regions, for example: ['ap-east-1', 'ap-east-2', 'ap-northeast-1', 'ap-northeast-2', 'ap-northeast-3', 'ap-south-1']\nzones in ap-south-1: ['ap-south-1a', 'ap-south-1b', 'ap-south-1c']\nbudget: monthly-10-usd 10 USD MONTHLY",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "0f5f2172687bff1d"
+ },
+ "aws-10": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a10_monitor.py <<'EOF'\n> # Logs, metrics and alarms in CloudWatch (moto plays AWS).\n> import boto3, json, time\n> from datetime import datetime, timedelta, timezone\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     logs, cw, sns = (boto3.client(s, region_name=R) for s in (\"logs\", \"cloudwatch\", \"sns\"))\n>     logs.create_log_group(logGroupName=\"/aws/lambda/quote\"); logs.put_retention_policy(logGroupName=\"/aws/lambda/quote\", retentionInDays=30)\n>     logs.create_log_stream(logGroupName=\"/aws/lambda/quote\", logStreamName=\"2026/11/24\")\n>     now = int(time.time() * 1000)\n>     lines = [{\"level\": \"info\", \"msg\": \"quote\", \"ms\": 41}, {\"level\": \"error\", \"msg\": \"price service timeout\", \"ms\": 3000},\n>              {\"level\": \"info\", \"msg\": \"quote\", \"ms\": 38}, {\"level\": \"error\", \"msg\": \"price service timeout\", \"ms\": 3000}, {\"level\": \"info\", \"msg\": \"quote\", \"ms\": 55}]\n>     logs.put_log_events(logGroupName=\"/aws/lambda/quote\", logStreamName=\"2026/11/24\",\n>                         logEvents=[{\"timestamp\": now + i, \"message\": json.dumps(l)} for i, l in enumerate(lines)])\n>     errs = logs.filter_log_events(logGroupName=\"/aws/lambda/quote\", filterPattern=\"error\")[\"events\"]\n>     print(\"log search for the word error:\", [json.loads(e[\"message\"])[\"msg\"] for e in errs])\n>     print(\"retention:\", logs.describe_log_groups()[\"logGroups\"][0][\"retentionInDays\"], \"days (the default keeps logs forever, and you pay for it)\")\n> \n>     # custom metrics: the app reports orders and errors; CloudWatch keeps the numbers\n>     t0 = datetime.now(timezone.utc) - timedelta(minutes=10)\n>     for m in range(10):\n>         cw.put_metric_data(Namespace=\"Shop\", MetricData=[\n>             {\"MetricName\": \"Orders\", \"Value\": [12, 15, 11, 14, 13, 2, 0, 1, 0, 0][m], \"Unit\": \"Count\", \"Timestamp\": t0 + timedelta(minutes=m)},\n>             {\"MetricName\": \"Errors\", \"Value\": [0, 1, 0, 0, 0, 9, 14, 12, 15, 11][m], \"Unit\": \"Count\", \"Timestamp\": t0 + timedelta(minutes=m)}])\n>     stats = cw.get_metric_statistics(Namespace=\"Shop\", MetricName=\"Errors\", StartTime=t0, EndTime=t0 + timedelta(minutes=10),\n>                                      Period=60, Statistics=[\"Sum\"])[\"Datapoints\"]\n>     print(\"errors per minute:\", [int(d[\"Sum\"]) for d in sorted(stats, key=lambda d: d[\"Timestamp\"])])\n> \n>     topic = sns.create_topic(Name=\"oncall\")[\"TopicArn\"]\n>     sns.subscribe(TopicArn=topic, Protocol=\"email\", Endpoint=\"oncall@example.com\")\n>     cw.put_metric_alarm(AlarmName=\"shop-errors-high\", Namespace=\"Shop\", MetricName=\"Errors\", Statistic=\"Sum\", Period=60,\n>                         EvaluationPeriods=5, DatapointsToAlarm=3, Threshold=5, ComparisonOperator=\"GreaterThanThreshold\",\n>                         TreatMissingData=\"notBreaching\", AlarmActions=[topic], OKActions=[topic])\n>     a = cw.describe_alarms(AlarmNames=[\"shop-errors-high\"])[\"MetricAlarms\"][0]\n>     print(f\"alarm: {a['MetricName']} {a['Statistic']} > {a['Threshold']:.0f} in {a['DatapointsToAlarm']} of {a['EvaluationPeriods']} minutes -> notify {a['AlarmActions'][0].split(':')[-1]}\")\n>     cw.put_dashboard(DashboardName=\"shop\", DashboardBody=json.dumps({\"widgets\": [{\"type\": \"metric\", \"properties\": {\n>         \"metrics\": [[\"Shop\", \"Orders\"], [\"Shop\", \"Errors\"]], \"period\": 60, \"stat\": \"Sum\", \"region\": R, \"title\": \"Orders and errors\"}}]}))\n>     print(\"dashboards:\", [d[\"DashboardName\"] for d in cw.list_dashboards()[\"DashboardEntries\"]])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a10_monitor.py",
+     "o": "log search for the word error: ['price service timeout', 'price service timeout']\nretention: 30 days (the default keeps logs forever, and you pay for it)\nerrors per minute: [0, 1, 0, 0, 0, 9, 14, 12, 15, 11]\nalarm: Errors Sum > 5 in 3 of 5 minutes -> notify oncall\ndashboards: ['shop']",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > alarm_sim.py <<'EOF'\n> # How a CloudWatch alarm decides, in plain Python: \"M of the last N datapoints breached\" changes the state.\n> errors = [0, 1, 0, 0, 0, 9, 14, 12, 15, 11, 3, 0, 0, 0, 0]       # errors per minute\n> THRESHOLD, N, M = 5, 5, 3\n> state = \"OK\"\n> for minute in range(len(errors)):\n>     window = errors[max(0, minute - N + 1): minute + 1]\n>     breaching = sum(v > THRESHOLD for v in window)\n>     new = \"ALARM\" if breaching >= M else \"OK\"\n>     note = f\"  <- state changes to {new}: notify\" if new != state else \"\"\n>     state = new\n>     print(f\"minute {minute:2}  errors {errors[minute]:2}  breaching {breaching} of {len(window)}  {state}{note}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 alarm_sim.py",
+     "o": "minute  0  errors  0  breaching 0 of 1  OK\nminute  1  errors  1  breaching 0 of 2  OK\nminute  2  errors  0  breaching 0 of 3  OK\nminute  3  errors  0  breaching 0 of 4  OK\nminute  4  errors  0  breaching 0 of 5  OK\nminute  5  errors  9  breaching 1 of 5  OK\nminute  6  errors 14  breaching 2 of 5  OK\nminute  7  errors 12  breaching 3 of 5  ALARM  <- state changes to ALARM: notify\nminute  8  errors 15  breaching 4 of 5  ALARM\nminute  9  errors 11  breaching 5 of 5  ALARM\nminute 10  errors  3  breaching 4 of 5  ALARM\nminute 11  errors  0  breaching 3 of 5  ALARM\nminute 12  errors  0  breaching 2 of 5  OK  <- state changes to OK: notify\nminute 13  errors  0  breaching 1 of 5  OK\nminute 14  errors  0  breaching 0 of 5  OK",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "440bbfee907991b6"
+ },
+ "aws-11": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > stack.yaml <<'EOF'\n> AWSTemplateFormatVersion: \"2010-09-09\"\n> Description: Order import pipeline - files land in S3, a queue feeds a worker, results go to DynamoDB\n> Parameters:\n>   Env: {Type: String, Default: dev, AllowedValues: [dev, prod]}\n> Resources:\n>   DeadLetters:\n>     Type: AWS::SQS::Queue\n>     Properties: {QueueName: !Sub \"orders-import-dlq-${Env}\"}\n>   ImportQueue:\n>     Type: AWS::SQS::Queue\n>     Properties:\n>       QueueName: !Sub \"orders-import-${Env}\"\n>       VisibilityTimeout: 120\n>       RedrivePolicy: {deadLetterTargetArn: !GetAtt DeadLetters.Arn, maxReceiveCount: 3}\n>   Orders:\n>     Type: AWS::DynamoDB::Table\n>     Properties:\n>       TableName: !Sub \"orders-${Env}\"\n>       BillingMode: PAY_PER_REQUEST\n>       AttributeDefinitions: [{AttributeName: order_id, AttributeType: S}]\n>       KeySchema: [{AttributeName: order_id, KeyType: HASH}]\n>   Uploads:\n>     Type: AWS::S3::Bucket\n>     Properties:\n>       BucketName: !Sub \"orders-uploads-demo-${Env}\"\n>       PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}\n>   WorkerRole:\n>     Type: AWS::IAM::Role\n>     Properties:\n>       AssumeRolePolicyDocument:\n>         Version: \"2012-10-17\"\n>         Statement: [{Effect: Allow, Principal: {Service: lambda.amazonaws.com}, Action: sts:AssumeRole}]\n>       Policies:\n>         - PolicyName: least-privilege\n>           PolicyDocument:\n>             Version: \"2012-10-17\"\n>             Statement:\n>               - {Effect: Allow, Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:GetQueueAttributes], Resource: !GetAtt ImportQueue.Arn}\n>               - {Effect: Allow, Action: s3:GetObject, Resource: !Sub \"${Uploads.Arn}/incoming/*\"}\n>               - {Effect: Allow, Action: dynamodb:PutItem, Resource: !GetAtt Orders.Arn}\n> Outputs:\n>   QueueUrl: {Value: !Ref ImportQueue}\n>   Bucket: {Value: !Ref Uploads}\n>   Table: {Value: !Ref Orders}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ echo template ready",
+     "o": "template ready",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a11_project.py <<'EOF'\n> # The project: deploy a stack from a template, run the pipeline end to end, check it, tear it down (moto plays AWS).\n> import boto3, csv, io, json, urllib.parse\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     cfn, s3, sqs = (boto3.client(s, region_name=R) for s in (\"cloudformation\", \"s3\", \"sqs\"))\n>     cfn.create_stack(StackName=\"orders-import-dev\", TemplateBody=open(\"stack.yaml\").read(),\n>                      Parameters=[{\"ParameterKey\": \"Env\", \"ParameterValue\": \"dev\"}], Capabilities=[\"CAPABILITY_IAM\"])\n>     st = cfn.describe_stacks(StackName=\"orders-import-dev\")[\"Stacks\"][0]\n>     out = {o[\"OutputKey\"]: o[\"OutputValue\"] for o in st[\"Outputs\"]}\n>     print(\"stack:\", st[\"StackStatus\"], \"| resources:\", sorted(r[\"ResourceType\"] for r in cfn.list_stack_resources(StackName=\"orders-import-dev\")[\"StackResourceSummaries\"]))\n>     print(\"outputs:\", {k: v.split(\"/\")[-1] for k, v in out.items()})\n>     qarn = sqs.get_queue_attributes(QueueUrl=out[\"QueueUrl\"], AttributeNames=[\"QueueArn\"])[\"Attributes\"][\"QueueArn\"]\n>     s3.put_bucket_notification_configuration(Bucket=out[\"Bucket\"], NotificationConfiguration={\"QueueConfigurations\": [\n>         {\"QueueArn\": qarn, \"Events\": [\"s3:ObjectCreated:*\"], \"Filter\": {\"Key\": {\"FilterRules\": [{\"Name\": \"prefix\", \"Value\": \"incoming/\"}]}}}]})\n>     table = boto3.resource(\"dynamodb\", region_name=R).Table(out[\"Table\"])\n> \n>     def worker(batch):                     # what the Lambda function would run for each batch of queue messages\n>         stored = 0\n>         for m in batch:\n>             for rec in json.loads(m[\"Body\"]).get(\"Records\", []):\n>                 key = urllib.parse.unquote_plus(rec[\"s3\"][\"object\"][\"key\"])     # keys arrive URL-encoded in S3 events\n>                 body = s3.get_object(Bucket=rec[\"s3\"][\"bucket\"][\"name\"], Key=key)[\"Body\"].read().decode()\n>                 for row in csv.DictReader(io.StringIO(body)):\n>                     table.put_item(Item={\"order_id\": row[\"order_id\"], \"customer\": row[\"customer\"], \"amount\": int(row[\"amount\"]), \"source\": key})\n>                     stored += 1\n>             sqs.delete_message(QueueUrl=out[\"QueueUrl\"], ReceiptHandle=m[\"ReceiptHandle\"])\n>         return stored\n> \n>     s3.put_object(Bucket=out[\"Bucket\"], Key=\"incoming/2026-11-24.csv\", Body=b\"order_id,customer,amount\\nA-1,asha,499\\nA-2,ben,1299\\nA-3,chen,250\\n\")\n>     s3.put_object(Bucket=out[\"Bucket\"], Key=\"incoming/2026-11-24.csv\", Body=b\"order_id,customer,amount\\nA-1,asha,499\\nA-2,ben,1299\\nA-3,chen,250\\n\")  # the same file again\n>     total = 0\n>     while (batch := sqs.receive_message(QueueUrl=out[\"QueueUrl\"], MaxNumberOfMessages=10).get(\"Messages\", [])): total += worker(batch)\n>     items = table.scan()[\"Items\"]\n>     print(f\"worker wrote {total} rows; the table holds {len(items)} orders (order_id is the key, so a repeated file does not duplicate)\")\n>     print(\"orders:\", sorted((i[\"order_id\"], i[\"customer\"], int(i[\"amount\"])) for i in items))\n> \n>     s3.delete_object(Bucket=out[\"Bucket\"], Key=\"incoming/2026-11-24.csv\")      # a stack cannot delete a bucket that still has files\n>     cfn.delete_stack(StackName=\"orders-import-dev\")\n>     print(\"after teardown, stacks:\", [s[\"StackName\"] for s in cfn.list_stacks(StackStatusFilter=[\"CREATE_COMPLETE\"])[\"StackSummaries\"]],\n>           \"| tables:\", boto3.client(\"dynamodb\", region_name=R).list_tables()[\"TableNames\"])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a11_project.py",
+     "o": "stack: CREATE_COMPLETE | resources: ['AWS::DynamoDB::Table', 'AWS::IAM::Role', 'AWS::S3::Bucket', 'AWS::SQS::Queue', 'AWS::SQS::Queue']\noutputs: {'QueueUrl': 'orders-import-dev', 'Bucket': 'orders-uploads-demo-dev', 'Table': 'orders-dev'}\nworker wrote 6 rows; the table holds 3 orders (order_id is the key, so a repeated file does not duplicate)\norders: [('A-1', 'asha', 499), ('A-2', 'ben', 1299), ('A-3', 'chen', 250)]\nafter teardown, stacks: [] | tables: []",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "bf234ab9b5d547fb"
+ },
+ "aws-2": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > iam_eval.py <<'EOF'\n> # How AWS decides \"allowed or not\" for one request, in plain Python.\n> # Rules: everything starts denied; an Allow that matches lets it through; any matching Deny wins over every Allow.\n> import fnmatch, ipaddress\n> def matches(pattern, value):\n>     return any(fnmatch.fnmatchcase(value, p) for p in ([pattern] if isinstance(pattern, str) else pattern))\n> def decide(policies, action, resource, context):\n>     allowed = False\n>     for pol in policies:\n>         for st in pol[\"Statement\"]:\n>             if not (matches(st[\"Action\"], action) and matches(st[\"Resource\"], resource)): continue\n>             cond = st.get(\"Condition\", {}).get(\"IpAddress\", {}).get(\"aws:SourceIp\")\n>             if cond and ipaddress.ip_address(context[\"ip\"]) not in ipaddress.ip_network(cond): continue   # condition not met\n>             if st[\"Effect\"] == \"Deny\": return \"DENY (explicit deny)\"\n>             allowed = True\n>     return \"ALLOW\" if allowed else \"DENY (nothing allowed it)\"\n> \n> reader = {\"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\", \"s3:ListBucket\"], \"Resource\": [\"arn:aws:s3:::reports\", \"arn:aws:s3:::reports/*\"]}]}\n> uploader = {\"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"s3:PutObject\", \"Resource\": \"arn:aws:s3:::reports/incoming/*\"}]}\n> guard = {\"Statement\": [{\"Effect\": \"Deny\", \"Action\": \"s3:*\", \"Resource\": \"*\", \"Condition\": {\"IpAddress\": {\"aws:SourceIp\": \"203.0.113.0/24\"}}},\n>                        {\"Effect\": \"Deny\", \"Action\": \"s3:DeleteObject\", \"Resource\": \"arn:aws:s3:::reports/*\"}]}\n> office, cafe = {\"ip\": \"10.20.0.15\"}, {\"ip\": \"203.0.113.9\"}\n> tests = [(\"read a report\", [reader], \"s3:GetObject\", \"arn:aws:s3:::reports/2026/nov.pdf\", office),\n>          (\"upload to incoming/\", [reader, uploader], \"s3:PutObject\", \"arn:aws:s3:::reports/incoming/a.csv\", office),\n>          (\"upload elsewhere\", [reader, uploader], \"s3:PutObject\", \"arn:aws:s3:::reports/final/a.csv\", office),\n>          (\"delete, even with s3:* allowed\", [{\"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\"}]}, guard], \"s3:DeleteObject\", \"arn:aws:s3:::reports/x\", office),\n>          (\"read from a blocked network\", [reader, guard], \"s3:GetObject\", \"arn:aws:s3:::reports/x\", cafe),\n>          (\"read another bucket\", [reader], \"s3:GetObject\", \"arn:aws:s3:::payroll/x\", office)]\n> for name, pols, act, res, ctx in tests: print(f\"{name:32} {decide(pols, act, res, ctx)}\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 iam_eval.py",
+     "o": "read a report                    ALLOW\nupload to incoming/              ALLOW\nupload elsewhere                 DENY (nothing allowed it)\ndelete, even with s3:* allowed   DENY (explicit deny)\nread from a blocked network      DENY (explicit deny)\nread another bucket              DENY (nothing allowed it)",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a2_iam.py <<'EOF'\n> # Users, groups, roles and policies with boto3 (moto plays AWS).\n> import boto3, json\n> from moto import mock_aws\n> with mock_aws():\n>     iam, sts = boto3.client(\"iam\"), boto3.client(\"sts\", region_name=\"ap-south-1\")\n>     read_reports = {\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\", \"s3:ListBucket\"],\n>                     \"Resource\": [\"arn:aws:s3:::reports\", \"arn:aws:s3:::reports/*\"]}]}\n>     arn = iam.create_policy(PolicyName=\"ReadReports\", PolicyDocument=json.dumps(read_reports))[\"Policy\"][\"Arn\"]\n>     # people: a group carries the permissions, users join the group\n>     iam.create_group(GroupName=\"analysts\"); iam.attach_group_policy(GroupName=\"analysts\", PolicyArn=arn)\n>     for u in [\"asha\", \"ben\"]:\n>         iam.create_user(UserName=u); iam.add_user_to_group(GroupName=\"analysts\", UserName=u)\n>     print(\"analysts:\", [u[\"UserName\"] for u in iam.get_group(GroupName=\"analysts\")[\"Users\"]],\n>           \"| policies:\", [p[\"PolicyName\"] for p in iam.list_attached_group_policies(GroupName=\"analysts\")[\"AttachedPolicies\"]])\n>     # machines: a role that a service (here EC2) may assume; no long-lived keys at all\n>     trust = {\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ec2.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}\n>     role = iam.create_role(RoleName=\"report-builder\", AssumeRolePolicyDocument=json.dumps(trust), MaxSessionDuration=3600)[\"Role\"]\n>     iam.attach_role_policy(RoleName=\"report-builder\", PolicyArn=arn)\n>     print(\"role:\", role[\"Arn\"])\n>     creds = sts.assume_role(RoleArn=role[\"Arn\"], RoleSessionName=\"nightly-job\", DurationSeconds=900)[\"Credentials\"]\n>     print(\"temporary key:\", creds[\"AccessKeyId\"][:4] + \"...\", \"| expires:\", \"yes, after 15 minutes\" if creds[\"Expiration\"] else \"never\")\n>     # an access key for a user is long-lived: list them so you can find and rotate old ones\n>     key = iam.create_access_key(UserName=\"ben\")[\"AccessKey\"]\n>     print(\"ben's key status:\", key[\"Status\"], \"| keys for asha:\", len(iam.list_access_keys(UserName=\"asha\")[\"AccessKeyMetadata\"]))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a2_iam.py",
+     "o": "analysts: ['asha', 'ben'] | policies: ['ReadReports']\nrole: arn:aws:iam::123456789012:role/report-builder\ntemporary key: ASIA... | expires: yes, after 15 minutes\nben's key status: Active | keys for asha: 0",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "912d3c9d1c7d2527"
+ },
+ "aws-3": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a3_s3.py <<'EOF'\n> # S3: buckets, objects, versions, lifecycle, encryption, public-access block and a presigned link (moto plays AWS).\n> import boto3, json\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     s3 = boto3.client(\"s3\", region_name=R)\n>     s3.create_bucket(Bucket=\"shop-invoices-demo\", CreateBucketConfiguration={\"LocationConstraint\": R})\n>     s3.put_public_access_block(Bucket=\"shop-invoices-demo\", PublicAccessBlockConfiguration={\n>         \"BlockPublicAcls\": True, \"IgnorePublicAcls\": True, \"BlockPublicPolicy\": True, \"RestrictPublicBuckets\": True})\n>     s3.put_bucket_encryption(Bucket=\"shop-invoices-demo\", ServerSideEncryptionConfiguration={\n>         \"Rules\": [{\"ApplyServerSideEncryptionByDefault\": {\"SSEAlgorithm\": \"aws:kms\"}}]})\n>     s3.put_bucket_versioning(Bucket=\"shop-invoices-demo\", VersioningConfiguration={\"Status\": \"Enabled\"})\n> \n>     s3.put_object(Bucket=\"shop-invoices-demo\", Key=\"2026/11/inv-1001.txt\", Body=b\"total 499\")\n>     s3.put_object(Bucket=\"shop-invoices-demo\", Key=\"2026/11/inv-1001.txt\", Body=b\"total 4990\")   # an accidental overwrite\n>     s3.put_object(Bucket=\"shop-invoices-demo\", Key=\"2026/11/inv-1002.txt\", Body=b\"total 120\")\n>     for o in s3.list_objects_v2(Bucket=\"shop-invoices-demo\", Prefix=\"2026/11/\")[\"Contents\"]:\n>         print(\"object:\", o[\"Key\"], o[\"Size\"], \"bytes\")\n>     versions = s3.list_object_versions(Bucket=\"shop-invoices-demo\", Prefix=\"2026/11/inv-1001\")[\"Versions\"]\n>     oldest = next(v for v in versions if not v[\"IsLatest\"])          # the version before the latest\n>     old = s3.get_object(Bucket=\"shop-invoices-demo\", Key=\"2026/11/inv-1001.txt\", VersionId=oldest[\"VersionId\"])[\"Body\"].read()\n>     print(f\"inv-1001 has {len(versions)} versions; the original said: {old.decode()!r}  <- versioning saved it\")\n> \n>     s3.delete_object(Bucket=\"shop-invoices-demo\", Key=\"2026/11/inv-1002.txt\")\n>     left = [o[\"Key\"] for o in s3.list_objects_v2(Bucket=\"shop-invoices-demo\").get(\"Contents\", [])]\n>     markers = s3.list_object_versions(Bucket=\"shop-invoices-demo\")[\"DeleteMarkers\"]\n>     print(\"after delete, listed:\", left, \"| delete markers:\", [m[\"Key\"] for m in markers], \"(the data is still recoverable)\")\n> \n>     s3.put_bucket_lifecycle_configuration(Bucket=\"shop-invoices-demo\", LifecycleConfiguration={\"Rules\": [{\n>         \"ID\": \"archive-then-expire\", \"Status\": \"Enabled\", \"Filter\": {\"Prefix\": \"\"},\n>         \"Transitions\": [{\"Days\": 30, \"StorageClass\": \"STANDARD_IA\"}, {\"Days\": 180, \"StorageClass\": \"GLACIER\"}],\n>         \"NoncurrentVersionExpiration\": {\"NoncurrentDays\": 90}}]})\n>     rule = s3.get_bucket_lifecycle_configuration(Bucket=\"shop-invoices-demo\")[\"Rules\"][0]\n>     print(\"lifecycle:\", [(t[\"Days\"], t[\"StorageClass\"]) for t in rule[\"Transitions\"]], \"old versions deleted after\", rule[\"NoncurrentVersionExpiration\"][\"NoncurrentDays\"], \"days\")\n>     print(\"encryption:\", s3.get_bucket_encryption(Bucket=\"shop-invoices-demo\")[\"ServerSideEncryptionConfiguration\"][\"Rules\"][0][\"ApplyServerSideEncryptionByDefault\"][\"SSEAlgorithm\"],\n>           \"| public access blocked:\", all(s3.get_public_access_block(Bucket=\"shop-invoices-demo\")[\"PublicAccessBlockConfiguration\"].values()))\n>     url = s3.generate_presigned_url(\"get_object\", Params={\"Bucket\": \"shop-invoices-demo\", \"Key\": \"2026/11/inv-1001.txt\"}, ExpiresIn=300)\n>     print(\"share for 5 minutes:\", url.split(\"?\")[0] + \"?...X-Amz-Expires=\" + url.split(\"X-Amz-Expires=\")[1].split(\"&\")[0] + \"&X-Amz-Signature=...\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a3_s3.py",
+     "o": "object: 2026/11/inv-1001.txt 10 bytes\nobject: 2026/11/inv-1002.txt 9 bytes\ninv-1001 has 2 versions; the original said: 'total 499'  <- versioning saved it\nafter delete, listed: ['2026/11/inv-1001.txt'] | delete markers: ['2026/11/inv-1002.txt'] (the data is still recoverable)\nlifecycle: [(30, 'STANDARD_IA'), (180, 'GLACIER')] old versions deleted after 90 days\nencryption: aws:kms | public access blocked: True\nshare for 5 minutes: https://shop-invoices-demo.s3.amazonaws.com/2026/11/inv-1001.txt?...X-Amz-Expires=300&X-Amz-Signature=...",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "a3da49fa024138c8"
+ },
+ "aws-4": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a4_vpc.py <<'EOF'\n> # A two-zone network: public subnets for the load balancer, private subnets for servers,\n> # security groups that only let each tier talk to the next one (moto plays AWS).\n> import boto3\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     ec2 = boto3.client(\"ec2\", region_name=R)\n>     vpc = ec2.create_vpc(CidrBlock=\"10.0.0.0/16\")[\"Vpc\"][\"VpcId\"]\n>     sub = {}\n>     for name, cidr, az in [(\"public-a\", \"10.0.0.0/24\", \"a\"), (\"public-b\", \"10.0.1.0/24\", \"b\"),\n>                            (\"private-a\", \"10.0.10.0/24\", \"a\"), (\"private-b\", \"10.0.11.0/24\", \"b\")]:\n>         sub[name] = ec2.create_subnet(VpcId=vpc, CidrBlock=cidr, AvailabilityZone=R + az,\n>                                       TagSpecifications=[{\"ResourceType\": \"subnet\", \"Tags\": [{\"Key\": \"Name\", \"Value\": name}]}])[\"Subnet\"][\"SubnetId\"]\n>     igw = ec2.create_internet_gateway()[\"InternetGateway\"][\"InternetGatewayId\"]\n>     ec2.attach_internet_gateway(InternetGatewayId=igw, VpcId=vpc)\n>     public_rt = ec2.create_route_table(VpcId=vpc)[\"RouteTable\"][\"RouteTableId\"]\n>     ec2.create_route(RouteTableId=public_rt, DestinationCidrBlock=\"0.0.0.0/0\", GatewayId=igw)\n>     for s in (\"public-a\", \"public-b\"): ec2.associate_route_table(RouteTableId=public_rt, SubnetId=sub[s])\n>     eip = ec2.allocate_address(Domain=\"vpc\")[\"AllocationId\"]\n>     nat = ec2.create_nat_gateway(SubnetId=sub[\"public-a\"], AllocationId=eip)[\"NatGateway\"][\"NatGatewayId\"]\n>     private_rt = ec2.create_route_table(VpcId=vpc)[\"RouteTable\"][\"RouteTableId\"]\n>     ec2.create_route(RouteTableId=private_rt, DestinationCidrBlock=\"0.0.0.0/0\", NatGatewayId=nat)\n>     for s in (\"private-a\", \"private-b\"): ec2.associate_route_table(RouteTableId=private_rt, SubnetId=sub[s])\n> \n>     def sg(name, desc): return ec2.create_security_group(GroupName=name, Description=desc, VpcId=vpc)[\"GroupId\"]\n>     lb_sg, app_sg, db_sg = sg(\"lb\", \"HTTPS from the internet\"), sg(\"app\", \"only from the load balancer\"), sg(\"db\", \"only from the app\")\n>     ec2.authorize_security_group_ingress(GroupId=lb_sg, IpPermissions=[{\"IpProtocol\": \"tcp\", \"FromPort\": 443, \"ToPort\": 443, \"IpRanges\": [{\"CidrIp\": \"0.0.0.0/0\"}]}])\n>     ec2.authorize_security_group_ingress(GroupId=app_sg, IpPermissions=[{\"IpProtocol\": \"tcp\", \"FromPort\": 8080, \"ToPort\": 8080, \"UserIdGroupPairs\": [{\"GroupId\": lb_sg}]}])\n>     ec2.authorize_security_group_ingress(GroupId=db_sg, IpPermissions=[{\"IpProtocol\": \"tcp\", \"FromPort\": 5432, \"ToPort\": 5432, \"UserIdGroupPairs\": [{\"GroupId\": app_sg}]}])\n> \n>     user_data = \"#!/bin/bash\\ndnf install -y nginx\\nsystemctl enable --now nginx\\n\"\n>     inst = ec2.run_instances(ImageId=\"ami-12c6146b\", InstanceType=\"t3.micro\", MinCount=2, MaxCount=2,\n>                              SubnetId=sub[\"private-a\"], SecurityGroupIds=[app_sg], UserData=user_data,\n>                              TagSpecifications=[{\"ResourceType\": \"instance\", \"Tags\": [{\"Key\": \"app\", \"Value\": \"shop\"}]}])[\"Instances\"]\n> \n>     names = {v: k for k, v in sub.items()}\n>     for s in ec2.describe_subnets(Filters=[{\"Name\": \"vpc-id\", \"Values\": [vpc]}])[\"Subnets\"]:\n>         print(f\"subnet {names[s['SubnetId']]:9} {s['CidrBlock']:13} {s['AvailabilityZone']}\")\n>     for rt, label in [(public_rt, \"public\"), (private_rt, \"private\")]:\n>         routes = ec2.describe_route_tables(RouteTableIds=[rt])[\"RouteTables\"][0][\"Routes\"]\n>         print(f\"{label:7} routes:\", [(r[\"DestinationCidrBlock\"], r.get(\"GatewayId\") or r.get(\"NatGatewayId\")) for r in routes])\n>     for g in ec2.describe_security_groups(GroupIds=[lb_sg, app_sg, db_sg])[\"SecurityGroups\"]:\n>         rules = [(p[\"FromPort\"], [x[\"CidrIp\"] for x in p[\"IpRanges\"]] or [\"sg:\" + {lb_sg: \"lb\", app_sg: \"app\"}[x[\"GroupId\"]] for x in p[\"UserIdGroupPairs\"]]) for p in g[\"IpPermissions\"]]\n>         print(f\"security group {g['GroupName']:3} allows in:\", rules)\n>     for i in inst: print(\"instance\", i[\"InstanceId\"][:10] + \"...\", i[\"InstanceType\"], \"private ip\", i[\"PrivateIpAddress\"], \"public ip\", i.get(\"PublicIpAddress\"))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a4_vpc.py",
+     "o": "subnet public-a  10.0.0.0/24   ap-south-1a\nsubnet private-a 10.0.10.0/24  ap-south-1a\nsubnet public-b  10.0.1.0/24   ap-south-1b\nsubnet private-b 10.0.11.0/24  ap-south-1b\npublic  routes: [('10.0.0.0/16', 'local'), ('0.0.0.0/0', 'igw-8a158880d3fd80f80')]\nprivate routes: [('10.0.0.0/16', 'local'), ('0.0.0.0/0', 'nat-861dd985b6d6738da')]\nsecurity group lb  allows in: [(443, ['0.0.0.0/0'])]\nsecurity group app allows in: [(8080, ['sg:lb'])]\nsecurity group db  allows in: [(5432, ['sg:app'])]\ninstance i-964aaeab... t3.micro private ip 10.0.10.4 public ip None\ninstance i-b86e8891... t3.micro private ip 10.0.10.5 public ip None",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "05ad7c56a16ffdb4"
+ },
+ "aws-5": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a5_scale.py <<'EOF'\n> # A load balancer in front of an auto scaling group spread over two zones (moto plays AWS).\n> import boto3\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     ec2, elb, asg = (boto3.client(s, region_name=R) for s in (\"ec2\", \"elbv2\", \"autoscaling\"))\n>     vpc = ec2.create_vpc(CidrBlock=\"10.0.0.0/16\")[\"Vpc\"][\"VpcId\"]\n>     subnets = [ec2.create_subnet(VpcId=vpc, CidrBlock=f\"10.0.{i}.0/24\", AvailabilityZone=R + z)[\"Subnet\"][\"SubnetId\"] for i, z in enumerate(\"ab\")]\n> \n>     lb = elb.create_load_balancer(Name=\"shop-alb\", Subnets=subnets, Scheme=\"internet-facing\", Type=\"application\")[\"LoadBalancers\"][0]\n>     tg = elb.create_target_group(Name=\"shop-web\", Protocol=\"HTTP\", Port=8080, VpcId=vpc, TargetType=\"instance\",\n>                                  HealthCheckPath=\"/health\", HealthCheckIntervalSeconds=15, HealthyThresholdCount=2, UnhealthyThresholdCount=3)[\"TargetGroups\"][0]\n>     elb.create_listener(LoadBalancerArn=lb[\"LoadBalancerArn\"], Protocol=\"HTTP\", Port=80,\n>                         DefaultActions=[{\"Type\": \"forward\", \"TargetGroupArn\": tg[\"TargetGroupArn\"]}])\n>     print(\"load balancer:\", lb[\"DNSName\"])\n>     print(\"health check:\", tg[\"HealthCheckPath\"], \"every\", tg[\"HealthCheckIntervalSeconds\"], \"s; unhealthy after\", tg[\"UnhealthyThresholdCount\"], \"failures\")\n> \n>     ec2.create_launch_template(LaunchTemplateName=\"shop-web\", LaunchTemplateData={\"ImageId\": \"ami-12c6146b\", \"InstanceType\": \"t3.small\"})\n>     asg.create_auto_scaling_group(AutoScalingGroupName=\"shop-web\", LaunchTemplate={\"LaunchTemplateName\": \"shop-web\", \"Version\": \"$Latest\"},\n>         MinSize=2, MaxSize=8, DesiredCapacity=2, VPCZoneIdentifier=\",\".join(subnets), TargetGroupARNs=[tg[\"TargetGroupArn\"]],\n>         HealthCheckType=\"ELB\", HealthCheckGracePeriod=120)\n>     asg.put_scaling_policy(AutoScalingGroupName=\"shop-web\", PolicyName=\"cpu-50\", PolicyType=\"TargetTrackingScaling\",\n>         TargetTrackingConfiguration={\"PredefinedMetricSpecification\": {\"PredefinedMetricType\": \"ASGAverageCPUUtilization\"}, \"TargetValue\": 50.0})\n>     g = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[\"shop-web\"])[\"AutoScalingGroups\"][0]\n>     print(f\"group: min {g['MinSize']} desired {g['DesiredCapacity']} max {g['MaxSize']}, across {len(g['VPCZoneIdentifier'].split(','))} subnets in two zones\")\n>     targets = elb.describe_target_health(TargetGroupArn=tg[\"TargetGroupArn\"])[\"TargetHealthDescriptions\"]\n>     print(\"registered with the load balancer:\", len(targets), \"instances\")\n>     p = asg.describe_policies(AutoScalingGroupName=\"shop-web\")[\"ScalingPolicies\"][0]\n>     print(\"scaling policy:\", p[\"PolicyType\"], \"keep average CPU at\", p[\"TargetTrackingConfiguration\"][\"TargetValue\"], \"%\")\n>     asg.set_desired_capacity(AutoScalingGroupName=\"shop-web\", DesiredCapacity=4)     # what the policy does when CPU is high\n>     g = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[\"shop-web\"])[\"AutoScalingGroups\"][0]\n>     print(\"after scaling out:\", len(g[\"Instances\"]), \"instances\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a5_scale.py",
+     "o": "load balancer: shop-alb-1.ap-south-1.elb.amazonaws.com\nhealth check: /health every 15 s; unhealthy after 3 failures\ngroup: min 2 desired 2 max 8, across 2 subnets in two zones\nregistered with the load balancer: 2 instances\nscaling policy: TargetTrackingScaling keep average CPU at 50.0 %\nafter scaling out: 4 instances",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > scale_sim.py <<'EOF'\n> # Target tracking in plain Python: keep average CPU near 50% as traffic rises and falls through a day.\n> import math\n> PER_SERVER = 100              # requests per second one server handles at 100% CPU\n> TARGET, MIN, MAX = 50, 2, 8\n> servers, cost = MIN, 0.0\n> print(\"hour  traffic  servers  cpu%\")\n> for hour in range(0, 24, 2):\n>     traffic = 120 + 260 * max(0, math.sin((hour - 7) / 12 * math.pi))       # quiet night, busy evening\n>     cpu = traffic / (servers * PER_SERVER) * 100\n>     print(f\"{hour:4}  {traffic:7.0f}  {servers:7}  {min(cpu, 100):4.0f}{'  overloaded' if cpu > 90 else ''}\")\n>     wanted = math.ceil(servers * cpu / TARGET)                               # the rule target tracking follows\n>     servers = max(MIN, min(MAX, wanted)); cost += servers * 2 * 0.0224     # t3.small on-demand, about $0.0224 per hour\n> print(f\"cost of the day: about ${cost:.2f}  (8 servers all day: ${8 * 24 * 0.0224:.2f})\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 scale_sim.py",
+     "o": "hour  traffic  servers  cpu%\n   0      120        2    60\n   2      120        3    40\n   4      120        3    40\n   6      120        3    40\n   8      187        3    62\n  10      304        4    76\n  12      371        7    53\n  14      371        8    46\n  16      304        8    38\n  18      187        7    27\n  20      120        4    30\n  22      120        3    40\ncost of the day: about $2.51  (8 servers all day: $4.30)",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "f7167f51612e545a"
+ },
+ "aws-6": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a6_data.py <<'EOF'\n> # Managed databases: an RDS PostgreSQL instance, and a DynamoDB table designed around its queries (moto plays AWS).\n> import boto3\n> from boto3.dynamodb.conditions import Key\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     rds = boto3.client(\"rds\", region_name=R)\n>     db = rds.create_db_instance(DBInstanceIdentifier=\"shop-db\", Engine=\"postgres\", EngineVersion=\"16.4\", DBInstanceClass=\"db.t4g.micro\",\n>         AllocatedStorage=20, MasterUsername=\"shop_admin\", ManageMasterUserPassword=True,   # RDS keeps the password in Secrets Manager\n>         MultiAZ=True, StorageEncrypted=True, BackupRetentionPeriod=7, PubliclyAccessible=False, DeletionProtection=True)[\"DBInstance\"]\n>     print(\"RDS:\", db[\"DBInstanceIdentifier\"], db[\"Engine\"], db[\"EngineVersion\"], \"| multi-AZ\", db[\"MultiAZ\"], \"| encrypted\", db[\"StorageEncrypted\"],\n>           \"| backups kept\", db[\"BackupRetentionPeriod\"], \"days | public\", db[\"PubliclyAccessible\"])\n>     rds.create_db_snapshot(DBInstanceIdentifier=\"shop-db\", DBSnapshotIdentifier=\"before-migration\")\n>     print(\"snapshot:\", rds.describe_db_snapshots(DBInstanceIdentifier=\"shop-db\", SnapshotType=\"manual\")[\"DBSnapshots\"][0][\"DBSnapshotIdentifier\"])\n>     rep = rds.create_db_instance_read_replica(DBInstanceIdentifier=\"shop-db-read\", SourceDBInstanceIdentifier=\"shop-db\")[\"DBInstance\"]\n>     print(\"read replica of:\", rep[\"ReadReplicaSourceDBInstanceIdentifier\"])\n> \n>     # DynamoDB: one table, keys chosen for the questions the app asks\n>     ddb = boto3.resource(\"dynamodb\", region_name=R)\n>     t = ddb.create_table(TableName=\"orders\", BillingMode=\"PAY_PER_REQUEST\",\n>         KeySchema=[{\"AttributeName\": \"customer\", \"KeyType\": \"HASH\"}, {\"AttributeName\": \"order_at\", \"KeyType\": \"RANGE\"}],\n>         AttributeDefinitions=[{\"AttributeName\": a, \"AttributeType\": \"S\"} for a in (\"customer\", \"order_at\", \"status\")],\n>         GlobalSecondaryIndexes=[{\"IndexName\": \"by-status\", \"KeySchema\": [{\"AttributeName\": \"status\", \"KeyType\": \"HASH\"}, {\"AttributeName\": \"order_at\", \"KeyType\": \"RANGE\"}],\n>                                  \"Projection\": {\"ProjectionType\": \"ALL\"}}])\n>     rows = [(\"asha\", \"2026-11-01T10:00\", \"delivered\", 499), (\"asha\", \"2026-11-20T09:30\", \"shipped\", 1299),\n>             (\"asha\", \"2026-11-23T18:05\", \"pending\", 250), (\"ben\", \"2026-11-22T12:00\", \"pending\", 999)]\n>     with t.batch_writer() as w:\n>         for c, at, st, amt in rows: w.put_item(Item={\"customer\": c, \"order_at\": at, \"status\": st, \"amount\": amt})\n>     q = t.query(KeyConditionExpression=Key(\"customer\").eq(\"asha\") & Key(\"order_at\").begins_with(\"2026-11-2\"))[\"Items\"]\n>     print(\"asha's orders since the 20th:\", [(i[\"order_at\"], i[\"status\"]) for i in q])\n>     q = t.query(IndexName=\"by-status\", KeyConditionExpression=Key(\"status\").eq(\"pending\"))[\"Items\"]\n>     print(\"all pending orders (from the index):\", [(i[\"customer\"], int(i[\"amount\"])) for i in q])\n>     try:   # a conditional write: only move pending -> shipped, never ship twice\n>         for _ in range(2):\n>             t.update_item(Key={\"customer\": \"ben\", \"order_at\": \"2026-11-22T12:00\"}, UpdateExpression=\"SET #s = :new\",\n>                           ConditionExpression=\"#s = :old\", ExpressionAttributeNames={\"#s\": \"status\"},\n>                           ExpressionAttributeValues={\":new\": \"shipped\", \":old\": \"pending\"})\n>             print(\"ben's order shipped\")\n>     except ddb.meta.client.exceptions.ConditionalCheckFailedException:\n>         print(\"second update refused: the order was no longer pending\")\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a6_data.py",
+     "o": "RDS: shop-db postgres 16.4 | multi-AZ True | encrypted True | backups kept 7 days | public False\nsnapshot: before-migration\nread replica of: shop-db\nasha's orders since the 20th: [('2026-11-20T09:30', 'shipped'), ('2026-11-23T18:05', 'pending')]\nall pending orders (from the index): [('ben', 999), ('asha', 250)]\nben's order shipped\nsecond update refused: the order was no longer pending",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "099f0ca78c429ed4"
+ },
+ "aws-7": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > handler.py <<'EOF'\n> # A Lambda function: AWS calls handler(event, context) for each request. Nothing else runs between requests.\n> import json, os\n> TAX = float(os.environ.get(\"TAX_RATE\", \"0.18\"))          # configuration comes from environment variables\n> def handler(event, context):\n>     if event.get(\"requestContext\", {}).get(\"http\", {}).get(\"method\") != \"POST\":\n>         return {\"statusCode\": 405, \"body\": json.dumps({\"error\": \"use POST\"})}\n>     try:\n>         items = json.loads(event.get(\"body\") or \"{}\")[\"items\"]\n>         subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n>     except (KeyError, TypeError, ValueError):\n>         return {\"statusCode\": 400, \"body\": json.dumps({\"error\": \"send {\\\"items\\\": [{\\\"price\\\": .., \\\"qty\\\": ..}]}\"})}\n>     print(json.dumps({\"level\": \"info\", \"msg\": \"quote\", \"items\": len(items), \"request\": context.aws_request_id}))  # goes to CloudWatch Logs\n>     return {\"statusCode\": 200, \"headers\": {\"content-type\": \"application/json\"},\n>             \"body\": json.dumps({\"subtotal\": subtotal, \"tax\": round(subtotal * TAX, 2), \"total\": round(subtotal * (1 + TAX), 2)})}\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > test_handler.py <<'EOF'\n> # Test the function on your machine with the same event shape API Gateway (HTTP API) sends.\n> import json, types\n> from handler import handler\n> ctx = types.SimpleNamespace(aws_request_id=\"test-1\", get_remaining_time_in_millis=lambda: 3000)\n> def call(method, body): return handler({\"requestContext\": {\"http\": {\"method\": method}}, \"body\": json.dumps(body) if body is not None else None}, ctx)\n> r = call(\"POST\", {\"items\": [{\"price\": 499, \"qty\": 2}, {\"price\": 120, \"qty\": 1}]}); print(r[\"statusCode\"], r[\"body\"])\n> r = call(\"POST\", {\"wrong\": 1});                                                    print(r[\"statusCode\"], r[\"body\"])\n> r = call(\"GET\", None);                                                             print(r[\"statusCode\"], r[\"body\"])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 test_handler.py",
+     "o": "{\"level\": \"info\", \"msg\": \"quote\", \"items\": 2, \"request\": \"test-1\"}\n200 {\"subtotal\": 1118, \"tax\": 201.24, \"total\": 1319.24}\n400 {\"error\": \"send {\\\"items\\\": [{\\\"price\\\": .., \\\"qty\\\": ..}]}\"}\n405 {\"error\": \"use POST\"}",
+     "x": 0
+    }
+   ],
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a7_deploy.py <<'EOF'\n> # Deploy the function: zip the code, give it a role, set config, publish a version and point an alias at it (moto plays AWS).\n> import os; os.environ[\"MOTO_IAM_LOAD_MANAGED_POLICIES\"] = \"true\"   # let moto know the AWS-managed policies\n> import boto3, io, json, zipfile\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     iam, lam = boto3.client(\"iam\"), boto3.client(\"lambda\", region_name=R)\n>     trust = {\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"lambda.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}\n>     role = iam.create_role(RoleName=\"quote-fn\", AssumeRolePolicyDocument=json.dumps(trust))[\"Role\"][\"Arn\"]\n>     iam.attach_role_policy(RoleName=\"quote-fn\", PolicyArn=\"arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole\")  # write logs only\n>     buf = io.BytesIO()\n>     with zipfile.ZipFile(buf, \"w\") as z: z.write(\"handler.py\")\n>     fn = lam.create_function(FunctionName=\"quote\", Runtime=\"python3.12\", Role=role, Handler=\"handler.handler\",\n>                              Code={\"ZipFile\": buf.getvalue()}, MemorySize=256, Timeout=10, Environment={\"Variables\": {\"TAX_RATE\": \"0.18\"}})\n>     print(\"function:\", fn[\"FunctionName\"], fn[\"Runtime\"], f\"{fn['MemorySize']} MB\", f\"timeout {fn['Timeout']} s\", \"| env:\", fn[\"Environment\"][\"Variables\"])\n>     v1 = lam.publish_version(FunctionName=\"quote\")[\"Version\"]\n>     lam.create_alias(FunctionName=\"quote\", Name=\"live\", FunctionVersion=v1)\n>     lam.update_function_configuration(FunctionName=\"quote\", Environment={\"Variables\": {\"TAX_RATE\": \"0.12\"}})\n>     v2 = lam.publish_version(FunctionName=\"quote\")[\"Version\"]\n>     lam.update_alias(FunctionName=\"quote\", Name=\"live\", FunctionVersion=v2, RoutingConfig={\"AdditionalVersionWeights\": {v1: 0.9}})\n>     a = lam.get_alias(FunctionName=\"quote\", Name=\"live\")\n>     print(f\"alias live -> version {a['FunctionVersion']} gets 10%, version {v1} keeps 90% (a canary)\")\n>     url = lam.create_function_url_config(FunctionName=\"quote\", AuthType=\"AWS_IAM\")[\"FunctionUrl\"]\n>     print(\"function URL (callers must sign requests):\", url)\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a7_deploy.py",
+     "o": "function: quote python3.12 256 MB timeout 10 s | env: {'TAX_RATE': '0.18'}\nalias live -> version 2 gets 10%, version 1 keeps 90% (a canary)\nfunction URL (callers must sign requests): https://fd78cf33d0734cc1931dded470049bc4.lambda-url.ap-south-1.on.aws",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "92593163b098039d"
+ },
+ "aws-8": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a8_events.py <<'EOF'\n> # Decoupling with queues and events: SQS with a dead-letter queue, SNS fan-out with a filter, an EventBridge rule (moto plays AWS).\n> import boto3, json\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     sqs, sns, ev = (boto3.client(s, region_name=R) for s in (\"sqs\", \"sns\", \"events\"))\n>     def arn(url): return sqs.get_queue_attributes(QueueUrl=url, AttributeNames=[\"QueueArn\"])[\"Attributes\"][\"QueueArn\"]\n> \n>     print(\"1) a work queue with a dead-letter queue\")\n>     dlq = sqs.create_queue(QueueName=\"orders-dlq\")[\"QueueUrl\"]\n>     q = sqs.create_queue(QueueName=\"orders\", Attributes={\"VisibilityTimeout\": \"30\",\n>         \"RedrivePolicy\": json.dumps({\"deadLetterTargetArn\": arn(dlq), \"maxReceiveCount\": \"3\"})})[\"QueueUrl\"]\n>     for body in ['{\"order\": 1}', '{\"order\": 2}', 'not json at all', '{\"order\": 3}']: sqs.send_message(QueueUrl=q, MessageBody=body)\n>     done = []\n>     for attempt in range(1, 6):\n>         msgs = sqs.receive_message(QueueUrl=q, MaxNumberOfMessages=10, VisibilityTimeout=0).get(\"Messages\", [])\n>         for m in msgs:\n>             try:\n>                 done.append(json.loads(m[\"Body\"])[\"order\"])\n>                 sqs.delete_message(QueueUrl=q, ReceiptHandle=m[\"ReceiptHandle\"])     # delete only after success\n>             except ValueError:\n>                 pass                                                                  # not deleted: it comes back\n>         if not msgs: break\n>     print(\"   processed:\", sorted(done))\n>     print(\"   dead-letter queue holds:\", [m[\"Body\"] for m in sqs.receive_message(QueueUrl=dlq).get(\"Messages\", [])])\n> \n>     print(\"2) one event, many subscribers (SNS fan-out with a filter)\")\n>     topic = sns.create_topic(Name=\"order-events\")[\"TopicArn\"]\n>     queues = {n: sqs.create_queue(QueueName=n)[\"QueueUrl\"] for n in (\"email-receipts\", \"warehouse\", \"fraud-check\")}\n>     sns.subscribe(TopicArn=topic, Protocol=\"sqs\", Endpoint=arn(queues[\"email-receipts\"]), Attributes={\"RawMessageDelivery\": \"true\"})\n>     sns.subscribe(TopicArn=topic, Protocol=\"sqs\", Endpoint=arn(queues[\"warehouse\"]), Attributes={\"RawMessageDelivery\": \"true\"})\n>     sns.subscribe(TopicArn=topic, Protocol=\"sqs\", Endpoint=arn(queues[\"fraud-check\"]), Attributes={\"RawMessageDelivery\": \"true\",\n>                   \"FilterPolicy\": json.dumps({\"amount\": [{\"numeric\": [\">=\", 10000]}]})})\n>     for amt in (499, 25000):\n>         sns.publish(TopicArn=topic, Message=json.dumps({\"order\": amt, \"amount\": amt}),\n>                     MessageAttributes={\"amount\": {\"DataType\": \"Number\", \"StringValue\": str(amt)}})\n>     for n, u in queues.items():\n>         got = [json.loads(m[\"Body\"])[\"amount\"] for m in sqs.receive_message(QueueUrl=u, MaxNumberOfMessages=10).get(\"Messages\", [])]\n>         print(f\"   {n:15} received amounts {sorted(got)}\")\n> \n>     print(\"3) an EventBridge rule that matches on content\")\n>     audit = sqs.create_queue(QueueName=\"refund-audit\")[\"QueueUrl\"]\n>     ev.put_rule(Name=\"big-refunds\", EventPattern=json.dumps({\"source\": [\"shop.payments\"], \"detail-type\": [\"Refund\"], \"detail\": {\"amount\": [{\"numeric\": [\">\", 5000]}]}}))\n>     ev.put_targets(Rule=\"big-refunds\", Targets=[{\"Id\": \"audit\", \"Arn\": arn(audit)}])\n>     ev.put_events(Entries=[{\"Source\": \"shop.payments\", \"DetailType\": \"Refund\", \"Detail\": json.dumps({\"amount\": a, \"order\": i})} for i, a in enumerate((300, 7000, 12000))])\n>     got = [json.loads(m[\"Body\"])[\"detail\"][\"amount\"] for m in sqs.receive_message(QueueUrl=audit, MaxNumberOfMessages=10).get(\"Messages\", [])]\n>     print(\"   refund-audit received:\", sorted(got))\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a8_events.py",
+     "o": "1) a work queue with a dead-letter queue\n   processed: [1, 2, 3]\n   dead-letter queue holds: ['not json at all']\n2) one event, many subscribers (SNS fan-out with a filter)\n   email-receipts  received amounts [499, 25000]\n   warehouse       received amounts [499, 25000]\n   fraud-check     received amounts [25000]\n3) an EventBridge rule that matches on content\n   refund-audit received: [7000, 12000]",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "e6963ada39131462"
+ },
+ "aws-9": {
+  "blocks": [
+   [
+    {
+     "c": "$ mkdir -p ~/lab/aws && cd ~/lab/aws",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ cat > a9_ecs.py <<'EOF'\n> # Containers on AWS: an ECR repository, a Fargate task definition, and an ECS service (moto plays AWS).\n> import boto3, json\n> from moto import mock_aws\n> R = \"ap-south-1\"\n> with mock_aws():\n>     ecr, ecs, ec2, sm = (boto3.client(s, region_name=R) for s in (\"ecr\", \"ecs\", \"ec2\", \"secretsmanager\"))\n>     repo = ecr.create_repository(repositoryName=\"shop/web\", imageTagMutability=\"IMMUTABLE\",\n>                                  imageScanningConfiguration={\"scanOnPush\": True})[\"repository\"]\n>     print(\"registry:\", repo[\"repositoryUri\"], \"| tags immutable:\", repo[\"imageTagMutability\"] == \"IMMUTABLE\",\n>           \"| scan on push:\", repo[\"imageScanningConfiguration\"][\"scanOnPush\"])\n>     secret = sm.create_secret(Name=\"shop/db-password\", SecretString=\"demo-only-value\")[\"ARN\"]\n> \n>     td = ecs.register_task_definition(family=\"shop-web\", requiresCompatibilities=[\"FARGATE\"], networkMode=\"awsvpc\",\n>         cpu=\"256\", memory=\"512\", executionRoleArn=\"arn:aws:iam::123456789012:role/ecsTaskExecutionRole\",\n>         taskRoleArn=\"arn:aws:iam::123456789012:role/shop-web-task\",\n>         containerDefinitions=[{\"name\": \"web\", \"image\": repo[\"repositoryUri\"] + \":1.4.2\", \"essential\": True,\n>             \"portMappings\": [{\"containerPort\": 8080}], \"environment\": [{\"name\": \"APP_ENV\", \"value\": \"prod\"}],\n>             \"secrets\": [{\"name\": \"DB_PASSWORD\", \"valueFrom\": secret}],\n>             \"healthCheck\": {\"command\": [\"CMD-SHELL\", \"curl -f http://localhost:8080/health || exit 1\"], \"interval\": 15, \"retries\": 3},\n>             \"logConfiguration\": {\"logDriver\": \"awslogs\", \"options\": {\"awslogs-group\": \"/ecs/shop-web\", \"awslogs-region\": R, \"awslogs-stream-prefix\": \"web\"}}}])[\"taskDefinition\"]\n>     c = td[\"containerDefinitions\"][0]\n>     print(f\"task definition {td['family']}:{td['revision']}  {td['cpu']} CPU units, {td['memory']} MB, image tag {c['image'].split(':')[-1]}\")\n>     print(\"   env:\", [e[\"name\"] for e in c[\"environment\"]], \"| secrets injected at start:\", [s[\"name\"] for s in c[\"secrets\"]], \"| logs ->\", c[\"logConfiguration\"][\"options\"][\"awslogs-group\"])\n> \n>     vpc = ec2.create_vpc(CidrBlock=\"10.0.0.0/16\")[\"Vpc\"][\"VpcId\"]\n>     subnets = [ec2.create_subnet(VpcId=vpc, CidrBlock=f\"10.0.{i}.0/24\", AvailabilityZone=R + z)[\"Subnet\"][\"SubnetId\"] for i, z in enumerate(\"ab\")]\n>     sg = ec2.create_security_group(GroupName=\"web-task\", Description=\"from the load balancer only\", VpcId=vpc)[\"GroupId\"]\n>     ecs.create_cluster(clusterName=\"shop\")\n>     rolling = {\"minimumHealthyPercent\": 100, \"maximumPercent\": 200, \"deploymentCircuitBreaker\": {\"enable\": True, \"rollback\": True}}\n>     svc = ecs.create_service(cluster=\"shop\", serviceName=\"web\", taskDefinition=\"shop-web:1\", desiredCount=2, launchType=\"FARGATE\",\n>         networkConfiguration={\"awsvpcConfiguration\": {\"subnets\": subnets, \"securityGroups\": [sg], \"assignPublicIp\": \"DISABLED\"}},\n>         deploymentConfiguration=rolling)[\"service\"]\n>     print(\"service:\", svc[\"serviceName\"], \"desired\", svc[\"desiredCount\"], svc[\"launchType\"], \"| status\", svc[\"status\"])\n>     print(\"   rolling updates requested: never below\", rolling[\"minimumHealthyPercent\"], \"% healthy, up to\", rolling[\"maximumPercent\"],\n>           \"% during a deploy, automatic rollback:\", rolling[\"deploymentCircuitBreaker\"][\"rollback\"])\n>     td2 = ecs.register_task_definition(family=\"shop-web\", requiresCompatibilities=[\"FARGATE\"], networkMode=\"awsvpc\", cpu=\"256\", memory=\"512\",\n>         containerDefinitions=[dict(c, image=repo[\"repositoryUri\"] + \":1.5.0\")])[\"taskDefinition\"]\n>     svc = ecs.update_service(cluster=\"shop\", service=\"web\", taskDefinition=f\"shop-web:{td2['revision']}\")[\"service\"]\n>     print(\"deploy a new version: service now uses\", svc[\"taskDefinition\"].split(\"/\")[-1])\n> EOF",
+     "o": "",
+     "x": 0
+    },
+    {
+     "c": "$ python3 a9_ecs.py",
+     "o": "registry: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/shop/web | tags immutable: True | scan on push: True\ntask definition shop-web:1  256 CPU units, 512 MB, image tag 1.4.2\n   env: ['APP_ENV'] | secrets injected at start: ['DB_PASSWORD'] | logs -> /ecs/shop-web\nservice: web desired 2 FARGATE | status ACTIVE\n   rolling updates requested: never below 100 % healthy, up to 200 % during a deploy, automatic rollback: True\ndeploy a new version: service now uses shop-web:2",
+     "x": 0
+    }
+   ]
+  ],
+  "key": "370e8d368abcbf0e"
+ },
  "capstone-1": {
   "blocks": [
    [

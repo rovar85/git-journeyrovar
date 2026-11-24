@@ -96,6 +96,14 @@
   "why": "Labs and environments increasingly live in the cloud."
  },
  {
+  "id": "aws",
+  "name": "AWS hands-on",
+  "group": "4 · Run in production",
+  "level": "Beginner to professional · after Cloud fundamentals",
+  "blurb": "Eleven lessons with real boto3 code: accounts and credentials, IAM, S3, VPC and EC2, load balancing and auto scaling, RDS and DynamoDB, Lambda, SQS, SNS and EventBridge, ECS on Fargate, CloudWatch and cost, and a CloudFormation project you deploy and tear down. Runs against a local AWS imitation, so there are no bills or keys.",
+  "why": "AWS is the most requested cloud in DevOps, backend and data job posts. This track gives you working code for every core service and the habits that keep accounts safe and cheap."
+ },
+ {
   "id": "windows",
   "name": "Windows and PowerShell",
   "group": "4 · Run in production",

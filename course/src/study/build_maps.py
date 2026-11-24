@@ -744,6 +744,26 @@ M["secops"] = dict(
  round2=["Threat model an app you use with STRIDE and rank five risks.", "Explain salting and slow hashing to a non-technical friend.", "Find and fix an IDOR in a small API you write.", "Add a new rule to each scanner in this track and a test case that triggers it.", "Write the incident timeline for a leaked cloud key."],
 )
 
+M["aws"] = dict(
+ title="One web shop on AWS, from an empty account to a deployed stack",
+ intro="Each lesson adds one layer to the same shop: identity, storage, network, servers, scaling, data, functions, events, containers, monitoring, and finally everything as code.",
+ hops=[
+  H("Account", "Regions and zones, CLI and SDK, credentials, a budget first.", 1),
+  H("Identity", "Policies, evaluation, groups, roles, temporary credentials.", 2),
+  H("Storage", "Private, encrypted, versioned buckets; lifecycle; presigned links.", 3),
+  H("Network and servers", "Public and private subnets in two zones, NAT, chained security groups, EC2, Session Manager.", 4),
+  H("Scale", "Load balancer, health checks, auto scaling, target tracking.", 5),
+  H("Data", "RDS done right; DynamoDB designed from its queries.", 6),
+  H("Serverless and events", "Lambda handlers, versions and canaries; SQS, SNS, EventBridge.", 7, 8),
+  H("Containers", "ECR, Fargate task definitions, ECS services, which compute to pick.", 9),
+  H("Operate", "Logs, metrics, alarms, CloudTrail, cost.", 10),
+  H("As code", "A CloudFormation pipeline deployed, verified and torn down.", 11),
+ ],
+ tips=["Create a budget alert before anything else in a real account.", "Run each script, then delete the moto lines only when you have a sandbox account and a budget.", "Tear down after every session; check the NAT gateway twice.", "Say the CLI equivalent of each boto3 call out loud.", "Draw the shop's architecture from memory after the last lesson."],
+ docs=[D("AWS Well-Architected Framework", "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"), D("IAM policy evaluation logic", "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"), D("boto3 documentation", "https://boto3.amazonaws.com/v1/documentation/api/latest/index.html"), D("AWS CLI command reference", "https://awscli.amazonaws.com/v2/documentation/api/latest/index.html"), D("moto", "https://docs.getmoto.org/")],
+ round2=["Rebuild the VPC from lesson 4 as a CloudFormation template.", "Add the Lambda function and alarms to the project stack.", "Write a least-privilege policy for the ECS task role from scratch.", "Explain multi-AZ vs read replica vs backup in one minute.", "Estimate the monthly cost of the project with the AWS pricing calculator."],
+)
+
 _ql = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qbank_lessons.json")))["lessons"]
 def _q(topic): return [l["n"] for l in _ql if l["topic"] == topic]
 M["qbank"] = dict(

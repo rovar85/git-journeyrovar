@@ -2922,6 +2922,119 @@
    "Write the incident timeline for a leaked cloud key."
   ]
  },
+ "aws": {
+  "title": "One web shop on AWS, from an empty account to a deployed stack",
+  "intro": "Each lesson adds one layer to the same shop: identity, storage, network, servers, scaling, data, functions, events, containers, monitoring, and finally everything as code.",
+  "hops": [
+   {
+    "label": "Account",
+    "text": "Regions and zones, CLI and SDK, credentials, a budget first.",
+    "lessons": [
+     1
+    ]
+   },
+   {
+    "label": "Identity",
+    "text": "Policies, evaluation, groups, roles, temporary credentials.",
+    "lessons": [
+     2
+    ]
+   },
+   {
+    "label": "Storage",
+    "text": "Private, encrypted, versioned buckets; lifecycle; presigned links.",
+    "lessons": [
+     3
+    ]
+   },
+   {
+    "label": "Network and servers",
+    "text": "Public and private subnets in two zones, NAT, chained security groups, EC2, Session Manager.",
+    "lessons": [
+     4
+    ]
+   },
+   {
+    "label": "Scale",
+    "text": "Load balancer, health checks, auto scaling, target tracking.",
+    "lessons": [
+     5
+    ]
+   },
+   {
+    "label": "Data",
+    "text": "RDS done right; DynamoDB designed from its queries.",
+    "lessons": [
+     6
+    ]
+   },
+   {
+    "label": "Serverless and events",
+    "text": "Lambda handlers, versions and canaries; SQS, SNS, EventBridge.",
+    "lessons": [
+     7,
+     8
+    ]
+   },
+   {
+    "label": "Containers",
+    "text": "ECR, Fargate task definitions, ECS services, which compute to pick.",
+    "lessons": [
+     9
+    ]
+   },
+   {
+    "label": "Operate",
+    "text": "Logs, metrics, alarms, CloudTrail, cost.",
+    "lessons": [
+     10
+    ]
+   },
+   {
+    "label": "As code",
+    "text": "A CloudFormation pipeline deployed, verified and torn down.",
+    "lessons": [
+     11
+    ]
+   }
+  ],
+  "tips": [
+   "Create a budget alert before anything else in a real account.",
+   "Run each script, then delete the moto lines only when you have a sandbox account and a budget.",
+   "Tear down after every session; check the NAT gateway twice.",
+   "Say the CLI equivalent of each boto3 call out loud.",
+   "Draw the shop's architecture from memory after the last lesson."
+  ],
+  "docs": [
+   {
+    "label": "AWS Well-Architected Framework",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+   },
+   {
+    "label": "IAM policy evaluation logic",
+    "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+   },
+   {
+    "label": "boto3 documentation",
+    "url": "https://boto3.amazonaws.com/v1/documentation/api/latest/index.html"
+   },
+   {
+    "label": "AWS CLI command reference",
+    "url": "https://awscli.amazonaws.com/v2/documentation/api/latest/index.html"
+   },
+   {
+    "label": "moto",
+    "url": "https://docs.getmoto.org/"
+   }
+  ],
+  "round2": [
+   "Rebuild the VPC from lesson 4 as a CloudFormation template.",
+   "Add the Lambda function and alarms to the project stack.",
+   "Write a least-privilege policy for the ECS task role from scratch.",
+   "Explain multi-AZ vs read replica vs backup in one minute.",
+   "Estimate the monthly cost of the project with the AWS pricing calculator."
+  ]
+ },
  "qbank": {
   "title": "One answer shape for every interview question",
   "intro": "Whatever the topic, a strong answer has the same four beats. Use the topic lessons as the raw material.",
